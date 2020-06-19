@@ -50,7 +50,7 @@ conda env create -f environment.yml -n ganshop
      	        ├── val2.png
 		└── ...
        ├── test
-           └── val_folder
+           └── test_folder
 	        ├── test1.png
      	        ├── test2.png
 		└── ...
