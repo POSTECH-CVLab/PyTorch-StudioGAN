@@ -30,7 +30,7 @@ __Since we are in the final exam period, we will start updating the GAN Shop aft
 
 ## 4. Enviroment Setting
 ```
-conda env create -f environment.yml -n contraGAN
+conda env create -f environment.yml -n ganshop
 ```
 
 ## 5. Dataset
