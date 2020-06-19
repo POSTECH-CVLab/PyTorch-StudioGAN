@@ -28,7 +28,6 @@ GAN Shop is a library for experiment and evaluation of modern GANs. The objectiv
 
 __Since we are in the final exam period, we will start updating the GAN Shop after the final exam.__
 
-
 &nbsp;
 
 ## Contrastive Generative Adversarial Networks
