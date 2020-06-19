@@ -57,13 +57,32 @@ conda env create -f environment.yml -n ganshop
 For CIFAR10 image generation tasks:
 
 ```
+ex)
+
 CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table1/contra_biggan32_cifar_hinge_no.json"
 ```
 
 For Tiny ImageNet generation tasks:
 
 ```
+ex)
+
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table1/contra_biggan64_tiny_hinge_no.json"
+```
+
+For ImageNet generation tasks:
+
+```
+ex)
+
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -c "./configs/Table6/contra_biggan128_imagenet_hinge_no.json"
+```
+
+For ImageNet generation tasks (load all images in main memory to reduce I/O bottleneck):
+```
+ex)
+
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -l -c "./configs/Table6/contra_biggan128_imagenet_hinge_no.json"
 ```
 
 ## 6. About PyTorch FID
