@@ -1,3 +1,11 @@
+
+# PyTorch GAN Shop: https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop
+# The MIT License (MIT)
+# See license file or visit https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop for details
+
+# utils/sample.py
+
+
 import numpy as np
 from numpy import random, linalg
 from math import sin,cos,sqrt
