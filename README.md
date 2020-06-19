@@ -2,6 +2,10 @@
 
 GAN Shop is a library for experiment and evaluation of modern GANs. The objective of GAN Shop project is to enable machine learning researchers to easily implement their ideas and compare them with other GAN frameworks. To do so, we have implemented or are going to implement state-of-the-art GAN models and welcome every feedbacks from the users.
 
+```
+Since we are in the final exam period, we will start updating the GAN Shop after the final exam.
+```
+
 ## 1. Implemented GANs
 
 * Vanilla DCGAN
@@ -24,19 +28,15 @@ GAN Shop is a library for experiment and evaluation of modern GANs. The objectiv
 * LOGAN
 * CntrGAN
 
-## 3. Notice
-
-__Since we are in the final exam period, we will start updating the GAN Shop after the final exam.__
-
-## 4. Enviroment Setting
+## 3. Enviroment Setting
 ```
 conda env create -f environment.yml -n ganshop
 ```
 
-## 5. Dataset
+## 4. Dataset(CIFAR10, Tiny ImageNet, ImageNet possible)
 ```
 ├── data
-   └── TINY_ILSVRC2012
+   └── ILSVRC2012
        ├── train
            ├── n01443537
      	        ├── image1.png
@@ -49,13 +49,22 @@ conda env create -f environment.yml -n ganshop
 	        ├── val1.png
      	        ├── val2.png
 		└── ...
-       ├── test
-           └── test_folder
-	        ├── test1.png
-     	        ├── test2.png
-		└── ...
 ```
 
+
+## 5. How to run
+
+For CIFAR10 image generation tasks:
+
+```
+CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table1/contra_biggan32_cifar_hinge_no.json"
+```
+
+For Tiny ImageNet generation tasks:
+
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table1/contra_biggan64_tiny_hinge_no.json"
+```
 
 ## 6. About PyTorch FID
 
