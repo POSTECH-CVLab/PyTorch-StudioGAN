@@ -19,7 +19,7 @@ Since we are in the final exam period, we will start updating the GAN Shop after
 * BigGAN
 * CRGAN
 * ContraGAN
-
+d
 ## 2. Are going to implement
 
 * DRAGAN
