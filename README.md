@@ -128,15 +128,15 @@ You can execute various experiments conducted in our paper using configs/Tablex/
 
 **Self-Attention module:** https://github.com/voletiv/self-attention-GAN-pytorch
 
-**Exponential Moving Average:**https://github.com/ajbrock/BigGAN-PyTorch
+**Exponential Moving Average:** https://github.com/ajbrock/BigGAN-PyTorch
 
-**Tensorflow FID:**https://github.com/bioinf-jku/TTUR
+**Tensorflow FID:** https://github.com/bioinf-jku/TTUR
 
-**Pytorch FID:**https://github.com/mseitzer/pytorch-fid
+**Pytorch FID:** https://github.com/mseitzer/pytorch-fid
 
-**Synchronized BatchNorm:**https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+**Synchronized BatchNorm:** https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
 
-**Implementation Details:**https://github.com/ajbrock/BigGAN-PyTorch
+**Implementation Details:** https://github.com/ajbrock/BigGAN-PyTorch
 
 
 ## Citation
