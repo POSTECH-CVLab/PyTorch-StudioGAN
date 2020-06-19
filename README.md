@@ -8,7 +8,7 @@ Since we are in the final exam period, we will start updating the GAN Shop after
 
 ## 1. Implemented GANs
 
-* [Vanilla DCGAN](https://arxiv.org/abs/1511.06434): [Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks]
+* [Vanilla DCGAN](https://arxiv.org/abs/1511.06434): Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks
 * WGAN Weight Clipping
 * WGAN Gradient Penalty
 * ACGAN
