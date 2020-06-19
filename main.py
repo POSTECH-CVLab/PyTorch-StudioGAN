@@ -1,3 +1,10 @@
+ # PyTorch GAN Shop: https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop
+# The MIT License (MIT)
+# See license file or visit https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop for details
+
+# main.py
+
+
 from argparse import ArgumentParser
 import json
 import os
