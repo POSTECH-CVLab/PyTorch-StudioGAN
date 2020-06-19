@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Code apapted from https://github.com/bioinf-jku/TTUR to use PyTorch instead of Tensorflow
 Copyright 2018 Institute of Bioinformatics, JKU Linz
