@@ -94,7 +94,7 @@ Schematics of the discriminators of three conditional GANs. (a) ACGAN has an aux
 ## 6. About PyTorch FID
 
 FID is a widely used metric to evaluate the performance of a GAN model. Since calculating FID requires a pre-trained inception-V3 network, many implementations use Tensorflow (https://github.com/bioinf-jku/TTUR) or PyTorch (https://github.com/mseitzer/pytorch-fid) libraries. Among them, the TensorFlow implementation for FID measurement is widely used. We use the PyTorch implementation for FID measurement, instead. In this section, we show that the PyTorch based FID implementation used in our work provides almost the same results with the TensorFlow implementation. The results are summarized in Table below.
-<p align="center"><img src = 'figures/Table3.png' height = '150px' width = '500px'>
+<p align="center"><img src = 'figures/Table3.png' height = '120px' width = '400px'>
 
 ## 7. Pre-trained model on Tiny ImageNet
 ```
