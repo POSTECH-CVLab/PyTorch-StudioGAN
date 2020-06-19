@@ -9,24 +9,24 @@ Since we are in the final exam period, we will start updating the GAN Shop after
 ## 1. Implemented GANs
 
 * [Vanilla DCGAN (Radford et al.)](https://arxiv.org/abs/1511.06434)
-* WGAN Weight Clipping
-* WGAN Gradient Penalty
-* ACGAN
-* Geometric GAN
-* cGAN
-* SNDCGAN,SNResGAN
-* SAGAN
-* BigGAN
-* CRGAN
-* ContraGAN
+* [WGAN Weight Clipping (Arjovsky et al.)](https://arxiv.org/abs/1701.07875)
+* [WGAN Gradient Penalty (Gulrajani et al.)](https://arxiv.org/abs/1704.00028)
+* [ACGAN (Odena et al.)](https://arxiv.org/abs/1610.09585)
+* [Geometric GAN (Lim and Ye)](https://arxiv.org/abs/1705.02894)
+* [cGAN (Miyato and Koyama)](https://arxiv.org/abs/1705.02894)
+* [SNDCGAN,SNResGAN (Miyato et al.)](https://arxiv.org/abs/1802.05957)
+* [SAGAN (Zhang et al.)](https://arxiv.org/abs/1805.08318)
+* [BigGAN (Brock et al.)](https://arxiv.org/abs/1809.11096)
+* [CRGAN (Zhang et al.)](https://arxiv.org/abs/1910.12027)
+* [ContraGAN (Ours)](https://github.com/)
 
 ## 2. Are going to implement
 
-* DRAGAN
-* BigGAN-Deep
-* ICRGAN
-* LOGAN
-* CntrGAN
+* [DRAGAN (Kodali et al.)](https://arxiv.org/abs/1705.07215)
+* [BigGAN-Deep (Brock et al.)](https://arxiv.org/abs/1809.11096)
+* [ICRGAN (Zhao et al.)](https://arxiv.org/abs/2002.04724)
+* [LOGAN (Wu et al.)](https://arxiv.org/abs/1912.00953)
+* [CntrGAN (Zhao et al.)](https://arxiv.org/abs/2006.02595)
 
 ## 3. Enviroment Setting
 ```
