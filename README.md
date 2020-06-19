@@ -54,34 +54,31 @@ conda env create -f environment.yml -n ganshop
 
 ## 5. How to run
 
+Requirements
+
+- Pytorch xx
+- xx
+
 For CIFAR10 image generation tasks:
 
 ```
-ex)
-
 CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table2/biggan32_cifar_hinge_no.json"
 ```
 
 For Tiny ImageNet generation tasks:
 
 ```
-ex)
-
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table2/biggan64_tiny_hinge_no.json"
 ```
 
 For ImageNet generation tasks:
 
 ```
-ex)
-
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -c "./configs/Imagenet_experiments/proj_biggan128_imagenet_hinge_no.json"
 ```
 
 For ImageNet generation tasks (load all images in main memory to reduce I/O bottleneck):
 ```
-ex)
-
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -l -c "./configs/Imagenet_experiments/proj_biggan128_imagenet_hinge_no.json"
 ```
 
