@@ -1,10 +1,17 @@
+# PyTorch GAN Shop: https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop
+# The MIT License (MIT)
+# See license file or visit https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop for details
+
+# utils/plot.py
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 from os.path import dirname, abspath, exists
 import os
 
 from torchvision.utils import save_image
-import pdb
+
 
 
 def plot_img_canvas(images, save_path, logger):
