@@ -8,9 +8,6 @@ booktitle={International Conference on Learning Representations},
 year={2019},
 url={https://openreview.net/forum?id=B1xsqj09Fm},
 }
-Convert dataset to HDF5
-This script preprocesses a dataset and saves it (images and labels) to
-an HDF5 file for improved I/O.
 """
 
 import torch
