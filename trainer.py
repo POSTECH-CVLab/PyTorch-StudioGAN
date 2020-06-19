@@ -1,3 +1,10 @@
+# PyTorch GAN Shop: https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop
+# The MIT License (MIT)
+# See license file or visit https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop for details
+
+# trainer.py
+
+
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
 from metrics.Accuracy_Confidence import calculate_acc_confidence
