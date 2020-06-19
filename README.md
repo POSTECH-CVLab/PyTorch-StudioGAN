@@ -81,7 +81,7 @@ Schematics of the discriminators of three conditional GANs. (a) ACGAN has an aux
 
 ### Quantitative Results
 **Table1:** Experiments using CIFAR10 and Tiny ImageNet dataset. Using three backbone architectures (SNDCGAN, SNResGAN, and BigGAN), we test three approaches using different class information conditioning (ACGAN, cGAN, and ours). Mean +- variance of FID is reported.
-<p align="center"><img src = 'figures/Table1.png' height = '150px' width = '800px'>
+<p align="center"><img src = 'figures/Table1.png' height = '150px' width = '740px'>
 
 **Table2:** Comparison with state-of-the-art GAN models. We mark "*" to FID values reported in the original papers (BigGAN and CRGAN). The other FID values are obtained from our implementation.
 <p align="center"><img src = 'figures/Table2.png' height = '100px' width = '740px'>
@@ -120,7 +120,7 @@ You can execute various experiments conducted in our paper using configs/Tablex/
 
 ## 9. About PyTorch FID
 
-FID is a widely used metric to evaluate the performance of a GAN model. Since calculating FID requires a pre-trained inception-V3 network, many implementations use Tensorflow~\cite{tensorflow2015-whitepaper} or PyTorch~\cite{NEURIPS2019_9015} libraries. Among them, the TensorFlow implementation for FID measurement is widely used. We use the PyTorch implementation for FID measurement, instead. In this section, we show that the PyTorch based FID implementation used in our work provides almost the same results with the TensorFlow implementation. The results are summarized in Table below.
+FID is a widely used metric to evaluate the performance of a GAN model. Since calculating FID requires a pre-trained inception-V3 network, many implementations use Tensorflow (https://github.com/bioinf-jku/TTUR) or PyTorch (https://github.com/mseitzer/pytorch-fid) libraries. Among them, the TensorFlow implementation for FID measurement is widely used. We use the PyTorch implementation for FID measurement, instead. In this section, we show that the PyTorch based FID implementation used in our work provides almost the same results with the TensorFlow implementation. The results are summarized in Table below.
 
 ## 10. References
 
