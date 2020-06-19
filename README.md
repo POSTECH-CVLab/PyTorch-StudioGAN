@@ -81,7 +81,7 @@ Schematics of the discriminators of three conditional GANs. (a) ACGAN has an aux
 
 ### Quantitative Results
 **Table1:** Experiments using CIFAR10 and Tiny ImageNet dataset. Using three backbone architectures (SNDCGAN, SNResGAN, and BigGAN), we test three approaches using different class information conditioning (ACGAN, cGAN, and ours). Mean +- variance of FID is reported.
-<p align="center"><img src = 'figures/Table1.png' height = '140px' width = '700px'>
+<p align="center"><img src = 'figures/Table1.png' height = '150px' width = '700px'>
 
 **Table2:** Comparison with state-of-the-art GAN models. We mark "*" to FID values reported in the original papers (BigGAN and CRGAN). The other FID values are obtained from our implementation.
 <p align="center"><img src = 'figures/Table2.png' height = '100px' width = '740px'>
