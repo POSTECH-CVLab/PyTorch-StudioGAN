@@ -19,7 +19,7 @@ Since we are in the final exam period, we will start updating the GAN Shop after
 * BigGAN
 * CRGAN
 * ContraGAN
-d
+
 ## 2. Are going to implement
 
 * DRAGAN
@@ -59,7 +59,7 @@ For CIFAR10 image generation tasks:
 ```
 ex)
 
-CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table1/proj_biggan32_cifar_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table2/biggan32_cifar_hinge_no.json"
 ```
 
 For Tiny ImageNet generation tasks:
@@ -67,7 +67,7 @@ For Tiny ImageNet generation tasks:
 ```
 ex)
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table1/proj_biggan64_tiny_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table2/biggan64_tiny_hinge_no.json"
 ```
 
 For ImageNet generation tasks:
@@ -75,14 +75,14 @@ For ImageNet generation tasks:
 ```
 ex)
 
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -c "./configs/Table6/contra_biggan128_imagenet_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -c "./configs/Imagenet_experiments/proj_biggan128_imagenet_hinge_no.json"
 ```
 
 For ImageNet generation tasks (load all images in main memory to reduce I/O bottleneck):
 ```
 ex)
 
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -l -c "./configs/Table6/contra_biggan128_imagenet_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -l -c "./configs/Imagenet_experiments/proj_biggan128_imagenet_hinge_no.json"
 ```
 
 ## 6. About PyTorch FID
