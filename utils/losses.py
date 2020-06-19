@@ -1,3 +1,10 @@
+# PyTorch GAN Shop: https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop
+# The MIT License (MIT)
+# See license file or visit https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop for details
+
+# utils/losses.py
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,6 +12,8 @@ from torch.nn import DataParallel
 from torch import autograd
 from models.model_ops import snlinear, linear
 import numpy as np 
+
+
 
 # DCGAN loss
 def loss_dcgan_dis(dis_out_real, dis_out_fake):
