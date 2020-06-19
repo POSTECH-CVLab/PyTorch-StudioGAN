@@ -146,11 +146,7 @@ To use pre-trained model on Tiny ImageNet:
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -c "./configs/Table1/contra_biggan64_tiny_hinge_no.json" --checkpoint_folder "./checkpoints/contra_tiny_imagenet_pretrained" --step 50000 --eval -t
 ```
 
-## 6. Experiments
-
-You can execute various experiments conducted in our paper using configs/Tablex/xxxx.json file:)
-
-## 7. References
+## 6. References
 
 **Self-Attention module:** https://github.com/voletiv/self-attention-GAN-pytorch
 
