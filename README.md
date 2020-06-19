@@ -81,7 +81,7 @@ Schematics of the discriminators of three conditional GANs. (a) ACGAN has an aux
 
 ### Quantitative Results
 **Table1:** Experiments using CIFAR10 and Tiny ImageNet dataset. Using three backbone architectures (SNDCGAN, SNResGAN, and BigGAN), we test three approaches using different class information conditioning (ACGAN, cGAN, and ours). Mean +- variance of FID is reported.
-<p align="center"><img src = 'figures/Table1.png' height = '150px' width = '700px'>
+<p align="center"><img src = 'figures/Table1.png' height = '150px' width = '720px'>
 
 **Table2:** Comparison with state-of-the-art GAN models. We mark "*" to FID values reported in the original papers (BigGAN and CRGAN). The other FID values are obtained from our implementation.
 <p align="center"><img src = 'figures/Table2.png' height = '100px' width = '740px'>
@@ -90,12 +90,18 @@ Schematics of the discriminators of three conditional GANs. (a) ACGAN has an aux
 **Figure 1:** Examples of generated images using ContraGAN. (left) CIFAR10, FID: 10.322, (right) Tiny ImageNet, FID: 27.018. 
 <p align="center"><img src = 'figures/generated images.png' height = '450px' width = '900px'>
 
-## 6. Pre-trained model on Tiny ImageNet
+
+## 6. About PyTorch FID
+
+FID is a widely used metric to evaluate the performance of a GAN model. Since calculating FID requires a pre-trained inception-V3 network, many implementations use Tensorflow (https://github.com/bioinf-jku/TTUR) or PyTorch (https://github.com/mseitzer/pytorch-fid) libraries. Among them, the TensorFlow implementation for FID measurement is widely used. We use the PyTorch implementation for FID measurement, instead. In this section, we show that the PyTorch based FID implementation used in our work provides almost the same results with the TensorFlow implementation. The results are summarized in Table below.
+<p align="center"><img src = 'figures/Table3.png' height = '150px' width = '200px'>
+
+## 7. Pre-trained model on Tiny ImageNet
 ```
 https://drive.google.com/file/d/1XsouS_HIlES9CAshrtgYA3b6H2qUXTnx/view?usp=sharing
 ```
 
-## 7. How to run
+## 8. How to run
 
 For CIFAR10 image generation tasks:
 
@@ -114,15 +120,19 @@ To use pre-trained model on Tiny ImageNet:
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -c "./configs/Table1/contra_biggan64_tiny_hinge_no.json" --checkpoint_folder "./checkpoints/contra_tiny_imagenet_pretrained" --step 50000 --eval -t
 ```
 
-## 8. Experiments
+## 9. Experiments
 
 You can execute various experiments conducted in our paper using configs/Tablex/xxxx.json file:)
 
-## 9. About PyTorch FID
-
-FID is a widely used metric to evaluate the performance of a GAN model. Since calculating FID requires a pre-trained inception-V3 network, many implementations use Tensorflow (https://github.com/bioinf-jku/TTUR) or PyTorch (https://github.com/mseitzer/pytorch-fid) libraries. Among them, the TensorFlow implementation for FID measurement is widely used. We use the PyTorch implementation for FID measurement, instead. In this section, we show that the PyTorch based FID implementation used in our work provides almost the same results with the TensorFlow implementation. The results are summarized in Table below.
-
 ## 10. References
+
+**Self-Attention module:**
+**Exponential Moving Average:**
+**Tensorflow FID:**
+**Pytorch FID:**
+**Synchronized BatchNorm:**
+**Implementation Details:**
+
 
 ## Citation
 
