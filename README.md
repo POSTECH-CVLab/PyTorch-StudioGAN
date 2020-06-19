@@ -59,7 +59,7 @@ For CIFAR10 image generation tasks:
 ```
 ex)
 
-CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table1/contra_biggan32_cifar_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table1/proj_biggan32_cifar_hinge_no.json"
 ```
 
 For Tiny ImageNet generation tasks:
@@ -67,7 +67,7 @@ For Tiny ImageNet generation tasks:
 ```
 ex)
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table1/contra_biggan64_tiny_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table1/proj_biggan64_tiny_hinge_no.json"
 ```
 
 For ImageNet generation tasks:
