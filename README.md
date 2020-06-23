@@ -35,7 +35,7 @@ StudioGAN is a library for experiment and evaluation of modern GANs. The objecti
 - h5py
 - tqdm
 
-You can easily install the environment setting that we used as follows:
+You can easily install the environment setting we used as follows:
 
 ```
 conda env create -f environment.yml -n StudioGAN
