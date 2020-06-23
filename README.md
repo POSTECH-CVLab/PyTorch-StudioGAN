@@ -29,7 +29,7 @@ StudioGAN is a library for experiment and evaluation of modern GANs. The objecti
 
 - Python 3.6
 - torch 1.3.1
-- torchvision==0.4.2
+- torchvision 0.4.2
 - tensorboard 1.15.0
 - Pillow 6.2.2
 - h5py
