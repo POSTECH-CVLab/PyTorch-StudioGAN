@@ -25,13 +25,13 @@ StudioGAN is a library for experiment and evaluation of modern GANs. The objecti
 * [LOGAN (Wu et al.)](https://arxiv.org/abs/1912.00953)
 * [CntrGAN (Zhao et al.)](https://arxiv.org/abs/2006.02595)
 
-## 3. Environment Setting
+## 3. Requirements
 
-- Python 3.6
-- torch 1.3.1
-- torchvision 0.4.2
-- tensorboard 1.15.0
-- Pillow 6.2.2
+- Python > 3.6
+- torch > 1.3.1 
+- torchvision > 0.4.2
+- Pillow < 7 
+- tensorboard
 - h5py
 - tqdm
 
