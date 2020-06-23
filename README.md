@@ -1,10 +1,7 @@
-## GAN Shop: A Library for Experiment and Evaluation of GANs (Early Version)
+## StudioGAN: A Library for Experiment and Evaluation of GANs (Early Version)
 
-GAN Shop is a library for experiment and evaluation of modern GANs. The objective of GAN Shop project is to enable machine learning researchers to easily implement their ideas and compare them with other GAN frameworks. To do so, we have implemented or are going to implement state-of-the-art GAN models and welcome every feedbacks from the users.
+StudioGAN is a library for experiment and evaluation of modern GANs. The objective of StudioGAN project is to enable machine learning researchers to easily implement their ideas and compare them with other GAN frameworks. To do so, we have implemented or are going to implement state-of-the-art-models and welcome every feedbacks from the users.
 
-```
-Since we are in the final exam period, we will start updating the GAN Shop after the final exam.
-```
 
 ## 1. Implemented GANs
 
@@ -28,9 +25,20 @@ Since we are in the final exam period, we will start updating the GAN Shop after
 * [LOGAN (Wu et al.)](https://arxiv.org/abs/1912.00953)
 * [CntrGAN (Zhao et al.)](https://arxiv.org/abs/2006.02595)
 
-## 3. Enviroment Setting
+## 3. Environment Setting
+
+- Python 3.6
+- torch 1.3.1
+- torchvision==0.4.2
+- tensorboard 1.15.0
+- Pillow 6.2.2
+- h5py
+- tqdm
+
+You can easily install the environment setting that we used as follows:
+
 ```
-conda env create -f environment.yml -n ganshop
+conda env create -f environment.yml -n StudioGAN
 ```
 
 ## 4. Dataset(CIFAR10, Tiny ImageNet, ImageNet possible)
@@ -53,11 +61,6 @@ conda env create -f environment.yml -n ganshop
 
 
 ## 5. How to run
-
-Requirements
-
-- Pytorch xx
-- xx
 
 For CIFAR10 image generation tasks:
 
