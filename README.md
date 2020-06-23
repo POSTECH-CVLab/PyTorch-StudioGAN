@@ -104,6 +104,13 @@ FID is a widely used metric to evaluate the performance of a GAN model. Since ca
 
 **Implementation Details:** https://github.com/ajbrock/BigGAN-PyTorch
 
-
-
-
+## Citation
+```
+@article{
+  ,
+  title={{Contrastive Generative Adversarial Networks}},
+  author={Minguk Kang and Jaesik Park},
+  journal={arXiv preprint arXiv 2002.04724},
+  year={2020},
+}
+```
