@@ -1,6 +1,6 @@
-# PyTorch GAN Shop: https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop
+# PyTorch StudioGAN: https://github.com/POSTECH-CVLab/PyTorch-StudioGAN
 # The MIT License (MIT)
-# See license file or visit https://github.com/POSTECH-CVLab/PyTorch-GAN-Shop for details
+# See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
 # utils/sample.py
 
