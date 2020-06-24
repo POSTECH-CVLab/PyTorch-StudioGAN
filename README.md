@@ -110,7 +110,7 @@ FID is a widely used metric to evaluate the performance of a GAN model. Since ca
   ,
   title={{Contrastive Generative Adversarial Networks}},
   author={Minguk Kang and Jaesik Park},
-  journal={arXiv preprint arXiv},
+  journal={arXiv preprint arXiv 2006.12681},
   year={2020},
 }
 ```
