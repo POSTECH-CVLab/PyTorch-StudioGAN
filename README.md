@@ -1,5 +1,4 @@
-## StudioGAN: A Library for Experiment and Evaluation of GANs 
-## (Early Version)
+## StudioGAN: A Library for Experiment and Evaluation of GANs (Early Version)
 
 StudioGAN is a library for experiment and evaluation of modern GANs. The objective of StudioGAN project is to enable machine learning researchers to easily implement their ideas and compare them with other GAN frameworks. To do so, we have implemented or are going to implement state-of-the-art-models and welcome every feedbacks from the users.
 
@@ -107,8 +106,7 @@ FID is a widely used metric to evaluate the performance of a GAN model. Since ca
 
 ## Citation
 ```
-@article{
-  ,
+@article{kang2020contrastive
   title={{Contrastive Generative Adversarial Networks}},
   author={Minguk Kang and Jaesik Park},
   journal={arXiv preprint arXiv 2006.12681},
