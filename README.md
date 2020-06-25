@@ -1,4 +1,5 @@
-## StudioGAN: A Library for Experiment and Evaluation of GANs (Early Version)
+## StudioGAN: A Library for Experiment and Evaluation of GANs 
+## (Early Version)
 
 StudioGAN is a library for experiment and evaluation of modern GANs. The objective of StudioGAN project is to enable machine learning researchers to easily implement their ideas and compare them with other GAN frameworks. To do so, we have implemented or are going to implement state-of-the-art-models and welcome every feedbacks from the users.
 
