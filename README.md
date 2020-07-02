@@ -1,6 +1,6 @@
 ## StudioGAN: A Library for Experiment and Evaluation of GANs (Early Version)
 
-StudioGAN is a library for experiment and evaluation of modern GANs. The objective of StudioGAN project is to enable machine learning researchers to easily implement their ideas and compare them with other GAN frameworks. To do so, we have implemented or are going to implement state-of-the-art-models and welcome every feedbacks from users.
+StudioGAN is a Pytorch library providing the implementation of representative Generative Adversarial Networks (GANs) for conditional/unconditional image synthesis. This project aims to help machine learning researchers to compare the new idea with other GANs in the same Pytorch environment. 
 
 
 ## 1. Implemented GANs
@@ -17,7 +17,7 @@ StudioGAN is a library for experiment and evaluation of modern GANs. The objecti
 * [CRGAN (Zhang et al.)](https://arxiv.org/abs/1910.12027)
 * [ContraGAN (Ours)](https://github.com/)
 
-## 2. Are going to implement
+## 2. To be implemented
 
 * [DRAGAN (Kodali et al.)](https://arxiv.org/abs/1705.07215)
 * [BigGAN-Deep (Brock et al.)](https://arxiv.org/abs/1809.11096)
@@ -27,6 +27,7 @@ StudioGAN is a library for experiment and evaluation of modern GANs. The objecti
 
 ## 3. Requirements
 
+- Anaconda
 - Python > 3.6
 - torch > 1.3.1 
 - torchvision > 0.4.2
@@ -35,13 +36,14 @@ StudioGAN is a library for experiment and evaluation of modern GANs. The objecti
 - h5py
 - tqdm
 
-You can easily install the environment setting we used as follows:
+You can install the recommended environment setting as follows:
 
 ```
 conda env create -f environment.yml -n StudioGAN
 ```
 
 ## 4. Dataset(CIFAR10, Tiny ImageNet, ImageNet possible)
+The folder structure of the datasets is shown below:
 ```
 ├── data
    └── ILSVRC2012
@@ -62,33 +64,33 @@ conda env create -f environment.yml -n StudioGAN
 
 ## 5. How to run
 
-For CIFAR10 image generation tasks:
+For CIFAR10 image generation:
 
 ```
 CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table2/biggan32_cifar_hinge_no.json"
 ```
 
-For Tiny ImageNet generation tasks:
+For Tiny ImageNet image generation:
 
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table2/biggan64_tiny_hinge_no.json"
 ```
 
-For ImageNet generation tasks:
+For ImageNet image generation:
 
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -c "./configs/Imagenet_experiments/proj_biggan128_imagenet_hinge_no.json"
 ```
 
-For ImageNet generation tasks (load all images in main memory to reduce I/O bottleneck):
+For ImageNet image generation (loading all images into main memory to reduce I/O bottleneck):
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -l -c "./configs/Imagenet_experiments/proj_biggan128_imagenet_hinge_no.json"
 ```
 
 ## 6. About PyTorch FID
 
-FID is a widely used metric to evaluate the performance of a GAN model. Since calculating FID requires a pre-trained inception-V3 network, many implementations use Tensorflow (https://github.com/bioinf-jku/TTUR) or PyTorch (https://github.com/mseitzer/pytorch-fid) libraries. Among them, the TensorFlow implementation for FID measurement is widely used. We use the PyTorch implementation for FID measurement, instead. In this section, we show that the PyTorch based FID implementation used in our work provides almost the same results with the TensorFlow implementation. The results are summarized in Table below.
-<p align="center"><img src = 'figures/Table3.png' height = '140px' width = '460px'>
+FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires a pre-trained inception-V3 network, and approaches use Tensorflow-based FID (https://github.com/bioinf-jku/TTUR), or PyTorch-based FID (https://github.com/mseitzer/pytorch-fid). StudioGAN utilizes the PyTorch-based FID to test GAN models in the same PyTorch environment seamlessly. We show that the PyTorch based FID implementation used in StudioGAN provides almost the same results with the TensorFlow implementation. The results are summarized in the table below.
+<p align="center"><img src = 'figures/Table3.png' height = '140px' width = '520px'>
 
 ## 6. References
 
@@ -105,11 +107,12 @@ FID is a widely used metric to evaluate the performance of a GAN model. Since ca
 **Implementation Details:** https://github.com/ajbrock/BigGAN-PyTorch
 
 ## Citation
-```
-@article{kang2020contrastive,
-  title={{Contrastive Generative Adversarial Networks}},
-  author={Minguk Kang and Jaesik Park},
-  journal={arXiv preprint arXiv:2006.12681},
-  year={2020}
+StudioGAN is established for the following research project. Please cite our work if you use StudioGAN.
+```bib
+@article{kang2020ContraGAN,
+  title   = {{Contrastive Generative Adversarial Networks}},
+  author  = {Minguk Kang and Jaesik Park},
+  journal = {arXiv preprint arXiv:2006.12681},
+  year    = {2020}
 }
 ```
