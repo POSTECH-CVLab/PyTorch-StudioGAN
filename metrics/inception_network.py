@@ -92,7 +92,9 @@ class InceptionV3(nn.Module):
 
         for param in self.parameters():
             param.requires_grad = requires_grad
-
+        
+        # for set dropout param
+        self.requires_grad = requires_grad
 
     def forward(self, inp):
         """Get Inception feature maps
@@ -119,7 +121,7 @@ class InceptionV3(nn.Module):
         for idx, block in enumerate(self.blocks):
             x = block(x)
 
-        x = F.dropout(x, training=False)
+        x = F.dropout(x, training=self.requires_grad)
         x = torch.flatten(x, 1)
         logit = self.fc(x)
         return x, logit
