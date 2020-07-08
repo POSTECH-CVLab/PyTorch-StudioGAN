@@ -51,6 +51,7 @@
       "latent_norm_reg_weight":"N/A",
       "consistency_reg": false,
       "consistency_lambda":"N/A",
+      "make_positive_aug":false, 
       "synchronized_bn": false,
       "ema": true,
     
