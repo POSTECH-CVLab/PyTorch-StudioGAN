@@ -2,7 +2,7 @@
     "data_processing":{
       "dataset_name": "imagenet",
       "data_path": "./data/ILSVRC2012",
-      "img_size": 128,
+      "img_size": 96,
       "num_classes": 1000,
       "batch_size4prcsing": 256,
       "chunk_size": 500,
@@ -67,13 +67,13 @@
     
       "batch_size": 256,
       "accumulation_steps": 8, 
-      "total_step": 200000,
+      "total_step": 150000,
       "truncated_factor": 1,
       "prior": "gaussian",
       "g_steps_per_iter": 1,
-      "d_steps_per_iter": 2,
-      "d_lr": 0.0002,
-      "g_lr": 0.00005,
+      "d_steps_per_iter": 1,
+      "d_lr": 0.0004,
+      "g_lr": 0.0001,
       "beta1": 0.0,
       "beta2": 0.999,
       "batch4metrics": 50
