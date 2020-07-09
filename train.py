@@ -39,7 +39,7 @@ RUN_NAME_FORMAT = (
 
 def train_framework(dataset_name, architecture, num_classes, img_size, data_path, eval_dataset, hdf5_path_train, hdf5_path_valid, train_rate, auxiliary_classifier,
                     projection_discriminator, contrastive_training, hyper_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, attention, reduce_class,
-                    at_after_th_gen_block, at_after_th_dis_block, leaky_relu, g_init, d_init, latent_op, consistency_reg, make_positive_aug, synchronized_bn, ema,
+                    at_after_th_gen_block, at_after_th_dis_block, leaky_relu, g_init, d_init, latent_op, consistency_reg, diff_aug,  make_positive_aug, synchronized_bn, ema,
                     ema_decay, ema_start, adv_loss, z_dim, shared_dim, g_conv_dim, d_conv_dim, batch_size, total_step, truncated_factor, prior, d_lr, g_lr,
                     beta1, beta2, batch4metrics, config, **_):
 
@@ -214,6 +214,7 @@ def train_framework(dataset_name, architecture, num_classes, img_size, data_path
         latent_op_beta=config['latent_op_beta'],
         latent_norm_reg_weight=config['latent_norm_reg_weight'],
         consistency_reg=consistency_reg,
+        diff_aug=diff_aug,
         consistency_lambda=config['consistency_lambda'],
         make_positive_aug=make_positive_aug,
         G_optimizer=G_optimizer,

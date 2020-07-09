@@ -11,7 +11,7 @@ from metrics.Accuracy_Confidence import calculate_acc_confidence
 from utils.sample import sample_latents, make_mask
 from utils.plot import plot_img_canvas, plot_confidence_histogram
 from utils.utils import elapsed_time, calculate_all_sn
-from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss, Cross_Entropy_loss
+from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss, Cross_Entropy_loss, DiffAugment
 from utils.biggan_utils import ortho
 
 import torch
@@ -44,7 +44,7 @@ class Trainer:
                 G_loss, D_loss, auxiliary_classifier, contrastive_training, softmax_posterior, contrastive_softmax, hyper_dim, contrastive_lambda, tempering, 
                  discrete_tempering, tempering_times, start_temperature, end_temperature, gradient_penalty_for_dis, lambda4lp, lambda4gp, weight_clipping_for_dis,
                  weight_clipping_bound, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,
-                 consistency_reg,  consistency_lambda, make_positive_aug, G_optimizer, D_optimizer, default_device, second_device,  batch_size, z_dim, num_classes, 
+                 consistency_reg, diff_aug, consistency_lambda, make_positive_aug, G_optimizer, D_optimizer, default_device, second_device,  batch_size, z_dim, num_classes, 
                  truncated_factor, prior, g_steps_per_iter, d_steps_per_iter, accumulation_steps, lambda4ortho, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_val_fid,
                  best_checkpoint_fid_path, best_val_is, best_checkpoint_is_path, config):
 
@@ -86,6 +86,7 @@ class Trainer:
         self.latent_op_beta = latent_op_beta
         self.latent_norm_reg_weight = latent_norm_reg_weight
         self.consistency_reg = consistency_reg
+        self.diff_aug = diff_aug
         self.consistency_lambda = consistency_lambda
         self.make_positive_aug = make_positive_aug
         self.G_optimizer = G_optimizer
@@ -128,6 +129,11 @@ class Trainer:
         self.best_val_is = best_val_is
         self.best_checkpoint_fid_path = best_checkpoint_fid_path
         self.best_checkpoint_is_path = best_checkpoint_is_path
+
+
+        # new add for Diff-aug
+        self.policy = "color,translation,cutout"
+
 
 
     #################################    proposed Contrastive Generative Adversarial Networks    ###################################
@@ -176,9 +182,13 @@ class Trainer:
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
                     real_cls_mask = make_mask(real_labels, self.num_classes, self.second_device)
 
+                    if self.diff_aug:
+                        images = DiffAugment(images, policy=self.policy)
                     cls_real_anchor, cls_real_embed, dis_real_authen_out = self.dis_model(images, real_labels)
 
                     fake_images = self.gen_model(z, fake_labels)
+                    if self.diff_aug:
+                        fake_images = DiffAugment(fake_images, policy=self.policy)
                     cls_fake_anchor, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
                     
                     dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
@@ -225,6 +235,8 @@ class Trainer:
 
                     fake_images = self.gen_model(z, fake_labels)
 
+                    if self.diff_aug:
+                        fake_images = DiffAugment(fake_images, policy=self.policy)
                     cls_fake_anchor, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
 
                     gen_acml_loss = self.G_loss(dis_fake_authen_out)
@@ -310,8 +322,12 @@ class Trainer:
                         z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
                                             self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
 
+                    if self.diff_aug:
+                        images = DiffAugment(images, policy=self.policy)
                     _, cls_out_real, dis_out_real = self.dis_model(images, real_labels)
                     fake_images = self.gen_model(z, fake_labels)
+                    if self.diff_aug:
+                        fake_images = DiffAugment(fake_images, policy=self.policy)
                     _, cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
 
                     dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
@@ -358,6 +374,9 @@ class Trainer:
                                                             self.latent_op_alpha, self.latent_op_beta, True, self.second_device)
 
                     fake_images = self.gen_model(z, fake_labels)
+
+                    if self.diff_aug:
+                        fake_images = DiffAugment(fake_images, policy=self.policy)
                     _, cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
 
                     gen_acml_loss = self.G_loss(dis_out_fake)
