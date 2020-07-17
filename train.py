@@ -100,7 +100,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
         Dis = DataParallel(Dis, output_device=second_device)
         if ema:
             Gen_copy = DataParallel(Gen_copy, output_device=second_device)
-        if config['synchronized_bn']:
+        if model_config['training_and_sampling_setting']['synchronized_bn']:
             patch_replication_callback(Gen)
             patch_replication_callback(Dis)
 
