@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 import os
 import h5py as h5
 import numpy as np
-from scipy import io
+from scipy import io, misc
 
 import torch
 import torchvision.transforms as transforms
@@ -19,7 +19,7 @@ from torchvision.datasets import ImageFolder
 
 
 class LoadDataset(Dataset):
-    def __init__(self, dataset_name, data_path, train, download, resize_size, hdf5_path=None, consistency_reg=False, make_positive_aug=False):
+    def __init__(self, dataset_name, data_path, train, download, resize_size, hdf5_path=None, consistency_reg=False):
         super(LoadDataset, self).__init__()
         self.dataset_name = dataset_name
         self.data_path = data_path
@@ -28,7 +28,7 @@ class LoadDataset(Dataset):
         self.resize_size = resize_size
         self.hdf5_path = hdf5_path
         self.consistency_reg = consistency_reg
-        self.make_positive_aug = make_positive_aug
+        self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size))])
         self.load_dataset()
 
 
@@ -51,7 +51,7 @@ class LoadDataset(Dataset):
                     self.data = f['imgs'][:]
                     self.labels = f['labels'][:]
             else:
-                mode = 'train' if self.train == True else 'val'
+                mode = 'train' if self.train == True else 'valid'
                 root = os.path.join('data','ILSVRC2012', mode)
                 self.data = ImageFolder(root=root)
         
@@ -62,7 +62,7 @@ class LoadDataset(Dataset):
                     self.data = f['imgs'][:]
                     self.labels = f['labels'][:]
             else:
-                mode = 'train' if self.train == True else 'val'
+                mode = 'train' if self.train == True else 'valid'
                 root = os.path.join('data','TINY_ILSVRC2012', mode)
                 self.data = ImageFolder(root=root)
         else:
@@ -90,8 +90,7 @@ class LoadDataset(Dataset):
 
     def __getitem__(self, index):
         if self.hdf5_path is not None:
-            img = np.asarray((self.data[index]-127.5)/127.5, np.float32)
-            label = int(self.labels[index])
+            img, label = np.asarray((self.data[index]-127.5)/127.5, np.float32), int(self.labels[index])
         elif self.hdf5_path is None and self.dataset_name == 'imagenet':
             img, label = self.data[index]
             size = (min(img.size), min(img.size))
@@ -102,17 +101,18 @@ class LoadDataset(Dataset):
                  else (img.size[1] - size[1]) // 2)
                  
             img = img.crop((i, j, i + size[0], j + size[1]))
-            img = np.asarray(img.resize((self.resize_size, self.resize_size)), np.float32)
+            img = np.asarray(self.transform(img),np.float32)
             img = np.transpose((img-127.5)/127.5, (2,0,1))
         else:
             img, label = self.data[index]
-            img = np.asarray(img, np.float32)
+            img = np.asarray(self.transform(img),np.float32)
             img = np.transpose((img-127.5)/127.5, (2,0,1))
 
-        if self.consistency_reg or self.make_positive_aug:
+        if self.consistency_reg:
             flip_index, tx_index, ty_index = self._decompose_index(index)
             img_aug = np.copy(img)
             c,h,w = img_aug.shape
+
             if flip_index == 0:
                 img_aug = img_aug[:,:,::-1]
     
@@ -135,11 +135,6 @@ class LoadDataset(Dataset):
                 j = 2*pad_w
 
             img_aug = img_aug[:, i:i+h, j:j+w]
-
-            img = torch.from_numpy(img)
-            img_aug = torch.from_numpy(img_aug)
-            return img, label, img_aug
-
-        img = torch.from_numpy(img)
-        return img, label
+            return torch.from_numpy(img), label, torch.from_numpy(img_aug)
+        return torch.from_numpy(img), label
 

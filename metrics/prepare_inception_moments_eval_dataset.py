@@ -13,26 +13,18 @@ from metrics.IS import evaluator
 
 
 
-def prepare_inception_moments_eval_dataset(dataloader, inception_model, reduce_class, splits, logger, device, eval_dataset=False):
+def prepare_inception_moments_eval_dataset(dataloader, eval_mode, inception_model, splits, logger, device):
     dataset_name = dataloader.dataset.dataset_name
-    if dataloader.dataset.train:
-        dataset_mode = 'train'
-    elif dataloader.dataset.train is False and dataset_name == "imagenet" or dataset_name == "tiny_imagenet":
-        dataset_mode = 'valid'
-    else:
-        dataset_mode = 'test'
-
     inception_model.eval()
 
-    save_path = os.path.abspath(os.path.join("./data", dataset_name + "_" + dataset_mode + "_" + str(reduce_class) +'_inception_moments.npz'))
+    save_path = os.path.abspath(os.path.join("./data", dataset_name + "_" + eval_mode +'_' + 'inception_moments.npz'))
     is_file = os.path.isfile(save_path)
-    is_score, is_std = None, None
 
     if is_file is True:
         mu = np.load(save_path)['mu']
         sigma = np.load(save_path)['sigma']
     else:
-        logger.info('Calculate moments of {} dataset'.format(dataset_mode))
+        logger.info('Calculate moments of {} dataset'.format(eval_mode))
         mu, sigma = calculate_activation_statistics(data_loader=dataloader,
                                                     generator=None,
                                                     discriminator=None,
@@ -51,11 +43,10 @@ def prepare_inception_moments_eval_dataset(dataloader, inception_model, reduce_c
         logger.info('Saving calculated means and covariances to disk...')
         np.savez(save_path, **{'mu': mu, 'sigma': sigma})
 
-    if eval_dataset is True:
-        logger.info('calculate inception score of {} dataset'.format(dataset_mode))
-        evaluator_instance = evaluator(inception_model, device=device)
-        is_score, is_std = evaluator_instance.eval_dataset(dataloader, splits=len(dataloader.dataset)//5000)
-        logger.info('Inception score={is_score}-Inception_std={is_std}'.format(is_score=is_score, is_std=is_std))
+    logger.info('calculate inception score of {} dataset'.format(eval_mode))
+    evaluator_instance = evaluator(inception_model, device=device)
+    is_score, is_std = evaluator_instance.eval_dataset(dataloader, splits=splits)
+    logger.info('Inception score={is_score}-Inception_std={is_std}'.format(is_score=is_score, is_std=is_std))
     return mu, sigma, is_score, is_std
 
 

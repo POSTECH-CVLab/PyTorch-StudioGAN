@@ -6,9 +6,8 @@ from datetime import datetime
 
 
 
-def make_run_name(format, framework, phase, config):
+def make_run_name(format, framework, phase):
     return format.format(
-        **config,
         framework=framework,
         phase=phase,
         timestamp=datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
@@ -41,12 +40,8 @@ def make_logger(run_name, log_output):
     return logger
 
 
-def make_checkpoint_dir(checkpoint_dir, run_name, config):
+def make_checkpoint_dir(checkpoint_dir, run_name):
     checkpoint_dir = checkpoint_dir if checkpoint_dir is not None else join('checkpoints', run_name)
     if not exists(abspath(checkpoint_dir)):
         os.makedirs(checkpoint_dir)
-
-    config_output = join(checkpoint_dir, 'config.json')
-    with open(config_output, 'w') as config_file:
-        json.dump(config, config_file)
     return checkpoint_dir

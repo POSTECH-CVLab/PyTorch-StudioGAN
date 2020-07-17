@@ -15,9 +15,15 @@ import torch.nn.functional as F
 
 
 
-def sample_latents(dist, n_samples, noise_dim, truncated_factor=1, n_categories=None, perturb=None, device=torch.device("cpu")):
+def sample_latents(dist, n_samples, noise_dim, truncated_factor=1, n_categories=None, perturb=None, device=torch.device("cpu"), cls_wise_sampling=False):
     if n_categories:
-        y_fake = torch.randint(low=0, high=n_categories, size=(n_samples,), dtype=torch.long, device=device)
+        if cls_wise_sampling:
+            y_fake = []
+            for c in range(n_categories):
+                y_fake += [c]*8
+            y_fake = torch.tensor(y_fake, dtype=torch.long).to(device) 
+        else:
+            y_fake = torch.randint(low=0, high=n_categories, size=(n_samples,), dtype=torch.long, device=device)
     else:
         y_fake = None
 
@@ -95,7 +101,7 @@ def make_mask(labels, n_cls, device):
     mask_multi = np.zeros([n_cls, n_samples])
     for c in range(n_cls):
         c_indices = np.where(labels==c)
-        mask_multi[c, c_indices] = +1
+        mask_multi[c, c_indices] =+1
 
     mask_multi = torch.tensor(mask_multi).type(torch.long)
     return mask_multi.to(device)

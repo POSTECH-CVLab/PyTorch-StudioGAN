@@ -42,7 +42,7 @@ class ema_(object):
     with torch.no_grad():
       for key in self.source_dict:
         self.target_dict[key].data.copy_(self.source_dict[key].data)
-        # target_dict[key].data = source_dict[key].data # Doesn't work!
+
 
   def update(self, itr=None):
     # If an iteration counter is provided and itr is less than the start itr,

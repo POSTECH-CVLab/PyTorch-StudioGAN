@@ -42,10 +42,6 @@ class evaluator(object):
 
     def inception_softmax(self, batch_images):
         with torch.no_grad():
-            if batch_images.shape[-1] != 299 or batch_images.shape[-2] != 299:
-                batch_images = torch.nn.functional.interpolate(batch_images, size=(299, 299), mode='bilinear',
-                                                               align_corners=False)
-
             embeddings, logits = self.inception_model(batch_images)
             y = torch.nn.functional.softmax(logits, dim=1)
         return y

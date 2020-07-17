@@ -32,12 +32,9 @@ def load_checkpoint(model, optimizer, filename, metric=False, ema=False):
                         state[k] = v.cuda()
 
             if metric:
-                best_val_fid = checkpoint['best_val_fid']
-                best_checkpoint_fid_path = checkpoint['best_checkpoint_fid_path']
-                best_val_is = checkpoint['best_val_is']
-                best_checkpoint_is_path =checkpoint['best_val_is']
-                return model, optimizer, seed, run_name, start_step, \
-                       best_val_fid, best_checkpoint_fid_path, best_val_is, best_checkpoint_is_path
+                best_fid = checkpoint['best_fid']
+                best_fid_checkpoint_path = checkpoint['best_fid_checkpoint_path']
+                return model, optimizer, seed, run_name, start_step, best_val_fid, best_checkpoint_fid_path
     else:
         print("=> no checkpoint found at '{}'".format(filename))
     return model, optimizer, seed, run_name, start_step

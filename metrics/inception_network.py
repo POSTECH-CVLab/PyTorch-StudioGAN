@@ -87,8 +87,9 @@ class InceptionV3(nn.Module):
         self.blocks.append(nn.Sequential(*block3))
 
         with torch.no_grad():
-            self.fc = nn.Linear(2048, 1008, bias=False)
+            self.fc = nn.Linear(2048, 1008, bias=True)
             self.fc.weight.copy_(state_dict['fc.weight'])
+            self.fc.bias.copy_(state_dict['fc.bias'])
 
         for param in self.parameters():
             param.requires_grad = requires_grad
@@ -107,6 +108,7 @@ class InceptionV3(nn.Module):
         block, sorted ascending by index
         """
         x = inp
+
         if self.resize_input:
             x = F.interpolate(x,
                               size=(299, 299),

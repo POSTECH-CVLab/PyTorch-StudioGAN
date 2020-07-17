@@ -369,3 +369,4 @@ class Discriminator(nn.Module):
         else:
             authen_output = torch.squeeze(self.linear6(h))
             return None, None, authen_output
+[g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim][g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim]
