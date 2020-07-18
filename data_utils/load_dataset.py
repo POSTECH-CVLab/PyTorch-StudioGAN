@@ -10,7 +10,8 @@ from torch.utils.data import Dataset
 import os
 import h5py as h5
 import numpy as np
-from scipy import io, misc
+import random.random as random
+from scipy import io
 
 import torch
 import torchvision.transforms as transforms
@@ -32,7 +33,6 @@ class LoadDataset(Dataset):
         if self.random_flip:
             self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size)),
                                                  transforms.RandomHorizontalFlip(p=0.5)])
-            self.flip_transform = transforms.Compose([transforms.RandomHorizontalFlip(p=0.5)])
         else:
             self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size))])
         self.load_dataset()
@@ -97,7 +97,7 @@ class LoadDataset(Dataset):
     def __getitem__(self, index):
         if self.hdf5_path is not None:
             img, label = self.data[index], int(self.labels[index])
-            img = self.flip_transform(img) if self.random_flip is True else img
+            img = img[:,:,::-1] if random() > 0.5 else img
             img = np.asarray((self.data[index]-127.5)/127.5, np.float32)
         elif self.hdf5_path is None and self.dataset_name == 'imagenet':
             img, label = self.data[index]

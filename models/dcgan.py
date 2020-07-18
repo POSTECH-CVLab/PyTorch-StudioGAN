@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# models/dcgan32.py
+# models/dcgan.py
 
 
 from models.model_ops import *
