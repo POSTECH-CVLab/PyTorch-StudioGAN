@@ -20,7 +20,7 @@ def main():
     parser.add_argument('--checkpoint_folder', type=str, default=None)
     parser.add_argument('--log_output_path', type=str, default=None)
 
-    parser.add_argument('--seed', type=int, default=1, help='seed for generating random number')
+    parser.add_argument('--seed', type=int, default=0, help='seed for generating random number')
     parser.add_argument('--num_workers', type=int, default=8, help='')
     
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
@@ -30,7 +30,7 @@ def main():
 
     parser.add_argument('--print_every', type=int, default=100, help='control log interval')
     parser.add_argument('--save_every', type=int, default=2000, help='control evaluation and save interval')
-    parser.add_argument('--type4eval_dataset', type=str, default='test', help='[train/valid/test]')
+    parser.add_argument('--type4eval_dataset', type=str, default='valid', help='[train/valid/test]')
     args = parser.parse_args()
 
     if args.config_path is not None:
