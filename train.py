@@ -79,6 +79,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     logger.info('Building model...')
+    if architecture == "dcgan":
+        assert img_size == 32, "Sry, StudioGAN does not support dcgan models for generation of images larger than 32 resolution."
     module = __import__('models.{architecture}'.format(architecture=architecture),fromlist=['something'])
     logger.info('Modules are located on models.{architecture}'.format(architecture=architecture))
     Gen = module.Generator(z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,

@@ -85,6 +85,8 @@ class Generator(nn.Module):
                                  "64": [g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "96": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "128": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim]}
+        
+        bottom_collection = {"32": 4, "64": 4, "96": 3, "128":4}
 
         self.z_dim = z_dim
         self.shared_dim = shared_dim
@@ -93,15 +95,16 @@ class Generator(nn.Module):
         
         self.in_dims =  g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
+        self.bottom = bottom_collection[str(img_size)]
         self.n_blocks = len(self.in_dims)
         self.chunk_size = z_dim//(self.n_blocks+1)
         self.z_dims_after_concat = self.chunk_size + self.shared_dim
         assert self.z_dim % (self.n_blocks+1) == 0, "z_dim should be divided by the number of blocks "
 
         if g_spectral_norm:
-            self.linear0 = snlinear(in_features=self.chunk_size, out_features=self.in_dims[0]*4*4)
+            self.linear0 = snlinear(in_features=self.chunk_size, out_features=self.in_dims[0]*self.bottom*self.bottom)
         else:
-            self.linear0 = linear(in_features=self.chunk_size, out_features=self.in_dims[0]*4*4)
+            self.linear0 = linear(in_features=self.chunk_size, out_features=self.in_dims[0]*self.bottom*self.bottom)
 
         self.shared = embedding(self.num_classes, self.shared_dim)
 
@@ -151,7 +154,7 @@ class Generator(nn.Module):
         labels = [torch.cat([label, item], 1) for item in zs[1:]]
 
         act = self.linear0(z)
-        act = act.view(-1, self.in_dims[0], 4, 4)
+        act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
         counter = 0
         for index, blocklist in enumerate(self.blocks):
             for block in blocklist:
@@ -197,6 +200,7 @@ class DiscOptBlock(nn.Module):
             raise NotImplementedError
 
         self.average_pooling = nn.AvgPool2d(2)
+
 
     def forward(self, x):
         x0 = x
@@ -380,7 +384,7 @@ class Discriminator(nn.Module):
         h = torch.sum(h, dim=[2,3])
         
         if self.conditional_strategy == 'no':
-            authen_output = torch.squeeze(self.linear4(h))
+            authen_output = torch.squeeze(self.linear1(h))
             return authen_output
         elif self.conditional_strategy == 'ContraGAN':
             authen_output = torch.squeeze(self.linear1(h))
@@ -395,7 +399,7 @@ class Discriminator(nn.Module):
 
         elif self.conditional_strategy == 'cGAN':
             authen_output = torch.squeeze(self.linear1(h))
-            proj = torch.sum(self.embedding(label) * h, 1, keepdim=True)
+            proj = torch.sum(torch.mul(self.embedding(label), h), 1)
             return authen_output + proj
         
         elif self.conditional_strategy == 'ACGAN':

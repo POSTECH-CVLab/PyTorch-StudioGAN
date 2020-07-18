@@ -14,7 +14,7 @@ import pdb
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_spectral_norm, leaky_relu, conditional_bn, num_classes, synchronized_bn):
+    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes, synchronized_bn):
         super(GenBlock, self).__init__()
         self.conditional_bn = conditional_bn
 
@@ -33,10 +33,12 @@ class GenBlock(nn.Module):
             else:
                 self.bn0 = batchnorm_2d(in_features=out_channels)
 
-        if leaky_relu:
+        if activation_fn == "ReLU":
+            self.activation = nn.ReLU(inplace=True)
+        elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
         else:
-            self.activation = nn.ReLU(inplace=True)
+            raise NotImplementedError
 
     def forward(self, x, label):
         x = self.deconv0(x)
@@ -50,15 +52,15 @@ class GenBlock(nn.Module):
 
 class Generator(nn.Module):
     """Generator."""
-    def __init__(self, z_dim, shared_dim, g_conv_dim, g_spectral_norm, attention, at_after_th_gen_block, leaky_relu,
-                 auxiliary_classifier, projection_discriminator, num_classes, contrastive_training, synchronized_bn, initialize):
+    def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
+                 conditional_strategy, num_classes, synchronized_bn, initialize):
         super(Generator, self).__init__()
-        self.z_dim = z_dim
-        self.num_classes = num_classes
-        conditional_bn = auxiliary_classifier or projection_discriminator or contrastive_training
-
         self.in_dims =  [512, 256, 128]
         self.out_dims = [256, 128, 64]
+
+        self.z_dim = z_dim
+        self.num_classes = num_classes
+        conditional_bn = True if conditional_strategy == "ACGAN" or conditional_strategy =="cGAN" or conditional_strategy == "ContraGAN" else False
 
         if g_spectral_norm:
             self.linear0 = snlinear(in_features=self.z_dim, out_features=self.in_dims[0]*4*4)
@@ -70,7 +72,7 @@ class Generator(nn.Module):
             self.blocks += [[GenBlock(in_channels=self.in_dims[index],
                                           out_channels=self.out_dims[index],
                                           g_spectral_norm=g_spectral_norm,
-                                          leaky_relu=leaky_relu,
+                                          activation_fn=activation_fn,
                                           conditional_bn=conditional_bn,
                                           num_classes=self.num_classes,
                                           synchronized_bn=synchronized_bn)]]
@@ -106,7 +108,7 @@ class Generator(nn.Module):
 
 
 class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, d_spectral_norm, leaky_relu, synchronized_bn):
+    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, synchronized_bn):
         super(DiscBlock, self).__init__()
         self.d_spectral_norm = d_spectral_norm
 
@@ -124,10 +126,12 @@ class DiscBlock(nn.Module):
                 self.bn0 = batchnorm_2d(in_features=out_channels)
                 self.bn1 = batchnorm_2d(in_features=out_channels)
 
-        if leaky_relu:
+        if activation_fn == "ReLU":
+            self.activation = nn.ReLU(inplace=True)
+        elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
         else:
-            self.activation = nn.ReLU(inplace=True)
+            raise NotImplementedError
 
     def forward(self, x):
         x = self.conv0(x)
@@ -143,25 +147,24 @@ class DiscBlock(nn.Module):
 
 class Discriminator(nn.Module):
     """Discriminator."""
-    def __init__(self, d_conv_dim, d_spectral_norm, attention, at_after_th_dis_block, leaky_relu, auxiliary_classifier, projection_discriminator,
-                 hyper_dim, num_classes, contrastive_training, nonlinear_embed, normalize_embed, synchronized_bn, initialize):
+    def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy, 
+                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, initialize):
         super(Discriminator, self).__init__()
+        self.in_dims  = [3] + [64, 128]
+        self.out_dims = [64, 128, 256]
+
         self.d_spectral_norm = d_spectral_norm
+        self.conditional_strategy = conditional_strategy
         self.num_classes = num_classes
-        self.auxiliary_classifier = auxiliary_classifier
-        self.projection_discriminator = projection_discriminator
-        self.contrastive_training = contrastive_training
         self.nonlinear_embed = nonlinear_embed
         self.normalize_embed = normalize_embed
 
-        self.in_dims  = [3] + [64, 128]
-        self.out_dims = [64, 128, 256]
         self.blocks = []
         for index in range(len(self.in_dims)):
             self.blocks += [[DiscBlock(in_channels=self.in_dims[index],
                                        out_channels=self.out_dims[index],
                                        d_spectral_norm=d_spectral_norm,
-                                       leaky_relu=leaky_relu,
+                                       activation_fn=activation_fn,
                                        synchronized_bn=synchronized_bn)]]
 
             if index+1 == at_after_th_dis_block and attention is True:
@@ -170,83 +173,87 @@ class Discriminator(nn.Module):
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
         if self.d_spectral_norm:
-            self.conv3 = snconv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
+            self.conv = snconv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
         else:
-            self.conv3 = conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
+            self.conv = conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
             if self.synchronized_bn:
-                self.bn4 = sync_batchnorm_2d(in_features=512)
+                self.bn = sync_batchnorm_2d(in_features=512)
             else:
-                self.bn4 = batchnorm_2d(in_features=512)
+                self.bn = batchnorm_2d(in_features=512)
 
-        if leaky_relu:
+        if activation_fn == "ReLU":
+            self.activation = nn.ReLU(inplace=True)
+        elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
         else:
-            self.activation = nn.ReLU(inplace=True)
+            raise NotImplementedError
 
         if d_spectral_norm:
-            self.linear5 = snlinear(in_features=512, out_features=1)
-            if self.contrastive_training and not self.auxiliary_classifier and not self.projection_discriminator:
-                self.linear6 = snlinear(in_features=512, out_features=hyper_dim)
+            self.linear1 = snlinear(in_features=512, out_features=1)
+            if self.conditional_strategy == 'ContraGAN':
+                self.linear2 = snlinear(in_features=512, out_features=hypersphere_dim)
                 if self.nonlinear_embed:
-                    self.linear7 = snlinear(in_features=hyper_dim, out_features=hyper_dim)
-                self.embedding = sn_embedding(num_classes, hyper_dim)
-            elif self.projection_discriminator and not self.contrastive_training and not self.auxiliary_classifier:
+                    self.linear3 = snlinear(in_features=hypersphere_dim, out_features=hypersphere_dim)
+                self.embedding = sn_embedding(num_classes, hypersphere_dim)
+            elif self.conditional_strategy == 'cGAN':
                 self.embedding = sn_embedding(num_classes, 512)
-            elif self.auxiliary_classifier and not self.projection_discriminator and not self.contrastive_training:
-                self.linear6 = snlinear(in_features=512, out_features=num_classes)
+            elif self.conditional_strategy == 'ACGAN':
+                self.linear4 = snlinear(in_features=512, out_features=num_classes)
             else:
-                pass
+                raise NotImplementedError
         else:
-            self.linear5 = linear(in_features=512, out_features=1)
-            if self.contrastive_training and not self.auxiliary_classifier and not self.projection_discriminator:
-                self.linear6 = linear(in_features=512, out_features=hyper_dim)
+            self.linear1 = linear(in_features=512, out_features=1)
+            if self.conditional_strategy == 'ContraGAN':
+                self.linear2 = linear(in_features=512, out_features=hypersphere_dim)
                 if self.nonlinear_embed:
-                    self.linear7 = linear(in_features=hyper_dim, out_features=hyper_dim)
-                self.embedding = embedding(num_classes, hyper_dim)
-            elif self.projection_discriminator and not self.contrastive_training and not self.auxiliary_classifier:
+                    self.linear3 = linear(in_features=hypersphere_dim, out_features=hypersphere_dim)
+                self.embedding = embedding(num_classes, hypersphere_dim)
+            elif self.conditional_strategy == 'cGAN':
                 self.embedding = embedding(num_classes, 512)
-            elif self.auxiliary_classifier and not self.projection_discriminator and not self.contrastive_training:
-                self.linear6 = linear(in_features=512, out_features=num_classes)
+            elif self.conditional_strategy == 'ACGAN':
+                self.linear4 = linear(in_features=512, out_features=num_classes)
             else:
-                pass
+                raise NotImplementedError
 
         # Weight init
         if initialize is not False:
             init_weights(self.modules, initialize)
+
 
     def forward(self, x, label):
         h = x
         for index, blocklist in enumerate(self.blocks):
             for block in blocklist:
                 h = block(h)      
-        h = self.conv3(h)
+        h = self.conv(h)
         if self.d_spectral_norm is False:
-            h = self.bn4(h)
+            h = self.bn(h)
         h = self.activation(h)
         h = torch.sum(h, dim=[2, 3])
 
-        if self.contrastive_training and not self.auxiliary_classifier and not self.projection_discriminator:
-            authen_output = torch.squeeze(self.linear5(h))
-            cls_anchor = self.embedding(label)
-            cls_embed = self.linear6(h)
+        if self.conditional_strategy == 'no':
+            authen_output = torch.squeeze(self.linear1(h))
+            return authen_output
+        elif self.conditional_strategy == 'ContraGAN':
+            authen_output = torch.squeeze(self.linear1(h))
+            cls_proxy = self.embedding(label)
+            cls_embed = self.linear2(h)
             if self.nonlinear_embed:
-                cls_embed = self.linear7(self.activation(cls_embed))
+                cls_embed = self.linear3(self.activation(cls_embed))
             if self.normalize_embed:
-                cls_anchor = F.normalize(cls_anchor, dim=1)
+                cls_proxy = F.normalize(cls_proxy, dim=1)
                 cls_embed = F.normalize(cls_embed, dim=1)
-            return cls_anchor, cls_embed, authen_output
+            return cls_proxy, cls_embed, authen_output
 
-        elif self.projection_discriminator and not self.contrastive_training and not self.auxiliary_classifier:
-            authen_output = torch.squeeze(self.linear5(h))
-            h_label = self.embedding(label)
-            proj = torch.mul(h, h_label)
-            cls_output = torch.sum(proj, dim=[1])
-            return None, None, authen_output + cls_output
+        elif self.conditional_strategy == 'cGAN':
+            authen_output = torch.squeeze(self.linear1(h))
+            proj = torch.sum(torch.mul(self.embedding(label), h), 1)
+            return authen_output + proj
+        
+        elif self.conditional_strategy == 'ACGAN':
+            authen_output = torch.squeeze(self.linear1(h))
+            cls_output = self.linear4(h)
+            return cls_output, authen_output
 
-        elif self.auxiliary_classifier and not self.projection_discriminator and not self.contrastive_training:
-            authen_output = torch.squeeze(self.linear5(h))
-            cls_output = self.linear6(h)
-            return None, cls_output, authen_output
         else:
-            authen_output = torch.squeeze(self.linear5(h))
-            return None, None, authen_output
+            raise NotImplementedError
