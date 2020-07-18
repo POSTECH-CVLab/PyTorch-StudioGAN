@@ -256,7 +256,7 @@ class Trainer:
                         generator = self.gen_model
                     
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
-                    self.writer.add_images('Generated samples', generated_images, step_count)
+                    self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
 
                     if self.Gen_copy is not None:
                         self.Gen_copy.train()
@@ -413,7 +413,7 @@ class Trainer:
                         generator = self.gen_model
                     
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
-                    self.writer.add_images('Generated samples', generated_images, step_count)
+                    self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
 
                     if self.Gen_copy is not None:
                         self.Gen_copy.train()
