@@ -12,7 +12,6 @@ from utils.sample import sample_latents, make_mask
 from utils.plot import plot_img_canvas, plot_confidence_histogram
 from utils.utils import elapsed_time, calculate_all_sn
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss, Cross_Entropy_loss
-from utils.biggan_utils import ortho
 
 import torch
 from torch.nn import DataParallel
@@ -130,8 +129,15 @@ class Trainer:
             if self.tempering_type == 'discrete':
                 self.tempering_interval = self.total_step//(self.tempering_step + 1)
 
-        cls_wise_sampling = True if self.conditional_strategy != 'no' else False
-        self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.num_classes*8, self.z_dim, 1,
+        if self.conditional_strategy != "no":
+            if self.dataset_name == "cifar10":
+                cls_wise_sampling = "all"
+            else:
+                cls_wise_sampling = "some"
+        else:
+            cls_wise_sampling = "no"
+
+        self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
                                                                 self.num_classes, None, self.second_device, cls_wise_sampling=cls_wise_sampling)
 
 
@@ -173,20 +179,19 @@ class Trainer:
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
                     real_cls_mask = make_mask(real_labels, self.num_classes, self.second_device)
 
-                    cls_real_anchor, cls_real_embed, dis_real_authen_out = self.dis_model(images, real_labels)
+                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(images, real_labels)
 
                     fake_images = self.gen_model(z, fake_labels)
-                    cls_fake_anchor, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
+                    cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
                     
                     dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
-                    dis_acml_loss += self.contrastive_lambda* self.contrastive_criterion(cls_real_embed, cls_real_anchor, real_cls_mask,
+                    dis_acml_loss += self.contrastive_lambda* self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
                                                                                          real_labels, t)
                     if self.consistency_reg:
                         images_aug = images_aug.to(self.second_device)
                         _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(images_aug, real_labels)
-                        if self.consistency_reg:
-                            consistency_loss = self.l2_loss(dis_real_authen_out, dis_real_aug_authen_out)
-                            dis_acml_loss += self.consistency_lambda*consistency_loss
+                        consistency_loss = self.l2_loss(dis_real_authen_out, dis_real_aug_authen_out)
+                        dis_acml_loss += self.consistency_lambda*consistency_loss
 
                     dis_acml_loss = dis_acml_loss/self.accumulation_steps
                     dis_acml_loss.backward()
@@ -212,10 +217,10 @@ class Trainer:
 
                     fake_images = self.gen_model(z, fake_labels)
 
-                    cls_fake_anchor, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
+                    cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
 
                     gen_acml_loss = self.G_loss(dis_fake_authen_out)
-                    gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_anchor, fake_cls_mask, fake_labels, t)
+                    gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_proxies, fake_cls_mask, fake_labels, t)
                     gen_acml_loss = gen_acml_loss/self.accumulation_steps
                     gen_acml_loss.backward()
 
@@ -243,15 +248,25 @@ class Trainer:
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
                 with torch.no_grad():
-                    self.gen_model.eval()
-                    generated_images = self.gen_model(self.fixed_noise, self.fixed_fake_labels)
+                    if self.Gen_copy is not None:
+                        self.Gen_copy.eval()
+                        generator = self.Gen_copy
+                    else:
+                        self.gen_model.eval()
+                        generator = self.gen_model
+                    
+                    generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', generated_images, step_count)
-                    self.gen_model.train()
+
+                    if self.Gen_copy is not None:
+                        self.Gen_copy.train()
+                    else:
+                        self.gen_model.train()
 
             if step_count % self.save_every == 0 or step_count == total_step:
-                self.save(step_count)
                 if self.evaluate:
                     self.evaluation(step_count)
+                self.save(step_count)
     ################################################################################################################################
 
 
@@ -390,15 +405,25 @@ class Trainer:
                                                    'generator': gen_acml_loss.item()}, step_count)
                 
                 with torch.no_grad():
-                    self.gen_model.eval()
-                    generated_images = self.gen_model(self.fixed_noise, self.fixed_fake_labels)
+                    if self.Gen_copy is not None:
+                        self.Gen_copy.eval()
+                        generator = self.Gen_copy
+                    else:
+                        self.gen_model.eval()
+                        generator = self.gen_model
+                    
+                    generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', generated_images, step_count)
-                    self.gen_model.train()
-            
+
+                    if self.Gen_copy is not None:
+                        self.Gen_copy.train()
+                    else:
+                        self.gen_model.train()
+
             if step_count % self.save_every == 0 or step_count == total_step:
-                self.save(step_count)
                 if self.evaluate:
                     self.evaluation(step_count)
+                self.save(step_count)
     ################################################################################################################################
 
 
@@ -407,7 +432,7 @@ class Trainer:
         self.dis_model.eval()
         self.gen_model.eval()
         if self.Gen_copy is not None:
-            self.Gen_copy.train()
+            self.Gen_copy.eval()
 
         g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step,
                     'state_dict': self.gen_model.state_dict(), 'optimizer': self.G_optimizer.state_dict(),}
@@ -443,7 +468,7 @@ class Trainer:
         self.gen_model.eval()
         
         if self.Gen_copy is not None:
-            self.Gen_copy.train()
+            self.Gen_copy.eval()
             generator = self.Gen_copy
         else:
             generator = self.gen_model
@@ -471,13 +496,14 @@ class Trainer:
         if self.best_fid is None:
             self.best_fid = fid_score
         else:
-            if fid_score >= self.best_fid:
+            if fid_score <= self.best_fid:
                  self.best_fid = fid_score
         
-        self.writer.add_scalars('FID_score', {'using_{type}_moments'.format(type=self.type4eval_dataset):fid_score}, step)
-        self.writer.add_scalars('IS_score', {'{num}_generated_images'.format(num=str(num_eval[self.type4eval_dataset])):kl_score}, step)
-        self.logger.info('FID_score (using {type} moments): {FID}'.format(type=self.type4eval_dataset, FID=fid_score))
-        self.logger.info('Inception_score ({num} generated images): {IS}'.format(num=str(num_eval[self.type4eval_dataset]), IS=kl_score))
+        self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.type4eval_dataset):fid_score}, step)
+        self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(num_eval[self.type4eval_dataset])):kl_score}, step)
+        self.logger.info('FID score (using {type} moments): {FID}'.format(type=self.type4eval_dataset, FID=fid_score))
+        self.logger.info('Best FID score (using {type} moments): {FID}'.format(type=self.type4eval_dataset, FID=self.best_fid))
+        self.logger.info('Inception score ({num} generated images): {IS}'.format(num=str(num_eval[self.type4eval_dataset]), IS=kl_score))
 
         self.dis_model.train()
         self.gen_model.train()

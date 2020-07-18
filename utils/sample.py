@@ -15,12 +15,21 @@ import torch.nn.functional as F
 
 
 
-def sample_latents(dist, n_samples, noise_dim, truncated_factor=1, n_categories=None, perturb=None, device=torch.device("cpu"), cls_wise_sampling=False):
+def sample_latents(dist, n_samples, noise_dim, truncated_factor=1, n_categories=None, perturb=None, device=torch.device("cpu"), cls_wise_sampling=None):
     if n_categories:
-        if cls_wise_sampling:
+        if cls_wise_sampling is not None and cls_wise_sampling != "no":
+            if cls_wise_sampling == "all":
+                indices = [c for c in range(n_categories)]
+                n_samples = 8*n_categories
+            elif cls_wise_sampling == "some":
+                num_categories_plot = n_samples//8
+                indices = np.random.permutation(n_categories)[:num_categories_plot]
+                n_samples = num_categories_plot*8
+
             y_fake = []
-            for c in range(n_categories):
+            for c in indices:
                 y_fake += [c]*8
+
             y_fake = torch.tensor(y_fake, dtype=torch.long).to(device) 
         else:
             y_fake = torch.randint(low=0, high=n_categories, size=(n_samples,), dtype=torch.long, device=device)

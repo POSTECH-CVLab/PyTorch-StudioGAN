@@ -40,7 +40,7 @@ RUN_NAME_FORMAT = (
 def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4eval_dataset, dataset_name, num_classes, img_size, data_path, architecture, conditional_strategy,
                     hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block,
                     attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, optimizer, batch_size, d_lr, g_lr, beta1, beta2, total_step, adv_loss, consistency_reg,
-                    g_init, d_init, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, hdf5_path_train, train_config, model_config, **_):
+                    g_init, d_init, random_flip, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, hdf5_path_train, train_config, model_config, **_):
     fix_all_seed(seed)
     cudnn.benchmark = True # Not good Generator for undetermined input size
     cudnn.deterministic = False
@@ -67,7 +67,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
 
     logger.info('Loading train datasets...')
     train_dataset = LoadDataset(dataset_name, data_path, train=True, download=True, resize_size=img_size, hdf5_path=hdf5_path_train,
-                                consistency_reg=consistency_reg)
+                                consistency_reg=consistency_reg, random_flip=random_flip)
     if reduce_train_dataset < 1.0:
         num_train = int(reduce_train_dataset*len(train_dataset))
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
@@ -75,7 +75,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
 
     logger.info('Loading {mode} datasets...'.format(mode=type4eval_dataset))
     eval_mode = True if type4eval_dataset == 'train' else False
-    eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, hdf5_path=None)
+    eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, hdf5_path=None, random_flip=False)
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     logger.info('Building model...')
@@ -100,7 +100,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
         Dis = DataParallel(Dis, output_device=second_device)
         if ema:
             Gen_copy = DataParallel(Gen_copy, output_device=second_device)
-        if model_config['training_and_sampling_setting']['synchronized_bn']:
+        if synchronized_bn:
             patch_replication_callback(Gen)
             patch_replication_callback(Dis)
 
@@ -126,12 +126,12 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
 
     if train_config['checkpoint_folder'] is not None:
         logger = make_logger(run_name, train_config['log_output_path'])
-        g_checkpoint_dir = glob.glob(os.path.join(checkpoint_dir,"model=G-step=" + str(train_config['step']) + "*.pth"))[0]
-        d_checkpoint_dir = glob.glob(os.path.join(checkpoint_dir,"model=D-step=" + str(train_config['step']) + "*.pth"))[0]
+        g_checkpoint_dir = os.path.join(checkpoint_dir,"model=G-trained-weights.pth")
+        d_checkpoint_dir = os.path.join(checkpoint_dir,"model=D-trained-weights.pth")
         Gen, G_optimizer, trained_seed, run_name, start_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
         Dis, D_optimizer, trained_seed, run_name, start_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
         if ema:
-            g_ema_checkpoint_dir = glob.glob(os.path.join(checkpoint_dir, "model=G_ema-step=" + str(train_config['step']) + "*.pth"))[0]
+            g_ema_checkpoint_dir = os.path.join(checkpoint_dir, "model=G_ema-trained-weights.pth")
             Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
             Gen_ema.source, Gen_ema.target = Gen, Gen_copy
 

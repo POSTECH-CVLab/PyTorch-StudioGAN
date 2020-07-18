@@ -19,7 +19,7 @@ from torchvision.datasets import ImageFolder
 
 
 class LoadDataset(Dataset):
-    def __init__(self, dataset_name, data_path, train, download, resize_size, hdf5_path=None, consistency_reg=False):
+    def __init__(self, dataset_name, data_path, train, download, resize_size, hdf5_path=None, consistency_reg=False, random_flip=False):
         super(LoadDataset, self).__init__()
         self.dataset_name = dataset_name
         self.data_path = data_path
@@ -28,7 +28,13 @@ class LoadDataset(Dataset):
         self.resize_size = resize_size
         self.hdf5_path = hdf5_path
         self.consistency_reg = consistency_reg
-        self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size))])
+        self.random_flip = random_flip
+        if self.random_flip:
+            self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size)),
+                                                 transforms.RandomHorizontalFlip(p=0.5)])
+            self.flip_transform = transforms.Compose([transforms.RandomHorizontalFlip(p=0.5)])
+        else:
+            self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size))])
         self.load_dataset()
 
 
@@ -90,7 +96,9 @@ class LoadDataset(Dataset):
 
     def __getitem__(self, index):
         if self.hdf5_path is not None:
-            img, label = np.asarray((self.data[index]-127.5)/127.5, np.float32), int(self.labels[index])
+            img, label = self.data[index], int(self.labels[index])
+            img = self.flip_transform(img) if self.random_flip is True else img
+            img = np.asarray((self.data[index]-127.5)/127.5, np.float32)
         elif self.hdf5_path is None and self.dataset_name == 'imagenet':
             img, label = self.data[index]
             size = (min(img.size), min(img.size))
