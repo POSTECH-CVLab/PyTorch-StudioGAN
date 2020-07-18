@@ -97,7 +97,8 @@ class LoadDataset(Dataset):
     def __getitem__(self, index):
         if self.hdf5_path is not None:
             img, label = self.data[index], int(self.labels[index])
-            img = img[:,:,::-1] if random.random() > 0.5 else img
+            if self.random_flip:
+                img = img[:,:,::-1] if random.random() > 0.5 else img
             img = np.asarray((self.data[index]-127.5)/127.5, np.float32)
         elif self.hdf5_path is None and self.dataset_name == 'imagenet':
             img, label = self.data[index]
