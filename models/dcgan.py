@@ -77,7 +77,7 @@ class Generator(nn.Module):
                                           num_classes=self.num_classes,
                                           synchronized_bn=synchronized_bn)]]
 
-            if index+1 == at_after_th_gen_block and attention is True:
+            if index+1 == attention_after_nth_gen_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], g_spectral_norm)]]
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
@@ -167,7 +167,7 @@ class Discriminator(nn.Module):
                                        activation_fn=activation_fn,
                                        synchronized_bn=synchronized_bn)]]
 
-            if index+1 == at_after_th_dis_block and attention is True:
+            if index+1 == attention_after_nth_dis_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], d_spectral_norm)]]
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
