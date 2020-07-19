@@ -24,6 +24,7 @@ def load_checkpoint(model, optimizer, filename, metric=False, ema=False):
             seed = checkpoint['seed']
             run_name = checkpoint['run_name']
             start_step = checkpoint['step']
+            best_step = checkpoint['best_step']
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             for state in optimizer.state.values():
@@ -34,7 +35,7 @@ def load_checkpoint(model, optimizer, filename, metric=False, ema=False):
             if metric:
                 best_fid = checkpoint['best_fid']
                 best_fid_checkpoint_path = checkpoint['best_fid_checkpoint_path']
-                return model, optimizer, seed, run_name, start_step, best_fid, best_fid_checkpoint_path
+                return model, optimizer, seed, run_name, start_step, best_step, best_fid, best_fid_checkpoint_path
     else:
         raise FileNotFoundError
-    return model, optimizer, seed, run_name, start_step
+    return model, optimizer, seed, run_name, start_step, best_step

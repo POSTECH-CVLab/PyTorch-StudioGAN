@@ -37,8 +37,8 @@ RUN_NAME_FORMAT = (
     "{timestamp}"
 )
 
-def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4eval_dataset, dataset_name, num_classes, img_size, data_path, architecture, conditional_strategy,
-                    hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block,
+def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path, architecture, 
+                    conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block,
                     attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, optimizer, batch_size, d_lr, g_lr, beta1, beta2, total_step, adv_loss, consistency_reg,
                     g_init, d_init, random_flip, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, hdf5_path_train, train_config, model_config, **_):
     fix_all_seed(seed)
@@ -53,8 +53,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
         warnings.warn('You have chosen a specific GPU. This will completely '
                       'disable data parallelism.')
 
-    start_step = 0
-    best_fid, best_fid_checkpoint_path = None, None
+    start_step, best_step, best_fid, best_fid_checkpoint_path = 0, 0, None, None
     run_name = make_run_name(RUN_NAME_FORMAT,
                              framework=config_path.split('/')[3][:-5],
                              phase='train')
@@ -128,12 +127,14 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
 
     if train_config['checkpoint_folder'] is not None:
         logger = make_logger(run_name, train_config['log_output_path'])
-        g_checkpoint_dir = os.path.join(checkpoint_dir,"model=G-trained-weights")
-        d_checkpoint_dir = os.path.join(checkpoint_dir,"model=D-trained-weights")
-        Gen, G_optimizer, trained_seed, run_name, start_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
-        Dis, D_optimizer, trained_seed, run_name, start_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
+        when = "current" if load_current is True else "best"
+        
+        g_checkpoint_dir = os.path.join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when))
+        d_checkpoint_dir = os.path.join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when))
+        Gen, G_optimizer, trained_seed, run_name, start_step, best_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
+        Dis, D_optimizer, trained_seed, run_name, start_step, best_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
         if ema:
-            g_ema_checkpoint_dir = os.path.join(checkpoint_dir, "model=G_ema-trained-weights")
+            g_ema_checkpoint_dir = os.path.join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when))
             Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
             Gen_ema.source, Gen_ema.target = Gen, Gen_copy
 
@@ -157,6 +158,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
     logger.info('Start training...')
     trainer = Trainer(
         run_name=run_name,
+        best_step=best_step,
         dataset_name=dataset_name,
         type4eval_dataset=type4eval_dataset,
         logger=logger,

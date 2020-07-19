@@ -40,15 +40,16 @@ LOG_FORMAT = (
 
 
 class Trainer:
-    def __init__(self, run_name, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy, Gen_ema, train_dataloader, 
-                 eval_dataloader, conditional_strategy, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer,
-                 batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, tempering_type,
+    def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy, Gen_ema,
+                 train_dataloader, eval_dataloader, conditional_strategy, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer,
+                 D_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, tempering_type,
                  tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis, gradient_penelty_lambda, weight_clipping_for_dis,
                  weight_clipping_bound, consistency_reg, consistency_lambda, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step,
                  latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device, second_device, print_every, save_every,
                  checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
         
         self.run_name = run_name
+        self.best_step = best_step
         self.dataset_name = dataset_name
         self.type4eval_dataset = type4eval_dataset
         self.logger = logger
@@ -247,30 +248,19 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
-                """
                 with torch.no_grad():
-                    if self.Gen_copy is not None:
-                        self.Gen_copy.eval()
-                        generator = self.Gen_copy
-                    else:
-                        self.gen_model.eval()
-                        generator = self.gen_model
-                    
+                    generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model     
+                    generator.eval()               
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
+                    generator.train()
 
-                    if self.Gen_copy is not None:
-                        self.Gen_copy.train()
-                    else:
-                        self.gen_model.train()
-                """
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
-                    is_save = self.evaluation(step_count)
-                    if is_save:
-                        self.save(step_count)
+                    is_best = self.evaluation(step_count)
+                        self.save(step_count, is_best)
                 else:
-                    self.save(step_count)
+                    self.save(step_count, False)
     ################################################################################################################################
 
 
@@ -407,57 +397,48 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
-                """                
                 with torch.no_grad():
-                    if self.Gen_copy is not None:
-                        self.Gen_copy.eval()
-                        generator = self.Gen_copy
-                    else:
-                        self.gen_model.eval()
-                        generator = self.gen_model
-                    
+                    generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model     
+                    generator.eval()               
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-
-                    if self.Gen_copy is not None:
-                        self.Gen_copy.train()
-                    else:
-                        self.gen_model.train()
-                """
+                    generator.train()
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
-                    is_save = self.evaluation(step_count)
-                    if is_save:
-                        self.save(step_count)
+                    is_best = self.evaluation(step_count)
+                        self.save(step_count, is_best)
                 else:
-                    self.save(step_count)
+                    self.save(step_count, False)
     ################################################################################################################################
 
 
     ################################################################################################################################
-    def save(self, step):
+    def save(self, step, is_best):
+        when = "best" if is_best is True else "current"
         self.dis_model.eval()
         self.gen_model.eval()
         if self.Gen_copy is not None:
-            self.Gen_copy.train()
+            self.Gen_copy.eval()
 
-        g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step,
+        g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': self.gen_model.state_dict(), 'optimizer': self.G_optimizer.state_dict(),}
 
-        d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step,
+        d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step
                     'state_dict': self.dis_model.state_dict(), 'optimizer': self.D_optimizer.state_dict(),
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
 
-        g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-trained-weights")
-        d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-trained-weights")
-
+        find_and_remove(os.path.join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))
+        find_and_remove(os.path.join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))
+        g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-{when}-weights-step={step}".format(when=when, step=str(step)))
+        d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-{when}-weights-step={step}".format(when=when, step=str(step)))
         torch.save(g_states, g_checkpoint_output_path)
         torch.save(d_states, d_checkpoint_output_path)
 
         if self.Gen_copy is not None:
             g_ema_states = {'state_dict': self.Gen_copy.state_dict()}
-            g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-trained-weights")
+            find_and_remove(os.path.join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))
+            g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}".format(when=when, step=str(step)))
             torch.save(g_ema_states, g_ema_checkpoint_output_path)
 
         if self.logger:
@@ -475,10 +456,10 @@ class Trainer:
         self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
         self.dis_model.eval()
         self.gen_model.eval()
-        is_save = False
+        is_best = False
         
         if self.Gen_copy is not None:
-            self.Gen_copy.train()
+            self.Gen_copy.eval()
             generator = self.Gen_copy
         else:
             generator = self.gen_model
@@ -504,21 +485,21 @@ class Trainer:
                                                     self.latent_op_beta, 10, self.second_device)
 
         if self.best_fid is None:
-            self.best_fid, is_save = fid_score, True
+            self.best_fid, self.best_step, is_best = fid_score, step, True
         else:
             if fid_score <= self.best_fid:
-                 self.best_fid, is_save = fid_score, True
+                 self.best_fid, self.best_step, is_best = fid_score, step, True
         
         self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.type4eval_dataset):fid_score}, step)
         self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(num_eval[self.type4eval_dataset])):kl_score}, step)
-        self.logger.info('FID score (using {type} moments): {FID}'.format(type=self.type4eval_dataset, FID=fid_score))
-        self.logger.info('Inception score ({num} generated images): {IS}'.format(num=str(num_eval[self.type4eval_dataset]), IS=kl_score))
-        self.logger.info('Best FID score (using {type} moments): {FID}'.format(type=self.type4eval_dataset, FID=self.best_fid))
+        self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.type4eval_dataset, FID=fid_score))
+        self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(num_eval[self.type4eval_dataset]), IS=kl_score))
+        self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.type4eval_dataset, FID=self.best_fid))
 
         self.dis_model.train()
         self.gen_model.train()
         if self.Gen_copy is not None:
             self.Gen_copy.train()
         
-        return is_save
+        return is_best
     ################################################################################################################################

@@ -7,6 +7,7 @@
 
 import numpy as np
 import random
+import os
 
 import torch
 import torch.nn.functional as F
@@ -44,7 +45,11 @@ def find_string(list_, string):
     for i, s in enumerate(list_):
         if string == s:
             return i
-            
+
+def find_and_remove(path):
+    if os.path.isfile(path):
+        os.remove(path)
+
 def calculate_all_sn(model):
     sigmas = {}
     with torch.no_grad():
