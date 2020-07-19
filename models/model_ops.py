@@ -138,15 +138,14 @@ class ConditionalBatchNorm2d(nn.Module):
             self.bn = sync_batchnorm_2d(num_features, momentum=0.001, affine=False)
         else:
             self.bn = batchnorm_2d(num_features, momentum=0.001, affine=False)
-        self.embed = nn.Embedding(num_classes, num_features * 2)
-        self.embed.weight.data[:, :num_features]
-        self.embed.weight.data[:, num_features:]
+        self.embed0 = nn.Embedding(num_classes, num_features)
+        self.embed1 = nn.Embedding(num_classes, num_features)
 
     def forward(self, x, y):
+        gain = (1 + self.embed0(y)).view(-1, self.num_features, 1, 1)
+        bias = self.embed1(y).view(-1, self.num_features, 1, 1)
         out = self.bn(x)
-        gamma, beta = self.embed(y).chunk(2, 1)
-        out = (1 + gamma.view(-1, self.num_features, 1, 1))*out + beta.view(-1, self.num_features, 1, 1)
-        return out
+        return out * gain + bias
 
 
 class ConditionalBatchNorm2d_for_skip_and_shared(nn.Module):
