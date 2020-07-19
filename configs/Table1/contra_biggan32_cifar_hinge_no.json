@@ -11,7 +11,7 @@
 
   "train": {
     "model": {
-      "architecture": "biggan",
+      "architecture": "resgan",
       "conditional_strategy": "ContraGAN",
       "hypersphere_dim": 512,
       "nonlinear_embed": false,

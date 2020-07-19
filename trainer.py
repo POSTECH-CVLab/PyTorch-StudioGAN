@@ -294,7 +294,7 @@ class Trainer:
 
                     images, real_labels = images.to(self.second_device), real_labels.to(self.second_device)
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
-
+                    
                     if self.latent_op:
                         z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
                                             self.latent_op_alpha, self.latent_op_beta, False, self.second_device)

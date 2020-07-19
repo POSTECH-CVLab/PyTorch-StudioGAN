@@ -10,7 +10,6 @@ from models.model_ops import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pdb
 
 
 class GenBlock(nn.Module):
@@ -44,7 +43,6 @@ class GenBlock(nn.Module):
             self.conv2d0 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
             self.conv2d1 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
             self.conv2d2 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-
 
     def forward(self, x, label):
         x0 = x
@@ -137,7 +135,6 @@ class Generator(nn.Module):
         # Weight init
         if initialize is not False:
             init_weights(self.modules, initialize)
-
 
     def forward(self, z, label):
         act = self.linear0(z)
@@ -298,7 +295,7 @@ class Discriminator(nn.Module):
         self.in_dims  = d_in_dims_collection[str(img_size)]
         self.out_dims = d_out_dims_collection[str(img_size)]
         down = d_down[str(img_size)]
-
+        
         self.blocks = []
         for index in range(len(self.in_dims)):
             if index == 0:
@@ -358,7 +355,6 @@ class Discriminator(nn.Module):
         if initialize is not False:
             init_weights(self.modules, initialize)
 
-
     def forward(self, x, label):
         h = x
         for index, blocklist in enumerate(self.blocks):
@@ -366,7 +362,7 @@ class Discriminator(nn.Module):
                 h = block(h)
         h = self.activation(h)
         h = torch.sum(h, dim=[2,3])
-        
+
         if self.conditional_strategy == 'no':
             authen_output = torch.squeeze(self.linear1(h))
             return authen_output
