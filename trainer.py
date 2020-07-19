@@ -265,8 +265,11 @@ class Trainer:
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
-                    self.evaluation(step_count)
-                self.save(step_count)
+                    is_save = self.evaluation(step_count)
+                    if is_save:
+                        self.save(step_count)
+                else:
+                    self.save(step_count)
     ################################################################################################################################
 
 
@@ -422,8 +425,11 @@ class Trainer:
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
-                    self.evaluation(step_count)
-                self.save(step_count)
+                    is_save = self.evaluation(step_count)
+                    if is_save:
+                        self.save(step_count)
+                else:
+                    self.save(step_count)
     ################################################################################################################################
 
 
@@ -464,8 +470,10 @@ class Trainer:
 
     ################################################################################################################################
     def evaluation(self, step):
+        self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
         self.dis_model.eval()
         self.gen_model.eval()
+        is_save = False
         
         if self.Gen_copy is not None:
             self.Gen_copy.eval()
@@ -494,19 +502,21 @@ class Trainer:
                                                     self.latent_op_beta, 10, self.second_device)
 
         if self.best_fid is None:
-            self.best_fid = fid_score
+            self.best_fid, is_save = fid_score, True
         else:
             if fid_score <= self.best_fid:
-                 self.best_fid = fid_score
+                 self.best_fid, is_save = fid_score, True
         
         self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.type4eval_dataset):fid_score}, step)
         self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(num_eval[self.type4eval_dataset])):kl_score}, step)
         self.logger.info('FID score (using {type} moments): {FID}'.format(type=self.type4eval_dataset, FID=fid_score))
-        self.logger.info('Best FID score (using {type} moments): {FID}'.format(type=self.type4eval_dataset, FID=self.best_fid))
         self.logger.info('Inception score ({num} generated images): {IS}'.format(num=str(num_eval[self.type4eval_dataset]), IS=kl_score))
+        self.logger.info('Best FID score (using {type} moments): {FID}'.format(type=self.type4eval_dataset, FID=self.best_fid))
 
         self.dis_model.train()
         self.gen_model.train()
         if self.Gen_copy is not None:
             self.Gen_copy.train()
+        
+        return is_save
     ################################################################################################################################

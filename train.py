@@ -128,12 +128,12 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
 
     if train_config['checkpoint_folder'] is not None:
         logger = make_logger(run_name, train_config['log_output_path'])
-        g_checkpoint_dir = os.path.join(checkpoint_dir,"model=G-trained-weights.pth")
-        d_checkpoint_dir = os.path.join(checkpoint_dir,"model=D-trained-weights.pth")
+        g_checkpoint_dir = os.path.join(checkpoint_dir,"model=G-trained-weights")
+        d_checkpoint_dir = os.path.join(checkpoint_dir,"model=D-trained-weights")
         Gen, G_optimizer, trained_seed, run_name, start_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
         Dis, D_optimizer, trained_seed, run_name, start_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
         if ema:
-            g_ema_checkpoint_dir = os.path.join(checkpoint_dir, "model=G_ema-trained-weights.pth")
+            g_ema_checkpoint_dir = os.path.join(checkpoint_dir, "model=G_ema-trained-weights")
             Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
             Gen_ema.source, Gen_ema.target = Gen, Gen_copy
 
@@ -224,4 +224,4 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, type4e
     elif train_config['train']:
         trainer.run(current_step=start_step, total_step=total_step)
     elif train_config['eval']:
-        trainer.evaluation(step=start_step)
+        is_save = trainer.evaluation(step=start_step)

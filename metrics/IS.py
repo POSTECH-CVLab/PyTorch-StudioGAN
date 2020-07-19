@@ -110,7 +110,7 @@ def calculate_incep_score(dataloader, generator, discriminator, inception_model,
 
     batch_size = dataloader.batch_size
     evaluator_instance = evaluator(inception_model, device=device)
-    print("Evaluating Inception Score....")
+    print("Calculating Inception Score....")
     kl_score, kl_std = evaluator_instance.eval_gen(generator, discriminator, n_generate, truncated_factor, prior,
                                                    latent_op, latent_op_step, latent_op_alpha, latent_op_beta, splits, batch_size)
     generator.train()

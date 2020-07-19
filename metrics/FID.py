@@ -173,7 +173,7 @@ def calculate_fid_score(data_loader, generator, discriminator, inception_model, 
     discriminator.eval()
     inception_model.eval()
 
-    print("Evaluating FID Score....")
+    print("Calculating FID Score....")
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std
     else:

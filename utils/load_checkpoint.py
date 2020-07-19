@@ -33,8 +33,9 @@ def load_checkpoint(model, optimizer, filename, metric=False, ema=False):
 
             if metric:
                 best_fid = checkpoint['best_fid']
+                best_fid_step = checkpoint['best_fid_step']
                 best_fid_checkpoint_path = checkpoint['best_fid_checkpoint_path']
-                return model, optimizer, seed, run_name, start_step, best_val_fid, best_checkpoint_fid_path
+                return model, optimizer, seed, run_name, start_step, best_fid, best_fid_checkpoint_path
     else:
         print("=> no checkpoint found at '{}'".format(filename))
     return model, optimizer, seed, run_name, start_step
