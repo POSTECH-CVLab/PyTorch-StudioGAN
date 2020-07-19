@@ -11,7 +11,7 @@ from metrics.Accuracy_Confidence import calculate_acc_confidence
 from utils.sample import sample_latents, make_mask
 from utils.plot import plot_img_canvas, plot_confidence_histogram
 from utils.utils import elapsed_time, calculate_all_sn
-from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss, Cross_Entropy_loss
+from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss
 
 import torch
 from torch.nn import DataParallel
@@ -247,6 +247,7 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
+                """
                 with torch.no_grad():
                     if self.Gen_copy is not None:
                         self.Gen_copy.eval()
@@ -262,7 +263,7 @@ class Trainer:
                         self.Gen_copy.train()
                     else:
                         self.gen_model.train()
-
+                """
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
                     is_save = self.evaluation(step_count)
@@ -406,7 +407,7 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
-                
+                """                
                 with torch.no_grad():
                     if self.Gen_copy is not None:
                         self.Gen_copy.eval()
@@ -422,6 +423,7 @@ class Trainer:
                         self.Gen_copy.train()
                     else:
                         self.gen_model.train()
+                """
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
@@ -438,7 +440,7 @@ class Trainer:
         self.dis_model.eval()
         self.gen_model.eval()
         if self.Gen_copy is not None:
-            self.Gen_copy.eval()
+            self.Gen_copy.train()
 
         g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step,
                     'state_dict': self.gen_model.state_dict(), 'optimizer': self.G_optimizer.state_dict(),}

@@ -106,70 +106,20 @@ class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
         mask = torch.from_numpy((hard_positive)).type(torch.bool)
         return mask.to(self.device)
 
-    def forward(self, inst_embed, anchor, cls_mask, labels, temperature, augmentation=None):
-        if augmentation is not None:
-            representations = torch.cat([inst_embed, augmentation], dim=0)
-            candidates = self.calculate_similarity_matrix(representations, representations)
-            inst2aug_positive = torch.exp(candidates[self.hard_positive_mask]/temperature)
-            instance_zone = torch.exp(self.remove_diag(candidates[:self.batch_size, :self.batch_size])/temperature)
+    def forward(self, inst_embed, anchor, cls_mask, labels, temperature):
+        similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
+        instance_zone = torch.exp(self.remove_diag(similarity_matrix)/temperature)
 
-            mask_4_remove_negatives = cls_mask[labels]
-            mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
-
-            inst2inst_positives = instance_zone*mask_4_remove_negatives
-            inst2embed_positive = torch.exp(self.cosine_similarity(inst_embed, anchor)/temperature)
-
-            numerator = (inst2inst_positives.sum(dim=1)+inst2embed_positive + inst2aug_positive)
-            denomerator = torch.cat([torch.unsqueeze(inst2aug_positive, dim=1), torch.unsqueeze(inst2embed_positive, dim=1),
-                                     instance_zone], dim=1).sum(dim=1)
-
-            criterion = -torch.log(numerator/denomerator).mean()
-        else:
-            similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
-            instance_zone = torch.exp(self.remove_diag(similarity_matrix)/temperature)
-
-            mask_4_remove_negatives = cls_mask[labels]
-            mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
-
-            inst2inst_positives = instance_zone*mask_4_remove_negatives
-            inst2embed_positive = torch.exp(self.cosine_similarity(inst_embed, anchor)/temperature)
-
-            numerator = (inst2inst_positives.sum(dim=1)+inst2embed_positive)
-            denomerator = torch.cat([torch.unsqueeze(inst2embed_positive, dim=1), instance_zone], dim=1).sum(dim=1)
-
-            criterion = -torch.log(numerator/denomerator).mean()
-        return criterion
-
-
-class Class_Conditional_Repulsion_loss(torch.nn.Module):
-    def __init__(self, device, batch_size):
-        super(Class_Conditional_Repulsion_loss, self).__init__()
-        self.batch_size = batch_size
-        self.device = device
-        self.calculate_similarity_matrix = self._calculate_similarity_matrix()
-        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
-
-    def _calculate_similarity_matrix(self):
-        return self._cosine_simililarity_matrix
-    
-    def remove_diag(self, M):
-        h, w = M.shape
-        assert h==w, "h and w should be same"
-        mask = np.ones((h, w)) - np.eye(h)
-        mask = torch.from_numpy(mask)
-        mask = (mask).type(torch.bool).to(self.device)
-        return M[mask].view(h, -1)
-
-    def _cosine_simililarity_matrix(self, x, y):
-        v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
-        return v
-
-    def forward(self, images, cls_mask, labels):
-        channel_mean = torch.mean(images, dim=(2,3))
-        similarity_matrix = self.calculate_similarity_matrix(channel_mean, channel_mean)
         mask_4_remove_negatives = cls_mask[labels]
-        mask_4_remove_negatives = mask_4_remove_negatives.type(torch.bool).to(self.device)
-        criterion = similarity_matrix[mask_4_remove_negatives].mean()
+        mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
+
+        inst2inst_positives = instance_zone*mask_4_remove_negatives
+        inst2embed_positive = torch.exp(self.cosine_similarity(inst_embed, anchor)/temperature)
+
+        numerator = (inst2inst_positives.sum(dim=1)+inst2embed_positive)
+        denomerator = torch.cat([torch.unsqueeze(inst2embed_positive, dim=1), instance_zone], dim=1).sum(dim=1)
+
+        criterion = -torch.log(numerator/denomerator).mean()
         return criterion
 
 
