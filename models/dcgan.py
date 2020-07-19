@@ -200,7 +200,7 @@ class Discriminator(nn.Module):
             elif self.conditional_strategy == 'ACGAN':
                 self.linear4 = snlinear(in_features=512, out_features=num_classes)
             else:
-                raise NotImplementedError
+                pass
         else:
             self.linear1 = linear(in_features=512, out_features=1)
             if self.conditional_strategy == 'ContraGAN':
@@ -213,7 +213,7 @@ class Discriminator(nn.Module):
             elif self.conditional_strategy == 'ACGAN':
                 self.linear4 = linear(in_features=512, out_features=num_classes)
             else:
-                raise NotImplementedError
+                pass
 
         # Weight init
         if initialize is not False:

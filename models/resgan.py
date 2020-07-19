@@ -295,7 +295,7 @@ class Discriminator(nn.Module):
         self.in_dims  = d_in_dims_collection[str(img_size)]
         self.out_dims = d_out_dims_collection[str(img_size)]
         down = d_down[str(img_size)]
-        
+
         self.blocks = []
         for index in range(len(self.in_dims)):
             if index == 0:
@@ -336,7 +336,7 @@ class Discriminator(nn.Module):
             elif self.conditional_strategy == 'ACGAN':
                 self.linear4 = snlinear(in_features=self.out_dims[-1], out_features=num_classes)
             else:
-                raise NotImplementedError
+                pass
         else:
             self.linear1 = linear(in_features=self.out_dims[-1], out_features=1)
             if self.conditional_strategy == 'ContraGAN':
@@ -349,11 +349,12 @@ class Discriminator(nn.Module):
             elif self.conditional_strategy == 'ACGAN':
                 self.linear4 = linear(in_features=self.out_dims[-1], out_features=num_classes)
             else:
-                raise NotImplementedError
+                pass
 
         # Weight init
         if initialize is not False:
             init_weights(self.modules, initialize)
+
 
     def forward(self, x, label):
         h = x
@@ -362,7 +363,7 @@ class Discriminator(nn.Module):
                 h = block(h)
         h = self.activation(h)
         h = torch.sum(h, dim=[2,3])
-
+        
         if self.conditional_strategy == 'no':
             authen_output = torch.squeeze(self.linear1(h))
             return authen_output
