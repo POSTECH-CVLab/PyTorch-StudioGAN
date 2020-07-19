@@ -476,7 +476,7 @@ class Trainer:
         is_save = False
         
         if self.Gen_copy is not None:
-            self.Gen_copy.eval()
+            self.Gen_copy.train()
             generator = self.Gen_copy
         else:
             generator = self.gen_model
