@@ -23,6 +23,7 @@ import random
 import sys
 
 from os.path import join
+import glob
 from datetime import datetime
 
 
@@ -427,18 +428,43 @@ class Trainer:
         d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': self.dis_model.state_dict(), 'optimizer': self.D_optimizer.state_dict(),
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
+        
+        if len(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))) >= 1:
+            find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0])
+            find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0])
 
-        find_and_remove(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))
-        find_and_remove(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))
-        g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-{when}-weights-step={step}".format(when=when, step=str(step)))
-        d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-{when}-weights-step={step}".format(when=when, step=str(step)))
+        g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
+        d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
+
+        if when == "best":
+            if len(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth".format(when=when)))) >= 1:
+                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth".format(when=when)))[0])
+                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-current-weights-step*.pth".format(when=when)))[0])
+
+            g_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G-current-weights-step={step}.pth".format(when=when, step=str(step)))
+            d_checkpoint_output_path_ = join(self.checkpoint_dir, "model=D-current-weights-step={step}.pth".format(when=when, step=str(step)))
+
+            torch.save(g_states, g_checkpoint_output_path_)
+            torch.save(d_states, d_checkpoint_output_path_)
+        
         torch.save(g_states, g_checkpoint_output_path)
         torch.save(d_states, d_checkpoint_output_path)
 
         if self.Gen_copy is not None:
             g_ema_states = {'state_dict': self.Gen_copy.state_dict()}
-            find_and_remove(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))
-            g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}".format(when=when, step=str(step)))
+            if len(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))) >= 1:
+                find_and_remove(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0])
+            
+            g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
+            
+            if when == "best":
+                if len(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))) >= 1:
+                    find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))[0])
+                
+                g_ema_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G_ema-current-weights-step={step}.pth".format(when=when, step=str(step)))
+
+                torch.save(g_states, g_ema_checkpoint_output_path_)
+
             torch.save(g_ema_states, g_ema_checkpoint_output_path)
 
         if self.logger:

@@ -16,7 +16,7 @@ from train import train_framework
 
 def main():
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('-c', '--config_path', type=str, default='./configs/Imagenet_experiments/contra_biggan96_imagenet_hinge_no.json')
+    parser.add_argument('-c', '--config_path', type=str, default='./configs/Table1/contra_biggan32_cifar_hinge_no.json')
     parser.add_argument('--checkpoint_folder', type=str, default=None)
     parser.add_argument('--load_current', type=bool, default=True, help='choose whether you load current or best weights')
     parser.add_argument('--log_output_path', type=str, default=None)
@@ -31,7 +31,7 @@ def main():
 
     parser.add_argument('--print_every', type=int, default=100, help='control log interval')
     parser.add_argument('--save_every', type=int, default=2000, help='control evaluation and save interval')
-    parser.add_argument('--type4eval_dataset', type=str, default='valid', help='[train/valid/test]')
+    parser.add_argument('--type4eval_dataset', type=str, default='test', help='[train/valid/test]')
     args = parser.parse_args()
 
     if args.config_path is not None:
