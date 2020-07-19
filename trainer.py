@@ -428,8 +428,8 @@ class Trainer:
                     'state_dict': self.dis_model.state_dict(), 'optimizer': self.D_optimizer.state_dict(),
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
 
-        find_and_remove(os.path.join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))
-        find_and_remove(os.path.join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))
+        find_and_remove(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))
+        find_and_remove(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))
         g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-{when}-weights-step={step}".format(when=when, step=str(step)))
         d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-{when}-weights-step={step}".format(when=when, step=str(step)))
         torch.save(g_states, g_checkpoint_output_path)
@@ -437,7 +437,7 @@ class Trainer:
 
         if self.Gen_copy is not None:
             g_ema_states = {'state_dict': self.Gen_copy.state_dict()}
-            find_and_remove(os.path.join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))
+            find_and_remove(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))
             g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}".format(when=when, step=str(step)))
             torch.save(g_ema_states, g_ema_checkpoint_output_path)
 
