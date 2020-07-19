@@ -10,7 +10,7 @@ from metrics.FID import calculate_fid_score
 from metrics.Accuracy_Confidence import calculate_acc_confidence
 from utils.sample import sample_latents, make_mask
 from utils.plot import plot_img_canvas, plot_confidence_histogram
-from utils.utils import elapsed_time, calculate_all_sn
+from utils.utils import elapsed_time, calculate_all_sn, find_and_remove
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss
 
 import torch
@@ -258,7 +258,7 @@ class Trainer:
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
                     is_best = self.evaluation(step_count)
-                        self.save(step_count, is_best)
+                    self.save(step_count, is_best)
                 else:
                     self.save(step_count, False)
     ################################################################################################################################
@@ -407,7 +407,7 @@ class Trainer:
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
                     is_best = self.evaluation(step_count)
-                        self.save(step_count, is_best)
+                    self.save(step_count, is_best)
                 else:
                     self.save(step_count, False)
     ################################################################################################################################
@@ -424,7 +424,7 @@ class Trainer:
         g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': self.gen_model.state_dict(), 'optimizer': self.G_optimizer.state_dict(),}
 
-        d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step
+        d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': self.dis_model.state_dict(), 'optimizer': self.D_optimizer.state_dict(),
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
 
