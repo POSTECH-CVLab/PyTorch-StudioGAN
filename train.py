@@ -128,12 +128,12 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     if train_config['checkpoint_folder'] is not None:
         logger = make_logger(run_name, train_config['log_output_path'])
         when = "current" if load_current is True else "best"
-        g_checkpoint_dir = join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when))
-        d_checkpoint_dir = join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when))
+        g_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0]
+        d_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0]
         Gen, G_optimizer, trained_seed, run_name, start_step, best_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
         Dis, D_optimizer, trained_seed, run_name, start_step, best_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
         if ema:
-            g_ema_checkpoint_dir = join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when))
+            g_ema_checkpoint_dir = glob.glob(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
             Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
             Gen_ema.source, Gen_ema.target = Gen, Gen_copy
 
