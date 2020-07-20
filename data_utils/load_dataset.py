@@ -17,6 +17,7 @@ import torch
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10, STL10
 from torchvision.datasets import ImageFolder
+from PIL import ImageOps
 
 
 class LoadDataset(Dataset):
@@ -30,11 +31,7 @@ class LoadDataset(Dataset):
         self.hdf5_path = hdf5_path
         self.consistency_reg = consistency_reg
         self.random_flip = random_flip
-        if self.random_flip:
-            self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size)),
-                                                 transforms.RandomHorizontalFlip(p=0.5)])
-        else:
-            self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size))])
+        self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size))])
         self.load_dataset()
 
 
@@ -98,7 +95,7 @@ class LoadDataset(Dataset):
         if self.hdf5_path is not None:
             img, label = self.data[index], int(self.labels[index])
             if self.random_flip:
-                img = img[:,:,::-1] if random.random() > 0.5 else img
+                img = np.fliplr(img) if random.random() > 0.5 else img
             img = np.asarray((self.data[index]-127.5)/127.5, np.float32)
         elif self.hdf5_path is None and self.dataset_name == 'imagenet':
             img, label = self.data[index]
@@ -110,11 +107,16 @@ class LoadDataset(Dataset):
                  else (img.size[1] - size[1]) // 2)
                  
             img = img.crop((i, j, i + size[0], j + size[1]))
-            img = np.asarray(self.transform(img),np.float32)
+            img = self.transform(img)
+            if self.random_flip:
+                img = ImageOps.mirror(img) if random.random() > 0.5 else img
+            img = np.asarray(img, np.float32)
             img = np.transpose((img-127.5)/127.5, (2,0,1))
         else:
             img, label = self.data[index]
-            img = np.asarray(self.transform(img),np.float32)
+            if self.random_flip:
+                img = ImageOps.mirror(img) if random.random() > 0.5 else img
+            img = np.asarray(img, np.float32)
             img = np.transpose((img-127.5)/127.5, (2,0,1))
 
         if self.consistency_reg:
