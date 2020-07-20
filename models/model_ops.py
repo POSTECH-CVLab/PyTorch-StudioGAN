@@ -74,16 +74,16 @@ def snlinear(in_features, out_features, bias=True):
 def sn_embedding(num_embeddings, embedding_dim):
     return spectral_norm(nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim))
 
-def sync_batchnorm_1d(in_features, eps=1e-5, momentum=0.0001, affine=True):
+def sync_batchnorm_1d(in_features, eps=1e-5, momentum=0.1, affine=True):
     return SynchronizedBatchNorm1d(in_features, eps=eps, momentum=momentum, affine=affine)
 
-def sync_batchnorm_2d(in_features, eps=1e-5, momentum=0.0001, affine=True):
+def sync_batchnorm_2d(in_features, eps=1e-5, momentum=0.1, affine=True):
     return SynchronizedBatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine)
 
-def batchnorm_1d(in_features, eps=1e-5, momentum=0.0001, affine=True):
+def batchnorm_1d(in_features, eps=1e-5, momentum=0.1, affine=True):
     return nn.BatchNorm1d(in_features, eps=eps, momentum=momentum, affine=affine)
 
-def batchnorm_2d(in_features, eps=1e-5, momentum=0.0001, affine=True):
+def batchnorm_2d(in_features, eps=1e-5, momentum=0.1, affine=True):
     return nn.BatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine)
 
 class ConditionalBatchNorm1d(nn.Module):
@@ -135,9 +135,9 @@ class ConditionalBatchNorm2d(nn.Module):
         super().__init__()
         self.num_features = num_features
         if synchronized_bn:
-            self.bn = sync_batchnorm_2d(num_features, momentum=0.001, affine=False)
+            self.bn = sync_batchnorm_2d(num_features, momentum=0.1, affine=False)
         else:
-            self.bn = batchnorm_2d(num_features, momentum=0.001, affine=False)
+            self.bn = batchnorm_2d(num_features, momentum=0.1, affine=False)
         self.embed0 = nn.Embedding(num_classes, num_features)
         self.embed1 = nn.Embedding(num_classes, num_features)
 
@@ -154,9 +154,9 @@ class ConditionalBatchNorm2d_for_skip_and_shared(nn.Module):
         super().__init__()
         self.num_features = num_features
         if synchronized_bn:
-            self.bn = sync_batchnorm_2d(num_features, momentum=0.001, affine=False)
+            self.bn = sync_batchnorm_2d(num_features, momentum=0.1, affine=False)
         else:
-            self.bn = batchnorm_2d(num_features, momentum=0.001, affine=False)
+            self.bn = batchnorm_2d(num_features, momentum=0.1, affine=False)
 
         if spectral_norm:
             self.gain = snlinear(z_dims_after_concat, num_features, bias=False)

@@ -53,10 +53,7 @@ class ema_(object):
       decay = self.decay
     with torch.no_grad():
       for key in self.source_dict:
-        if 'num_batches_tracked' in key:
-          self.target_dict[key].data.copy_(self.source_dict[key].data)
-        else:
-          self.target_dict[key].data.copy_(self.target_dict[key].data * decay + self.source_dict[key].data * (1 - decay))
+        self.target_dict[key].data.copy_(self.target_dict[key].data * decay + self.source_dict[key].data * (1 - decay))
 
 
 def ortho(model, strength=1e-4, blacklist=[]):

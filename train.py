@@ -112,7 +112,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     logger.info(Dis)
     
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers, drop_last=True)
-    eval_dataloader = DataLoader(eval_dataset, batch_size=100, shuffle=True, pin_memory=True, num_workers=num_workers, drop_last=False)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers, drop_last=False)
 
     G_loss = {'vanilla': loss_dcgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
     D_loss = {'vanilla': loss_dcgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}

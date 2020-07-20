@@ -250,16 +250,17 @@ class Trainer:
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
 
-                self.writer.add_images('Generated samples', (fake_images+1)/2, step_count)
-
-                """
                 with torch.no_grad():
-                    generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model     
-                    generator.eval()               
+                    if self.Gen_copy is not None:
+                        self.Gen_copy.train()
+                        generator = self.Gen_copy
+                    else:
+                        self.gen_model.eval()
+                        generator = self.gen_model
+
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-                    generator.train()
-                """
+                    self.gen_model.train()
             
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
@@ -403,14 +404,17 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
-                """
                 with torch.no_grad():
-                    generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model     
-                    generator.eval()               
+                    if self.Gen_copy is not None:
+                        self.Gen_copy.train()
+                        generator = self.Gen_copy
+                    else:
+                        self.gen_model.eval()
+                        generator = self.gen_model
+
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-                    generator.train()
-                """
+                    self.gen_model.train()
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
@@ -486,58 +490,55 @@ class Trainer:
 
     ################################################################################################################################
     def evaluation(self, step):
-        self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
-        is_best = False
+        with torch.no_grad():
+            self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
+            is_best = False
 
-        self.dis_model.eval()
-        self.gen_model.eval()
-        if self.Gen_copy is not None:
-            self.Gen_copy.train()
-            generator = self.Gen_copy
-        else:
-            generator = self.gen_model
+            self.dis_model.eval()
+            self.gen_model.eval()
+            if self.Gen_copy is not None:
+                self.Gen_copy.train()
+                generator = self.Gen_copy
+            else:
+                generator = self.gen_model
 
-        if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
-            num_eval = {'train':50000, 'valid':50000}
-        elif self.dataset_name == "cifar10":
-            num_eval = {'train':50000, 'test':10000}
-                                                    
-        if self.latent_op:
-            self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                            self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
+            if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
+                num_eval = {'train':50000, 'valid':50000}
+            elif self.dataset_name == "cifar10":
+                num_eval = {'train':50000, 'test':10000}
+                                                        
+            if self.latent_op:
+                self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
+                                                self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
 
-        fake_images = generator(self.fixed_noise, self.fixed_fake_labels).detach().cpu()
-        plot_generated_samples_path = join('figures', self.run_name, "[{}]generated_samples.png".format(step))
-        plot_img_canvas(fake_images, plot_generated_samples_path, self.logger)
-        self.writer.add_images('Generated samples', (fake_images+1)/2, step)
 
-        fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
+            fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
+                                                            self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
+                                                            self.latent_op_beta, self.second_device, self.mu, self.sigma)
+
+            ### pre-calculate an inception score
+            ### calculating inception score using the below will give you an underestimated one.
+            ### plz use the official tensorflow implementation(inception_tensorflow.py). 
+            kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
                                                         self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                        self.latent_op_beta, self.second_device, self.mu, self.sigma)
+                                                        self.latent_op_beta, 10, self.second_device)
 
-        ### pre-calculate an inception score
-        ### calculating inception score using the below will give you an underestimated one.
-        ### plz use the official tensorflow implementation(inception_tensorflow.py). 
-        kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
-                                                    self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                    self.latent_op_beta, 10, self.second_device)
+            if self.best_fid is None:
+                self.best_fid, self.best_step, is_best = fid_score, step, True
+            else:
+                if fid_score <= self.best_fid:
+                    self.best_fid, self.best_step, is_best = fid_score, step, True
+            
+            self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.type4eval_dataset):fid_score}, step)
+            self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(num_eval[self.type4eval_dataset])):kl_score}, step)
+            self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.type4eval_dataset, FID=fid_score))
+            self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(num_eval[self.type4eval_dataset]), IS=kl_score))
+            self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.type4eval_dataset, FID=self.best_fid))
 
-        if self.best_fid is None:
-            self.best_fid, self.best_step, is_best = fid_score, step, True
-        else:
-            if fid_score <= self.best_fid:
-                 self.best_fid, self.best_step, is_best = fid_score, step, True
-        
-        self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.type4eval_dataset):fid_score}, step)
-        self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(num_eval[self.type4eval_dataset])):kl_score}, step)
-        self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.type4eval_dataset, FID=fid_score))
-        self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(num_eval[self.type4eval_dataset]), IS=kl_score))
-        self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.type4eval_dataset, FID=self.best_fid))
-
-        self.dis_model.train()
-        self.gen_model.train()
-        if self.Gen_copy is not None:
-            self.Gen_copy.train()
-        
+            self.dis_model.train()
+            self.gen_model.train()
+            if self.Gen_copy is not None:
+                self.Gen_copy.train()
+            
         return is_best
     ################################################################################################################################
