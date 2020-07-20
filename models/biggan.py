@@ -400,7 +400,7 @@ class Discriminator(nn.Module):
         elif self.conditional_strategy == 'cGAN':
             authen_output = torch.squeeze(self.linear1(h))
             proj = torch.sum(torch.mul(self.embedding(label), h), 1)
-            return authen_output + proj
+            return proj + authen_output
         
         elif self.conditional_strategy == 'ACGAN':
             authen_output = torch.squeeze(self.linear1(h))

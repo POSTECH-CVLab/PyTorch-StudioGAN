@@ -122,7 +122,6 @@ class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
         criterion = -torch.log(numerator/denomerator).mean()
         return criterion
 
-
 def calc_derv4gp(netD, real_data, fake_data, real_labels, device):
     # print "real_data: ", real_data.size(), fake_data.size()
     batch_size, c, h, w = real_data.shape

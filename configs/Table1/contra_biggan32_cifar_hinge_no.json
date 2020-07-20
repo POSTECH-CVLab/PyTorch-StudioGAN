@@ -11,7 +11,7 @@
 
   "train": {
     "model": {
-      "architecture": "resgan",
+      "architecture": "biggan",
       "conditional_strategy": "ContraGAN",
       "hypersphere_dim": 512,
       "nonlinear_embed": false,
@@ -66,7 +66,7 @@
     },
 
     "training_and_sampling_setting":{
-      "random_flip": true,
+      "random_flip": false,
       
       "prior": "gaussian",
       "truncated_factor": 1,

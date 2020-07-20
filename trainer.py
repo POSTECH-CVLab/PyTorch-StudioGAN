@@ -249,13 +249,18 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
+
+                self.writer.add_images('Generated samples', (fake_images+1)/2, step_count)
+
+                """
                 with torch.no_grad():
                     generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model     
                     generator.eval()               
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
                     generator.train()
-
+                """
+            
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
                     is_best = self.evaluation(step_count)
@@ -294,7 +299,7 @@ class Trainer:
 
                     images, real_labels = images.to(self.second_device), real_labels.to(self.second_device)
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
-                    
+
                     if self.latent_op:
                         z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
                                             self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
@@ -398,12 +403,14 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
+                """
                 with torch.no_grad():
                     generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model     
                     generator.eval()               
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
                     generator.train()
+                """
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
@@ -480,12 +487,12 @@ class Trainer:
     ################################################################################################################################
     def evaluation(self, step):
         self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
+        is_best = False
+
         self.dis_model.eval()
         self.gen_model.eval()
-        is_best = False
-        
         if self.Gen_copy is not None:
-            self.Gen_copy.eval()
+            self.Gen_copy.train()
             generator = self.Gen_copy
         else:
             generator = self.gen_model
@@ -498,6 +505,11 @@ class Trainer:
         if self.latent_op:
             self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
                                             self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
+
+        fake_images = generator(self.fixed_noise, self.fixed_fake_labels).detach().cpu()
+        plot_generated_samples_path = join('figures', self.run_name, "[{}]generated_samples.png".format(step))
+        plot_img_canvas(fake_images, plot_generated_samples_path, self.logger)
+        self.writer.add_images('Generated samples', (fake_images+1)/2, step)
 
         fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
                                                         self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
