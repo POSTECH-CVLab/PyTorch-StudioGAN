@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# models/resgan.py
+# models/biggan_deep.py
 
 
 from models.model_ops import *
@@ -14,22 +14,34 @@ import torch.nn.functional as F
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes, synchronized_bn):
+    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, z_dims_after_concat, synchronized_bn, 
+                 upsample, channel_ratio=4):
         super(GenBlock, self).__init__()
         self.conditional_bn = conditional_bn
+        self.in_channels, self.out_channels = in_channels, out_channels
+        self.upsample = upsample
+        self.hidden_channels = self.in_channels//channel_ratio
 
         if self.conditional_bn:
-            self.bn1 = ConditionalBatchNorm2d(num_features=in_channels, num_classes=num_classes,
-                                              spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
-            self.bn2 = ConditionalBatchNorm2d(num_features=out_channels, num_classes=num_classes,
-                                              spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+            self.bn1 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=in_channels, z_dims_after_concat=z_dims_after_concat,
+                                                                  spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+            self.bn2 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=self.hidden_channels, z_dims_after_concat=z_dims_after_concat,
+                                                                  spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+            self.bn3 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=self.hidden_channels, z_dims_after_concat=z_dims_after_concat,
+                                                                  spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+            self.bn4 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=self.hidden_channels, z_dims_after_concat=z_dims_after_concat,
+                                                                  spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
         else:
             if synchronized_bn:
                 self.bn1 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn2 = sync_batchnorm_2d(in_features=out_channels)
+                self.bn2 = sync_batchnorm_2d(in_features=self.hidden_channels)
+                self.bn3 = sync_batchnorm_2d(in_features=self.hidden_channels)
+                self.bn4 = sync_batchnorm_2d(in_features=self.hidden_channels)
             else:
                 self.bn1 = batchnorm_2d(in_features=in_channels)
-                self.bn2 = batchnorm_2d(in_features=out_channels)
+                self.bn2 = batchnorm_2d(in_features=self.hidden_channels)
+                self.bn3 = batchnorm_2d(in_features=self.hidden_channels)
+                self.bn4 = batchnorm_2d(in_features=self.hidden_channels)
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -43,34 +55,33 @@ class GenBlock(nn.Module):
             raise NotImplementedError
 
         if g_spectral_norm:
-            self.conv2d0 = snconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
-            self.conv2d1 = snconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-            self.conv2d2 = snconv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d1 = snconv2d(in_channels=in_channels, out_channels=self.hidden_channels, kernel_size=1, stride=1, padding=0)
+            self.conv2d2 = snconv2d(in_channels=self.hidden_channels, out_channels=self.hidden_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d3 = snconv2d(in_channels=self.hidden_channels, out_channels=self.hidden_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d4 = snconv2d(in_channels=self.hidden_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
         else:
-            self.conv2d0 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
-            self.conv2d1 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-            self.conv2d2 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d1 = conv2d(in_channels=in_channels, out_channels=self.hidden_channels, kernel_size=1, stride=1, padding=0)
+            self.conv2d2 = conv2d(in_channels=self.hidden_channels, out_channels=self.hidden_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d3 = conv2d(in_channels=self.hidden_channels, out_channels=self.hidden_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d4 = conv2d(in_channels=self.hidden_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
+
 
     def forward(self, x, label):
-        x0 = x
-        
-        if self.conditional_bn:
-            x = self.bn1(x, label)
+        if self.in_channels != self.out_channels:
+            x0 = x[:, :self.out_channels]
         else:
-            x = self.bn1(x)
-        x = self.activation(x)
-        x = F.interpolate(x, scale_factor=2, mode='nearest')
-        x = self.conv2d1(x)
-        if self.conditional_bn:
-            x = self.bn2(x, label)
-        else:
-            x = self.bn2(x)
-        x = self.activation(x)
+            x0 = x
+
+        x = self.conv2d1(self.activation(self.bn1(x, label)))
+        x = self.activation(self.bn2(x, label))
+        if self.upsample:
+            x = F.interpolate(x, scale_factor=2, mode='nearest') # upsample
         x = self.conv2d2(x)
+        x = self.conv2d3(self.activation(self.bn3(x, label)))
+        x = self.conv2d4(self.activation(self.bn4(x, label)))
 
-        x0 = F.interpolate(x0, scale_factor=2, mode='nearest')
-        x0 = self.conv2d0(x0)
-
+        if self.upsample:
+            x0 = F.interpolate(x0, scale_factor=2, mode='nearest') # upsample
         out = x + x0
         return out
 
@@ -91,30 +102,36 @@ class Generator(nn.Module):
                                  "128": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim]}
         
         bottom_collection = {"32": 4, "64": 4, "96": 3, "128":4}
-
         self.z_dim = z_dim
+        self.shared_dim = shared_dim
         self.num_classes = num_classes
         conditional_bn = True if conditional_strategy == "ACGAN" or conditional_strategy =="cGAN" or conditional_strategy == "ContraGAN" else False
-
+        
         self.in_dims =  g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
         self.bottom = bottom_collection[str(img_size)]
+        self.n_blocks = len(self.in_dims)
+        self.z_dims_after_concat = self.z_dim + self.shared_dim
 
         if g_spectral_norm:
-            self.linear0 = snlinear(in_features=self.z_dim, out_features=self.in_dims[0]*self.bottom*self.bottom)
+            self.linear0 = snlinear(in_features=self.z_dims_after_concat, out_features=self.in_dims[0]*self.bottom*self.bottom)
         else:
-            self.linear0 = linear(in_features=self.z_dim, out_features=self.in_dims[0]*self.bottom*self.bottom)
+            self.linear0 = linear(in_features=self.z_dims_after_concat, out_features=self.in_dims[0]*self.bottom*self.bottom)
+
+        self.shared = embedding(self.num_classes, self.shared_dim)
 
         self.blocks = []
-        for index in range(len(self.in_dims)):
+        for index in range(self.n_blocks):
             self.blocks += [[GenBlock(in_channels=self.in_dims[index],
-                                          out_channels=self.out_dims[index],
-                                          g_spectral_norm=g_spectral_norm,
-                                          activation_fn=activation_fn,
-                                          conditional_bn=conditional_bn,
-                                          num_classes=self.num_classes,
-                                          synchronized_bn=synchronized_bn)]]
-
+                                      out_channels=self.in_dims[index] if g_index ==0 else self.out_dims[index],
+                                      g_spectral_norm=g_spectral_norm,
+                                      activation_fn=activation_fn,
+                                      conditional_bn=conditional_bn,
+                                      z_dims_after_concat=self.z_dims_after_concat,
+                                      synchronized_bn=synchronized_bn,
+                                      upsample=True if g_index == (G_depth-1) else False)]
+                            for g_index in range(G_depth)]
+                                          
             if index+1 == attention_after_nth_gen_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], g_spectral_norm)]]
 
@@ -148,14 +165,20 @@ class Generator(nn.Module):
             init_weights(self.modules, initialize)
 
     def forward(self, z, label):
+        label = self.shared(label)
+        z = torch.cat([label, z], 1)      
+
         act = self.linear0(z)
         act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
+        counter = 0
         for index, blocklist in enumerate(self.blocks):
             for block in blocklist:
                 if isinstance(block, Self_Attn):
                     act = block(act)
                 else:
-                    act = block(act, label)
+                    act = block(act, z)
+                    counter +=1
+
         act = self.bn4(act)
         act = self.activation(act)
         act = self.conv2d5(act)
@@ -163,65 +186,13 @@ class Generator(nn.Module):
         return out
 
 
-class DiscOptBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, synchronized_bn):
-        super(DiscOptBlock, self).__init__()
-        self.d_spectral_norm = d_spectral_norm
-
-        if d_spectral_norm:
-            self.conv2d0 = snconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
-            self.conv2d1 = snconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-            self.conv2d2 = snconv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-        else:
-            self.conv2d0 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
-            self.conv2d1 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-            self.conv2d2 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-
-            if synchronized_bn:
-                self.bn0 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn1 = sync_batchnorm_2d(in_features=out_channels)
-            else:
-                self.bn0 = batchnorm_2d(in_features=in_channels)
-                self.bn1 = batchnorm_2d(in_features=out_channels)
-
-        if activation_fn == "ReLU":
-            self.activation = nn.ReLU(inplace=True)
-        elif activation_fn == "Leaky_ReLU":
-            self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
-        elif activation_fn == "ELU":
-            self.activation = nn.ELU(alpha=1.0, inplace=True)
-        elif activation_fn == "GELU":
-            self.activation = nn.GELU()
-        else:
-            raise NotImplementedError
-
-        self.average_pooling = nn.AvgPool2d(2)
-
-
-    def forward(self, x):
-        x0 = x
-
-        x = self.conv2d1(x)
-        if self.d_spectral_norm is False:
-            x = self.bn1(x)
-        x = self.activation(x)
-        x = self.conv2d2(x)
-        x = self.average_pooling(x)
-
-        x0 = self.average_pooling(x0)
-        if self.d_spectral_norm is False:
-            x0 = self.bn0(x0)
-        x0 = self.conv2d0(x0)
-
-        out = x + x0
-        return out
-
-
 class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, synchronized_bn, downsample=True):
+    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, synchronized_bn, downsample=True,
+                 channel_ratio=4):
         super(DiscBlock, self).__init__()
-        self.d_spectral_norm = d_spectral_norm
         self.downsample = downsample
+        self.d_spectral_norm = d_spectral_norm
+        hidden_channels = out_channels//channel_ratio
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -230,58 +201,49 @@ class DiscBlock(nn.Module):
         elif activation_fn == "ELU":
             self.activation = nn.ELU(alpha=1.0, inplace=True)
         elif activation_fn == "GELU":
-            self.activation = nn.GELU()
-        else:
             raise NotImplementedError
 
-        self.ch_mismatch = False
-        if in_channels != out_channels:
-            self.ch_mismatch = True
-
-        if d_spectral_norm:
-            if self.ch_mismatch or downsample:
-                self.conv2d0 = snconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
-            self.conv2d1 = snconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-            self.conv2d2 = snconv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
+        if self.d_spectral_norm:
+            self.conv2d1 = snconv2d(in_channels=in_channels, out_channels=hidden_channels, kernel_size=1, stride=1, padding=0)
+            self.conv2d2 = snconv2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d3 = snconv2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d4 = snconv2d(in_channels=hidden_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
         else:
-            if self.ch_mismatch or downsample:
-                self.conv2d0 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
-            self.conv2d1 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-            self.conv2d2 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-
-            if synchronized_bn:
-                if self.ch_mismatch or downsample:
-                    self.bn0 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn1 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn2 = sync_batchnorm_2d(in_features=out_channels)
+            self.conv2d1 = conv2d(in_channels=in_channels, out_channels=hidden_channels, kernel_size=1, stride=1, padding=0)
+            self.conv2d2 = conv2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d3 = conv2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1)
+            self.conv2d4 = conv2d(in_channels=hidden_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
+                                 
+        self.learnable_sc = True if (in_channels != out_channels) else False
+        if self.learnable_sc:
+            if self.d_spectral_norm:
+                self.conv2d0 = snconv2d(in_channels=in_channels, out_channels=out_channels-in_channels, kernel_size=1, stride=1, padding=0)
             else:
-                if self.ch_mismatch or downsample:
-                    self.bn0 = batchnorm_2d(in_features=in_channels)
-                self.bn1 = batchnorm_2d(in_features=in_channels)
-                self.bn2 = batchnorm_2d(in_features=out_channels)
+                self.conv2d0 = conv2d(in_channels=in_channels, out_channels=out_channels-in_channels, kernel_size=1, stride=1, padding=0)
+        
+        if self.downsample:
+            self.average_pooling = nn.AvgPool2d(2)
 
-        self.average_pooling = nn.AvgPool2d(2)
-
-
+    
     def forward(self, x):
         x0 = x
-        if self.d_spectral_norm is False:
-            x = self.bn1(x)
+
         x = self.activation(x)
         x = self.conv2d1(x)
-        if self.d_spectral_norm is False:
-            x = self.bn2(x)
-        x = self.activation(x)
-        x = self.conv2d2(x)
-        if self.downsample:
-            x = self.average_pooling(x)
 
-        if self.downsample or self.ch_mismatch:
-            if self.d_spectral_norm is False:
-                x0 = self.bn0(x0)
-            x0 = self.conv2d0(x0)
-            if self.downsample:
-                x0 = self.average_pooling(x0)
+        x = self.conv2d2(self.activation(x))
+        x = self.conv2d3(self.activation(x))
+        x = self.activation(x)
+
+        if self.downsample:
+            x = self.average_pooling(x)     
+        
+        x = self.conv2d4(x)
+
+        if self.downsample:
+            x0 = self.average_pooling(x0)
+        if self.learnable_sc:
+            x0 = torch.cat([x0, self.conv2d0(x0)], 1)  
 
         out = x + x0
         return out
@@ -302,10 +264,10 @@ class Discriminator(nn.Module):
                                  "96": [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16],
                                  "128": [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16]}
 
-        d_down = {"32": [True, True, False, False],
-                  "64": [True, True, True, True, False],
-                  "96": [True, True, True, True, True, False],
-                  "128": [True, True, True, True, True, False]}
+        d_down = {"32": [False, True, True, False],
+                  "64": [False, True, True, True, True],
+                  "96": [False, True, True, True, True, True],
+                  "128": [False, True, True, True, True, True]}
 
         self.nonlinear_embed = nonlinear_embed
         self.normalize_embed = normalize_embed
@@ -315,25 +277,27 @@ class Discriminator(nn.Module):
         self.out_dims = d_out_dims_collection[str(img_size)]
         down = d_down[str(img_size)]
 
+        if d_spectral_norm:
+            self.input_conv = snconv2d(in_channels=self.in_dims[0], out_channels=self.out_dims[0], kernel_size=3, stride=1, padding=1)
+        else:
+            self.input_conv = conv2d(in_channels=self.in_dims[0], out_channels=self.out_dims[0], kernel_size=3, stride=1, padding=1)
+
         self.blocks = []
         for index in range(len(self.in_dims)):
             if index == 0:
-                self.blocks += [[DiscOptBlock(in_channels=self.in_dims[index],
-                                              out_channels=self.out_dims[index],
-                                              d_spectral_norm=d_spectral_norm,
-                                              activation_fn=activation_fn,
-                                              synchronized_bn=synchronized_bn)]]
+                self.blocks += [[self.input_conv]]
             else:
-                self.blocks += [[DiscBlock(in_channels=self.in_dims[index],
-                                           out_channels=self.out_dims[index],
-                                           d_spectral_norm=d_spectral_norm,
-                                           activation_fn=activation_fn,
-                                           synchronized_bn=synchronized_bn,
-                                           downsample=down[index])]]
+                self.blocks += [[DiscBlock(in_channels=self.in_dims[index] if d_index==0 else self.out_dims[index],
+                                        out_channels=self.out_dims[index],
+                                        d_spectral_norm=d_spectral_norm,
+                                        activation_fn=activation_fn,
+                                        synchronized_bn=synchronized_bn,
+                                        downsample=True if down[index] and d_index==0 else False)]
+                                for d_index in range(D_depth)]
 
-            if index+1 == attention_after_nth_dis_block and attention is True:
+            if index == attention_after_nth_dis_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], d_spectral_norm)]]
-
+        
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
         if activation_fn == "ReLU":
@@ -381,12 +345,13 @@ class Discriminator(nn.Module):
 
     def forward(self, x, label):
         h = x
+    
         for index, blocklist in enumerate(self.blocks):
             for block in blocklist:
                 h = block(h)
         h = self.activation(h)
         h = torch.sum(h, dim=[2,3])
-        
+
         if self.conditional_strategy == 'no':
             authen_output = torch.squeeze(self.linear1(h))
             return authen_output
@@ -405,7 +370,7 @@ class Discriminator(nn.Module):
         elif self.conditional_strategy == 'cGAN':
             authen_output = torch.squeeze(self.linear1(h))
             proj = torch.sum(torch.mul(self.embedding(label), h), 1)
-            return authen_output + proj
+            return proj + authen_output
         
         elif self.conditional_strategy == 'ACGAN':
             authen_output = torch.squeeze(self.linear1(h))

@@ -107,7 +107,6 @@ class ConditionalBatchNorm1d(nn.Module):
 
 
 class ConditionalBatchNorm1d_for_skip_and_shared(nn.Module):
-    # https://github.com/voletiv/self-attention-GAN-pytorch
     def __init__(self, num_features, z_dims_after_concat, spectral_norm, synchronized_bn):
         super().__init__()
         self.num_features = num_features
@@ -131,15 +130,20 @@ class ConditionalBatchNorm1d_for_skip_and_shared(nn.Module):
 
 class ConditionalBatchNorm2d(nn.Module):
     # https://github.com/voletiv/self-attention-GAN-pytorch
-    def __init__(self, num_features, num_classes, synchronized_bn):
+    def __init__(self, num_features, num_classes, spectral_norm, synchronized_bn):
         super().__init__()
         self.num_features = num_features
         if synchronized_bn:
             self.bn = sync_batchnorm_2d(num_features, momentum=0.1, affine=False)
         else:
             self.bn = batchnorm_2d(num_features, momentum=0.1, affine=False)
-        self.embed0 = nn.Embedding(num_classes, num_features)
-        self.embed1 = nn.Embedding(num_classes, num_features)
+        
+        if spectral_norm:
+            self.embed0 = sn_embedding(num_classes, num_features)
+            self.embed1 = sn_embedding(num_classes, num_features)
+        else:
+            self.embed0 = embedding(num_classes, num_features)
+            self.embed1 = embedding(num_classes, num_features)
 
     def forward(self, x, y):
         gain = (1 + self.embed0(y)).view(-1, self.num_features, 1, 1)

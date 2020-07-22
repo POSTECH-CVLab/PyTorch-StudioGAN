@@ -78,7 +78,7 @@ class GenBlock(nn.Module):
 class Generator(nn.Module):
     """Generator."""
     def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                 conditional_strategy, num_classes, synchronized_bn, initialize):
+                 conditional_strategy, num_classes, synchronized_bn, initialize, G_depth):
         super(Generator, self).__init__()
         g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4], 
                                 "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
@@ -306,7 +306,7 @@ class DiscBlock(nn.Module):
 class Discriminator(nn.Module):
     """Discriminator."""
     def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy, 
-                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, initialize):
+                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, initialize, D_depth):
         super(Discriminator, self).__init__()
         d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2], 
                                 "64": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8],
@@ -351,8 +351,6 @@ class Discriminator(nn.Module):
                 self.blocks += [[Self_Attn(self.out_dims[index], d_spectral_norm)]]
         
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
-        
-        self.LN = nn.LayerNorm([self.out_dims[-1], img_size//(2**n_down), img_size//(2**n_down)])
         
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -408,6 +406,7 @@ class Discriminator(nn.Module):
         if self.conditional_strategy == 'no':
             authen_output = torch.squeeze(self.linear1(h))
             return authen_output
+            
         elif self.conditional_strategy == 'ContraGAN':
             authen_output = torch.squeeze(self.linear1(h))
             cls_proxy = self.embedding(label)

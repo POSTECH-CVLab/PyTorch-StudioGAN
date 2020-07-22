@@ -41,8 +41,8 @@ RUN_NAME_FORMAT = (
 
 def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path, architecture, 
                     conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block,
-                    attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2,
-                    total_step, adv_loss, consistency_reg, g_init, d_init, random_flip, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn,
+                    attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1,
+                    beta2, total_step, adv_loss, consistency_reg, g_init, d_init, random_flip, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn,
                     hdf5_path_train, train_config, model_config, **_):
     fix_all_seed(seed)
     cudnn.benchmark = True # Not good Generator for undetermined input size
@@ -86,15 +86,15 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     module = __import__('models.{architecture}'.format(architecture=architecture),fromlist=['something'])
     logger.info('Modules are located on models.{architecture}'.format(architecture=architecture))
     Gen = module.Generator(z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                           conditional_strategy, num_classes, synchronized_bn, g_init).to(default_device)
+                           conditional_strategy, num_classes, synchronized_bn, g_init, G_depth).to(default_device)
 
     Dis = module.Discriminator(img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy, 
-                               hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, d_init).to(default_device)
+                               hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, d_init, D_depth).to(default_device)
 
     if ema:
         print('Preparing EMA for G with decay of {}'.format(ema_decay))
         Gen_copy = module.Generator(z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                                    conditional_strategy, num_classes, synchronized_bn=False, initialize=False).to(default_device)
+                                    conditional_strategy, num_classes, synchronized_bn=False, initialize=False, G_depth=G_depth).to(default_device)
         Gen_ema = ema_(Gen, Gen_copy, ema_decay, ema_start)
     else:
         Gen_copy, Gen_ema = None, None
