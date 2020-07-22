@@ -35,6 +35,10 @@ class GenBlock(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -132,6 +136,10 @@ class Generator(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -196,6 +204,10 @@ class DiscOptBlock(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -230,6 +242,10 @@ class DiscBlock(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
         
@@ -333,13 +349,19 @@ class Discriminator(nn.Module):
 
             if index+1 == attention_after_nth_dis_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], d_spectral_norm)]]
-
+        
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
-
+        
+        self.LN = nn.LayerNorm([self.out_dims[-1], img_size//(2**n_down), img_size//(2**n_down)])
+        
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 

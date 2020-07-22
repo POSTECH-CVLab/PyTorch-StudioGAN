@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+
 class GenBlock(nn.Module):
     def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes, synchronized_bn):
         super(GenBlock, self).__init__()
@@ -32,6 +33,10 @@ class GenBlock(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -122,6 +127,10 @@ class Generator(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -177,6 +186,10 @@ class DiscOptBlock(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -212,6 +225,10 @@ class DiscBlock(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -321,6 +338,10 @@ class Discriminator(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 

@@ -29,6 +29,8 @@ from torch.backends import cudnn
 from torch.nn import DataParallel
 from torch.utils.tensorboard import SummaryWriter
 
+from adamp import AdamP
+
 
 
 RUN_NAME_FORMAT = (
@@ -39,8 +41,9 @@ RUN_NAME_FORMAT = (
 
 def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path, architecture, 
                     conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block,
-                    attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, optimizer, batch_size, d_lr, g_lr, beta1, beta2, total_step, adv_loss, consistency_reg,
-                    g_init, d_init, random_flip, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, hdf5_path_train, train_config, model_config, **_):
+                    attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2,
+                    total_step, adv_loss, consistency_reg, g_init, d_init, random_flip, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn,
+                    hdf5_path_train, train_config, model_config, **_):
     fix_all_seed(seed)
     cudnn.benchmark = True # Not good Generator for undetermined input size
     cudnn.deterministic = False
@@ -117,9 +120,18 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     G_loss = {'vanilla': loss_dcgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
     D_loss = {'vanilla': loss_dcgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
 
-    if optimizer == "Adam":
+    if optimizer == "SGD":
+        G_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
+        D_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, nesterov=nesterov)
+    elif optimizer == "RMSprop":
+        G_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, alpha=alpha)
+        D_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, alpha=alpha)
+    elif optimizer == "Adam":
         G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, [beta1, beta2])
         D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2])
+    elif optimizer == "AdamP":
+        G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, betas=(beta1, beta2))
+        D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, betas=(beta1, beta2))
     else:
         raise NotImplementedError
 

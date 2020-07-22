@@ -16,7 +16,7 @@ from train import train_framework
 
 def main():
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('-c', '--config_path', type=str, default='./configs/Table1/contra_biggan32_cifar_hinge_no.json')
+    parser.add_argument('-c', '--config_path', type=str, default='./configs/Table1/contra_biggan_cifar32_hinge_no.json')
     parser.add_argument('--checkpoint_folder', type=str, default=None)
     parser.add_argument('--load_current', type=bool, default=True, help='choose whether you load current or best weights')
     parser.add_argument('--log_output_path', type=str, default=None)

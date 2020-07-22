@@ -10,7 +10,7 @@ from models.model_ops import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pdb
+
 
 
 class GenBlock(nn.Module):
@@ -37,6 +37,10 @@ class GenBlock(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -130,6 +134,10 @@ class DiscBlock(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
@@ -185,6 +193,10 @@ class Discriminator(nn.Module):
             self.activation = nn.ReLU(inplace=True)
         elif activation_fn == "Leaky_ReLU":
             self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif activation_fn == "ELU":
+            self.activation = nn.ELU(alpha=1.0, inplace=True)
+        elif activation_fn == "GELU":
+            self.activation = nn.GELU()
         else:
             raise NotImplementedError
 
