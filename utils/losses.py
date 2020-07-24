@@ -5,12 +5,14 @@
 # utils/losses.py
 
 
+from models.model_ops import snlinear, linear
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import DataParallel
 from torch import autograd
-from models.model_ops import snlinear, linear
+
 import numpy as np 
 
 
@@ -118,7 +120,6 @@ class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
 
         numerator = (inst2inst_positives.sum(dim=1)+inst2embed_positive)
         denomerator = torch.cat([torch.unsqueeze(inst2embed_positive, dim=1), instance_zone], dim=1).sum(dim=1)
-
         criterion = -torch.log(numerator/denomerator).mean()
         return criterion
 

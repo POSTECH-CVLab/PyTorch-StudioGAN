@@ -5,12 +5,12 @@
 # models/model_ops.py
 
 
+from sync_batchnorm.batchnorm import SynchronizedBatchNorm1d, SynchronizedBatchNorm2d
+
 import torch
 import torch.nn as nn
 from torch.nn.utils import spectral_norm
 from torch.nn import init
-
-from sync_batchnorm.batchnorm import SynchronizedBatchNorm1d, SynchronizedBatchNorm2d
 
 
 

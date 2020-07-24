@@ -5,15 +5,16 @@
 # metrics/prepare_inception_moments_eval_dataset.py
 
 
-import numpy as np
-import os
-
 from metrics.FID import calculate_activation_statistics
 from metrics.IS import evaluator
 
+import numpy as np
+import os
 
 
-def prepare_inception_moments_eval_dataset(dataloader, eval_mode, inception_model, splits, logger, device):
+
+
+def prepare_inception_moments_eval_dataset(dataloader, eval_mode, generator, inception_model, splits, run_name, logger, device):
     dataset_name = dataloader.dataset.dataset_name
     inception_model.eval()
 
@@ -26,7 +27,7 @@ def prepare_inception_moments_eval_dataset(dataloader, eval_mode, inception_mode
     else:
         logger.info('Calculate moments of {} dataset'.format(eval_mode))
         mu, sigma = calculate_activation_statistics(data_loader=dataloader,
-                                                    generator=None,
+                                                    generator=generator,
                                                     discriminator=None,
                                                     inception_model=inception_model,
                                                     n_generate=None,
@@ -38,7 +39,8 @@ def prepare_inception_moments_eval_dataset(dataloader, eval_mode, inception_mode
                                                     latent_op_alpha=None,
                                                     latent_op_beta=None,
                                                     device=device,
-                                                    tqdm_disable=False)
+                                                    tqdm_disable=False,
+                                                    run_name=run_name)
 
         logger.info('Saving calculated means and covariances to disk...')
         np.savez(save_path, **{'mu': mu, 'sigma': sigma})

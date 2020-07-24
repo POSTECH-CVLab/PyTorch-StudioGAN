@@ -14,13 +14,13 @@ from torchvision.utils import save_image
 
 
 
-def plot_img_canvas(images, save_path, logger):
+def plot_img_canvas(images, save_path, logger, nrow):
     directory = dirname(save_path)
 
     if not exists(abspath(directory)):
         os.makedirs(directory)
 
-    save_image(images, save_path, padding=0, normalize=True)
+    save_image(images, save_path, padding=0, nrow=nrow)
     logger.info("Saved image to {}".format(save_path))
 
 

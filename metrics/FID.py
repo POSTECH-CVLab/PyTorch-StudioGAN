@@ -14,16 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+
+from utils.sample import sample_latents
+from utils.losses import calc_derv4lo, latent_optimise
 import numpy as np
 from scipy import linalg
 from tqdm import tqdm
 import math
+from os.path import dirname, abspath, exists, join
+import os
+import shutil
 
 import torch
 from torch.nn import DataParallel
+from torchvision.utils import save_image
 
-from utils.sample import sample_latents
-from utils.losses import calc_derv4lo, latent_optimise
 
 
 def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
@@ -91,11 +96,11 @@ def generate_images(batch_size, gen, dis, truncated_factor, prior, latent_op, la
     with torch.no_grad():
         batch_images = gen(z, fake_labels)
 
-    return batch_images
+    return batch_images, fake_labels
 
 
 def get_activations(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior, is_generate,
-                    latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable=False):
+                    latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable=False, run_name=None):
     """Calculates the activations of the pool_3 layer for all images.
     Params:
     -- data_loader      : data_loader of training images
@@ -115,21 +120,32 @@ def get_activations(data_loader, generator, discriminator, inception_model, n_ge
         batch_size = data_loader.batch_size
         total_instance = len(data_loader.dataset)
         n_batches = math.ceil(float(total_instance) / float(batch_size))
-
-    pred_arr = np.empty((total_instance, 2048))
-    if is_generate is False:
         data_iter = iter(data_loader)
+
+    num_classes = generator.module.num_classes if isinstance(generator, DataParallel) else generator.num_classes
+    pred_arr = np.empty((total_instance, 2048))
+
+    directory = join('./generated_images', run_name)
+    if exists(abspath(directory)):
+        shutil.rmtree(abspath(directory))
+    os.makedirs(directory)
+    for f in range(num_classes):
+        os.makedirs(join(directory, str(f)))
+
     for i in tqdm(range(0, n_batches), disable=tqdm_disable):
         start = i*batch_size
         end = start + batch_size
-        """
-        for idx, img in enumerate(images.detach().cpu()):
-            save_image((img+1)/2, './generated_images/{idx}.png'.format(idx=batch_size*i + idx))
-        """
         if is_generate is True:
-            images = generate_images(batch_size, generator, discriminator, truncated_factor, prior, latent_op,
-                                     latent_op_step, latent_op_alpha, latent_op_beta, device)
+            images, labels = generate_images(batch_size, generator, discriminator, truncated_factor, prior, latent_op,
+                                             latent_op_step, latent_op_alpha, latent_op_beta, device)
+            for idx, img in enumerate(images.detach()):
+                if batch_size*i + idx < n_generate:
+                    save_image((img+1)/2, join(directory, str(labels[idx].item()), '{idx}.png'.format(idx=batch_size*i + idx)))
+                else:
+                    pass
+
             images = images.to(device)
+
             with torch.no_grad():
                 embeddings, logits = inception_model(images)
 
@@ -159,16 +175,16 @@ def get_activations(data_loader, generator, discriminator, inception_model, n_ge
 
 
 def calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior, 
-                                    is_generate, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable):
+                                    is_generate, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable, run_name=None):
     act = get_activations(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                          is_generate, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable)
+                          is_generate, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable, run_name)
     mu = np.mean(act, axis=0)
     sigma = np.cov(act, rowvar=False)
     return mu, sigma
 
 
 def calculate_fid_score(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior, 
-                        latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, pre_cal_mean=None, pre_cal_std=None):
+                        latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, pre_cal_mean=None, pre_cal_std=None, run_name=None):
     generator.eval()
     discriminator.eval()
     inception_model.eval()
@@ -181,7 +197,7 @@ def calculate_fid_score(data_loader, generator, discriminator, inception_model, 
                                                  prior, False, False, 0, latent_op_alpha, latent_op_beta, device, tqdm_disable=False)
 
     m2, s2 = calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                                             True, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable=False)
+                                             True, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable=False, run_name=run_name)
 
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 

@@ -5,6 +5,8 @@
 # utils/sample.py
 
 
+from utils.losses import latent_optimise
+
 import numpy as np
 from numpy import random, linalg
 from math import sin,cos,sqrt
@@ -12,6 +14,7 @@ import random
 
 import torch
 import torch.nn.functional as F
+from torch.nn import DataParallel
 
 
 
@@ -78,31 +81,6 @@ def random_ball(batch_size, z_dim, perturb=False):
         z = 1.0 * (random_directions * random_radii).T
         return z
 
-def gaussian_mixture(batch_size, n_labels ,n_dim, x_var=0.5, y_var=0.1):
-    label_indices = np.random.randint(0, n_labels, size=[batch_size])
-    if n_dim != 2:
-        raise Exception("n_dim must be 2.")
-
-    def sample(x, y, label, n_labels):
-        shift = 1.4
-        r = 2.0 * np.pi / float(n_labels) * float(label)
-        new_x = x * cos(r) - y * sin(r)
-        new_y = x * sin(r) + y * cos(r)
-        new_x += shift * cos(r)
-        new_y += shift * sin(r)
-        return np.array([new_x, new_y]).reshape((2,))
-
-    x = np.random.normal(0, x_var, (batch_size, (int)(n_dim/2)))
-    y = np.random.normal(0, y_var, (batch_size, (int)(n_dim/2)))
-    z = np.empty((batch_size, n_dim), dtype=np.float32)
-    for batch in range(batch_size):
-        for zi in range((int)(n_dim/2)):
-            if label_indices is not None:
-                z[batch, zi*2:zi*2+2] = sample(x[batch, zi], y[batch, zi], label_indices[batch], n_labels)
-            else:
-                z[batch, zi*2:zi*2+2] = sample(x[batch, zi], y[batch, zi], np.random.randint(0, n_labels), n_labels)
-
-    return z, label_indices
 
 def make_mask(labels, n_cls, device):
     labels = labels.detach().cpu().numpy()
@@ -114,3 +92,23 @@ def make_mask(labels, n_cls, device):
 
     mask_multi = torch.tensor(mask_multi).type(torch.long)
     return mask_multi.to(device)
+
+
+def generate_images_for_KNN(batch_size, real_label, gen, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
+    if isinstance(gen, DataParallel):
+        z_dim = gen.module.z_dim
+        num_classes = gen.module.num_classes
+    else:
+        z_dim = gen.z_dim
+        num_classes = gen.num_classes
+
+    z, _ = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
+    fake_labels = torch.tensor([real_label]*batch_size, dtype=torch.long).to(device) 
+
+    if latent_op:
+        z = latent_optimise(z, fake_labels, gen, dis, latent_op_step, 1.0, latent_op_alpha, latent_op_beta, False, device)
+    
+    with torch.no_grad():
+        batch_images = gen(z, fake_labels)
+
+    return batch_images, list(fake_labels.detach().cpu().numpy())

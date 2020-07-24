@@ -7,19 +7,22 @@
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
-from metrics.Accuracy_Confidence import calculate_acc_confidence
-from utils.sample import sample_latents, make_mask
-from utils.plot import plot_img_canvas, plot_confidence_histogram
+from utils.sample import sample_latents, make_mask, generate_images_for_KNN
+from utils.plot import plot_img_canvas, plot_confidence_histogram, plot_img_canvas
 from utils.utils import elapsed_time, calculate_all_sn, find_and_remove
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss
+from utils.calculate_accuracy import calculate_accuracy
 
 import torch
+import torch.nn as nn
 from torch.nn import DataParallel
 import torch.nn.functional as F
 import torchvision
+from torchvision import transforms
 
 import numpy as np
-import random
+from PIL import Image
+from tqdm import tqdm
 import sys
 
 from os.path import join
@@ -327,7 +330,7 @@ class Trainer:
                     if self.consistency_reg:
                         images_aug = images_aug.to(self.second_device)
                         if self.conditional_strategy == "ACGAN":
-                            _, dis_out_real_aug = self.dis_model(images_aug, real_labels)
+                            cls_out_real_aug, dis_out_real_aug = self.dis_model(images_aug, real_labels)
                         elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
                             dis_out_real_aug = self.dis_model(images_aug, real_labels)
                         else:
@@ -514,7 +517,7 @@ class Trainer:
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
                                                             self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                            self.latent_op_beta, self.second_device, self.mu, self.sigma)
+                                                            self.latent_op_beta, self.second_device, self.mu, self.sigma, self.run_name)
 
             ### pre-calculate an inception score
             ### calculating inception score using the below will give you an underestimated one.
@@ -522,6 +525,18 @@ class Trainer:
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
                                                         self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                         self.latent_op_beta, 10, self.second_device)
+
+            real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior, self.latent_op,
+                                                          self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.second_device, eval_generated_sample=True)
+
+            if self.type4eval_dataset == 'train':
+                acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
+            else:
+                real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior, self.latent_op,
+                                                   self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.second_device, eval_generated_sample=False)
+                acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
+
+            self.writer.add_scalars('Accuracy', acc_dict, step)
 
             if self.best_fid is None:
                 self.best_fid, self.best_step, is_best = fid_score, step, True
@@ -541,4 +556,90 @@ class Trainer:
                 self.Gen_copy.train()
             
         return is_best
+    ################################################################################################################################
+
+    ################################################################################################################################
+    def K_Nearest_Neighbor(self, mode, k, real_label, num_sampling=1000, image_path=None):
+        resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
+        resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.default_device)
+        if self.n_gpus > 1:
+            resnet50_conv = DataParallel(resnet50_conv, output_device=self.second_device)
+        
+        resnet50_conv.eval()
+        with torch.no_grad():
+            self.logger.info("Start K-Nearest Neighbor (K = {k})...".format(k=k))
+            self.gen_model.eval()
+            if self.Gen_copy is not None:
+                self.Gen_copy.train()
+                generator = self.Gen_copy
+            else:
+                generator = self.gen_model
+
+            if mode == 'real':
+                if image_path is None:
+                    train_iter = iter(self.train_dataloader)
+                    real_images, real_labels = next(train_iter)
+                    real_image, real_label = real_images[0].to(self.default_device), real_labels[0]
+                else:
+                    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5),(0.5, 0.5, 0.5))])
+                    rael_image, real_label = transform(Image.open(image_path)).to(self.default_device), int(image_path.split('/')[-2])
+                
+                real_image = torch.unsqueeze(real_image, dim=0)
+                real_anchor_embedding = torch.squeeze(resnet50_conv(real_image))
+
+                for i in tqdm(range(num_sampling//self.batch_size + 1)):
+                    fake_images, fake_labels = generate_images_for_KNN(self.batch_size, real_label, generator, self.truncated_factor, self.prior, self.latent_op,
+                                                                            self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
+                    if i == 0:
+                        fake_embeddings = torch.squeeze(resnet50_conv(fake_images))
+                        distances = torch.square(fake_embeddings - real_anchor_embedding).mean(dim=1).detach().cpu().numpy()
+                        holder = fake_images.detach().cpu().numpy()
+                    else:
+                        fake_embeddings = torch.squeeze(resnet50_conv(fake_images))
+                        distances = np.concatenate([distances, torch.square(fake_embeddings - real_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
+                        holder = np.concatenate([holder, fake_images.detach().cpu().numpy()], axis=0)
+                
+                nearest_indices = (-distances).argsort()[-k:][::-1]
+                image_grid = np.concatenate([real_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
+                plot_img_canvas(torch.from_numpy((image_grid+1)/2), "./figures/{run_name}/real_anchor_KNN({k}).png".format(run_name=self.run_name, k=k), self.logger, (k+1)//4)
+            
+            elif mode == 'fake':
+                train_iter = iter(self.train_dataloader)
+                if image_path is None:
+                    fake_images, fake_labels = generate_images_for_KNN(self.batch_size, real_label, generator, self.truncated_factor, self.prior, self.latent_op,
+                                                                            self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
+                else:
+                    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5),(0.5, 0.5, 0.5))])
+                    fake_image, real_label = transform(Image.open(image_path)).to(self.default_device), int(image_path.split('/')[-2])
+
+                fake_image = torch.unsqueeze(fake_images[0], dim=0)
+                fake_anchor_embedding = torch.squeeze(resnet50_conv(fake_image))
+
+                for i in tqdm(range(num_sampling//self.batch_size + 1)):
+                    real_images, real_labels = next(train_iter)
+                    real_images = real_images[torch.tensor(real_labels.detach().cpu().numpy()==real_label)]
+                    real_images = real_images.to(self.default_device)
+
+                    if i == 0:
+                        real_embeddings = torch.squeeze(resnet50_conv(real_images))
+                        distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
+                        holder = real_images.detach().cpu().numpy()
+                    else:
+                        real_embeddings = torch.squeeze(resnet50_conv(real_images))
+                        distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
+                        holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
+                
+                nearest_indices = (-distances).argsort()[-k:][::-1]
+                image_grid = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
+                plot_img_canvas(torch.from_numpy((image_grid+1)/2), "./figures/{run_name}/fake_anchor_KNN({k}).png".format(run_name=self.run_name, k=k), self.logger, (k+1)//4)
+
+            else:
+                raise NotImplementedError
+                
+                    
+                    
+
+
+
+            
     ################################################################################################################################

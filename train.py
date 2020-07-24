@@ -20,6 +20,7 @@ import glob
 import os
 import PIL
 from os.path import join
+import random
 import warnings
 
 import torch
@@ -134,16 +135,16 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, betas=(beta1, beta2))
     else:
         raise NotImplementedError
-
+    
     checkpoint_dir = make_checkpoint_dir(train_config['checkpoint_folder'], run_name)
 
     if train_config['checkpoint_folder'] is not None:
-        logger = make_logger(run_name, train_config['log_output_path'])
         when = "current" if load_current is True else "best"
         g_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0]
         d_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0]
         Gen, G_optimizer, trained_seed, run_name, start_step, best_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
         Dis, D_optimizer, trained_seed, run_name, start_step, best_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
+        logger = make_logger(run_name, None)
         if ema:
             g_ema_checkpoint_dir = glob.glob(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
             Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
@@ -158,9 +159,11 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         inception_model = InceptionV3().to(default_device)
         inception_model = DataParallel(inception_model, output_device=second_device)
         mu, sigma, is_score, is_std = prepare_inception_moments_eval_dataset(dataloader=eval_dataloader,
+                                                                             generator=Gen,
                                                                              eval_mode=type4eval_dataset,
                                                                              inception_model=inception_model,
                                                                              splits=10,
+                                                                             run_name=run_name,
                                                                              logger=logger,
                                                                              device=second_device)
     else:
@@ -238,3 +241,6 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         trainer.run(current_step=start_step, total_step=total_step)
     elif train_config['eval']:
         is_save = trainer.evaluation(step=start_step)
+
+    if train_config['k_nearest_neighbor'] > 0:
+        trainer.K_Nearest_Neighbor(train_config['criterion_4_k_nearest_neighbor'], train_config['number_of_nearest_samples'], random.randrange(num_classes))

@@ -54,7 +54,7 @@ The folder structure of the datasets is shown below:
 		└── ...
            ├── n01629819
            └── ...
-       ├── val
+       ├── valid
            └── val_folder
 	        ├── val1.png
      	        ├── val2.png

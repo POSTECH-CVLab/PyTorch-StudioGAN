@@ -8,12 +8,11 @@
 import numpy as np
 import random
 import os
+from datetime import datetime
 
 import torch
 import torch.nn.functional as F
 from torch.nn import DataParallel
-
-from datetime import datetime
 
 
 

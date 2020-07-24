@@ -5,11 +5,12 @@
 # metrics/IS.py
 
 
+from utils.sample import sample_latents
+from utils.losses import latent_optimise
+
 import torch
 from torch.nn import DataParallel
 
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
 import math
 from tqdm import tqdm
 
@@ -70,10 +71,6 @@ class evaluator(object):
         for i in tqdm(range(n_batches)):
             batch_images = self.generate_images(gen, dis, truncated_factor, prior, latent_op, latent_op_step,
                                                 latent_op_alpha, latent_op_beta, batch_size)
-            """
-            for idx, img in enumerate(batch_images.detach().cpu()):
-                save_image((img+1)/2, './generated_images/{idx}.png'.format(idx=batch_size*i + idx))
-            """
             y = self.inception_softmax(batch_images)
             ys.append(y)
         

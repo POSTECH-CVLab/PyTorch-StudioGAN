@@ -21,6 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
+from data_utils.load_dataset import LoadDataset
+
 import os
 import sys
 from argparse import ArgumentParser
@@ -33,7 +36,6 @@ import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
-from data_utils.load_dataset import LoadDataset
 
 
 
