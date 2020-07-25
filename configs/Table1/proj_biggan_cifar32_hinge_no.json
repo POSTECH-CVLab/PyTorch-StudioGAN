@@ -71,7 +71,8 @@
       },
   
       "training_and_sampling_setting":{
-        "random_flip": true,
+        "random_flip_preprocessing": false,
+        "diff_aug":false,
         
         "prior": "gaussian",
         "truncated_factor": 1,

@@ -43,7 +43,7 @@ RUN_NAME_FORMAT = (
 def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path, architecture, 
                     conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block,
                     attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1,
-                    beta2, total_step, adv_loss, consistency_reg, g_init, d_init, random_flip, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn,
+                    beta2, total_step, adv_loss, consistency_reg, g_init, d_init, random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn,
                     hdf5_path_train, train_config, model_config, **_):
     fix_all_seed(seed)
     cudnn.benchmark = False # Not good Generator for undetermined input size
@@ -70,7 +70,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
 
     logger.info('Loading train datasets...')
     train_dataset = LoadDataset(dataset_name, data_path, train=True, download=True, resize_size=img_size, hdf5_path=hdf5_path_train,
-                                consistency_reg=consistency_reg, random_flip=random_flip)
+                                consistency_reg=consistency_reg, random_flip=random_flip_preprocessing)
     if reduce_train_dataset < 1.0:
         num_train = int(reduce_train_dataset*len(train_dataset))
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
@@ -211,6 +211,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         weight_clipping_bound=model_config['loss_function']['weight_clipping_bound'],
         consistency_reg=consistency_reg,
         consistency_lambda=model_config['loss_function']['consistency_lambda'],
+        diff_aug=model_config['training_and_sampling_setting']['diff_aug'],
         prior=prior,
         truncated_factor=truncated_factor,
         ema=ema,

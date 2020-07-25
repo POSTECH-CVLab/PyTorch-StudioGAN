@@ -10,7 +10,7 @@ from metrics.FID import calculate_fid_score
 from utils.sample import sample_latents, make_mask, generate_images_for_KNN
 from utils.plot import plot_img_canvas, plot_confidence_histogram, plot_img_canvas
 from utils.utils import elapsed_time, calculate_all_sn, find_and_remove
-from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss
+from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss, DiffAugment
 from utils.calculate_accuracy import calculate_accuracy
 
 import torch
@@ -48,7 +48,7 @@ class Trainer:
                  train_dataloader, eval_dataloader, conditional_strategy, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer,
                  D_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, tempering_type,
                  tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis, gradient_penelty_lambda, weight_clipping_for_dis,
-                 weight_clipping_bound, consistency_reg, consistency_lambda, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step,
+                 weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step,
                  latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device, second_device, print_every, save_every,
                  checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
         
@@ -98,6 +98,7 @@ class Trainer:
         self.consistency_reg = consistency_reg
         self.consistency_lambda = consistency_lambda
         
+        self.diff_aug = diff_aug
         self.prior = prior
         self.truncated_factor = truncated_factor
         self.ema = ema
@@ -142,6 +143,8 @@ class Trainer:
         else:
             cls_wise_sampling = "no"
 
+        self.policy = "color,translation,cutout"
+
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
                                                                 self.num_classes, None, self.second_device, cls_wise_sampling=cls_wise_sampling)
 
@@ -181,12 +184,17 @@ class Trainer:
                             images, real_labels = next(train_iter)
 
                     images, real_labels = images.to(self.second_device), real_labels.to(self.second_device)
+                    if self.diff_aug:
+                        images = DiffAugment(images, policy=self.policy)
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
                     real_cls_mask = make_mask(real_labels, self.num_classes, self.second_device)
 
                     cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(images, real_labels)
 
                     fake_images = self.gen_model(z, fake_labels)
+                    if self.diff_aug:
+                        fake_images = DiffAugment(fake_images, policy=self.policy)
+
                     cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
                     
                     dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
@@ -221,6 +229,8 @@ class Trainer:
                     fake_cls_mask = make_mask(fake_labels, self.num_classes, self.second_device)
 
                     fake_images = self.gen_model(z, fake_labels)
+                    if self.diff_aug:
+                        fake_images = DiffAugment(fake_images, policy=self.policy)
 
                     cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
 
@@ -302,6 +312,8 @@ class Trainer:
                             images, real_labels = next(train_iter)
 
                     images, real_labels = images.to(self.second_device), real_labels.to(self.second_device)
+                    if self.diff_aug:
+                        images = DiffAugment(images, policy=self.policy)
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
 
                     if self.latent_op:
@@ -309,6 +321,8 @@ class Trainer:
                                             self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
                     
                     fake_images = self.gen_model(z, fake_labels)
+                    if self.diff_aug:
+                        fake_images = DiffAugment(fake_images, policy=self.policy)
 
                     if self.conditional_strategy == "ACGAN":
                         cls_out_real, dis_out_real = self.dis_model(images, real_labels)
@@ -365,6 +379,8 @@ class Trainer:
                                                             self.latent_op_alpha, self.latent_op_beta, True, self.second_device)
 
                     fake_images = self.gen_model(z, fake_labels)
+                    if self.diff_aug:
+                        fake_images = DiffAugment(fake_images, policy=self.policy)
 
                     if self.conditional_strategy == "ACGAN":
                         cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
@@ -635,11 +651,4 @@ class Trainer:
 
             else:
                 raise NotImplementedError
-                
-                    
-                    
-
-
-
-            
     ################################################################################################################################
