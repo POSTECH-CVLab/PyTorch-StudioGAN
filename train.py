@@ -46,8 +46,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
                     beta2, total_step, adv_loss, consistency_reg, g_init, d_init, random_flip, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn,
                     hdf5_path_train, train_config, model_config, **_):
     fix_all_seed(seed)
-    cudnn.benchmark = True # Not good Generator for undetermined input size
-    cudnn.deterministic = False
+    cudnn.benchmark = False # Not good Generator for undetermined input size
+    cudnn.deterministic = True
     n_gpus = torch.cuda.device_count()
     default_device = torch.cuda.current_device()
     second_device = default_device if n_gpus == 1 else default_device+1

@@ -108,15 +108,15 @@ class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
         mask = torch.from_numpy((hard_positive)).type(torch.bool)
         return mask.to(self.device)
 
-    def forward(self, inst_embed, anchor, cls_mask, labels, temperature):
-        similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
+    def forward(self, inst_embed, proxy, negative_mask, labels, temperature):
+        similarity_matrix = torch.exp(self.calculate_similarity_matrix(inst_embed, inst_embed)/temperature)
         instance_zone = torch.exp(self.remove_diag(similarity_matrix)/temperature)
 
-        mask_4_remove_negatives = cls_mask[labels]
+        mask_4_remove_negatives = negative_mask[labels]
         mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
 
         inst2inst_positives = instance_zone*mask_4_remove_negatives
-        inst2embed_positive = torch.exp(self.cosine_similarity(inst_embed, anchor)/temperature)
+        inst2embed_positive = torch.exp(self.cosine_similarity(inst_embed, proxy)/0.25)
 
         numerator = (inst2inst_positives.sum(dim=1)+inst2embed_positive)
         denomerator = torch.cat([torch.unsqueeze(inst2embed_positive, dim=1), instance_zone], dim=1).sum(dim=1)
