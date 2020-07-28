@@ -12,7 +12,7 @@
     "train": {
       "model": {
         "architecture": "biggan",
-        "conditional_strategy": "cGAN",
+        "conditional_strategy": "ACGAN",
         "hypersphere_dim": "N/A",
         "nonlinear_embed": false,
         "normalize_embed": false,
