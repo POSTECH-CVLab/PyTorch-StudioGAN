@@ -17,7 +17,9 @@ import torch
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10, STL10
 from torchvision.datasets import ImageFolder
-from PIL import ImageOps
+
+from PIL import ImageOps, Image
+
 
 
 class LoadDataset(Dataset):
@@ -95,7 +97,8 @@ class LoadDataset(Dataset):
         if self.hdf5_path is not None:
             img, label = self.data[index], int(self.labels[index])
             if self.random_flip:
-                img = img[:,:,::-1] if random.random() > 0.5 else img
+                img = img.copy()[:,:,::-1] if random.random() > 0.5 else img
+                
             img = np.asarray((self.data[index]-127.5)/127.5, np.float32)
         elif self.hdf5_path is None and self.dataset_name == 'imagenet':
             img, label = self.data[index]
@@ -108,17 +111,17 @@ class LoadDataset(Dataset):
                  
             img = img.crop((i, j, i + size[0], j + size[1]))
             img = self.transform(img)
+            if self.random_flip:
+                img = img.transpose(Image.FLIP_LEFT_RIGHT) if random.random() > 0.5 else img
             img = np.asarray(img, np.float32)
             img = np.transpose((img-127.5)/127.5, (2,0,1))
-            if self.random_flip:
-                img = img[:,:,::-1] if random.random() > 0.5 else img
         else:
             img, label = self.data[index]
+            if self.random_flip:
+                img = img.transpose(Image.FLIP_LEFT_RIGHT) if random.random() > 0.5 else img
             img = np.asarray(img, np.float32)
             img = np.transpose((img-127.5)/127.5, (2,0,1))
-            if self.random_flip:
-                img = img[:,:,::-1] if random.random() > 0.5 else img
-                
+
         if self.consistency_reg:
             flip_index, tx_index, ty_index = self._decompose_index(index)
             img_aug = np.copy(img)

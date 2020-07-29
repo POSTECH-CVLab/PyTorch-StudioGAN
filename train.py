@@ -240,7 +240,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         trainer.run_ours(current_step=start_step, total_step=total_step)
     elif train_config['train']:
         trainer.run(current_step=start_step, total_step=total_step)
-    elif train_config['eval']:
+    
+    if train_config['eval']:
         is_save = trainer.evaluation(step=start_step)
 
     if train_config['k_nearest_neighbor'] > 0:

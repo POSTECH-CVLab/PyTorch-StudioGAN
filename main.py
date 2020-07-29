@@ -48,8 +48,8 @@ def main():
     if dataset == 'cifar10':
         assert args.type4eval_dataset == 'train' or args.type4eval_dataset == 'test', "cifar10 does not contain dataset for validation"
     elif dataset == 'imagenet' or dataset == 'tiny imagenet':
-        if args.type4eval_dataset == 'test':
-            raise NotImplementedError
+        assert args.type4eval_dataset == 'train' or args.type4eval_dataset == 'valid',\
+             "we do not support the evaluation mode using test images in tiny_imagenet/imagenet dataset"
 
     hdf5_path_train = make_hdf5(**model_config['data_processing'], **train_config, mode='train') if args.load_all_data_in_memory else None
     

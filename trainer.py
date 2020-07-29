@@ -493,7 +493,7 @@ class Trainer:
                 
                 g_ema_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G_ema-current-weights-step={step}.pth".format(when=when, step=str(step)))
 
-                torch.save(g_states, g_ema_checkpoint_output_path_)
+                torch.save(g_ema_states, g_ema_checkpoint_output_path_)
 
             torch.save(g_ema_states, g_ema_checkpoint_output_path)
 
@@ -595,9 +595,10 @@ class Trainer:
                 if image_path is None:
                     train_iter = iter(self.train_dataloader)
                     real_images, real_labels = next(train_iter)
+                    real_images = (real_images + 1)/2
                     real_image, real_label = real_images[0].to(self.default_device), real_labels[0]
                 else:
-                    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5),(0.5, 0.5, 0.5))])
+                    transform = transforms.Compose([transforms.ToTensor()])
                     rael_image, real_label = transform(Image.open(image_path)).to(self.default_device), int(image_path.split('/')[-2])
                 
                 real_image = torch.unsqueeze(real_image, dim=0)
@@ -606,6 +607,7 @@ class Trainer:
                 for i in tqdm(range(num_sampling//self.batch_size + 1)):
                     fake_images, fake_labels = generate_images_for_KNN(self.batch_size, real_label, generator, self.truncated_factor, self.prior, self.latent_op,
                                                                             self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
+                    fake_images = (fake_images + 1)/2
                     if i == 0:
                         fake_embeddings = torch.squeeze(resnet50_conv(fake_images))
                         distances = torch.square(fake_embeddings - real_anchor_embedding).mean(dim=1).detach().cpu().numpy()
@@ -617,37 +619,51 @@ class Trainer:
                 
                 nearest_indices = (-distances).argsort()[-k:][::-1]
                 image_grid = np.concatenate([real_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
-                plot_img_canvas(torch.from_numpy((image_grid+1)/2), "./figures/{run_name}/real_anchor_KNN({k}).png".format(run_name=self.run_name, k=k), self.logger, (k+1)//4)
+                plot_img_canvas(torch.from_numpy(image_grid), "./figures/{run_name}/real_anchor_KNN({k}).png".format(run_name=self.run_name, k=k), self.logger, (k+1)//4)
             
             elif mode == 'fake':
                 train_iter = iter(self.train_dataloader)
                 if image_path is None:
                     fake_images, fake_labels = generate_images_for_KNN(self.batch_size, real_label, generator, self.truncated_factor, self.prior, self.latent_op,
                                                                             self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
+                    fake_image = (fake_images[0] + 1)/2
                 else:
-                    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5),(0.5, 0.5, 0.5))])
-                    fake_image, real_label = transform(Image.open(image_path)).to(self.default_device), int(image_path.split('/')[-2])
+                    transform = transforms.Compose([transforms.ToTensor()])
+                    fake_image, fake_label = transform(Image.open(image_path)).to(self.default_device), int(image_path.split('/')[-2])
 
-                fake_image = torch.unsqueeze(fake_images[0], dim=0)
+                fake_image = torch.unsqueeze(fake_image, dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv(fake_image))
 
+                start = 0
                 for i in tqdm(range(num_sampling//self.batch_size + 1)):
                     real_images, real_labels = next(train_iter)
-                    real_images = real_images[torch.tensor(real_labels.detach().cpu().numpy()==real_label)]
-                    real_images = real_images.to(self.default_device)
+                    num_samples = torch.tensor(real_labels.detach().cpu().numpy()==real_label).sum().item()
+                    if num_samples > 0:
+                        real_images = real_images[torch.tensor(real_labels.detach().cpu().numpy()==real_label)]
+                        real_images = (real_images + 1)/2
+                        real_images = real_images.to(self.default_device)
 
-                    if i == 0:
-                        real_embeddings = torch.squeeze(resnet50_conv(real_images))
-                        distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
-                        holder = real_images.detach().cpu().numpy()
+                        if start == 0:
+                            real_embeddings = torch.squeeze(resnet50_conv(real_images))
+                            if num_samples == 1:
+                                distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy()
+                            else:
+                                distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
+                            holder = real_images.detach().cpu().numpy()
+                            start = 1
+                        else:
+                            real_embeddings = torch.squeeze(resnet50_conv(real_images))
+                            if num_samples == 1:
+                                distances = np.append(distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy())
+                            else:
+                                distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
+                            holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
                     else:
-                        real_embeddings = torch.squeeze(resnet50_conv(real_images))
-                        distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
-                        holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
+                        pass
                 
                 nearest_indices = (-distances).argsort()[-k:][::-1]
                 image_grid = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
-                plot_img_canvas(torch.from_numpy((image_grid+1)/2), "./figures/{run_name}/fake_anchor_KNN({k}).png".format(run_name=self.run_name, k=k), self.logger, (k+1)//4)
+                plot_img_canvas(torch.from_numpy(image_grid), "./figures/{run_name}/fake_anchor_KNN({k}).png".format(run_name=self.run_name, k=k), self.logger, (k+1)//4)
 
             else:
                 raise NotImplementedError
