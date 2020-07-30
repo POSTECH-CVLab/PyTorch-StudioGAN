@@ -47,7 +47,7 @@ def main():
     dataset = model_config['data_processing']['dataset_name']
     if dataset == 'cifar10':
         assert args.type4eval_dataset == 'train' or args.type4eval_dataset == 'test', "cifar10 does not contain dataset for validation"
-    elif dataset == 'imagenet' or dataset == 'tiny imagenet':
+    elif dataset == 'imagenet' or dataset == 'tiny_imagenet':
         assert args.type4eval_dataset == 'train' or args.type4eval_dataset == 'valid',\
              "we do not support the evaluation mode using test images in tiny_imagenet/imagenet dataset"
 
