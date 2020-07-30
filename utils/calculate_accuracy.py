@@ -55,7 +55,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
                 z = latent_optimise(z, fake_labels, generator, discriminator, latent_op_step, 1.0, latent_op_alpha,
                                     latent_op_beta, False, device)
             if consistency_reg:
-                real_images, real_labels, images_aug = next(train_iter)
+                real_images, real_labels, images_aug = next(data_iter)
             else:
                 real_images, real_labels = next(data_iter)
             
