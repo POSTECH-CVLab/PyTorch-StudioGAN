@@ -30,8 +30,6 @@ from torch.backends import cudnn
 from torch.nn import DataParallel
 from torch.utils.tensorboard import SummaryWriter
 
-from adamp import AdamP
-
 
 
 RUN_NAME_FORMAT = (
@@ -130,9 +128,6 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     elif optimizer == "Adam":
         G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, [beta1, beta2])
         D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2])
-    elif optimizer == "AdamP":
-        G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, betas=(beta1, beta2))
-        D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, betas=(beta1, beta2))
     else:
         raise NotImplementedError
     
