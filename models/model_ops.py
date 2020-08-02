@@ -62,28 +62,28 @@ def embedding(num_embeddings, embedding_dim):
 
 def snconv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True):
     return spectral_norm(nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
-                                   stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias))
+                                   stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias), eps=1e-4)
 
 def sndeconv2d(in_channels, out_channels, kernel_size, stride=2, padding=0, dilation=1, groups=1, bias=True):
     return spectral_norm(nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
-                                            stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias))
+                                            stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias), eps=1e-4)
 
 def snlinear(in_features, out_features, bias=True):
-    return spectral_norm(nn.Linear(in_features=in_features, out_features=out_features, bias=bias))
+    return spectral_norm(nn.Linear(in_features=in_features, out_features=out_features, bias=bias), eps=1e-4)
 
 def sn_embedding(num_embeddings, embedding_dim):
-    return spectral_norm(nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim))
+    return spectral_norm(nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim), eps=1e-4)
 
-def sync_batchnorm_1d(in_features, eps=1e-5, momentum=0.1, affine=True):
+def sync_batchnorm_1d(in_features, eps=1e-4, momentum=0.1, affine=True):
     return SynchronizedBatchNorm1d(in_features, eps=eps, momentum=momentum, affine=affine)
 
-def sync_batchnorm_2d(in_features, eps=1e-5, momentum=0.1, affine=True):
+def sync_batchnorm_2d(in_features, eps=1e-4, momentum=0.1, affine=True):
     return SynchronizedBatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine)
 
-def batchnorm_1d(in_features, eps=1e-5, momentum=0.1, affine=True):
+def batchnorm_1d(in_features, eps=1e-4, momentum=0.1, affine=True):
     return nn.BatchNorm1d(in_features, eps=eps, momentum=momentum, affine=affine)
 
-def batchnorm_2d(in_features, eps=1e-5, momentum=0.1, affine=True):
+def batchnorm_2d(in_features, eps=1e-4, momentum=0.1, affine=True):
     return nn.BatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine)
 
 class ConditionalBatchNorm1d(nn.Module):
@@ -92,9 +92,9 @@ class ConditionalBatchNorm1d(nn.Module):
         super().__init__()
         self.num_features = num_features
         if synchronized_bn:
-            self.bn = sync_batchnorm_1d(num_features, momentum=0.001, affine=False)
+            self.bn = sync_batchnorm_1d(num_features, eps=1e-4, momentum=0.1, affine=False)
         else:
-            self.bn = batchnorm_1d(num_features, momentum=0.001, affine=False)
+            self.bn = batchnorm_1d(num_features, eps=1e-4, momentum=0.1, affine=False)
         self.embed = nn.Embedding(num_classes, num_features * 2)
         self.embed.weight.data[:, :num_features]
         self.embed.weight.data[:, num_features:]
@@ -111,9 +111,9 @@ class ConditionalBatchNorm1d_for_skip_and_shared(nn.Module):
         super().__init__()
         self.num_features = num_features
         if synchronized_bn:
-            self.bn = sync_batchnorm_1d(num_features, momentum=0.001, affine=False)
+            self.bn = sync_batchnorm_1d(num_features, eps=1e-4, momentum=0.1, affine=False)
         else:
-            self.bn = batchnorm_1d(num_features, momentum=0.001, affine=False)
+            self.bn = batchnorm_1d(num_features, eps=1e-4, momentum=0.1, affine=False)
 
         if spectral_norm:
             self.gain = snlinear(z_dims_after_concat, num_features, bias=False)
@@ -134,9 +134,9 @@ class ConditionalBatchNorm2d(nn.Module):
         super().__init__()
         self.num_features = num_features
         if synchronized_bn:
-            self.bn = sync_batchnorm_2d(num_features, momentum=0.1, affine=False)
+            self.bn = sync_batchnorm_2d(num_features, eps=1e-4, momentum=0.1, affine=False)
         else:
-            self.bn = batchnorm_2d(num_features, momentum=0.1, affine=False)
+            self.bn = batchnorm_2d(num_features, eps=1e-4, momentum=0.1, affine=False)
         
         if spectral_norm:
             self.embed0 = sn_embedding(num_classes, num_features)
@@ -158,9 +158,9 @@ class ConditionalBatchNorm2d_for_skip_and_shared(nn.Module):
         super().__init__()
         self.num_features = num_features
         if synchronized_bn:
-            self.bn = sync_batchnorm_2d(num_features, momentum=0.1, affine=False)
+            self.bn = sync_batchnorm_2d(num_features, eps=1e-4, momentum=0.1, affine=False)
         else:
-            self.bn = batchnorm_2d(num_features, momentum=0.1, affine=False)
+            self.bn = batchnorm_2d(num_features, eps=1e-4, momentum=0.1, affine=False)
 
         if spectral_norm:
             self.gain = snlinear(z_dims_after_concat, num_features, bias=False)
