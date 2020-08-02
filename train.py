@@ -240,5 +240,5 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     if train_config['eval']:
         is_save = trainer.evaluation(step=step)
 
-    if train_config['k_nearest_neighbor'] > 0:
-        trainer.K_Nearest_Neighbor(train_config['criterion_4_k_nearest_neighbor'], train_config['number_of_nearest_samples'], random.randrange(num_classes))
+    if train_config['k_nearest_neighbor']:
+        trainer.Nearest_Neighbor()

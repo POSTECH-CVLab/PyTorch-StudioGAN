@@ -74,59 +74,12 @@ def snlinear(in_features, out_features, bias=True):
 def sn_embedding(num_embeddings, embedding_dim):
     return spectral_norm(nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim), eps=1e-6)
 
-def sync_batchnorm_1d(in_features, eps=1e-5, momentum=0.1, affine=True):
-    return SynchronizedBatchNorm1d(in_features, eps=eps, momentum=momentum, affine=affine)
-
 def sync_batchnorm_2d(in_features, eps=1e-5, momentum=0.1, affine=True):
-    return SynchronizedBatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine)
-
-def batchnorm_1d(in_features, eps=1e-5, momentum=0.1, affine=True):
-    return nn.BatchNorm1d(in_features, eps=eps, momentum=momentum, affine=affine)
+    return SynchronizedBatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine, track_running_stats=False)
 
 def batchnorm_2d(in_features, eps=1e-5, momentum=0.1, affine=True):
-    return nn.BatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine)
+    return nn.BatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine, track_running_stats=False)
 
-class ConditionalBatchNorm1d(nn.Module):
-    # https://github.com/voletiv/self-attention-GAN-pytorch
-    def __init__(self, num_features, num_classes, synchronized_bn):
-        super().__init__()
-        self.num_features = num_features
-        if synchronized_bn:
-            self.bn = sync_batchnorm_1d(num_features, eps=1e-4, momentum=0.1, affine=False)
-        else:
-            self.bn = batchnorm_1d(num_features, eps=1e-4, momentum=0.1, affine=False)
-        self.embed = nn.Embedding(num_classes, num_features * 2)
-        self.embed.weight.data[:, :num_features]
-        self.embed.weight.data[:, num_features:]
-
-    def forward(self, x, y):
-        out = self.bn(x)
-        gamma, beta = self.embed(y).chunk(2, 1)
-        out = (1 + gamma.view(-1, self.num_features))*out + beta.view(-1, self.num_features)
-        return out
-
-
-class ConditionalBatchNorm1d_for_skip_and_shared(nn.Module):
-    def __init__(self, num_features, z_dims_after_concat, spectral_norm, synchronized_bn):
-        super().__init__()
-        self.num_features = num_features
-        if synchronized_bn:
-            self.bn = sync_batchnorm_1d(num_features, eps=1e-4, momentum=0.1, affine=False)
-        else:
-            self.bn = batchnorm_1d(num_features, eps=1e-4, momentum=0.1, affine=False)
-
-        if spectral_norm:
-            self.gain = snlinear(z_dims_after_concat, num_features, bias=False)
-            self.bias = snlinear(z_dims_after_concat, num_features, bias=False)
-        else:
-            self.gain = linear(z_dims_after_concat, num_features, bias=False)
-            self.bias = linear(z_dims_after_concat, num_features, bias=False)
-
-    def forward(self, x, y):
-        gain = (1 + self.gain(y)).view(y.size(0), -1)
-        bias = self.bias(y).view(y.size(0), -1)
-        out = self.bn(x)
-        return out * gain + bias
 
 class ConditionalBatchNorm2d(nn.Module):
     # https://github.com/voletiv/self-attention-GAN-pytorch
