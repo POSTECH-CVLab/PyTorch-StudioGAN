@@ -22,6 +22,38 @@ from PIL import ImageOps, Image
 
 
 
+class RandomCropLongEdge(object):
+    """
+    this code is borrowed from https://github.com/ajbrock/BigGAN-PyTorch
+    MIT License
+    Copyright (c) 2019 Andy Brock
+    """
+    def __call__(self, img):
+        size = (min(img.size), min(img.size))
+        # Only step forward along this edge if it's the long edge
+        i = (0 if size[0] == img.size[0] 
+            else np.random.randint(low=0,high=img.size[0] - size[0]))
+        j = (0 if size[1] == img.size[1]
+            else np.random.randint(low=0,high=img.size[1] - size[1]))
+        return transforms.functional.crop(img, i, j, size[0], size[1])
+
+    def __repr__(self):
+        return self.__class__.__name__
+
+
+class CenterCropLongEdge(object):
+    """
+    this code is borrowed from https://github.com/ajbrock/BigGAN-PyTorch
+    MIT License
+    Copyright (c) 2019 Andy Brock
+    """
+    def __call__(self, img):
+        return transforms.functional.center_crop(img, min(img.size))
+
+    def __repr__(self):
+        return self.__class__.__name__
+        
+
 class LoadDataset(Dataset):
     def __init__(self, dataset_name, data_path, train, download, resize_size, hdf5_path=None, consistency_reg=False, random_flip=False):
         super(LoadDataset, self).__init__()
@@ -32,8 +64,39 @@ class LoadDataset(Dataset):
         self.resize_size = resize_size
         self.hdf5_path = hdf5_path
         self.consistency_reg = consistency_reg
+
         self.random_flip = random_flip
-        self.transform = transforms.Compose([transforms.Resize((resize_size, resize_size))])
+        self.norm_mean = [0.5,0.5,0.5]
+        self.norm_std = [0.5,0.5,0.5]
+        self.pad = int(resize_size//8)
+        if self.hdf5_path is not None:
+            self.transforms = [transforms.ToPILImage()]
+            if random_flip:
+                self.transforms += [transforms.RandomHorizontalFlip()]
+        else:
+            if self.dataset_name == 'cifar10' or self.dataset_name == 'tiny_imagenet':
+                self.transforms = []
+                if random_flip:
+                    self.transforms += [transforms.RandomHorizontalFlip()]
+
+            if self.dataset_name == 'imagenet':
+                self.transforms = [CenterCropLongEdge(), transforms.Resize(self.resize_size)]
+                if random_flip:
+                    self.transforms += [transforms.RandomHorizontalFlip()]
+        
+        self.transforms = transforms.Compose(self.transforms)
+        
+        if self.consistency_reg:
+            self.aug_tranforms = transforms.Compose([transforms.RandomHorizontalFlip(),
+                                                     transforms.RandomCrop((self.resize_size, self.resize_size),
+                                                                            padding=self.pad,
+                                                                            pad_if_needed=True,
+                                                                            padding_mode='reflect')])
+        
+
+        self.stadard_transform = transforms.Compose([transforms.ToTensor(),
+                                                     transforms.Normalize(self.norm_mean, self.norm_std)])
+
         self.load_dataset()
 
 
@@ -82,73 +145,16 @@ class LoadDataset(Dataset):
         return num_dataset
 
 
-    @staticmethod
-    def _decompose_index(index):
-        index = index % 18
-        flip_index = index // 9
-        index = index % 9
-        tx_index = index // 3
-        index = index % 3
-        ty_index = index 
-        return flip_index, tx_index, ty_index
-        
-
     def __getitem__(self, index):
         if self.hdf5_path is not None:
-            img, label = self.data[index], int(self.labels[index])
-            if self.random_flip:
-                img = img.copy()[:,:,::-1] if random.random() > 0.5 else img
-                
-            img = np.asarray((self.data[index]-127.5)/127.5, np.float32)
-        elif self.hdf5_path is None and self.dataset_name == 'imagenet':
-            img, label = self.data[index]
-            size = (min(img.size), min(img.size))
-
-            i = (0 if size[0] == img.size[0]
-                 else (img.size[0] - size[0]) // 2)
-            j = (0 if size[1] == img.size[1]
-                 else (img.size[1] - size[1]) // 2)
-                 
-            img = img.crop((i, j, i + size[0], j + size[1]))
-            img = self.transform(img)
-            if self.random_flip:
-                img = img.transpose(Image.FLIP_LEFT_RIGHT) if random.random() > 0.5 else img
-            img = np.asarray(img, np.float32)
-            img = np.transpose((img-127.5)/127.5, (2,0,1))
+            img, label = np.transpose(self.data[index], (1,2,0)), int(self.labels[index])
+            img = self.transforms(img)
         else:
             img, label = self.data[index]
-            if self.random_flip:
-                img = img.transpose(Image.FLIP_LEFT_RIGHT) if random.random() > 0.5 else img
-            img = np.asarray(img, np.float32)
-            img = np.transpose((img-127.5)/127.5, (2,0,1))
+            img, label = self.transforms(img), int(label)
 
         if self.consistency_reg:
-            flip_index, tx_index, ty_index = self._decompose_index(index)
-            img_aug = np.copy(img)
-            c,h,w = img_aug.shape
+            img_aug = self.aug_tranforms(img)
+            return self.stadard_transform(img), label, self.stadard_transform(img_aug)
 
-            if flip_index == 0:
-                img_aug = img_aug[:,:,::-1]
-    
-            pad_h = int(h//8)
-            pad_w = int(w//8)
-            img_aug = np.pad(img_aug, [(0, 0), (pad_h, pad_h), (pad_w, pad_w)], mode='reflect')
-
-            if ty_index == 0:
-                i = 0
-            elif ty_index == 1:
-                i = pad_h
-            else:
-                i = 2*pad_h
-
-            if tx_index == 0:
-                j = 0
-            elif tx_index == 1:
-                j = pad_w
-            else:
-                j = 2*pad_w
-
-            img_aug = img_aug[:, i:i+h, j:j+w]
-            return torch.from_numpy(img), label, torch.from_numpy(img_aug)
-        return torch.from_numpy(img), label
-
+        return self.stadard_transform(img), label

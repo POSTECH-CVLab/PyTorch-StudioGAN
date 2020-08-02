@@ -55,7 +55,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         warnings.warn('You have chosen a specific GPU. This will completely '
                       'disable data parallelism.')
 
-    start_step, best_step, best_fid, best_fid_checkpoint_path = 0, 0, None, None
+    step, best_step, best_fid, best_fid_checkpoint_path = 0, 0, None, None
     run_name = make_run_name(RUN_NAME_FORMAT,
                              framework=config_path.split('/')[3][:-5],
                              phase='train')
@@ -76,7 +76,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
 
     logger.info('Loading {mode} datasets...'.format(mode=type4eval_dataset))
     eval_mode = True if type4eval_dataset == 'train' else False
-    eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, hdf5_path=None, random_flip=False)
+    eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, hdf5_path=None,
+                               consistency_reg=False, random_flip=False)
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     logger.info('Building model...')
@@ -137,8 +138,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         when = "current" if load_current is True else "best"
         g_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0]
         d_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0]
-        Gen, G_optimizer, trained_seed, run_name, start_step, best_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
-        Dis, D_optimizer, trained_seed, run_name, start_step, best_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
+        Gen, G_optimizer, trained_seed, run_name, step, best_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
+        Dis, D_optimizer, trained_seed, run_name, step, best_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
         logger = make_logger(run_name, None)
         if ema:
             g_ema_checkpoint_dir = glob.glob(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
@@ -232,12 +233,12 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     )
 
     if conditional_strategy == 'ContraGAN' and train_config['train']:
-        trainer.run_ours(current_step=start_step, total_step=total_step)
+        step = trainer.run_ours(current_step=step, total_step=total_step)
     elif train_config['train']:
-        trainer.run(current_step=start_step, total_step=total_step)
+        step = trainer.run(current_step=step, total_step=total_step)
     
     if train_config['eval']:
-        is_save = trainer.evaluation(step=start_step)
+        is_save = trainer.evaluation(step=step)
 
     if train_config['k_nearest_neighbor'] > 0:
         trainer.K_Nearest_Neighbor(train_config['criterion_4_k_nearest_neighbor'], train_config['number_of_nearest_samples'], random.randrange(num_classes))

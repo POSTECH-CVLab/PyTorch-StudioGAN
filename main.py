@@ -18,11 +18,11 @@ def main():
     parser = ArgumentParser(add_help=False)
     parser.add_argument('-c', '--config_path', type=str, default='./configs/Table1/contra_biggan_cifar32_hinge_no.json')
     parser.add_argument('--checkpoint_folder', type=str, default=None)
-    parser.add_argument('--load_current', type=bool, default=True, help='choose whether you load current or best weights')
+    parser.add_argument('-current', '--load_current', action='store_true', help='choose whether you load current or best weights')
     parser.add_argument('--log_output_path', type=str, default=None)
 
     parser.add_argument('--seed', type=int, default=0, help='seed for generating random number')
-    parser.add_argument('--num_workers', type=int, default=8, help='')
+    parser.add_argument('--num_workers', type=int, default=4, help='')
     
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')

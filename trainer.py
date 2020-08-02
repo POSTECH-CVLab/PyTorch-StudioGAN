@@ -281,6 +281,7 @@ class Trainer:
                     self.save(step_count, is_best)
                 else:
                     self.save(step_count, False)
+        return step_count
     ################################################################################################################################
 
 
@@ -441,6 +442,7 @@ class Trainer:
                     self.save(step_count, is_best)
                 else:
                     self.save(step_count, False)
+        return step_count
     ################################################################################################################################
 
 
@@ -528,19 +530,19 @@ class Trainer:
                                                         
             if self.latent_op:
                 self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                                self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
+                                                   self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
 
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
-                                                            self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                            self.latent_op_beta, self.second_device, self.mu, self.sigma, self.run_name)
+                                                              self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
+                                                              self.latent_op_beta, self.second_device, self.mu, self.sigma, self.run_name)
 
             ### pre-calculate an inception score
             ### calculating inception score using the below will give you an underestimated one.
             ### plz use the official tensorflow implementation(inception_tensorflow.py). 
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, num_eval[self.type4eval_dataset],
-                                                        self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                        self.latent_op_beta, 10, self.second_device)
+                                                     self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
+                                                     self.latent_op_beta, 10, self.second_device)
 
             real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
                                                           self.latent_op,self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.second_device,
@@ -601,7 +603,7 @@ class Trainer:
                     real_image, real_label = real_images[0].to(self.default_device), real_labels[0]
                 else:
                     transform = transforms.Compose([transforms.ToTensor()])
-                    rael_image, real_label = transform(Image.open(image_path)).to(self.default_device), int(image_path.split('/')[-2])
+                    real_image, real_label = transform(Image.open(image_path)).to(self.default_device), int(image_path.split('/')[-2])
                 
                 real_image = torch.unsqueeze(real_image, dim=0)
                 real_anchor_embedding = torch.squeeze(resnet50_conv(real_image))
