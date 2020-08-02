@@ -7,6 +7,7 @@
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
+from utils.biggan_utils import toggle_grad
 from utils.sample import sample_latents, make_mask, generate_images_for_KNN
 from utils.plot import plot_img_canvas, plot_confidence_histogram, plot_img_canvas
 from utils.utils import elapsed_time, calculate_all_sn, find_and_remove
@@ -167,9 +168,11 @@ class Trainer:
                     (step_count//self.tempering_interval)*(self.end_temperature-self.start_temperature)/self.tempering_step
             else:
                 t = self.start_temperature
+
+            toggle_grad(self.dis_model, True)
+            toggle_grad(self.gen_model, False)
             for step_index in range(self.d_steps_per_iter):
                 self.D_optimizer.zero_grad()
-                self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
                     try:
                         if self.consistency_reg:
@@ -221,8 +224,9 @@ class Trainer:
                     self.writer.add_scalars('SN_of_dis', dis_sigmas, step_count)
             
             # ================== TRAIN G ================== #
+            toggle_grad(self.dis_model, False)
+            toggle_grad(self.gen_model, True)
             for step_index in range(self.g_steps_per_iter):
-                self.D_optimizer.zero_grad()
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
@@ -296,9 +300,10 @@ class Trainer:
         train_iter = iter(self.train_dataloader)
         while step_count <= total_step:
             # ================== TRAIN D ================== #
+            toggle_grad(self.dis_model, True)
+            toggle_grad(self.gen_model, False)
             for step_index in range(self.d_steps_per_iter):
                 self.D_optimizer.zero_grad()
-                self.G_optimizer.zero_grad()
                 for acml_index in range(self.accumulation_steps):
                     try:
                         if self.consistency_reg:
@@ -369,8 +374,9 @@ class Trainer:
                     self.writer.add_scalars('SN_of_dis', dis_sigmas, step_count)
 
             # ================== TRAIN G ================== #
+            toggle_grad(self.dis_model, False)
+            toggle_grad(self.gen_model, True)
             for step_index in range(self.g_steps_per_iter):
-                self.D_optimizer.zero_grad()
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)

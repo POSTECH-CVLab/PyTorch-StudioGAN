@@ -67,3 +67,8 @@ def ortho(model, strength=1e-4, blacklist=[]):
       grad = (2 * torch.mm(torch.mm(w, w.t())
               * (1. - torch.eye(w.shape[0], device=w.device)), w))
       param.grad.data += strength * grad.view(param.shape)
+
+# Convenience utility to switch off requires_grad
+def toggle_grad(model, on_or_off):
+  for param in model.parameters():
+    param.requires_grad = on_or_off
