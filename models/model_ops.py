@@ -75,10 +75,10 @@ def sn_embedding(num_embeddings, embedding_dim):
     return spectral_norm(nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim), eps=1e-6)
 
 def sync_batchnorm_2d(in_features, eps=1e-5, momentum=0.1, affine=True):
-    return SynchronizedBatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine, track_running_stats=False)
+    return SynchronizedBatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine)
 
 def batchnorm_2d(in_features, eps=1e-5, momentum=0.1, affine=True):
-    return nn.BatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine, track_running_stats=False)
+    return nn.BatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine)
 
 
 class ConditionalBatchNorm2d(nn.Module):
