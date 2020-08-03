@@ -45,13 +45,13 @@ LOG_FORMAT = (
 
 
 class Trainer:
-    def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy, Gen_ema,
-                 train_dataloader, eval_dataloader, conditional_strategy, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer,
-                 D_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, tempering_type,
-                 tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis, gradient_penelty_lambda, weight_clipping_for_dis,
-                 weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step,
-                 latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device, second_device, print_every, save_every,
-                 checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
+    def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
+                 linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, z_dim, num_classes, hypersphere_dim, d_spectral_norm,
+                 g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step,
+                 G_loss, D_loss, contrastive_lambda, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
+                 gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, prior, truncated_factor,
+                 ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device,
+                 second_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
         
         self.run_name = run_name
         self.best_step = best_step
@@ -65,6 +65,7 @@ class Trainer:
         self.dis_model = dis_model
         self.inception_model = inception_model
         self.Gen_copy = Gen_copy
+        self.linear_model = linear_model
         self.Gen_ema = Gen_ema
 
         self.train_dataloader = train_dataloader
@@ -79,6 +80,7 @@ class Trainer:
         
         self.G_optimizer = G_optimizer
         self.D_optimizer = D_optimizer
+        self.L_optimizer = L_optimizer
         self.batch_size = batch_size
         self.g_steps_per_iter = g_steps_per_iter
         self.d_steps_per_iter = d_steps_per_iter
@@ -161,6 +163,8 @@ class Trainer:
         self.gen_model.train()
         if self.Gen_copy is not None:
             self.Gen_copy.train()
+
+        self.logger.info('Start training...')
         step_count = current_step
         train_iter = iter(self.train_dataloader)
         while step_count <= total_step:
@@ -180,24 +184,24 @@ class Trainer:
                 for acml_step in range(self.accumulation_steps):
                     try:
                         if self.consistency_reg:
-                            images, real_labels, images_aug = next(train_iter)
+                            real_images, real_labels, real_images_aug = next(train_iter)
                         else:
-                            images, real_labels = next(train_iter)
+                            real_images, real_labels = next(train_iter)
                     except StopIteration:
                         train_iter = iter(self.train_dataloader)
                         if self.consistency_reg:
-                            images, real_labels, images_aug = next(train_iter)
+                            real_images, real_labels, real_images_aug = next(train_iter)
                         else:
-                            images, real_labels = next(train_iter)
+                            real_images, real_labels = next(train_iter)
 
-                    images, real_labels = images.to(self.second_device), real_labels.to(self.second_device)
+                    real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
                     if self.diff_aug:
-                        images = DiffAugment(images, policy=self.policy)
+                        real_images = DiffAugment(real_images, policy=self.policy)
                     
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
                     real_cls_mask = make_mask(real_labels, self.num_classes, self.second_device)
 
-                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(images, real_labels)
+                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
 
                     fake_images = self.gen_model(z, fake_labels)
                     if self.diff_aug:
@@ -209,8 +213,8 @@ class Trainer:
                     dis_acml_loss += self.contrastive_lambda* self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
                                                                                          real_labels, t)
                     if self.consistency_reg:
-                        images_aug = images_aug.to(self.second_device)
-                        _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(images_aug, real_labels)
+                        real_images_aug = real_images_aug.to(self.second_device)
+                        _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(real_images_aug, real_labels)
                         consistency_loss = self.l2_loss(dis_real_authen_out, dis_real_aug_authen_out)
                         dis_acml_loss += self.consistency_lambda*consistency_loss
 
@@ -299,6 +303,8 @@ class Trainer:
         self.gen_model.train()
         if self.Gen_copy is not None:
             self.Gen_copy.train()
+
+        self.logger.info('Start training...')
         step_count = current_step
         train_iter = iter(self.train_dataloader)
         while step_count <= total_step:
@@ -310,19 +316,19 @@ class Trainer:
                 for acml_index in range(self.accumulation_steps):
                     try:
                         if self.consistency_reg:
-                            images, real_labels, images_aug = next(train_iter)
+                            real_images, real_labels, real_images_aug = next(train_iter)
                         else:
-                            images, real_labels = next(train_iter)
+                            real_images, real_labels = next(train_iter)
                     except StopIteration:
                         train_iter = iter(self.train_dataloader)
                         if self.consistency_reg:
-                            images, real_labels, images_aug = next(train_iter)
+                            real_images, real_labels, real_images_aug = next(train_iter)
                         else:
-                            images, real_labels = next(train_iter)
+                            real_images, real_labels = next(train_iter)
 
-                    images, real_labels = images.to(self.second_device), real_labels.to(self.second_device)
+                    real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
                     if self.diff_aug:
-                        images = DiffAugment(images, policy=self.policy)
+                        real_images = DiffAugment(real_images, policy=self.policy)
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
 
                     if self.latent_op:
@@ -334,10 +340,10 @@ class Trainer:
                         fake_images = DiffAugment(fake_images, policy=self.policy)
 
                     if self.conditional_strategy == "ACGAN":
-                        cls_out_real, dis_out_real = self.dis_model(images, real_labels)
+                        cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
                         cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
                     elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
-                        dis_out_real = self.dis_model(images, real_labels)
+                        dis_out_real = self.dis_model(real_images, real_labels)
                         dis_out_fake = self.dis_model(fake_images, fake_labels)
                     else:
                         raise NotImplementedError
@@ -348,14 +354,14 @@ class Trainer:
                         dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
 
                     if self.gradient_penalty_for_dis:
-                        dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, images, fake_images, real_labels, self.second_device)
+                        dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.second_device)
                     
                     if self.consistency_reg:
-                        images_aug = images_aug.to(self.second_device)
+                        real_images_aug = real_images_aug.to(self.second_device)
                         if self.conditional_strategy == "ACGAN":
-                            cls_out_real_aug, dis_out_real_aug = self.dis_model(images_aug, real_labels)
+                            cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                         elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
-                            dis_out_real_aug = self.dis_model(images_aug, real_labels)
+                            dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                         else:
                             raise NotImplementedError
                         consistency_loss = self.l2_loss(dis_out_real, dis_out_real_aug)
@@ -679,6 +685,69 @@ class Trainer:
         
         self.gen_model.train()
         ################################################################################################################################
-    """
-    def linear_classification(self):
-    """
+    
+    def linear_classification(self, total_step):
+        toggle_grad(self.dis_model, False)
+        self.dis_model.eval()
+        self.linear_model.train()
+        
+        self.logger.info("Start training Linear classifier: {run_name}".format(run_name=self.run_name))
+        train_iter = iter(self.train_dataloader)
+        for step in tqdm(range(total_step)):
+            self.L_optimizer.zero_grad()
+            for acml_step in range(self.accumulation_steps):
+                try:
+                    if self.consistency_reg:
+                        real_images, real_labels, real_images_aug = next(train_iter)
+                    else:
+                        real_images, real_labels = next(train_iter)
+                except StopIteration:
+                    train_iter = iter(self.train_dataloader)
+                    if self.consistency_reg:
+                        real_images, real_labels, real_images_aug = next(train_iter)
+                    else:
+                        real_images, real_labels = next(train_iter)
+
+                real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
+
+                if self.conditional_strategy == "ContraGAN":
+                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
+                elif self.conditional_strategy == "ACGAN":
+                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
+                elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
+                    dis_out_real = self.dis_model(real_images, real_labels)
+
+                logits = self.linear_model(cls_real_embed)
+                cls_loss = self.ce_loss(logits, real_labels)    
+                
+                cls_loss.backward()
+                    
+                self.L_optimizer.step()
+
+        self.linear_model.eval()
+        self.logger.info("Start evaluating Linear classifier: {run_name}".format(run_name=self.run_name))
+        correct, total = 0, 0
+        with torch.no_grad():
+            eval_iter = iter(self.eval_dataloader)
+            for i in range(len(self.eval_dataloader)):
+                if self.consistency_reg:
+                    real_images, real_labels, real_images_aug = next(eval_iter)
+                else:
+                    real_images, real_labels = next(eval_iter)
+
+                real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
+
+                if self.conditional_strategy == "ContraGAN":
+                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
+                elif self.conditional_strategy == "ACGAN":
+                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
+                elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
+                    dis_out_real = self.dis_model(real_images, real_labels)
+                
+                logits_test = self.linear_model(cls_real_embed)
+                _, prediction = torch.max(logits_test.data, 1)
+                total += real_labels.size(0)
+                correct += (prediction == real_labels).sum().item()
+
+        self.logger.info("Accuracy of the network on the {total} {type} images: {acc}".\
+                         format(total=total, type=self.type4eval_dataset, acc=100*correct/total))

@@ -58,6 +58,7 @@ class GenBlock(nn.Module):
             x = self.bn1(x, label)
         else:
             x = self.bn1(x)
+
         x = self.activation(x)
         x = F.interpolate(x, scale_factor=2, mode='nearest') # upsample
         x = self.conv2d1(x)

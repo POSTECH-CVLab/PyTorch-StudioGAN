@@ -8,6 +8,7 @@
 from data_utils.load_dataset import *
 from metrics.inception_network import InceptionV3
 from metrics.prepare_inception_moments_eval_dataset import prepare_inception_moments_eval_dataset
+from models.linear_classifier import linear_classifier
 from utils.log import make_run_name, make_logger, make_checkpoint_dir
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
@@ -38,11 +39,12 @@ RUN_NAME_FORMAT = (
     "{timestamp}"
 )
 
-def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path, architecture, 
-                    conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block,
-                    attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1,
-                    beta2, total_step, adv_loss, consistency_reg, g_init, d_init, random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn,
-                    hdf5_path_train, train_config, model_config, **_):
+def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path,
+                    architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn,
+                    attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, 
+                    optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2, total_step, adv_loss, consistency_reg, g_init, d_init,
+                    random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, hdf5_path_train, train_config,
+                    model_config, **_):
     fix_all_seed(seed)
     cudnn.benchmark = False # Not good Generator for undetermined input size
     cudnn.deterministic = True
@@ -168,7 +170,27 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     else:
         mu, sigma, inception_model = None, None, None
 
-    logger.info('Start training...')
+    if train_config['linear_evaluation']:
+        in_channels = hypersphere_dim if conditional_strategy == "ContraGAN" else Dis.self.out_dims[-1]
+        linear_model = linear_classifier(in_channels=in_channels, num_classes=num_classes).to(default_device)
+        if n_gpus > 1:
+            linear_model = DataParallel(linear_model, output_device=second_device)
+            if synchronized_bn:
+                patch_replication_callback(linear_model)
+
+        if optimizer == "SGD":
+            L_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
+        elif optimizer == "RMSprop":
+            L_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, alpha=alpha)
+        elif optimizer == "Adam":
+            L_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, [beta1, beta2], eps=1e-6)
+        else:
+            raise NotImplementedError
+    else:
+        linear_model = None
+        L_optimizer = None
+
+
     trainer = Trainer(
         run_name=run_name,
         best_step=best_step,
@@ -181,6 +203,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         dis_model=Dis,
         inception_model=inception_model,
         Gen_copy=Gen_copy,
+        linear_model=linear_model,
         Gen_ema=Gen_ema,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
@@ -192,6 +215,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         g_spectral_norm=g_spectral_norm,
         G_optimizer=G_optimizer,
         D_optimizer=D_optimizer,
+        L_optimizer=L_optimizer,
         batch_size=batch_size,
         g_steps_per_iter=model_config['optimization']['g_steps_per_iter'],
         d_steps_per_iter=model_config['optimization']['d_steps_per_iter'],
@@ -249,3 +273,6 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     if train_config['interpolation']:
         trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True, fix_y=False)
         trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True)
+    
+    if train_config['linear_evaluation']:
+        trainer.linear_classification(train_config['step_linear_eval'])
