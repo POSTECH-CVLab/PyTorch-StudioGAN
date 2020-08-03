@@ -592,7 +592,7 @@ class Trainer:
                 resnet50_conv = DataParallel(resnet50_conv, output_device=self.second_device)
             resnet50_conv.eval()
             
-            self.logger.info("Start Nearest Neighbor...")
+            self.logger.info("Start Nearest Neighbor....")
             for c in tqdm(range(self.num_classes)):
                 fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
                                                                    self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
@@ -631,7 +631,7 @@ class Trainer:
                     else:
                         pass
             
-                nearest_indices = (-distances).argsort()[-ncol:][::-1]
+                nearest_indices = (-distances).argsort()[-(ncol-1):][::-1]
                 if c % nrow == 0:
                     canvas = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                 elif c % nrow == nrow-1:
@@ -651,24 +651,25 @@ class Trainer:
         generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
         assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
+        self.logger.info("Start Interpolation Analysis....")
         if fix_z:
-            zs = torch.randn(nrow, 1, self.gen_model.z_dim, device=self.default_device)
-            zs = zs.repeat(1, ncol, 1).view(-1, self.gen_model.z_dim)
+            zs = torch.randn(nrow, 1, generator.z_dim, device=self.default_device)
+            zs = zs.repeat(1, ncol, 1).view(-1, generator.z_dim)
             name = "fix_z"
         else:
-            zs = interp(torch.randn(nrow, 1, self.gen_model.z_dim, device=self.default_device),
-                        torch.randn(nrow, 1, self.gen_model.z_dim, device=self.default_device),
-                        ncol - 2).view(-1, self.gen_model.z_dim)
+            zs = interp(torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
+                        torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
+                        ncol - 2).view(-1, generator.z_dim)
         
         if fix_y:
             ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
-            ys = self.gen_model.shared(ys).view(nrow, 1, -1)
+            ys = generator.shared(ys).view(nrow, 1, -1)
             ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
             name = "fix_y"
         else:
-            ys = interp(G.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                        G.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                        num_midpoints).view(nrow * (ncol), -1)
+            ys = interp(generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                        generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                        ncol-2).view(nrow * (ncol), -1)
         
         with torch.no_grad():
             interpolated_images = generator(zs, None, shared_label=ys)
