@@ -70,5 +70,5 @@ def ortho(model, strength=1e-4, blacklist=[]):
 
 # Convenience utility to switch off requires_grad
 def toggle_grad(model, on_or_off):
-  for param in model.parameters():
-    param.requires_grad = on_or_off
+    for param in model.parameters():
+        param.requires_grad = on_or_off

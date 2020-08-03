@@ -19,7 +19,7 @@ from trainer import Trainer
 import glob
 import os
 import PIL
-from os.path import join
+from os.path import dirname, abspath, exists, join
 import random
 import warnings
 
@@ -131,11 +131,12 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2], eps=1e-6)
     else:
         raise NotImplementedError
-    
-    checkpoint_dir = make_checkpoint_dir(train_config['checkpoint_folder'], run_name)
 
     if train_config['checkpoint_folder'] is not None:
         when = "current" if load_current is True else "best"
+        if not exists(abspath(train_config['checkpoint_folder'])):
+            raise NotADirectoryError
+        checkpoint_dir = make_checkpoint_dir(train_config['checkpoint_folder'], run_name)
         g_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0]
         d_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0]
         Gen, G_optimizer, trained_seed, run_name, step, best_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
@@ -150,6 +151,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         assert seed == trained_seed, "seed for sampling random numbers should be same!"
         logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
+    else:
+        checkpoint_dir = make_checkpoint_dir(train_config['checkpoint_folder'], run_name)
 
     if train_config['eval']:
         inception_model = InceptionV3().to(default_device)

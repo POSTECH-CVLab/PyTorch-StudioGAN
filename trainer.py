@@ -138,16 +138,16 @@ class Trainer:
 
         if self.conditional_strategy != "no":
             if self.dataset_name == "cifar10":
-                cls_wise_sampling = "all"
+                sampler = "class_order_all"
             else:
-                cls_wise_sampling = "some"
+                sampler = "class_order_some"
         else:
-            cls_wise_sampling = "no"
+            sampler = "default"
 
         self.policy = "color,translation,cutout"
 
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
-                                                                self.num_classes, None, self.second_device, cls_wise_sampling=cls_wise_sampling)
+                                                                self.num_classes, None, self.second_device, sampler=sampler)
         if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
             self.num_eval = {'train':50000, 'valid':50000}
         elif self.dataset_name == "cifar10":
@@ -193,6 +193,7 @@ class Trainer:
                     images, real_labels = images.to(self.second_device), real_labels.to(self.second_device)
                     if self.diff_aug:
                         images = DiffAugment(images, policy=self.policy)
+                    
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
                     real_cls_mask = make_mask(real_labels, self.num_classes, self.second_device)
 
@@ -272,12 +273,10 @@ class Trainer:
                                                    'generator': gen_acml_loss.item()}, step_count)
 
                 with torch.no_grad():
+                    self.gen_model.eval()
                     if self.Gen_copy is not None:
-                        self.Gen_copy.eval()
-                        generator = self.Gen_copy
-                    else:
-                        self.gen_model.eval()
-                        generator = self.gen_model
+                        self.Gen_copy.train()
+                    generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
 
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
@@ -435,12 +434,10 @@ class Trainer:
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
                 with torch.no_grad():
+                    self.gen_model.eval()
                     if self.Gen_copy is not None:
-                        self.Gen_copy.eval()
-                        generator = self.Gen_copy
-                    else:
-                        self.gen_model.eval()
-                        generator = self.gen_model
+                        self.Gen_copy.train()
+                    generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
 
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
@@ -528,10 +525,8 @@ class Trainer:
             self.dis_model.eval()
             self.gen_model.eval()
             if self.Gen_copy is not None:
-                self.Gen_copy.eval()
-                generator = self.Gen_copy
-            else:
-                generator = self.gen_model
+                self.Gen_copy.train()
+            generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
                                                         
             if self.latent_op:
                 self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
@@ -585,104 +580,65 @@ class Trainer:
 
     ################################################################################################################################
     def Nearest_Neighbor(self):
-        resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
-        resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.default_device)
-        if self.n_gpus > 1:
-            resnet50_conv = DataParallel(resnet50_conv, output_device=self.second_device)
-        
-        resnet50_conv.eval()
         with torch.no_grad():
-            self.logger.info("Start Nearest Neighbor...")
             self.gen_model.eval()
             if self.Gen_copy is not None:
                 self.Gen_copy.eval()
-                generator = self.Gen_copy
-            else:
-                generator = self.gen_model
+            generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
 
-            if mode == 'real':
-                stack = []
-                num_inst_per_cls = self.num_eval[self.type4eval_dataset]//self.num_classes
-                while len(stack) < self.num_classes:
-                    train_iter = iter(self.train_dataloader)
-                    real_images, real_labels = next(train_iter)
-                    real_images = ((real_images + 1)/2).to(self.default_device)
-                    
-                    real_anchor_embeddings = torch.squeeze(resnet50_conv(real_images))
-                    for i in range(len(real_labels)):
-                        if real_labels[i] in stack:
-                            pass
-                        else:
-                            for j in range(num_inst_per_cls//self.batch_size + 1):
-                                fake_images, fake_labels = generate_images_for_KNN(self.batch_size, real_labels[i], generator, self.truncated_factor, self.prior,
-                                                                                self.latent_op, self.latent_op_step, self.latent_op_alpha, self.latent_op_beta,
-                                                                                self.second_device)
-                                fake_images = (fake_images + 1)/2
-
-                                if j == 0:
-                                    fake_embeddings = torch.squeeze(resnet50_conv(fake_images))
-                                    distances = torch.square(fake_embeddings - real_anchor_embeddings[i]).mean(dim=1).detach().cpu().numpy()
-                                    holder = fake_images.detach().cpu().numpy()
-                                else:
-                                    fake_embeddings = torch.squeeze(resnet50_conv(fake_images))
-                                    distances = np.concatenate([distances, torch.square(fake_embeddings - real_anchor_embeddings[i]).mean(dim=1).detach().cpu().numpy()], axis=0)
-                                    holder = np.concatenate([holder, fake_images.detach().cpu().numpy()], axis=0)
-                    
-                            nearest_indices = (-distances).argsort()[-7:][::-1]
-                            a_nn = np.concatenate([real_images[i].detach().cpu().numpy(), holder[nearest_indices]], axis=0)
-                            
-                            if i == 0:
-                                image_grid = a_nn
-                            else:
-                                image_grid = np.concatenate([image_grid, a_nn], axis=0)
-                            
-                            stack.append(real_labels[i])
-                        
-                    plot_img_canvas(torch.from_numpy(image_grid), "./figures/{run_name}/real_anchor_KNN(top_7).png".format(run_name=self.run_name), self.logger, 8)
+            resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
+            resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.default_device)
+            if self.n_gpus > 1:
+                resnet50_conv = DataParallel(resnet50_conv, output_device=self.second_device)
+            resnet50_conv.eval()
             
-            elif mode == 'fake':
-                train_iter = iter(self.train_dataloader)
-
-                for i in range(self.num_classes):
-                    fake_images, fake_labels = generate_images_for_KNN(self.batch_size, i, generator, self.truncated_factor, self.prior, self.latent_op,
-                                                                            self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
-                    fake_image = (fake_images[0] + 1)/2
-
-
+            self.logger.info("Start Nearest Neighbor...")
+            for c in tqdm(range(self.num_classes)):
+                fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
+                                                                   self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
+                fake_image = (fake_images[0] + 1)/2
                 fake_image = torch.unsqueeze(fake_image, dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv(fake_image))
 
-                start = 0
-                for i in tqdm(range(num_sampling//self.batch_size + 1)):
-                    real_images, real_labels = next(train_iter)
-                    num_samples = torch.tensor(real_labels.detach().cpu().numpy()==real_label).sum().item()
-                    if num_samples > 0:
-                        real_images = real_images[torch.tensor(real_labels.detach().cpu().numpy()==real_label)]
-                        real_images = (real_images + 1)/2
+                hit = 0
+                train_iter = iter(self.train_dataloader)
+                for batch_idx in range(len(train_iter)):
+                    if self.consistency_reg:
+                        real_images, real_labels, real_images_aug = next(train_iter)
+                    else:
+                        real_images, real_labels = next(train_iter)
+                    
+                    num_cls_in_batch = torch.tensor(real_labels.detach().cpu().numpy() == c).sum().item()
+                    if num_cls_in_batch > 0:
+                        real_images = (real_images[torch.tensor(real_labels.detach().cpu().numpy() == c)] + 1)/2
                         real_images = real_images.to(self.default_device)
 
-                        if start == 0:
+                        if hit == 0:
                             real_embeddings = torch.squeeze(resnet50_conv(real_images))
-                            if num_samples == 1:
+                            if num_cls_in_batch == 1:
                                 distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy()
                             else:
                                 distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
                             holder = real_images.detach().cpu().numpy()
-                            start = 1
+                            hit += 1
                         else:
                             real_embeddings = torch.squeeze(resnet50_conv(real_images))
-                            if num_samples == 1:
+                            if num_cls_in_batch == 1:
                                 distances = np.append(distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy())
                             else:
                                 distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
                             holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
                     else:
                         pass
-                
-                nearest_indices = (-distances).argsort()[-k:][::-1]
-                image_grid = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
-                plot_img_canvas(torch.from_numpy(image_grid), "./figures/{run_name}/fake_anchor_KNN({k}).png".format(run_name=self.run_name, k=k), self.logger, (k+1)//4)
-
-            else:
-                raise NotImplementedError
+            
+                nearest_indices = (-distances).argsort()[-7:][::-1]
+                if c % 10 == 0:
+                    canvas = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
+                elif c % 10 == 9:
+                    row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
+                    canvas = np.concatenate((canvas, row_images), axis=0)
+                    plot_img_canvas(torch.from_numpy(canvas), "./figures/{run_name}/Fake_anchor_7NN_{cls}.png".format(run_name=self.run_name, cls=c), self.logger, 8)
+                else:
+                    row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
+                    canvas = np.concatenate((canvas, row_images), axis=0)
     ################################################################################################################################
