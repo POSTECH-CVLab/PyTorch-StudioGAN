@@ -87,8 +87,8 @@ class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
         self.calculate_similarity_matrix = self._calculate_similarity_matrix()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
         self.hard_positive_mask = self._get_hard_positive_mask().type(torch.bool)
-        self.tp = nn.Parameter(torch.zeros(1))
-        self.ti = nn.Parameter(torch.zeros(1))
+        self.tp = nn.Parameter(torch.zeros(1)).to(device)
+        self.ti = nn.Parameter(torch.zeros(1)).to(device)
 
     def _calculate_similarity_matrix(self):
         return self._cosine_simililarity_matrix
