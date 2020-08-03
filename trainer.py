@@ -288,7 +288,7 @@ class Trainer:
                     self.save(step_count, is_best)
                 else:
                     self.save(step_count, False)
-        return step_count
+        return step_count-1
     ################################################################################################################################
 
 
@@ -449,7 +449,7 @@ class Trainer:
                     self.save(step_count, is_best)
                 else:
                     self.save(step_count, False)
-        return step_count
+        return step_count-1
     ################################################################################################################################
 
 
