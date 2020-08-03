@@ -244,4 +244,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         is_save = trainer.evaluation(step=step)
 
     if train_config['k_nearest_neighbor']:
-        trainer.Nearest_Neighbor()
+        trainer.Nearest_Neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'])
+
+    if train_config['interpolation']:
+        trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True, fix_y=False)
+        trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True)

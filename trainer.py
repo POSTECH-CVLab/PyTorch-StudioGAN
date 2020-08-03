@@ -7,8 +7,8 @@
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
-from utils.biggan_utils import toggle_grad
-from utils.sample import sample_latents, make_mask, generate_images_for_KNN
+from utils.biggan_utils import toggle_grad, interp
+from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
 from utils.plot import plot_img_canvas, plot_confidence_histogram, plot_img_canvas
 from utils.utils import elapsed_time, calculate_all_sn, find_and_remove
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss, DiffAugment
@@ -579,7 +579,7 @@ class Trainer:
     ################################################################################################################################
 
     ################################################################################################################################
-    def Nearest_Neighbor(self):
+    def Nearest_Neighbor(self, nrow, ncol):
         with torch.no_grad():
             self.gen_model.eval()
             if self.Gen_copy is not None:
@@ -631,14 +631,47 @@ class Trainer:
                     else:
                         pass
             
-                nearest_indices = (-distances).argsort()[-7:][::-1]
-                if c % 10 == 0:
+                nearest_indices = (-distances).argsort()[-ncol:][::-1]
+                if c % nrow == 0:
                     canvas = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
-                elif c % 10 == 9:
+                elif c % nrow == nrow-1:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
-                    plot_img_canvas(torch.from_numpy(canvas), "./figures/{run_name}/Fake_anchor_7NN_{cls}.png".format(run_name=self.run_name, cls=c), self.logger, 8)
+                    plot_img_canvas(torch.from_numpy(canvas), "./figures/{run_name}/Fake_anchor_{ncol}NN_{cls}.png".\
+                                    format(run_name=self.run_name,ncol=ncol, cls=c), self.logger, ncol)
                 else:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
     ################################################################################################################################
+
+    def linear_interpolation(self, nrow, ncol, fix_z, fix_y):
+        self.gen_model.eval()
+        if self.Gen_copy is not None:
+            self.Gen_copy.train()
+        generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
+        assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
+
+        if fix_z:
+            zs = torch.randn(nrow, 1, self.gen_model.z_dim, device=self.default_device)
+            zs = zs.repeat(1, ncol, 1).view(-1, self.gen_model.z_dim)
+            name = "fix_z"
+        else:
+            zs = interp(torch.randn(nrow, 1, self.gen_model.z_dim, device=self.default_device),
+                        torch.randn(nrow, 1, self.gen_model.z_dim, device=self.default_device),
+                        ncol - 2).view(-1, self.gen_model.z_dim)
+        
+        if fix_y:
+            ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
+            ys = self.gen_model.shared(ys).view(nrow, 1, -1)
+            ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
+            name = "fix_y"
+        else:
+            ys = interp(G.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                        G.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                        num_midpoints).view(nrow * (ncol), -1)
+        
+        with torch.no_grad():
+            interpolated_images = generator(zs, None, shared_label=ys)
+
+        plot_img_canvas(interpolated_images.detach().cpu(), "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
+                        format(run_name=self.run_name, fix_flag=name), self.logger, ncol)

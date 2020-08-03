@@ -72,3 +72,9 @@ def ortho(model, strength=1e-4, blacklist=[]):
 def toggle_grad(model, on_or_off):
     for param in model.parameters():
         param.requires_grad = on_or_off
+
+
+# Interp function; expects x0 and x1 to be of shape (shape0, 1, rest_of_shape..)
+def interp(x0, x1, num_midpoints):
+  lerp = torch.linspace(0, 1.0, num_midpoints + 2, device='cuda').to(x0.dtype)
+  return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))

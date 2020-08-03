@@ -155,11 +155,14 @@ class Generator(nn.Module):
             init_weights(self.modules, initialize)
 
 
-    def forward(self, z, label):
+    def forward(self, z, label, shared_label=None):
         zs = torch.split(z, self.chunk_size, 1)
         z = zs[0]
-        label = self.shared(label)
-        labels = [torch.cat([label, item], 1) for item in zs[1:]]
+        if shared_label is None:
+            shared_label = self.shared(label)
+        else:
+            pass
+        labels = [torch.cat([shared_label, item], 1) for item in zs[1:]]
 
         act = self.linear0(z)
         act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)

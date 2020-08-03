@@ -85,6 +85,12 @@ def random_ball(batch_size, z_dim, perturb=False):
         return z
 
 
+# Convenience function to sample an index, not actually a 1-hot
+def sample_1hot(batch_size, num_classes, device='cuda'):
+    return torch.randint(low=0, high=num_classes, size=(batch_size,),
+                         device=device, dtype=torch.int64, requires_grad=False)
+
+
 def make_mask(labels, n_cls, device):
     labels = labels.detach().cpu().numpy()
     n_samples = labels.shape[0]

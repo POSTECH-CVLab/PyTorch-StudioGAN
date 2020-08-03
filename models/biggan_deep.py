@@ -164,9 +164,12 @@ class Generator(nn.Module):
         if initialize is not False:
             init_weights(self.modules, initialize)
 
-    def forward(self, z, label):
-        label = self.shared(label)
-        z = torch.cat([label, z], 1)      
+    def forward(self, z, label, shared_label=None):
+        if shared_label is None:
+            shared_label = self.shared(label)
+        else:
+            pass
+        z = torch.cat([shared_label, z], 1)      
 
         act = self.linear0(z)
         act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
