@@ -275,11 +275,13 @@ class Trainer:
                 with torch.no_grad():
                     self.gen_model.eval()
                     if self.Gen_copy is not None:
-                        self.Gen_copy.train()
+                        self.Gen_copy.eval()
                     generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
 
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
+                    if self.Gen_copy is not None:
+                        self.Gen_copy.train()
                     self.gen_model.train()
             
             if step_count % self.save_every == 0 or step_count == total_step:
@@ -436,11 +438,13 @@ class Trainer:
                 with torch.no_grad():
                     self.gen_model.eval()
                     if self.Gen_copy is not None:
-                        self.Gen_copy.train()
+                        self.Gen_copy.eval()
                     generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
 
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
+                    if self.Gen_copy is not None:
+                        self.Gen_copy.train()
                     self.gen_model.train()
 
             if step_count % self.save_every == 0 or step_count == total_step:
@@ -525,7 +529,7 @@ class Trainer:
             self.dis_model.eval()
             self.gen_model.eval()
             if self.Gen_copy is not None:
-                self.Gen_copy.train()
+                self.Gen_copy.eval()
             generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
                                                         
             if self.latent_op:
@@ -642,12 +646,16 @@ class Trainer:
                 else:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
+        
+        self.gen_model.train()
+        if self.Gen_copy is not None:
+            self.Gen_copy.train()
     ################################################################################################################################
 
     def linear_interpolation(self, nrow, ncol, fix_z, fix_y):
         self.gen_model.eval()
         if self.Gen_copy is not None:
-            self.Gen_copy.train()
+            self.Gen_copy.eval()
         generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
         assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
@@ -676,3 +684,8 @@ class Trainer:
 
         plot_img_canvas(interpolated_images.detach().cpu(), "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
                         format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
+        
+        self.gen_model.train()
+        if self.Gen_copy is not None:
+            self.Gen_copy.train()
+        ################################################################################################################################
