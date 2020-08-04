@@ -119,10 +119,9 @@ class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
 
         inst2inst_positives = instance_zone*mask_4_remove_negatives
         inst2embed_positive = torch.exp(self.cosine_similarity(inst_embed, proxy)/temperature)
-        numerator0 = inst2inst_positives.sum(dim=1)
-        numerator1 = inst2embed_positive
+        numerator = (inst2inst_positives.sum(dim=1)+inst2embed_positive)
         denomerator = torch.cat([torch.unsqueeze(inst2embed_positive, dim=1), instance_zone], dim=1).sum(dim=1)
-        criterion = -torch.log(numerator0/denomerator).mean() - torch.log(numerator1/denomerator).mean()
+        criterion = -torch.log(numerator/denomerator).mean()
         return criterion
 
 def calc_derv4gp(netD, real_data, fake_data, real_labels, device):
