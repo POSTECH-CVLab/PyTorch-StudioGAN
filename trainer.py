@@ -600,9 +600,8 @@ class Trainer:
             for c in tqdm(range(self.num_classes)):
                 fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
                                                                    self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
-                fake_image = (fake_images[0] + 1)/2
                 fake_image = torch.unsqueeze(fake_image, dim=0)
-                fake_anchor_embedding = torch.squeeze(resnet50_conv(fake_image))
+                fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
 
                 hit = 0
                 train_iter = iter(self.train_dataloader)
@@ -614,11 +613,11 @@ class Trainer:
                     
                     num_cls_in_batch = torch.tensor(real_labels.detach().cpu().numpy() == c).sum().item()
                     if num_cls_in_batch > 0:
-                        real_images = (real_images[torch.tensor(real_labels.detach().cpu().numpy() == c)] + 1)/2
+                        real_images = real_images[torch.tensor(real_labels.detach().cpu().numpy() == c)]
                         real_images = real_images.to(self.default_device)
 
                         if hit == 0:
-                            real_embeddings = torch.squeeze(resnet50_conv(real_images))
+                            real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
                             if num_cls_in_batch == 1:
                                 distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy()
                             else:
@@ -626,7 +625,7 @@ class Trainer:
                             holder = real_images.detach().cpu().numpy()
                             hit += 1
                         else:
-                            real_embeddings = torch.squeeze(resnet50_conv(real_images))
+                            real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
                             if num_cls_in_batch == 1:
                                 distances = np.append(distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy())
                             else:
@@ -641,7 +640,7 @@ class Trainer:
                 elif c % nrow == nrow-1:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
-                    plot_img_canvas(torch.from_numpy(canvas), "./figures/{run_name}/Fake_anchor_{ncol}NN_{cls}.png".\
+                    plot_img_canvas((torch.from_numpy(canvas)+1)/2, "./figures/{run_name}/Fake_anchor_{ncol}NN_{cls}.png".\
                                     format(run_name=self.run_name,ncol=ncol, cls=c), self.logger, ncol)
                 else:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
@@ -680,7 +679,7 @@ class Trainer:
         with torch.no_grad():
             interpolated_images = generator(zs, None, shared_label=ys)
 
-        plot_img_canvas(interpolated_images.detach().cpu(), "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
+        plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
                         format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
         
         self.gen_model.train()
