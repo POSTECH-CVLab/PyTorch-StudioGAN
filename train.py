@@ -171,7 +171,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         mu, sigma, inception_model = None, None, None
 
     if train_config['linear_evaluation']:
-        in_channels = hypersphere_dim if conditional_strategy == "ContraGAN" else Dis.self.out_dims[-1]
+        in_channels = hypersphere_dim if conditional_strategy == "ContraGAN" else Dis.out_dims[-1]
         linear_model = linear_classifier(in_channels=in_channels, num_classes=num_classes).to(default_device)
         if n_gpus > 1:
             linear_model = DataParallel(linear_model, output_device=second_device)
