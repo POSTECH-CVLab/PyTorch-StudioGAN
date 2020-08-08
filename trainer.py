@@ -227,7 +227,7 @@ class Trainer:
                     dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
                     if self.conditional_strategy == "ContraGAN":
                         dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
-                                                                                            real_labels, t)
+                                                                                            real_labels, t, 1.0)
                     elif self.conditional_strategy == "Proxy_NCA_GAN":
                         dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_real_embed, cls_real_proxies, real_labels)
                     elif self.conditional_strategy == "XT_Xent_GAN":
@@ -275,7 +275,7 @@ class Trainer:
 
                     gen_acml_loss = self.G_loss(dis_fake_authen_out)
                     if self.conditional_strategy == "ContraGAN":
-                        gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_proxies, fake_cls_mask, fake_labels, t)
+                        gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_proxies, fake_cls_mask, fake_labels, t, 0.0)
                     elif self.conditional_strategy == "Proxy_NCA_GAN":
                         gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_fake_embed, cls_fake_proxies, fake_labels)
                     elif self.conditional_strategy == "XT_Xent_GAN":

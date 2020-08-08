@@ -104,11 +104,11 @@ class Conditional_Contrastive_loss(torch.nn.Module):
         v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
         return v
 
-    def forward(self, inst_embed, proxy, negative_mask, labels, temperature):
+    def forward(self, inst_embed, proxy, negative_mask, labels, temperature, margin):
         similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
-        instance_zone = torch.exp(self.remove_diag(similarity_matrix)/temperature)
+        instance_zone = torch.exp((self.remove_diag(similarity_matrix) - margin)/temperature)
 
-        inst2proxy_positive = torch.exp(self.cosine_similarity(inst_embed, proxy)/temperature)
+        inst2proxy_positive = torch.exp((self.cosine_similarity(inst_embed, proxy) - margin)/temperature)
         if self.pos_collected_numerator:
             numerator = inst2proxy_positive
         else:
