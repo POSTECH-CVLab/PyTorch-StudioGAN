@@ -35,13 +35,13 @@ from torch.utils.tensorboard import SummaryWriter
 
 RUN_NAME_FORMAT = (
     "{framework}-"
-    "{phase}-"   
+    "{phase}-"
     "{timestamp}"
 )
 
 def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path,
                     architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn,
-                    attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, 
+                    attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth,
                     optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2, total_step, adv_loss, consistency_reg, g_init, d_init,
                     random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, hdf5_path_train, train_config,
                     model_config, **_):
@@ -52,7 +52,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     default_device = torch.cuda.current_device()
     second_device = default_device if n_gpus == 1 else default_device+1
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
-    
+
     if n_gpus == 1:
         warnings.warn('You have chosen a specific GPU. This will completely '
                       'disable data parallelism.')
@@ -69,8 +69,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     logger.info(model_config)
 
     logger.info('Loading train datasets...')
-    train_dataset = LoadDataset(dataset_name, data_path, train=True, download=True, resize_size=img_size, hdf5_path=hdf5_path_train,
-                                consistency_reg=consistency_reg, random_flip=random_flip_preprocessing)
+    train_dataset = LoadDataset(dataset_name, data_path, train=True, download=True, resize_size=img_size, conditional_strategy=conditional_strategy,
+                                hdf5_path=hdf5_path_train, consistency_reg=consistency_reg, random_flip=random_flip_preprocessing)
     if reduce_train_dataset < 1.0:
         num_train = int(reduce_train_dataset*len(train_dataset))
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
@@ -78,8 +78,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
 
     logger.info('Loading {mode} datasets...'.format(mode=type4eval_dataset))
     eval_mode = True if type4eval_dataset == 'train' else False
-    eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, hdf5_path=None,
-                               consistency_reg=False, random_flip=False)
+    eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, conditional_strategy="no",
+                               hdf5_path=None, consistency_reg=False, random_flip=False)
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     logger.info('Building model...')
@@ -90,7 +90,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     Gen = module.Generator(z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
                            conditional_strategy, num_classes, synchronized_bn, g_init, G_depth).to(default_device)
 
-    Dis = module.Discriminator(img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy, 
+    Dis = module.Discriminator(img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
                                hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, d_init, D_depth).to(default_device)
 
     if ema:
@@ -100,7 +100,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         Gen_ema = ema_(Gen, Gen_copy, ema_decay, ema_start)
     else:
         Gen_copy, Gen_ema = None, None
-    
+
     if n_gpus > 1:
         Gen = DataParallel(Gen, output_device=second_device)
         Dis = DataParallel(Dis, output_device=second_device)
@@ -115,7 +115,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
 
     logger.info(count_parameters(Dis))
     logger.info(Dis)
-    
+
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers, drop_last=True)
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers, drop_last=False)
 
@@ -208,6 +208,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
         conditional_strategy=conditional_strategy,
+        pos_collected_numerator=model_config['model']['pos_collected_numerator'],
         z_dim=z_dim,
         num_classes=num_classes,
         hypersphere_dim=hypersphere_dim,
@@ -259,11 +260,11 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         model_config=model_config,
     )
 
-    if conditional_strategy == 'ContraGAN' and train_config['train']:
+    if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "XT_Xent_GAN"] and train_config['train']:
         step = trainer.run_ours(current_step=step, total_step=total_step)
     elif train_config['train']:
         step = trainer.run(current_step=step, total_step=total_step)
-    
+
     if train_config['eval']:
         is_save = trainer.evaluation(step=step)
 
@@ -273,6 +274,6 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     if train_config['interpolation']:
         trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True, fix_y=False)
         trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True)
-    
+
     if train_config['linear_evaluation']:
         trainer.linear_classification(train_config['step_linear_eval'])

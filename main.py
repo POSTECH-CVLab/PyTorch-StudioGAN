@@ -23,7 +23,7 @@ def main():
 
     parser.add_argument('--seed', type=int, default=0, help='seed for generating random number')
     parser.add_argument('--num_workers', type=int, default=4, help='')
-    
+
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')
     parser.add_argument('-t', '--train', action='store_true')
@@ -46,7 +46,7 @@ def main():
         train_config = vars(args)
     else:
         raise NotImplementedError
-    
+
     dataset = model_config['data_processing']['dataset_name']
     if dataset == 'cifar10':
         assert args.type4eval_dataset == 'train' or args.type4eval_dataset == 'test', "cifar10 does not contain dataset for validation"
@@ -55,7 +55,7 @@ def main():
              "we do not support the evaluation mode using test images in tiny_imagenet/imagenet dataset"
 
     hdf5_path_train = make_hdf5(**model_config['data_processing'], **train_config, mode='train') if args.load_all_data_in_memory else None
-    
+
     train_framework(**train_config,
                     **model_config['data_processing'],
                     **model_config['train']['model'],

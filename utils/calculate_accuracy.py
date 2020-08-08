@@ -54,16 +54,16 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
             if latent_op:
                 z = latent_optimise(z, fake_labels, generator, discriminator, latent_op_step, 1.0, latent_op_alpha,
                                     latent_op_beta, False, device)
-            if consistency_reg:
+            if consistency_reg or conditional_strategy == "XT_Xent_GAN":
                 real_images, real_labels, images_aug = next(data_iter)
             else:
                 real_images, real_labels = next(data_iter)
-            
+
             real_images, real_labels = real_images.to(device), real_labels.to(device)
             fake_images = generator(z, fake_labels)
 
             with torch.no_grad():
-                if conditional_strategy == "ContraGAN":
+                if conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "XT_Xent_GAN"]:
                     _, _, dis_out_fake = discriminator(fake_images, fake_labels)
                     _, _, dis_out_real = discriminator(real_images, real_labels)
                 elif conditional_strategy == "ACGAN":
@@ -84,7 +84,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
             else:
                 confid = np.concatenate((confid, dis_out_fake, dis_out_real), axis=0)
                 confid_label = np.concatenate((confid_label, [0.0]*len(dis_out_fake), [1.0]*len(dis_out_real)), axis=0)
-        
+
         real_confid = confid[confid_label==1.0]
         fake_confid = confid[confid_label==0.0]
 
@@ -96,7 +96,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
 
         generator.train()
         discriminator.train()
-        
+
         return only_real_acc, only_fake_acc
     else:
         for batch_id in tqdm(range(total_batch)):
@@ -104,7 +104,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
             real_images, real_labels = real_images.to(device), real_labels.to(device)
 
             with torch.no_grad():
-                if conditional_strategy == "ContraGAN":
+                if conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "XT_Xent_GAN"]:
                     _, _, dis_out_real = discriminator(real_images, real_labels)
                 elif conditional_strategy == "ACGAN":
                     _, dis_out_real = discriminator(real_images, real_labels)
@@ -128,6 +128,6 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
 
         generator.train()
         discriminator.train()
-        
+
         return only_real_acc
 

@@ -11,7 +11,8 @@ from utils.biggan_utils import toggle_grad, interp
 from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
 from utils.plot import plot_img_canvas, plot_confidence_histogram, plot_img_canvas
 from utils.utils import elapsed_time, calculate_all_sn, find_and_remove
-from utils.losses import calc_derv4gp, calc_derv, latent_optimise, Conditional_Embedding_Contrastive_loss, DiffAugment
+from utils.losses import calc_derv4gp, calc_derv, latent_optimise, DiffAugment
+from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, XT_Xent_loss
 from utils.calculate_accuracy import calculate_accuracy
 
 import torch
@@ -46,13 +47,13 @@ LOG_FORMAT = (
 
 class Trainer:
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
-                 linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, z_dim, num_classes, hypersphere_dim, d_spectral_norm,
-                 g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step,
-                 G_loss, D_loss, contrastive_lambda, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
+                 linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim,
+                 d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps,
+                 total_step, G_loss, D_loss, contrastive_lambda, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
                  gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, prior, truncated_factor,
                  ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device,
                  second_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
-        
+
         self.run_name = run_name
         self.best_step = best_step
         self.dataset_name = dataset_name
@@ -60,7 +61,7 @@ class Trainer:
         self.logger = logger
         self.writer = writer
         self.n_gpus = n_gpus
-        
+
         self.gen_model = gen_model
         self.dis_model = dis_model
         self.inception_model = inception_model
@@ -70,14 +71,17 @@ class Trainer:
 
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
-        
+
         self.conditional_strategy = conditional_strategy
+        self.pos_collected_numerator = pos_collected_numerator
+        assert self.pos_collected_numerator is True and self.conditional_strategy == "ContraGAN", \
+            "pos_collected_numerator option is not appliable except for ContraGAN."
         self.z_dim = z_dim
         self.num_classes = num_classes
         self.hypersphere_dim = hypersphere_dim
         self.d_spectral_norm = d_spectral_norm
         self.g_spectral_norm = g_spectral_norm
-        
+
         self.G_optimizer = G_optimizer
         self.D_optimizer = D_optimizer
         self.L_optimizer = L_optimizer
@@ -86,7 +90,7 @@ class Trainer:
         self.d_steps_per_iter = d_steps_per_iter
         self.accumulation_steps = accumulation_steps
         self.total_step = total_step
-        
+
         self.G_loss = G_loss
         self.D_loss = D_loss
         self.contrastive_lambda = contrastive_lambda
@@ -100,7 +104,7 @@ class Trainer:
         self.weight_clipping_bound = weight_clipping_bound
         self.consistency_reg = consistency_reg
         self.consistency_lambda = consistency_lambda
-        
+
         self.diff_aug = diff_aug
         self.prior = prior
         self.truncated_factor = truncated_factor
@@ -112,7 +116,7 @@ class Trainer:
         self.latent_op_alpha = latent_op_alpha
         self.latent_op_beta = latent_op_beta
         self.latent_norm_reg_weight = latent_norm_reg_weight
-        
+
         self.default_device = default_device
         self.second_device = second_device
         self.print_every = print_every
@@ -131,12 +135,22 @@ class Trainer:
         self.ce_loss = torch.nn.CrossEntropyLoss()
 
         if self.conditional_strategy == 'ContraGAN':
-            self.contrastive_criterion = Conditional_Embedding_Contrastive_loss(self.second_device, self.batch_size)
+            self.contrastive_criterion = Conditional_Contrastive_loss(self.second_device, self.batch_size, self.pos_collected_numerator)
             self.tempering_range = self.end_temperature - self.start_temperature
             assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
                 "tempering_type should be one of constant, continuous, or discrete"
             if self.tempering_type == 'discrete':
                 self.tempering_interval = self.total_step//(self.tempering_step + 1)
+        elif self.conditional_strategy == 'Proxy_NCA_GAN':
+            if isinstance(self.dis_model, DataParallel):
+                self.embedding_layer = self.dis_model.module.embedding
+            else:
+                self.embedding_layer = self.dis_model.embedding
+            self.NCA_criterion = Proxy_NCA_loss(self.second_device, self.embedding_layer, self.num_classes, self.batch_size)
+        elif self.conditional_strategy == 'XT_Xent_GAN':
+            self.XT_Xent_criterion = XT_Xent_loss(self.second_device, self.batch_size)
+        else:
+            pass
 
         if self.conditional_strategy != "no":
             if self.dataset_name == "cifar10":
@@ -150,6 +164,7 @@ class Trainer:
 
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
                                                                 self.num_classes, None, self.second_device, sampler=sampler)
+
         if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
             self.num_eval = {'train':50000, 'valid':50000}
         elif self.dataset_name == "cifar10":
@@ -183,13 +198,13 @@ class Trainer:
                 self.D_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
                     try:
-                        if self.consistency_reg:
+                        if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
                             real_images, real_labels, real_images_aug = next(train_iter)
                         else:
                             real_images, real_labels = next(train_iter)
                     except StopIteration:
                         train_iter = iter(self.train_dataloader)
-                        if self.consistency_reg:
+                        if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
                             real_images, real_labels, real_images_aug = next(train_iter)
                         else:
                             real_images, real_labels = next(train_iter)
@@ -197,7 +212,7 @@ class Trainer:
                     real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
                     if self.diff_aug:
                         real_images = DiffAugment(real_images, policy=self.policy)
-                    
+
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
                     real_cls_mask = make_mask(real_labels, self.num_classes, self.second_device)
 
@@ -208,15 +223,26 @@ class Trainer:
                         fake_images = DiffAugment(fake_images, policy=self.policy)
 
                     cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
-                    
+
                     dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
-                    dis_acml_loss += self.contrastive_lambda* self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
-                                                                                         real_labels, t)
-                    if self.consistency_reg:
+                    if self.conditional_strategy == "ContraGAN":
+                        dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
+                                                                                            real_labels, t)
+                    elif self.conditional_strategy == "Proxy_NCA_GAN":
+                        dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_real_embed, cls_real_proxies, real_labels)
+                    elif self.conditional_strategy == "XT_Xent_GAN":
+                        pass
+                    else:
+                        raise NotImplementedError
+
+                    if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
                         real_images_aug = real_images_aug.to(self.second_device)
                         _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(real_images_aug, real_labels)
-                        consistency_loss = self.l2_loss(dis_real_authen_out, dis_real_aug_authen_out)
-                        dis_acml_loss += self.consistency_lambda*consistency_loss
+                        if self.conditional_strategy == "XT_Xent_GAN":
+                            dis_acml_loss += self.contrastive_lambda*self.XT_Xent_criterion(cls_real_embed, cls_real_aug_embed, t)
+                        if self.consistency_reg:
+                            consistency_loss = self.l2_loss(dis_real_authen_out, dis_real_aug_authen_out)
+                            dis_acml_loss += self.consistency_lambda*consistency_loss
 
                     dis_acml_loss = dis_acml_loss/self.accumulation_steps
                     dis_acml_loss.backward()
@@ -226,12 +252,12 @@ class Trainer:
                 if self.weight_clipping_for_dis:
                     for p in self.dis_model.parameters():
                         p.data.clamp_(-self.weight_clipping_bound, self.weight_clipping_bound)
-            
+
             if step_count % self.print_every == 0 and step_count !=0 and self.logger:
                 if self.d_spectral_norm:
                     dis_sigmas = calculate_all_sn(self.dis_model)
                     self.writer.add_scalars('SN_of_dis', dis_sigmas, step_count)
-            
+
             # ================== TRAIN G ================== #
             toggle_grad(self.dis_model, False)
             toggle_grad(self.gen_model, True)
@@ -248,7 +274,15 @@ class Trainer:
                     cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
 
                     gen_acml_loss = self.G_loss(dis_fake_authen_out)
-                    gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_proxies, fake_cls_mask, fake_labels, t)
+                    if self.conditional_strategy == "ContraGAN":
+                        gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_proxies, fake_cls_mask, fake_labels, t)
+                    elif self.conditional_strategy == "Proxy_NCA_GAN":
+                        gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_fake_embed, cls_fake_proxies, fake_labels)
+                    elif self.conditional_strategy == "XT_Xent_GAN":
+                        pass
+                    else:
+                        raise NotImplementedError
+
                     gen_acml_loss = gen_acml_loss/self.accumulation_steps
                     gen_acml_loss.backward()
 
@@ -268,7 +302,7 @@ class Trainer:
                                                 gen_loss=gen_acml_loss.item(),
                                                 )
                 self.logger.info(log_message)
-                
+
                 if self.g_spectral_norm:
                     gen_sigmas = calculate_all_sn(self.gen_model)
                     self.writer.add_scalars('SN_of_gen', gen_sigmas, step_count)
@@ -285,7 +319,7 @@ class Trainer:
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
                     self.gen_model.train()
-            
+
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
                     is_best = self.evaluation(step_count)
@@ -296,7 +330,7 @@ class Trainer:
     ################################################################################################################################
 
 
-    #######################    dcgan/resgan/wgan_wc/wgan_gp/sngan/sagan/biggan/logan/crgan implementations    ######################   
+    #######################    dcgan/resgan/wgan_wc/wgan_gp/sngan/sagan/biggan/logan/crgan implementations    ######################
     ################################################################################################################################
     def run(self, current_step, total_step):
         self.dis_model.train()
@@ -334,7 +368,7 @@ class Trainer:
                     if self.latent_op:
                         z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
                                             self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
-                    
+
                     fake_images = self.gen_model(z, fake_labels)
                     if self.diff_aug:
                         fake_images = DiffAugment(fake_images, policy=self.policy)
@@ -355,7 +389,7 @@ class Trainer:
 
                     if self.gradient_penalty_for_dis:
                         dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.second_device)
-                    
+
                     if self.consistency_reg:
                         real_images_aug = real_images_aug.to(self.second_device)
                         if self.conditional_strategy == "ACGAN":
@@ -376,7 +410,7 @@ class Trainer:
                 if self.weight_clipping_for_dis:
                     for p in self.dis_model.parameters():
                         p.data.clamp_(-self.weight_clipping_bound, self.weight_clipping_bound)
-            
+
             if step_count % self.print_every == 0 and step_count !=0 and self.logger:
                 if self.d_spectral_norm:
                     dis_sigmas = calculate_all_sn(self.dis_model)
@@ -389,7 +423,7 @@ class Trainer:
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
                     z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
-                    
+
                     if self.latent_op:
                         z, transport_cost = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
                                                             self.latent_op_alpha, self.latent_op_beta, True, self.second_device)
@@ -432,7 +466,7 @@ class Trainer:
                                                 gen_loss=gen_acml_loss.item(),
                                                 )
                 self.logger.info(log_message)
-                   
+
                 if self.g_spectral_norm:
                     gen_sigmas = calculate_all_sn(self.gen_model)
                     self.writer.add_scalars('SN_of_gen', gen_sigmas, step_count)
@@ -473,7 +507,7 @@ class Trainer:
         d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': self.dis_model.state_dict(), 'optimizer': self.D_optimizer.state_dict(),
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
-        
+
         if len(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))) >= 1:
             find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0])
             find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0])
@@ -491,7 +525,7 @@ class Trainer:
 
             torch.save(g_states, g_checkpoint_output_path_)
             torch.save(d_states, d_checkpoint_output_path_)
-        
+
         torch.save(g_states, g_checkpoint_output_path)
         torch.save(d_states, d_checkpoint_output_path)
 
@@ -499,13 +533,13 @@ class Trainer:
             g_ema_states = {'state_dict': self.Gen_copy.state_dict()}
             if len(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))) >= 1:
                 find_and_remove(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0])
-            
+
             g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
-            
+
             if when == "best":
                 if len(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))) >= 1:
                     find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))[0])
-                
+
                 g_ema_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G_ema-current-weights-step={step}.pth".format(when=when, step=str(step)))
 
                 torch.save(g_ema_states, g_ema_checkpoint_output_path_)
@@ -533,7 +567,7 @@ class Trainer:
             if self.Gen_copy is not None:
                 self.Gen_copy.train()
             generator = self.Gen_copy if self.Gen_copy is not None else self.gen_model
-                                                        
+
             if self.latent_op:
                 self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
                                                    self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
@@ -545,7 +579,7 @@ class Trainer:
 
             ### pre-calculate an inception score
             ### calculating inception score using the below will give you an underestimated one.
-            ### plz use the official tensorflow implementation(inception_tensorflow.py). 
+            ### plz use the official tensorflow implementation(inception_tensorflow.py).
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                      self.latent_op_beta, 10, self.second_device)
@@ -569,7 +603,7 @@ class Trainer:
             else:
                 if fid_score <= self.best_fid:
                     self.best_fid, self.best_step, is_best = fid_score, step, True
-            
+
             self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.type4eval_dataset):fid_score}, step)
             self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.type4eval_dataset])):kl_score}, step)
             self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.type4eval_dataset, FID=fid_score))
@@ -578,7 +612,7 @@ class Trainer:
 
             self.dis_model.train()
             self.gen_model.train()
-            
+
         return is_best
     ################################################################################################################################
 
@@ -595,7 +629,7 @@ class Trainer:
             if self.n_gpus > 1:
                 resnet50_conv = DataParallel(resnet50_conv, output_device=self.second_device)
             resnet50_conv.eval()
-            
+
             self.logger.info("Start Nearest Neighbor....")
             for c in tqdm(range(self.num_classes)):
                 fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
@@ -610,7 +644,7 @@ class Trainer:
                         real_images, real_labels, real_images_aug = next(train_iter)
                     else:
                         real_images, real_labels = next(train_iter)
-                    
+
                     num_cls_in_batch = torch.tensor(real_labels.detach().cpu().numpy() == c).sum().item()
                     if num_cls_in_batch > 0:
                         real_images = real_images[torch.tensor(real_labels.detach().cpu().numpy() == c)]
@@ -633,7 +667,7 @@ class Trainer:
                             holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
                     else:
                         pass
-            
+
                 nearest_indices = (-distances).argsort()[-(ncol-1):][::-1]
                 if c % nrow == 0:
                     canvas = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
@@ -645,7 +679,7 @@ class Trainer:
                 else:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
-        
+
         self.gen_model.train()
     ################################################################################################################################
 
@@ -665,7 +699,7 @@ class Trainer:
             zs = interp(torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
                         torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
                         ncol - 2).view(-1, generator.z_dim)
-        
+
         if fix_y:
             ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
             ys = generator.shared(ys).view(nrow, 1, -1)
@@ -675,21 +709,21 @@ class Trainer:
             ys = interp(generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
                         generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
                         ncol-2).view(nrow * (ncol), -1)
-        
+
         with torch.no_grad():
             interpolated_images = generator(zs, None, shared_label=ys)
 
         plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
                         format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
-        
+
         self.gen_model.train()
         ################################################################################################################################
-    
+
     def linear_classification(self, total_step):
         toggle_grad(self.dis_model, False)
         self.dis_model.eval()
         self.linear_model.train()
-        
+
         self.logger.info("Start training Linear classifier: {run_name}".format(run_name=self.run_name))
         train_iter = iter(self.train_dataloader)
         for step in tqdm(range(total_step)):
@@ -717,10 +751,10 @@ class Trainer:
                     dis_out_real = self.dis_model(real_images, real_labels)
 
                 logits = self.linear_model(cls_real_embed)
-                cls_loss = self.ce_loss(logits, real_labels)    
-                
+                cls_loss = self.ce_loss(logits, real_labels)
+
                 cls_loss.backward()
-                    
+
                 self.L_optimizer.step()
 
         self.linear_model.eval()
@@ -742,7 +776,7 @@ class Trainer:
                     cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
                 elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
                     dis_out_real = self.dis_model(real_images, real_labels)
-                
+
                 logits_test = self.linear_model(cls_real_embed)
                 _, prediction = torch.max(logits_test.data, 1)
                 total += real_labels.size(0)

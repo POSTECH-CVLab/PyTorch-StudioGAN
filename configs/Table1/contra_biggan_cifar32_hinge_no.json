@@ -13,6 +13,7 @@
     "model": {
       "architecture": "biggan",
       "conditional_strategy": "ContraGAN",
+      "pos_collected_numerator": true,
       "hypersphere_dim": 512,
       "nonlinear_embed": false,
       "normalize_embed": true,

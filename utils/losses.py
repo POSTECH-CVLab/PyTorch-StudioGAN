@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from torch.nn import DataParallel
 from torch import autograd
 
-import numpy as np 
+import numpy as np
 
 
 
@@ -45,7 +45,7 @@ def loss_wgan_gen(gen_out_fake):
     return -torch.mean(gen_out_fake)
 
 
-def latent_optimise(z, fake_labels, gen_model, dis_model, latent_op_step, latent_op_rate, 
+def latent_optimise(z, fake_labels, gen_model, dis_model, latent_op_step, latent_op_rate,
                     latent_op_alpha, latent_op_beta, trans_cost, default_device):
     batch_size = z.shape[0]
     for step in range(latent_op_step):
@@ -79,11 +79,12 @@ class Cross_Entropy_loss(torch.nn.Module):
         return self.ce_loss(logits, labels)
 
 
-class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
-    def __init__(self, device, batch_size):
-        super(Conditional_Embedding_Contrastive_loss, self).__init__()
-        self.batch_size = batch_size
+class Conditional_Contrastive_loss(torch.nn.Module):
+    def __init__(self, device, batch_size, pos_collected_numerator):
+        super(Conditional_Contrastive_loss, self).__init__()
         self.device = device
+        self.batch_size = batch_size
+        self.pos_collected_numerator = pos_collected_numerator
         self.calculate_similarity_matrix = self._calculate_similarity_matrix()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
         self.hard_positive_mask = self._get_hard_positive_mask().type(torch.bool)
@@ -91,7 +92,7 @@ class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
 
     def _calculate_similarity_matrix(self):
         return self._cosine_simililarity_matrix
-    
+
     def remove_diag(self, M):
         h, w = M.shape
         assert h==w, "h and w should be same"
@@ -113,16 +114,107 @@ class Conditional_Embedding_Contrastive_loss(torch.nn.Module):
         similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
         instance_zone = torch.exp(self.remove_diag(similarity_matrix)/temperature)
 
-        mask_4_remove_negatives = negative_mask[labels]
-        mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
-        # avg_positive = int(mask_4_remove_negatives.detach().float().sum(dim=1).mean())
-
-        inst2inst_positives = instance_zone*mask_4_remove_negatives
-        inst2embed_positive = torch.exp(self.cosine_similarity(inst_embed, proxy)/temperature)
-        numerator = (inst2inst_positives.sum(dim=1)+inst2embed_positive)
-        denomerator = torch.cat([torch.unsqueeze(inst2embed_positive, dim=1), instance_zone], dim=1).sum(dim=1)
+        inst2proxy_positive = torch.exp(self.cosine_similarity(inst_embed, proxy)/temperature)
+        numerator = inst2proxy_positive
+        if self.pos_collected_numerator:
+            mask_4_remove_negatives = negative_mask[labels]
+            mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
+            inst2inst_positives = instance_zone*mask_4_remove_negatives
+            # avg_positive = int(mask_4_remove_negatives.detach().float().sum(dim=1).mean())
+            numerator += inst2inst_positives.sum(dim=1)
+        denomerator = torch.cat([torch.unsqueeze(inst2proxy_positive, dim=1), instance_zone], dim=1).sum(dim=1)
         criterion = -torch.log(numerator/denomerator).mean()
         return criterion
+
+
+class Proxy_NCA_loss(torch.nn.Module):
+    def __init__(self, device, embedding_layer, num_classes, batch_size):
+        super(Proxy_NCA_loss, self).__init__()
+        self.device = device
+        self.embedding_layer = embedding_layer
+        self.num_classes = num_classes
+        self.batch_size = batch_size
+        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
+
+    def _get_positive_proxy_mask(self, labels):
+        labels = labels.detach().cpu().numpy()
+        rvs_one_hot_target = np.ones([self.num_classes, self.num_classes]) - np.eye(self.num_classes)
+        rvs_one_hot_target = rvs_one_hot_target[labels]
+        mask = torch.from_numpy((rvs_one_hot_target)).type(torch.bool)
+        return mask.to(self.device)
+
+    def forward(self, inst_embed, proxy, labels):
+        all_labels = torch.tensor([c for c in range(self.num_classes)]).type(torch.long).to(self.device)
+        positive_proxy_mask = self._get_positive_proxy_mask(labels)
+        negative_proxies = torch.exp(torch.mm(inst_embed, self.embedding_layer(all_labels).T))*positive_proxy_mask
+
+        inst2proxy_positive = torch.exp(self.cosine_similarity(inst_embed, proxy))
+        numerator = inst2proxy_positive
+        denomerator = negative_proxies.sum(dim=1)
+        criterion = -torch.log(numerator/denomerator).mean()
+        return criterion
+
+
+class XT_Xent_loss(torch.nn.Module):
+    def __init__(self, device, batch_size, use_cosine_similarity=True):
+        super(XT_Xent_loss, self).__init__()
+        self.device = device
+        self.batch_size = batch_size
+        self.softmax = torch.nn.Softmax(dim=-1)
+        self.mask_samples_from_same_repr = self._get_correlated_mask().type(torch.bool)
+        self.similarity_function = self._get_similarity_function(use_cosine_similarity)
+        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+
+    def _get_similarity_function(self, use_cosine_similarity):
+        if use_cosine_similarity:
+            self._cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
+            return self._cosine_simililarity
+        else:
+            return self._dot_simililarity
+
+    def _get_correlated_mask(self):
+        diag = np.eye(2 * self.batch_size)
+        l1 = np.eye((2 * self.batch_size), 2 * self.batch_size, k=-self.batch_size)
+        l2 = np.eye((2 * self.batch_size), 2 * self.batch_size, k=self.batch_size)
+        mask = torch.from_numpy((diag + l1 + l2))
+        mask = (1 - mask).type(torch.bool)
+        return mask.to(self.device)
+
+    @staticmethod
+    def _dot_simililarity(x, y):
+        v = torch.tensordot(x.unsqueeze(1), y.T.unsqueeze(0), dims=2)
+        # x shape: (N, 1, C)
+        # y shape: (1, C, 2N)
+        # v shape: (N, 2N)
+        return v
+
+    def _cosine_simililarity(self, x, y):
+        # x shape: (N, 1, C)
+        # y shape: (1, 2N, C)
+        # v shape: (N, 2N)
+        v = self._cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
+        return v
+
+    def forward(self, zis, zjs, temperature):
+        representations = torch.cat([zjs, zis], dim=0)
+
+        similarity_matrix = self.similarity_function(representations, representations)
+
+        # filter out the scores from the positive samples
+        l_pos = torch.diag(similarity_matrix, self.batch_size)
+        r_pos = torch.diag(similarity_matrix, -self.batch_size)
+        positives = torch.cat([l_pos, r_pos]).view(2 * self.batch_size, 1)
+
+        negatives = similarity_matrix[self.mask_samples_from_same_repr].view(2 * self.batch_size, -1)
+
+        logits = torch.cat((positives, negatives), dim=1)
+        logits /= temperature
+
+        labels = torch.zeros(2 * self.batch_size).to(self.device).long()
+        loss = self.criterion(logits, labels)
+
+        return loss / (2 * self.batch_size)
+
 
 def calc_derv4gp(netD, real_data, fake_data, real_labels, device):
     # print "real_data: ", real_data.size(), fake_data.size()
@@ -164,18 +256,18 @@ def calc_derv4lo(z, fake_labels, netG, netD, device):
 
 def calc_derv(inputs, labels, netD, device, netG=None):
     if netG is None:
-        netD.eval()     
+        netD.eval()
 
         X = autograd.Variable(inputs, requires_grad=True)
 
         _, _, outputs = netD(X, labels)
 
-        gradients = autograd.grad(outputs=outputs, inputs=X, 
+        gradients = autograd.grad(outputs=outputs, inputs=X,
                                 grad_outputs=torch.ones(outputs.size()).to(device),
                                 create_graph=True, retain_graph=True, only_inputs=True)[0]
-        
+
         gradients_norm = torch.unsqueeze((gradients.norm(2, dim=1) ** 2), dim=1)
-        
+
         netD.train()
         return gradients_norm
     else:
@@ -184,7 +276,7 @@ def calc_derv(inputs, labels, netD, device, netG=None):
 
         Z = autograd.Variable(inputs, requires_grad=True)
         fake_images = netG(Z, labels)
-        
+
         _, _, dis_fake_out = netD(fake_images, labels)
 
         gradients = autograd.grad(outputs=dis_fake_out, inputs=Z,

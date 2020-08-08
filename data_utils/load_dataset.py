@@ -31,7 +31,7 @@ class RandomCropLongEdge(object):
     def __call__(self, img):
         size = (min(img.size), min(img.size))
         # Only step forward along this edge if it's the long edge
-        i = (0 if size[0] == img.size[0] 
+        i = (0 if size[0] == img.size[0]
             else np.random.randint(low=0,high=img.size[0] - size[0]))
         j = (0 if size[1] == img.size[1]
             else np.random.randint(low=0,high=img.size[1] - size[1]))
@@ -52,16 +52,18 @@ class CenterCropLongEdge(object):
 
     def __repr__(self):
         return self.__class__.__name__
-        
+
 
 class LoadDataset(Dataset):
-    def __init__(self, dataset_name, data_path, train, download, resize_size, hdf5_path=None, consistency_reg=False, random_flip=False):
+    def __init__(self, dataset_name, data_path, train, download, resize_size, conditional_strategy, hdf5_path=None,
+                 consistency_reg=False, random_flip=False):
         super(LoadDataset, self).__init__()
         self.dataset_name = dataset_name
         self.data_path = data_path
         self.train = train
         self.download = download
         self.resize_size = resize_size
+        self.conditional_strategy = conditional_strategy
         self.hdf5_path = hdf5_path
         self.consistency_reg = consistency_reg
 
@@ -83,16 +85,16 @@ class LoadDataset(Dataset):
                 self.transforms = [CenterCropLongEdge(), transforms.Resize(self.resize_size)]
                 if random_flip:
                     self.transforms += [transforms.RandomHorizontalFlip()]
-        
+
         self.transforms = transforms.Compose(self.transforms)
-        
-        if self.consistency_reg:
+
+        if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
             self.aug_tranforms = transforms.Compose([transforms.RandomHorizontalFlip(),
                                                      transforms.RandomCrop((self.resize_size, self.resize_size),
                                                                             padding=self.pad,
                                                                             pad_if_needed=True,
                                                                             padding_mode='reflect')])
-        
+
 
         self.stadard_transform = transforms.Compose([transforms.ToTensor(),
                                                      transforms.Normalize(self.norm_mean, self.norm_std)])
@@ -122,7 +124,7 @@ class LoadDataset(Dataset):
                 mode = 'train' if self.train == True else 'valid'
                 root = os.path.join('data','ILSVRC2012', mode)
                 self.data = ImageFolder(root=root)
-        
+
         elif self.dataset_name == "tiny_imagenet":
             if self.hdf5_path is not None:
                 print('Loading %s into memory...' % self.hdf5_path)
@@ -153,7 +155,7 @@ class LoadDataset(Dataset):
             img, label = self.data[index]
             img, label = self.transforms(img), int(label)
 
-        if self.consistency_reg:
+        if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
             img_aug = self.aug_tranforms(img)
             return self.stadard_transform(img), label, self.stadard_transform(img_aug)
 
