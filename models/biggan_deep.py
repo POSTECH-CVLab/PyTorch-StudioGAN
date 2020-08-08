@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, z_dims_after_concat, synchronized_bn, 
+    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, z_dims_after_concat, synchronized_bn,
                  upsample, channel_ratio=4):
         super(GenBlock, self).__init__()
         self.conditional_bn = conditional_bn
@@ -91,7 +91,7 @@ class Generator(nn.Module):
     def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
                  conditional_strategy, num_classes, synchronized_bn, initialize, G_depth):
         super(Generator, self).__init__()
-        g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4], 
+        g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
                                 "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
                                 "96": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
                                 "128": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2]}
@@ -100,13 +100,13 @@ class Generator(nn.Module):
                                  "64": [g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "96": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "128": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim]}
-        
+
         bottom_collection = {"32": 4, "64": 4, "96": 3, "128":4}
         self.z_dim = z_dim
         self.shared_dim = shared_dim
         self.num_classes = num_classes
-        conditional_bn = True if conditional_strategy == "ACGAN" or conditional_strategy =="cGAN" or conditional_strategy == "ContraGAN" else False
-        
+        conditional_bn = True if conditional_strategy in ["ACGAN", "cGAN", "ContraGAN", "Proxy_NCA_GAN", "XT_Xent_GAN"] else False
+
         self.in_dims =  g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
         self.bottom = bottom_collection[str(img_size)]
@@ -131,7 +131,7 @@ class Generator(nn.Module):
                                       synchronized_bn=synchronized_bn,
                                       upsample=True if g_index == (G_depth-1) else False)]
                             for g_index in range(G_depth)]
-                                          
+
             if index+1 == attention_after_nth_gen_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], g_spectral_norm)]]
 
@@ -169,7 +169,7 @@ class Generator(nn.Module):
             shared_label = self.shared(label)
         else:
             pass
-        z = torch.cat([shared_label, z], 1)      
+        z = torch.cat([shared_label, z], 1)
 
         act = self.linear0(z)
         act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
@@ -216,18 +216,18 @@ class DiscBlock(nn.Module):
             self.conv2d2 = conv2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1)
             self.conv2d3 = conv2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1)
             self.conv2d4 = conv2d(in_channels=hidden_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
-                                 
+
         self.learnable_sc = True if (in_channels != out_channels) else False
         if self.learnable_sc:
             if self.d_spectral_norm:
                 self.conv2d0 = snconv2d(in_channels=in_channels, out_channels=out_channels-in_channels, kernel_size=1, stride=1, padding=0)
             else:
                 self.conv2d0 = conv2d(in_channels=in_channels, out_channels=out_channels-in_channels, kernel_size=1, stride=1, padding=0)
-        
+
         if self.downsample:
             self.average_pooling = nn.AvgPool2d(2)
 
-    
+
     def forward(self, x):
         x0 = x
 
@@ -239,14 +239,14 @@ class DiscBlock(nn.Module):
         x = self.activation(x)
 
         if self.downsample:
-            x = self.average_pooling(x)     
-        
+            x = self.average_pooling(x)
+
         x = self.conv2d4(x)
 
         if self.downsample:
             x0 = self.average_pooling(x0)
         if self.learnable_sc:
-            x0 = torch.cat([x0, self.conv2d0(x0)], 1)  
+            x0 = torch.cat([x0, self.conv2d0(x0)], 1)
 
         out = x + x0
         return out
@@ -254,10 +254,10 @@ class DiscBlock(nn.Module):
 
 class Discriminator(nn.Module):
     """Discriminator."""
-    def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy, 
+    def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
                  hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, initialize, D_depth):
         super(Discriminator, self).__init__()
-        d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2], 
+        d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
                                 "64": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8],
                                 "96": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16],
                                 "128": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16]}
@@ -300,7 +300,7 @@ class Discriminator(nn.Module):
 
             if index == attention_after_nth_dis_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], d_spectral_norm)]]
-        
+
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
         if activation_fn == "ReLU":
@@ -316,7 +316,7 @@ class Discriminator(nn.Module):
 
         if d_spectral_norm:
             self.linear1 = snlinear(in_features=self.out_dims[-1], out_features=1)
-            if self.conditional_strategy == 'ContraGAN':
+            if self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'XT_Xent_GAN']:
                 self.linear2 = snlinear(in_features=self.out_dims[-1], out_features=hypersphere_dim)
                 if self.nonlinear_embed:
                     self.linear3 = snlinear(in_features=hypersphere_dim, out_features=hypersphere_dim)
@@ -329,7 +329,7 @@ class Discriminator(nn.Module):
                 pass
         else:
             self.linear1 = linear(in_features=self.out_dims[-1], out_features=1)
-            if self.conditional_strategy == 'ContraGAN':
+            if self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'XT_Xent_GAN']:
                 self.linear2 = linear(in_features=self.out_dims[-1], out_features=hypersphere_dim)
                 if self.nonlinear_embed:
                     self.linear3 = linear(in_features=hypersphere_dim, out_features=hypersphere_dim)
@@ -348,7 +348,7 @@ class Discriminator(nn.Module):
 
     def forward(self, x, label):
         h = x
-    
+
         for index, blocklist in enumerate(self.blocks):
             for block in blocklist:
                 h = block(h)
@@ -359,7 +359,7 @@ class Discriminator(nn.Module):
             authen_output = torch.squeeze(self.linear1(h))
             return authen_output
 
-        elif self.conditional_strategy == 'ContraGAN':
+        elif self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'XT_Xent_GAN']:
             authen_output = torch.squeeze(self.linear1(h))
             cls_proxy = self.embedding(label)
             cls_embed = self.linear2(h)
@@ -374,7 +374,7 @@ class Discriminator(nn.Module):
             authen_output = torch.squeeze(self.linear1(h))
             proj = torch.sum(torch.mul(self.embedding(label), h), 1)
             return proj + authen_output
-        
+
         elif self.conditional_strategy == 'ACGAN':
             authen_output = torch.squeeze(self.linear1(h))
             cls_output = self.linear4(h)

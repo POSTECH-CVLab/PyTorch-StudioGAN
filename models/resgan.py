@@ -53,7 +53,7 @@ class GenBlock(nn.Module):
 
     def forward(self, x, label):
         x0 = x
-        
+
         if self.conditional_bn:
             x = self.bn1(x, label)
         else:
@@ -80,7 +80,7 @@ class Generator(nn.Module):
     def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
                  conditional_strategy, num_classes, synchronized_bn, initialize, G_depth):
         super(Generator, self).__init__()
-        g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4], 
+        g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
                                 "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
                                 "96": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
                                 "128": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2]}
@@ -89,12 +89,12 @@ class Generator(nn.Module):
                                  "64": [g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "96": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "128": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim]}
-        
+
         bottom_collection = {"32": 4, "64": 4, "96": 3, "128":4}
 
         self.z_dim = z_dim
         self.num_classes = num_classes
-        conditional_bn = True if conditional_strategy == "ACGAN" or conditional_strategy =="cGAN" or conditional_strategy == "ContraGAN" else False
+        conditional_bn = True if conditional_strategy in ["ACGAN", "cGAN", "ContraGAN", "Proxy_NCA_GAN", "XT_Xent_GAN"] else False
 
         self.in_dims =  g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
@@ -289,10 +289,10 @@ class DiscBlock(nn.Module):
 
 class Discriminator(nn.Module):
     """Discriminator."""
-    def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy, 
+    def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
                  hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, initialize, D_depth):
         super(Discriminator, self).__init__()
-        d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2], 
+        d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
                                 "64": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8],
                                 "96": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16],
                                 "128": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16]}
@@ -349,7 +349,7 @@ class Discriminator(nn.Module):
 
         if d_spectral_norm:
             self.linear1 = snlinear(in_features=self.out_dims[-1], out_features=1)
-            if self.conditional_strategy == 'ContraGAN':
+            if self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'XT_Xent_GAN']:
                 self.linear2 = snlinear(in_features=self.out_dims[-1], out_features=hypersphere_dim)
                 if self.nonlinear_embed:
                     self.linear3 = snlinear(in_features=hypersphere_dim, out_features=hypersphere_dim)
@@ -362,7 +362,7 @@ class Discriminator(nn.Module):
                 pass
         else:
             self.linear1 = linear(in_features=self.out_dims[-1], out_features=1)
-            if self.conditional_strategy == 'ContraGAN':
+            if self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'XT_Xent_GAN']:
                 self.linear2 = linear(in_features=self.out_dims[-1], out_features=hypersphere_dim)
                 if self.nonlinear_embed:
                     self.linear3 = linear(in_features=hypersphere_dim, out_features=hypersphere_dim)
@@ -386,12 +386,12 @@ class Discriminator(nn.Module):
                 h = block(h)
         h = self.activation(h)
         h = torch.sum(h, dim=[2,3])
-        
+
         if self.conditional_strategy == 'no':
             authen_output = torch.squeeze(self.linear1(h))
             return authen_output
 
-        elif self.conditional_strategy == 'ContraGAN':
+        elif self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'XT_Xent_GAN']:
             authen_output = torch.squeeze(self.linear1(h))
             cls_proxy = self.embedding(label)
             cls_embed = self.linear2(h)
@@ -406,7 +406,7 @@ class Discriminator(nn.Module):
             authen_output = torch.squeeze(self.linear1(h))
             proj = torch.sum(torch.mul(self.embedding(label), h), 1)
             return authen_output + proj
-        
+
         elif self.conditional_strategy == 'ACGAN':
             authen_output = torch.squeeze(self.linear1(h))
             cls_output = self.linear4(h)
