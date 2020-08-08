@@ -87,7 +87,6 @@ class Conditional_Contrastive_loss(torch.nn.Module):
         self.pos_collected_numerator = pos_collected_numerator
         self.calculate_similarity_matrix = self._calculate_similarity_matrix()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
-        self.hard_positive_mask = self._get_hard_positive_mask().type(torch.bool)
 
 
     def _calculate_similarity_matrix(self):
@@ -105,23 +104,21 @@ class Conditional_Contrastive_loss(torch.nn.Module):
         v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
         return v
 
-    def _get_hard_positive_mask(self):
-        hard_positive = np.eye((2 * self.batch_size), 2 * self.batch_size, k=self.batch_size)
-        mask = torch.from_numpy((hard_positive)).type(torch.bool)
-        return mask.to(self.device)
-
     def forward(self, inst_embed, proxy, negative_mask, labels, temperature):
         similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
         instance_zone = torch.exp(self.remove_diag(similarity_matrix)/temperature)
 
         inst2proxy_positive = torch.exp(self.cosine_similarity(inst_embed, proxy)/temperature)
-        numerator = inst2proxy_positive
         if self.pos_collected_numerator:
+            numerator = inst2proxy_positive
+        else:
             mask_4_remove_negatives = negative_mask[labels]
             mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
+
             inst2inst_positives = instance_zone*mask_4_remove_negatives
-            # avg_positive = int(mask_4_remove_negatives.detach().float().sum(dim=1).mean())
-            numerator += inst2inst_positives.sum(dim=1)
+
+            numerator = (inst2inst_positives.sum(dim=1)+inst2proxy_positive)
+
         denomerator = torch.cat([torch.unsqueeze(inst2proxy_positive, dim=1), instance_zone], dim=1).sum(dim=1)
         criterion = -torch.log(numerator/denomerator).mean()
         return criterion

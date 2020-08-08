@@ -74,8 +74,8 @@ class Trainer:
 
         self.conditional_strategy = conditional_strategy
         self.pos_collected_numerator = pos_collected_numerator
-        assert self.pos_collected_numerator is True and self.conditional_strategy == "ContraGAN", \
-            "pos_collected_numerator option is not appliable except for ContraGAN."
+        if self.pos_collected_numerator:
+            assert self.conditional_strategy == "ContraGAN", "pos_collected_numerator option is not appliable except for ContraGAN."
         self.z_dim = z_dim
         self.num_classes = num_classes
         self.hypersphere_dim = hypersphere_dim
