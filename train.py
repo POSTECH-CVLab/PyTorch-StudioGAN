@@ -50,7 +50,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     cudnn.deterministic = True
     n_gpus = torch.cuda.device_count()
     default_device = torch.cuda.current_device()
-    second_device = default_device if n_gpus == 1 else default_device+1
+    second_device = default_device if n_gpus == 1 or conditional_strategy == "Proxy_NCA_GAN" else default_device+1
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
 
     if n_gpus == 1:
@@ -225,6 +225,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         G_loss=G_loss[adv_loss],
         D_loss=D_loss[adv_loss],
         contrastive_lambda=model_config['loss_function']['contrastive_lambda'],
+        margin=model_config['loss_function']['margin'],
         tempering_type=model_config['loss_function']['tempering_type'],
         tempering_step=model_config['loss_function']['tempering_step'],
         start_temperature=model_config['loss_function']['start_temperature'],

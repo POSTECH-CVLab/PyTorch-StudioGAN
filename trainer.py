@@ -49,7 +49,7 @@ class Trainer:
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
                  linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim,
                  d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps,
-                 total_step, G_loss, D_loss, contrastive_lambda, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
+                 total_step, G_loss, D_loss, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
                  gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, prior, truncated_factor,
                  ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device,
                  second_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
@@ -94,6 +94,7 @@ class Trainer:
         self.G_loss = G_loss
         self.D_loss = D_loss
         self.contrastive_lambda = contrastive_lambda
+        self.margin = margin
         self.tempering_type = tempering_type
         self.tempering_step = tempering_step
         self.start_temperature = start_temperature
@@ -227,7 +228,7 @@ class Trainer:
                     dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
                     if self.conditional_strategy == "ContraGAN":
                         dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
-                                                                                            real_labels, t, 1.0)
+                                                                                            real_labels, t, self.margin)
                     elif self.conditional_strategy == "Proxy_NCA_GAN":
                         dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_real_embed, cls_real_proxies, real_labels)
                     elif self.conditional_strategy == "XT_Xent_GAN":
