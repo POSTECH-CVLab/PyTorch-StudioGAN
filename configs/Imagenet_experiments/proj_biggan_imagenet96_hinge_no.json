@@ -51,6 +51,7 @@
       "adv_loss": "hinge",
 
       "contrastive_lambda":"N/A",
+      "margin": "N/A", 
       "tempering_type": "N/A",
       "tempering_step": "N/A",
       "start_temperature": "N/A",
