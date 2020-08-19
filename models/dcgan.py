@@ -12,6 +12,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class dummy_context_mgr():
+    def __enter__(self):
+        return None
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
 
 class GenBlock(nn.Module):
     def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes):
@@ -55,13 +61,14 @@ class GenBlock(nn.Module):
 class Generator(nn.Module):
     """Generator."""
     def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                 conditional_strategy, num_classes, initialize, G_depth):
+                 conditional_strategy, num_classes, initialize, G_depth, mixed_precision):
         super(Generator, self).__init__()
         self.in_dims =  [512, 256, 128]
         self.out_dims = [256, 128, 64]
 
         self.z_dim = z_dim
         self.num_classes = num_classes
+        self.mixed_precision = mixed_precision
         conditional_bn = True if conditional_strategy in ["ACGAN", "cGAN", "ContraGAN", "Proxy_NCA_GAN", "XT_Xent_GAN"] else False
 
         if g_spectral_norm:
@@ -94,17 +101,18 @@ class Generator(nn.Module):
         if initialize is not False:
             init_weights(self.modules, initialize)
 
-    def forward(self, z, label):
-        act = self.linear0(z)
-        act = act.view(-1, self.in_dims[0], 4, 4)
-        for index, blocklist in enumerate(self.blocks):
-            for block in blocklist:
-                if isinstance(block, Self_Attn):
-                    act = block(act)
-                else:
-                    act = block(act, label)
-        act = self.conv4(act)
-        out = self.tanh(act)
+    def forward(self, z, label, evaluation=False):
+        with torch.cuda.amp.autocast() if self.mixed_precision is True and evaluation is False else dummy_context_mgr() as mp:
+            act = self.linear0(z)
+            act = act.view(-1, self.in_dims[0], 4, 4)
+            for index, blocklist in enumerate(self.blocks):
+                for block in blocklist:
+                    if isinstance(block, Self_Attn):
+                        act = block(act)
+                    else:
+                        act = block(act, label)
+            act = self.conv4(act)
+            out = self.tanh(act)
         return out
 
 
@@ -149,7 +157,7 @@ class DiscBlock(nn.Module):
 class Discriminator(nn.Module):
     """Discriminator."""
     def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
-                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, initialize, D_depth):
+                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, initialize, D_depth, mixed_precision):
         super(Discriminator, self).__init__()
         self.in_dims  = [3] + [64, 128]
         self.out_dims = [64, 128, 256]
@@ -159,6 +167,7 @@ class Discriminator(nn.Module):
         self.num_classes = num_classes
         self.nonlinear_embed = nonlinear_embed
         self.normalize_embed = normalize_embed
+        self.mixed_precision = mixed_precision
 
         self.blocks = []
         for index in range(len(self.in_dims)):
@@ -221,41 +230,42 @@ class Discriminator(nn.Module):
             init_weights(self.modules, initialize)
 
 
-    def forward(self, x, label):
-        h = x
-        for index, blocklist in enumerate(self.blocks):
-            for block in blocklist:
-                h = block(h)
-        h = self.conv(h)
-        if self.d_spectral_norm is False:
-            h = self.bn(h)
-        h = self.activation(h)
-        h = torch.sum(h, dim=[2, 3])
+    def forward(self, x, label, evaluation=False):
+        with torch.cuda.amp.autocast() if self.mixed_precision is True and evaluation is False else dummy_context_mgr() as mp:
+            h = x
+            for index, blocklist in enumerate(self.blocks):
+                for block in blocklist:
+                    h = block(h)
+            h = self.conv(h)
+            if self.d_spectral_norm is False:
+                h = self.bn(h)
+            h = self.activation(h)
+            h = torch.sum(h, dim=[2, 3])
 
-        if self.conditional_strategy == 'no':
-            authen_output = torch.squeeze(self.linear1(h))
-            return authen_output
+            if self.conditional_strategy == 'no':
+                authen_output = torch.squeeze(self.linear1(h))
+                return authen_output
 
-        elif self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'XT_Xent_GAN']:
-            authen_output = torch.squeeze(self.linear1(h))
-            cls_proxy = self.embedding(label)
-            cls_embed = self.linear2(h)
-            if self.nonlinear_embed:
-                cls_embed = self.linear3(self.activation(cls_embed))
-            if self.normalize_embed:
-                cls_proxy = F.normalize(cls_proxy, dim=1)
-                cls_embed = F.normalize(cls_embed, dim=1)
-            return cls_proxy, cls_embed, authen_output
+            elif self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'XT_Xent_GAN']:
+                authen_output = torch.squeeze(self.linear1(h))
+                cls_proxy = self.embedding(label)
+                cls_embed = self.linear2(h)
+                if self.nonlinear_embed:
+                    cls_embed = self.linear3(self.activation(cls_embed))
+                if self.normalize_embed:
+                    cls_proxy = F.normalize(cls_proxy, dim=1)
+                    cls_embed = F.normalize(cls_embed, dim=1)
+                return cls_proxy, cls_embed, authen_output
 
-        elif self.conditional_strategy == 'cGAN':
-            authen_output = torch.squeeze(self.linear1(h))
-            proj = torch.sum(torch.mul(self.embedding(label), h), 1)
-            return authen_output + proj
+            elif self.conditional_strategy == 'cGAN':
+                authen_output = torch.squeeze(self.linear1(h))
+                proj = torch.sum(torch.mul(self.embedding(label), h), 1)
+                return authen_output + proj
 
-        elif self.conditional_strategy == 'ACGAN':
-            authen_output = torch.squeeze(self.linear1(h))
-            cls_output = self.linear4(h)
-            return cls_output, authen_output
+            elif self.conditional_strategy == 'ACGAN':
+                authen_output = torch.squeeze(self.linear1(h))
+                cls_output = self.linear4(h)
+                return cls_output, authen_output
 
-        else:
-            raise NotImplementedError
+            else:
+                raise NotImplementedError

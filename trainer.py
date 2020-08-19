@@ -45,6 +45,13 @@ LOG_FORMAT = (
 )
 
 
+class dummy_context_mgr():
+    def __enter__(self):
+        return None
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
+
 class Trainer:
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
                  linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim,
@@ -52,7 +59,7 @@ class Trainer:
                  total_step, G_loss, D_loss, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
                  gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, prior, truncated_factor,
                  ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device,
-                 print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
+                 print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -127,6 +134,7 @@ class Trainer:
         self.sigma = sigma
         self.best_fid = best_fid
         self.best_fid_checkpoint_path = best_fid_checkpoint_path
+        self.mixed_precision = mixed_precision
         self.train_config = train_config
         self.model_config = model_config
 
@@ -164,6 +172,10 @@ class Trainer:
 
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
                                                                 self.num_classes, None, self.default_device, sampler=sampler)
+
+        if self.mixed_precision:
+            self.dis_scaler = torch.cuda.amp.GradScaler()
+            self.gen_scaler = torch.cuda.amp.GradScaler()
 
         if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
             self.num_eval = {'train':50000, 'valid':50000}
@@ -209,45 +221,48 @@ class Trainer:
                         else:
                             real_images, real_labels = next(train_iter)
 
-                    real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
-                    if self.diff_aug:
-                        real_images = DiffAugment(real_images, policy=self.policy)
+                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
+                        real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
+                        if self.diff_aug:
+                            real_images = DiffAugment(real_images, policy=self.policy)
 
-                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
-                    real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
+                        z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                        real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
 
-                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
+                        cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
 
-                    fake_images = self.gen_model(z, fake_labels)
-                    if self.diff_aug:
-                        fake_images = DiffAugment(fake_images, policy=self.policy)
+                        fake_images = self.gen_model(z, fake_labels)
+                        if self.diff_aug:
+                            fake_images = DiffAugment(fake_images, policy=self.policy)
 
-                    cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
+                        cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
 
-                    dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
-                    if self.conditional_strategy == "ContraGAN":
-                        dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
+                        dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
+                        if self.conditional_strategy == "ContraGAN":
+                            dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
                                                                                             real_labels, t, self.margin)
-                    elif self.conditional_strategy == "Proxy_NCA_GAN":
-                        dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_real_embed, cls_real_proxies, real_labels)
-                    elif self.conditional_strategy == "XT_Xent_GAN":
-                        pass
-                    else:
-                        raise NotImplementedError
+                        elif self.conditional_strategy == "Proxy_NCA_GAN":
+                            dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_real_embed, cls_real_proxies, real_labels)
+                        elif self.conditional_strategy == "XT_Xent_GAN":
+                            pass
+                        else:
+                            raise NotImplementedError
 
-                    if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
-                        real_images_aug = real_images_aug.to(self.default_device)
-                        _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(real_images_aug, real_labels)
-                        if self.conditional_strategy == "XT_Xent_GAN":
-                            dis_acml_loss += self.contrastive_lambda*self.XT_Xent_criterion(cls_real_embed, cls_real_aug_embed, t)
-                        if self.consistency_reg:
-                            consistency_loss = self.l2_loss(dis_real_authen_out, dis_real_aug_authen_out)
-                            dis_acml_loss += self.consistency_lambda*consistency_loss
+                        if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
+                            real_images_aug = real_images_aug.to(self.default_device)
+                            _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(real_images_aug, real_labels)
+                            if self.conditional_strategy == "XT_Xent_GAN":
+                                dis_acml_loss += self.contrastive_lambda*self.XT_Xent_criterion(cls_real_embed, cls_real_aug_embed, t)
+                            if self.consistency_reg:
+                                consistency_loss = self.l2_loss(dis_real_authen_out, dis_real_aug_authen_out)
+                                dis_acml_loss += self.consistency_lambda*consistency_loss
 
-                    dis_acml_loss = dis_acml_loss/self.accumulation_steps
-                    dis_acml_loss.backward()
+                        dis_acml_loss = dis_acml_loss/self.accumulation_steps
 
-                self.D_optimizer.step()
+                    self.dis_scaler.scale(dis_acml_loss).backward()
+
+                self.dis_scaler.step(self.D_optimizer)
+                self.dis_scaler.update()
 
                 if self.weight_clipping_for_dis:
                     for p in self.dis_model.parameters():
@@ -264,29 +279,32 @@ class Trainer:
             for step_index in range(self.g_steps_per_iter):
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
-                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
-                    fake_cls_mask = make_mask(fake_labels, self.num_classes, self.default_device)
+                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
+                        z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                        fake_cls_mask = make_mask(fake_labels, self.num_classes, self.default_device)
 
-                    fake_images = self.gen_model(z, fake_labels)
-                    if self.diff_aug:
-                        fake_images = DiffAugment(fake_images, policy=self.policy)
+                        fake_images = self.gen_model(z, fake_labels)
+                        if self.diff_aug:
+                            fake_images = DiffAugment(fake_images, policy=self.policy)
 
-                    cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
+                        cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
 
-                    gen_acml_loss = self.G_loss(dis_fake_authen_out)
-                    if self.conditional_strategy == "ContraGAN":
-                        gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_proxies, fake_cls_mask, fake_labels, t, 0.0)
-                    elif self.conditional_strategy == "Proxy_NCA_GAN":
-                        gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_fake_embed, cls_fake_proxies, fake_labels)
-                    elif self.conditional_strategy == "XT_Xent_GAN":
-                        pass
-                    else:
-                        raise NotImplementedError
+                        gen_acml_loss = self.G_loss(dis_fake_authen_out)
+                        if self.conditional_strategy == "ContraGAN":
+                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_proxies, fake_cls_mask, fake_labels, t, 0.0)
+                        elif self.conditional_strategy == "Proxy_NCA_GAN":
+                            gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_fake_embed, cls_fake_proxies, fake_labels)
+                        elif self.conditional_strategy == "XT_Xent_GAN":
+                            pass
+                        else:
+                            raise NotImplementedError
 
-                    gen_acml_loss = gen_acml_loss/self.accumulation_steps
-                    gen_acml_loss.backward()
+                        gen_acml_loss = gen_acml_loss/self.accumulation_steps
 
-                self.G_optimizer.step()
+                    self.gen_scaler.scale(gen_acml_loss).backward()
+
+                self.gen_scaler.step(self.G_optimizer)
+                self.gen_scaler.update()
 
                 # if ema is True: we update parameters of the Gen_copy in adaptive way.
                 if self.ema:
@@ -360,52 +378,54 @@ class Trainer:
                         else:
                             real_images, real_labels = next(train_iter)
 
-                    real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
-                    if self.diff_aug:
-                        real_images = DiffAugment(real_images, policy=self.policy)
-                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
+                        real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
+                        if self.diff_aug:
+                            real_images = DiffAugment(real_images, policy=self.policy)
+                        z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
 
-                    if self.latent_op:
-                        z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                            self.latent_op_alpha, self.latent_op_beta, False, self.default_device)
+                        if self.latent_op:
+                            z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
+                                                self.latent_op_alpha, self.latent_op_beta, False, self.default_device)
 
-                    fake_images = self.gen_model(z, fake_labels)
-                    if self.diff_aug:
-                        fake_images = DiffAugment(fake_images, policy=self.policy)
+                        fake_images = self.gen_model(z, fake_labels)
+                        if self.diff_aug:
+                            fake_images = DiffAugment(fake_images, policy=self.policy)
 
-                    if self.conditional_strategy == "ACGAN":
-                        cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
-                        cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                    elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
-                        dis_out_real = self.dis_model(real_images, real_labels)
-                        dis_out_fake = self.dis_model(fake_images, fake_labels)
-                    else:
-                        raise NotImplementedError
-
-                    dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
-
-                    if self.conditional_strategy == "ACGAN":
-                        dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
-
-                    if self.gradient_penalty_for_dis:
-                        dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.default_device)
-
-                    if self.consistency_reg:
-                        real_images_aug = real_images_aug.to(self.default_device)
                         if self.conditional_strategy == "ACGAN":
-                            cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
+                            cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
+                            cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
-                            dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
+                            dis_out_real = self.dis_model(real_images, real_labels)
+                            dis_out_fake = self.dis_model(fake_images, fake_labels)
                         else:
                             raise NotImplementedError
-                        consistency_loss = self.l2_loss(dis_out_real, dis_out_real_aug)
-                        dis_acml_loss += self.consistency_lambda*consistency_loss
 
-                    dis_acml_loss = dis_acml_loss/self.accumulation_steps
+                        dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
 
-                    dis_acml_loss.backward()
+                        if self.conditional_strategy == "ACGAN":
+                            dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
 
-                self.D_optimizer.step()
+                        if self.gradient_penalty_for_dis:
+                            dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.default_device)
+
+                        if self.consistency_reg:
+                            real_images_aug = real_images_aug.to(self.default_device)
+                            if self.conditional_strategy == "ACGAN":
+                                cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
+                            elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
+                                dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
+                            else:
+                                raise NotImplementedError
+                            consistency_loss = self.l2_loss(dis_out_real, dis_out_real_aug)
+                            dis_acml_loss += self.consistency_lambda*consistency_loss
+
+                        dis_acml_loss = dis_acml_loss/self.accumulation_steps
+
+                    self.dis_scaler.scale(dis_acml_loss).backward()
+
+                self.dis_scaler.step(self.D_optimizer)
+                self.dis_scaler.update()
 
                 if self.weight_clipping_for_dis:
                     for p in self.dis_model.parameters():
@@ -422,34 +442,36 @@ class Trainer:
             for step_index in range(self.g_steps_per_iter):
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
-                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
+                        z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
 
-                    if self.latent_op:
-                        z, transport_cost = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                                            self.latent_op_alpha, self.latent_op_beta, True, self.default_device)
+                        if self.latent_op:
+                            z, transport_cost = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
+                                                                self.latent_op_alpha, self.latent_op_beta, True, self.default_device)
 
-                    fake_images = self.gen_model(z, fake_labels)
-                    if self.diff_aug:
-                        fake_images = DiffAugment(fake_images, policy=self.policy)
+                        fake_images = self.gen_model(z, fake_labels)
+                        if self.diff_aug:
+                            fake_images = DiffAugment(fake_images, policy=self.policy)
 
-                    if self.conditional_strategy == "ACGAN":
-                        cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                    elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
-                        dis_out_fake = self.dis_model(fake_images, fake_labels)
-                    else:
-                        raise NotImplementedError
+                        if self.conditional_strategy == "ACGAN":
+                            cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
+                        elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
+                            dis_out_fake = self.dis_model(fake_images, fake_labels)
+                        else:
+                            raise NotImplementedError
 
-                    gen_acml_loss = self.G_loss(dis_out_fake)
-                    if self.conditional_strategy == "ACGAN":
-                        gen_acml_loss += self.ce_loss(cls_out_fake, fake_labels)
+                        gen_acml_loss = self.G_loss(dis_out_fake)
+                        if self.conditional_strategy == "ACGAN":
+                            gen_acml_loss += self.ce_loss(cls_out_fake, fake_labels)
 
-                    if self.latent_op:
-                        gen_acml_loss += transport_cost*self.latent_norm_reg_weight
-                    gen_acml_loss = gen_acml_loss/self.accumulation_steps
+                        if self.latent_op:
+                            gen_acml_loss += transport_cost*self.latent_norm_reg_weight
+                        gen_acml_loss = gen_acml_loss/self.accumulation_steps
 
-                    gen_acml_loss.backward()
+                    self.gen_scaler.scale(gen_acml_loss).backward()
 
-                self.G_optimizer.step()
+                self.gen_scaler.step(self.G_optimizer)
+                self.gen_scaler.update()
 
                 # if ema is True: we update parameters of the Gen_copy in adaptive way.
                 if self.ema:
@@ -710,7 +732,7 @@ class Trainer:
                         ncol-2).view(nrow * (ncol), -1)
 
         with torch.no_grad():
-            interpolated_images = generator(zs, None, shared_label=ys)
+            interpolated_images = generator(zs, None, shared_label=ys, evaluation=True)
 
         plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
                         format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
@@ -743,11 +765,11 @@ class Trainer:
                 real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
 
                 if self.conditional_strategy == "ContraGAN":
-                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
+                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels, evaluation=True)
                 elif self.conditional_strategy == "ACGAN":
-                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
+                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
                 elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
-                    dis_out_real = self.dis_model(real_images, real_labels)
+                    dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
 
                 logits = self.linear_model(cls_real_embed)
                 cls_loss = self.ce_loss(logits, real_labels)
@@ -770,11 +792,11 @@ class Trainer:
                 real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
 
                 if self.conditional_strategy == "ContraGAN":
-                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
+                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels, evaluation=True)
                 elif self.conditional_strategy == "ACGAN":
-                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
+                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
                 elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
-                    dis_out_real = self.dis_model(real_images, real_labels)
+                    dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
 
                 logits_test = self.linear_model(cls_real_embed)
                 _, prediction = torch.max(logits_test.data, 1)

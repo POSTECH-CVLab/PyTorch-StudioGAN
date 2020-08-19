@@ -94,7 +94,7 @@ def generate_images(batch_size, gen, dis, truncated_factor, prior, latent_op, la
         z = latent_optimise(z, fake_labels, gen, dis, latent_op_step, 1.0, latent_op_alpha, latent_op_beta, False, device)
 
     with torch.no_grad():
-        batch_images = gen(z, fake_labels)
+        batch_images = gen(z, fake_labels, evaluation=True)
 
     return batch_images, fake_labels
 

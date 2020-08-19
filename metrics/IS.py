@@ -34,9 +34,9 @@ class evaluator(object):
 
         if latent_op:
             z = latent_optimise(z, fake_labels, gen, dis, latent_op_step, 1.0, latent_op_alpha, latent_op_beta, False, self.device)
-        
+
         with torch.no_grad():
-            batch_images = gen(z, fake_labels)
+            batch_images = gen(z, fake_labels, evaluation=True)
 
         return batch_images
 
@@ -73,7 +73,7 @@ class evaluator(object):
                                                 latent_op_alpha, latent_op_beta, batch_size)
             y = self.inception_softmax(batch_images)
             ys.append(y)
-        
+
         with torch.no_grad():
             ys = torch.cat(ys, 0)
             m_scores, m_std = self.kl_scores(ys[:n_eval], splits=split)
@@ -92,7 +92,7 @@ class evaluator(object):
             batch_images = batch_images.to(self.device)
             y = self.inception_softmax(batch_images)
             ys.append(y)
-        
+
         with torch.no_grad():
             ys = torch.cat(ys, 0)
             m_scores, m_std = self.kl_scores(ys, splits=splits)
@@ -112,4 +112,4 @@ def calculate_incep_score(dataloader, generator, discriminator, inception_model,
                                                    latent_op, latent_op_step, latent_op_alpha, latent_op_beta, splits, batch_size)
     generator.train()
     discriminator.train()
-    return kl_score, kl_std                                                          
+    return kl_score, kl_std

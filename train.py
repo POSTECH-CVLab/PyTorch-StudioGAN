@@ -43,8 +43,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
                     architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn,
                     attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth,
                     optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2, total_step, adv_loss, consistency_reg, g_init, d_init,
-                    random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, hdf5_path_train, train_config,
-                    model_config, **_):
+                    random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, mixed_precision,
+                    hdf5_path_train, train_config, model_config, **_):
     fix_all_seed(seed)
     cudnn.benchmark = False # Not good Generator for undetermined input size
     cudnn.deterministic = True
@@ -87,15 +87,15 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     module = __import__('models.{architecture}'.format(architecture=architecture),fromlist=['something'])
     logger.info('Modules are located on models.{architecture}'.format(architecture=architecture))
     Gen = module.Generator(z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                           conditional_strategy, num_classes, g_init, G_depth).to(default_device)
+                           conditional_strategy, num_classes, g_init, G_depth, mixed_precision).to(default_device)
 
     Dis = module.Discriminator(img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
-                               hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, d_init, D_depth).to(default_device)
+                               hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, d_init, D_depth, mixed_precision).to(default_device)
 
     if ema:
         print('Preparing EMA for G with decay of {}'.format(ema_decay))
         Gen_copy = module.Generator(z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                                    conditional_strategy, num_classes, initialize=False, G_depth=G_depth).to(default_device)
+                                    conditional_strategy, num_classes, initialize=False, G_depth=G_depth, mixed_precision=mixed_precision).to(default_device)
         Gen_ema = ema_(Gen, Gen_copy, ema_decay, ema_start)
     else:
         Gen_copy, Gen_ema = None, None
@@ -160,7 +160,8 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
 
     if train_config['eval']:
         inception_model = InceptionV3().to(default_device)
-        inception_model = DataParallel(inception_model, output_device=default_device)
+        if n_gpus > 1:
+            inception_model = DataParallel(inception_model, output_device=default_device)
         mu, sigma, is_score, is_std = prepare_inception_moments_eval_dataset(dataloader=eval_dataloader,
                                                                              generator=Gen,
                                                                              eval_mode=type4eval_dataset,
@@ -256,6 +257,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         sigma=sigma,
         best_fid=best_fid,
         best_fid_checkpoint_path=best_fid_checkpoint_path,
+        mixed_precision=mixed_precision,
         train_config=train_config,
         model_config=model_config,
     )

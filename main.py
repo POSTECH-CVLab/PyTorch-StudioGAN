@@ -24,7 +24,7 @@ def main():
     parser.add_argument('--seed', type=int, default=0, help='seed for generating random number')
     parser.add_argument('--num_workers', type=int, default=4, help='')
     parser.add_argument('-sync_bn', '--synchronized_bn', action='store_true', help='select whether turn on synchronized batchnorm')
-    parser.add_argument('-half', '--half_precision_training', action='store_true', help='select whether turn on half precision training')
+    parser.add_argument('-mpc', '--mixed_precision', action='store_true', help='select whether turn on mixed precision training')
 
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')
