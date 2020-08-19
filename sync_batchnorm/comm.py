@@ -1,37 +1,12 @@
-"""
--*- coding: utf-8 -*-
-File   : comm.py
-Author : Jiayuan Mao
-Email  : maojiayuan@gmail.com
-Date   : 27/01/2018
-
-This file is part of Synchronized-BatchNorm-PyTorch.
-https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
-Distributed under MIT License.
-
-MIT License
-
-Copyright (c) 2018 Jiayuan MAO
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
+# -*- coding: utf-8 -*-
+# File   : comm.py
+# Author : Jiayuan Mao
+# Email  : maojiayuan@gmail.com
+# Date   : 27/01/2018
+# 
+# This file is part of Synchronized-BatchNorm-PyTorch.
+# https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+# Distributed under MIT License.
 
 import queue
 import collections
@@ -80,6 +55,7 @@ class SlavePipe(_SlavePipeBase):
 
 class SyncMaster(object):
     """An abstract `SyncMaster` object.
+
     - During the replication, as the data parallel will trigger an callback of each module, all slave devices should
     call `register(id)` and obtain an `SlavePipe` to communicate with the master.
     - During the forward pass, master device invokes `run_master`, all messages from slave devices will be collected,
@@ -90,6 +66,7 @@ class SyncMaster(object):
 
     def __init__(self, master_callback):
         """
+
         Args:
             master_callback: a callback to be invoked after having collected messages from slave devices.
         """
@@ -107,9 +84,12 @@ class SyncMaster(object):
     def register_slave(self, identifier):
         """
         Register an slave device.
+
         Args:
             identifier: an identifier, usually is the device id.
+
         Returns: a `SlavePipe` object which can be used to communicate with the master device.
+
         """
         if self._activated:
             assert self._queue.empty(), 'Queue is not clean before next initialization.'
@@ -125,10 +105,13 @@ class SyncMaster(object):
         The messages were first collected from each devices (including the master device), and then
         an callback will be invoked to compute the message to be sent back to each devices
         (including the master device).
+
         Args:
             master_msg: the message that the master want to send to itself. This will be placed as the first
             message when calling `master_callback`. For detailed usage, see `_SynchronizedBatchNorm` for an example.
+
         Returns: the message to be sent back to the master device.
+
         """
         self._activated = True
 

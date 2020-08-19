@@ -1,37 +1,12 @@
-"""
--*- coding: utf-8 -*-
-File   : batchnorm.py
-Author : Jiayuan Mao
-Email  : maojiayuan@gmail.com
-Date   : 27/01/2018
-
-This file is part of Synchronized-BatchNorm-PyTorch.
-https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
-Distributed under MIT License.
-
-MIT License
-
-Copyright (c) 2018 Jiayuan MAO
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
+# -*- coding: utf-8 -*-
+# File   : batchnorm.py
+# Author : Jiayuan Mao
+# Email  : maojiayuan@gmail.com
+# Date   : 27/01/2018
+#
+# This file is part of Synchronized-BatchNorm-PyTorch.
+# https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+# Distributed under MIT License.
 
 import collections
 import contextlib
@@ -74,10 +49,15 @@ _MasterMessage = collections.namedtuple('_MasterMessage', ['sum', 'inv_std'])
 
 
 class _SynchronizedBatchNorm(_BatchNorm):
-    def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True):
+    def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True, track_running_stats=True):
         assert ReduceAddCoalesced is not None, 'Can not use Synchronized Batch Normalization without CUDA support.'
 
-        super(_SynchronizedBatchNorm, self).__init__(num_features, eps=eps, momentum=momentum, affine=affine)
+        super(_SynchronizedBatchNorm, self).__init__(num_features, eps=eps, momentum=momentum, affine=affine,
+                                                     track_running_stats=track_running_stats)
+
+        if not self.track_running_stats:
+            import warnings
+            warnings.warn('track_running_stats=False is not supported by the SynchronizedBatchNorm.')
 
         self._sync_master = SyncMaster(self._data_parallel_master)
 
@@ -173,26 +153,36 @@ class _SynchronizedBatchNorm(_BatchNorm):
 class SynchronizedBatchNorm1d(_SynchronizedBatchNorm):
     r"""Applies Synchronized Batch Normalization over a 2d or 3d input that is seen as a
     mini-batch.
+
     .. math::
+
         y = \frac{x - mean[x]}{ \sqrt{Var[x] + \epsilon}} * gamma + beta
+
     This module differs from the built-in PyTorch BatchNorm1d as the mean and
     standard-deviation are reduced across all devices during training.
+
     For example, when one uses `nn.DataParallel` to wrap the network during
     training, PyTorch's implementation normalize the tensor on each device using
     the statistics only on that device, which accelerated the computation and
     is also easy to implement, but the statistics might be inaccurate.
     Instead, in this synchronized version, the statistics will be computed
     over all training samples distributed on multiple devices.
+
     Note that, for one-GPU or CPU-only case, this module behaves exactly same
     as the built-in PyTorch implementation.
+
     The mean and standard-deviation are calculated per-dimension over
     the mini-batches and gamma and beta are learnable parameter vectors
     of size C (where C is the input size).
+
     During training, this layer keeps a running estimate of its computed mean
     and variance. The running sum is kept with a default momentum of 0.1.
+
     During evaluation, this running mean/variance is used for normalization.
+
     Because the BatchNorm is done over the `C` dimension, computing statistics
     on `(N, L)` slices, it's common terminology to call this Temporal BatchNorm
+
     Args:
         num_features: num_features from an expected input of size
             `batch_size x num_features [x width]`
@@ -202,9 +192,11 @@ class SynchronizedBatchNorm1d(_SynchronizedBatchNorm):
             computation. Default: 0.1
         affine: a boolean value that when set to ``True``, gives the layer learnable
             affine parameters. Default: ``True``
+
     Shape::
         - Input: :math:`(N, C)` or :math:`(N, C, L)`
         - Output: :math:`(N, C)` or :math:`(N, C, L)` (same shape as input)
+
     Examples:
         >>> # With Learnable Parameters
         >>> m = SynchronizedBatchNorm1d(100)
@@ -218,32 +210,41 @@ class SynchronizedBatchNorm1d(_SynchronizedBatchNorm):
         if input.dim() != 2 and input.dim() != 3:
             raise ValueError('expected 2D or 3D input (got {}D input)'
                              .format(input.dim()))
-        super(SynchronizedBatchNorm1d, self)._check_input_dim(input)
 
 
 class SynchronizedBatchNorm2d(_SynchronizedBatchNorm):
     r"""Applies Batch Normalization over a 4d input that is seen as a mini-batch
     of 3d inputs
+
     .. math::
+
         y = \frac{x - mean[x]}{ \sqrt{Var[x] + \epsilon}} * gamma + beta
+
     This module differs from the built-in PyTorch BatchNorm2d as the mean and
     standard-deviation are reduced across all devices during training.
+
     For example, when one uses `nn.DataParallel` to wrap the network during
     training, PyTorch's implementation normalize the tensor on each device using
     the statistics only on that device, which accelerated the computation and
     is also easy to implement, but the statistics might be inaccurate.
     Instead, in this synchronized version, the statistics will be computed
     over all training samples distributed on multiple devices.
+
     Note that, for one-GPU or CPU-only case, this module behaves exactly same
     as the built-in PyTorch implementation.
+
     The mean and standard-deviation are calculated per-dimension over
     the mini-batches and gamma and beta are learnable parameter vectors
     of size C (where C is the input size).
+
     During training, this layer keeps a running estimate of its computed mean
     and variance. The running sum is kept with a default momentum of 0.1.
+
     During evaluation, this running mean/variance is used for normalization.
+
     Because the BatchNorm is done over the `C` dimension, computing statistics
     on `(N, H, W)` slices, it's common terminology to call this Spatial BatchNorm
+
     Args:
         num_features: num_features from an expected input of
             size batch_size x num_features x height x width
@@ -253,9 +254,11 @@ class SynchronizedBatchNorm2d(_SynchronizedBatchNorm):
             computation. Default: 0.1
         affine: a boolean value that when set to ``True``, gives the layer learnable
             affine parameters. Default: ``True``
+
     Shape::
         - Input: :math:`(N, C, H, W)`
         - Output: :math:`(N, C, H, W)` (same shape as input)
+
     Examples:
         >>> # With Learnable Parameters
         >>> m = SynchronizedBatchNorm2d(100)
@@ -269,33 +272,42 @@ class SynchronizedBatchNorm2d(_SynchronizedBatchNorm):
         if input.dim() != 4:
             raise ValueError('expected 4D input (got {}D input)'
                              .format(input.dim()))
-        super(SynchronizedBatchNorm2d, self)._check_input_dim(input)
 
 
 class SynchronizedBatchNorm3d(_SynchronizedBatchNorm):
     r"""Applies Batch Normalization over a 5d input that is seen as a mini-batch
     of 4d inputs
+
     .. math::
+
         y = \frac{x - mean[x]}{ \sqrt{Var[x] + \epsilon}} * gamma + beta
+
     This module differs from the built-in PyTorch BatchNorm3d as the mean and
     standard-deviation are reduced across all devices during training.
+
     For example, when one uses `nn.DataParallel` to wrap the network during
     training, PyTorch's implementation normalize the tensor on each device using
     the statistics only on that device, which accelerated the computation and
     is also easy to implement, but the statistics might be inaccurate.
     Instead, in this synchronized version, the statistics will be computed
     over all training samples distributed on multiple devices.
+
     Note that, for one-GPU or CPU-only case, this module behaves exactly same
     as the built-in PyTorch implementation.
+
     The mean and standard-deviation are calculated per-dimension over
     the mini-batches and gamma and beta are learnable parameter vectors
     of size C (where C is the input size).
+
     During training, this layer keeps a running estimate of its computed mean
     and variance. The running sum is kept with a default momentum of 0.1.
+
     During evaluation, this running mean/variance is used for normalization.
+
     Because the BatchNorm is done over the `C` dimension, computing statistics
     on `(N, D, H, W)` slices, it's common terminology to call this Volumetric BatchNorm
     or Spatio-temporal BatchNorm
+
     Args:
         num_features: num_features from an expected input of
             size batch_size x num_features x depth x height x width
@@ -305,9 +317,11 @@ class SynchronizedBatchNorm3d(_SynchronizedBatchNorm):
             computation. Default: 0.1
         affine: a boolean value that when set to ``True``, gives the layer learnable
             affine parameters. Default: ``True``
+
     Shape::
         - Input: :math:`(N, C, D, H, W)`
         - Output: :math:`(N, C, D, H, W)` (same shape as input)
+
     Examples:
         >>> # With Learnable Parameters
         >>> m = SynchronizedBatchNorm3d(100)
@@ -321,7 +335,6 @@ class SynchronizedBatchNorm3d(_SynchronizedBatchNorm):
         if input.dim() != 5:
             raise ValueError('expected 5D input (got {}D input)'
                              .format(input.dim()))
-        super(SynchronizedBatchNorm3d, self)._check_input_dim(input)
 
 
 @contextlib.contextmanager
@@ -343,8 +356,10 @@ def convert_model(module):
     """Traverse the input module and its child recursively
        and replace all instance of torch.nn.modules.batchnorm.BatchNorm*N*d
        to SynchronizedBatchNorm*N*d
+
     Args:
         module: the input module needs to be convert to SyncBN model
+
     Examples:
         >>> import torch.nn as nn
         >>> import torchvision

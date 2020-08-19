@@ -14,22 +14,18 @@ import torch.nn.functional as F
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes, synchronized_bn):
+    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes):
         super(GenBlock, self).__init__()
         self.conditional_bn = conditional_bn
 
         if self.conditional_bn:
             self.bn1 = ConditionalBatchNorm2d(num_features=in_channels, num_classes=num_classes,
-                                              spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+                                              spectral_norm=g_spectral_norm)
             self.bn2 = ConditionalBatchNorm2d(num_features=out_channels, num_classes=num_classes,
-                                              spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+                                              spectral_norm=g_spectral_norm)
         else:
-            if synchronized_bn:
-                self.bn1 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn2 = sync_batchnorm_2d(in_features=out_channels)
-            else:
-                self.bn1 = batchnorm_2d(in_features=in_channels)
-                self.bn2 = batchnorm_2d(in_features=out_channels)
+            self.bn1 = batchnorm_2d(in_features=in_channels)
+            self.bn2 = batchnorm_2d(in_features=out_channels)
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -78,7 +74,7 @@ class GenBlock(nn.Module):
 class Generator(nn.Module):
     """Generator."""
     def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                 conditional_strategy, num_classes, synchronized_bn, initialize, G_depth):
+                 conditional_strategy, num_classes, initialize, G_depth):
         super(Generator, self).__init__()
         g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
                                 "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
@@ -112,18 +108,14 @@ class Generator(nn.Module):
                                           g_spectral_norm=g_spectral_norm,
                                           activation_fn=activation_fn,
                                           conditional_bn=conditional_bn,
-                                          num_classes=self.num_classes,
-                                          synchronized_bn=synchronized_bn)]]
+                                          num_classes=self.num_classes)]]
 
             if index+1 == attention_after_nth_gen_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], g_spectral_norm)]]
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
-        if synchronized_bn:
-            self.bn4 = sync_batchnorm_2d(in_features=self.out_dims[-1])
-        else:
-            self.bn4 = batchnorm_2d(in_features=self.out_dims[-1])
+        self.bn4 = batchnorm_2d(in_features=self.out_dims[-1])
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -164,7 +156,7 @@ class Generator(nn.Module):
 
 
 class DiscOptBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, synchronized_bn):
+    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn):
         super(DiscOptBlock, self).__init__()
         self.d_spectral_norm = d_spectral_norm
 
@@ -177,12 +169,8 @@ class DiscOptBlock(nn.Module):
             self.conv2d1 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
             self.conv2d2 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
 
-            if synchronized_bn:
-                self.bn0 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn1 = sync_batchnorm_2d(in_features=out_channels)
-            else:
-                self.bn0 = batchnorm_2d(in_features=in_channels)
-                self.bn1 = batchnorm_2d(in_features=out_channels)
+            self.bn0 = batchnorm_2d(in_features=in_channels)
+            self.bn1 = batchnorm_2d(in_features=out_channels)
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -218,7 +206,7 @@ class DiscOptBlock(nn.Module):
 
 
 class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, synchronized_bn, downsample=True):
+    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, downsample=True):
         super(DiscBlock, self).__init__()
         self.d_spectral_norm = d_spectral_norm
         self.downsample = downsample
@@ -249,16 +237,10 @@ class DiscBlock(nn.Module):
             self.conv2d1 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
             self.conv2d2 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
 
-            if synchronized_bn:
-                if self.ch_mismatch or downsample:
-                    self.bn0 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn1 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn2 = sync_batchnorm_2d(in_features=out_channels)
-            else:
-                if self.ch_mismatch or downsample:
-                    self.bn0 = batchnorm_2d(in_features=in_channels)
-                self.bn1 = batchnorm_2d(in_features=in_channels)
-                self.bn2 = batchnorm_2d(in_features=out_channels)
+            if self.ch_mismatch or downsample:
+                self.bn0 = batchnorm_2d(in_features=in_channels)
+            self.bn1 = batchnorm_2d(in_features=in_channels)
+            self.bn2 = batchnorm_2d(in_features=out_channels)
 
         self.average_pooling = nn.AvgPool2d(2)
 
@@ -290,7 +272,7 @@ class DiscBlock(nn.Module):
 class Discriminator(nn.Module):
     """Discriminator."""
     def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
-                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, initialize, D_depth):
+                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, initialize, D_depth):
         super(Discriminator, self).__init__()
         d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
                                 "64": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8],
@@ -321,14 +303,12 @@ class Discriminator(nn.Module):
                 self.blocks += [[DiscOptBlock(in_channels=self.in_dims[index],
                                               out_channels=self.out_dims[index],
                                               d_spectral_norm=d_spectral_norm,
-                                              activation_fn=activation_fn,
-                                              synchronized_bn=synchronized_bn)]]
+                                              activation_fn=activation_fn)]]
             else:
                 self.blocks += [[DiscBlock(in_channels=self.in_dims[index],
                                            out_channels=self.out_dims[index],
                                            d_spectral_norm=d_spectral_norm,
                                            activation_fn=activation_fn,
-                                           synchronized_bn=synchronized_bn,
                                            downsample=down[index])]]
 
             if index+1 == attention_after_nth_dis_block and attention is True:

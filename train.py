@@ -14,7 +14,7 @@ from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
 from utils.utils import *
 from utils.biggan_utils import ema_
-from sync_batchnorm.batchnorm import DataParallelWithCallback
+from sync_batchnorm.batchnorm import convert_model
 from trainer import Trainer
 
 import glob
@@ -87,25 +87,25 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     module = __import__('models.{architecture}'.format(architecture=architecture),fromlist=['something'])
     logger.info('Modules are located on models.{architecture}'.format(architecture=architecture))
     Gen = module.Generator(z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                           conditional_strategy, num_classes, synchronized_bn, g_init, G_depth).to(default_device)
+                           conditional_strategy, num_classes, g_init, G_depth).to(default_device)
 
     Dis = module.Discriminator(img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
-                               hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, d_init, D_depth).to(default_device)
+                               hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, d_init, D_depth).to(default_device)
 
     if ema:
         print('Preparing EMA for G with decay of {}'.format(ema_decay))
         Gen_copy = module.Generator(z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                                    conditional_strategy, num_classes, synchronized_bn=False, initialize=False, G_depth=G_depth).to(default_device)
+                                    conditional_strategy, num_classes, initialize=False, G_depth=G_depth).to(default_device)
         Gen_ema = ema_(Gen, Gen_copy, ema_decay, ema_start)
     else:
         Gen_copy, Gen_ema = None, None
 
     if n_gpus > 1:
         if synchronized_bn:
-            Gen = DataParallelWithCallback(Gen)
-            Dis = DataParallelWithCallback(Dis)
+            Gen = convert_model(Gen)
+            Dis = convert_model(Dis)
             if ema:
-                Gen_copy = DataParallelWithCallback(Gen_copy, output_device=default_device)
+                Gen_copy = convert_model(Gen_copy)
         else:
             Gen = DataParallel(Gen, output_device=default_device)
             Dis = DataParallel(Dis, output_device=default_device)

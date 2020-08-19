@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, z_dims_after_concat, synchronized_bn,
+    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, z_dims_after_concat,
                  upsample, channel_ratio=4):
         super(GenBlock, self).__init__()
         self.conditional_bn = conditional_bn
@@ -24,24 +24,18 @@ class GenBlock(nn.Module):
 
         if self.conditional_bn:
             self.bn1 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=in_channels, z_dims_after_concat=z_dims_after_concat,
-                                                                  spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+                                                                  spectral_norm=g_spectral_norm)
             self.bn2 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=self.hidden_channels, z_dims_after_concat=z_dims_after_concat,
-                                                                  spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+                                                                  spectral_norm=g_spectral_norm)
             self.bn3 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=self.hidden_channels, z_dims_after_concat=z_dims_after_concat,
-                                                                  spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+                                                                  spectral_norm=g_spectral_norm)
             self.bn4 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=self.hidden_channels, z_dims_after_concat=z_dims_after_concat,
-                                                                  spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+                                                                  spectral_norm=g_spectral_norm)
         else:
-            if synchronized_bn:
-                self.bn1 = sync_batchnorm_2d(in_features=in_channels)
-                self.bn2 = sync_batchnorm_2d(in_features=self.hidden_channels)
-                self.bn3 = sync_batchnorm_2d(in_features=self.hidden_channels)
-                self.bn4 = sync_batchnorm_2d(in_features=self.hidden_channels)
-            else:
-                self.bn1 = batchnorm_2d(in_features=in_channels)
-                self.bn2 = batchnorm_2d(in_features=self.hidden_channels)
-                self.bn3 = batchnorm_2d(in_features=self.hidden_channels)
-                self.bn4 = batchnorm_2d(in_features=self.hidden_channels)
+            self.bn1 = batchnorm_2d(in_features=in_channels)
+            self.bn2 = batchnorm_2d(in_features=self.hidden_channels)
+            self.bn3 = batchnorm_2d(in_features=self.hidden_channels)
+            self.bn4 = batchnorm_2d(in_features=self.hidden_channels)
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -89,7 +83,7 @@ class GenBlock(nn.Module):
 class Generator(nn.Module):
     """Generator."""
     def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                 conditional_strategy, num_classes, synchronized_bn, initialize, G_depth):
+                 conditional_strategy, num_classes, initialize, G_depth):
         super(Generator, self).__init__()
         g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
                                 "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
@@ -128,7 +122,6 @@ class Generator(nn.Module):
                                       activation_fn=activation_fn,
                                       conditional_bn=conditional_bn,
                                       z_dims_after_concat=self.z_dims_after_concat,
-                                      synchronized_bn=synchronized_bn,
                                       upsample=True if g_index == (G_depth-1) else False)]
                             for g_index in range(G_depth)]
 
@@ -137,10 +130,7 @@ class Generator(nn.Module):
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
-        if synchronized_bn:
-            self.bn4 = sync_batchnorm_2d(in_features=self.out_dims[-1])
-        else:
-            self.bn4 = batchnorm_2d(in_features=self.out_dims[-1])
+        self.bn4 = batchnorm_2d(in_features=self.out_dims[-1])
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -190,7 +180,7 @@ class Generator(nn.Module):
 
 
 class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, synchronized_bn, downsample=True,
+    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, downsample=True,
                  channel_ratio=4):
         super(DiscBlock, self).__init__()
         self.downsample = downsample
@@ -255,7 +245,7 @@ class DiscBlock(nn.Module):
 class Discriminator(nn.Module):
     """Discriminator."""
     def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
-                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, initialize, D_depth):
+                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, initialize, D_depth):
         super(Discriminator, self).__init__()
         d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
                                 "64": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8],
@@ -294,7 +284,6 @@ class Discriminator(nn.Module):
                                         out_channels=self.out_dims[index],
                                         d_spectral_norm=d_spectral_norm,
                                         activation_fn=activation_fn,
-                                        synchronized_bn=synchronized_bn,
                                         downsample=True if down[index] and d_index==0 else False)]
                                 for d_index in range(D_depth)]
 

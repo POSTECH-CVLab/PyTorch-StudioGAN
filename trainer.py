@@ -572,7 +572,6 @@ class Trainer:
                 self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
                                                    self.latent_op_alpha, self.latent_op_beta, False, self.default_device)
 
-
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                               self.latent_op_beta, self.default_device, self.mu, self.sigma, self.run_name)

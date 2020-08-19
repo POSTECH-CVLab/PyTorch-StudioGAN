@@ -1,37 +1,12 @@
-"""
--*- coding: utf-8 -*-
-File   : replicate.py
-Author : Jiayuan Mao
-Email  : maojiayuan@gmail.com
-Date   : 27/01/2018
-
-This file is part of Synchronized-BatchNorm-PyTorch.
-https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
-Distributed under MIT License.
-
-MIT License
-
-Copyright (c) 2018 Jiayuan MAO
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
+# -*- coding: utf-8 -*-
+# File   : replicate.py
+# Author : Jiayuan Mao
+# Email  : maojiayuan@gmail.com
+# Date   : 27/01/2018
+# 
+# This file is part of Synchronized-BatchNorm-PyTorch.
+# https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+# Distributed under MIT License.
 
 import functools
 
@@ -52,10 +27,13 @@ class CallbackContext(object):
 def execute_replication_callbacks(modules):
     """
     Execute an replication callback `__data_parallel_replicate__` on each module created by original replication.
+
     The callback will be invoked with arguments `__data_parallel_replicate__(ctx, copy_id)`
+
     Note that, as all modules are isomorphism, we assign each sub-module with a context
     (shared among multiple copies of this module on different devices).
     Through this context, different copies can share some information.
+
     We guarantee that the callback on the master copy (the first copy) will be called ahead of calling the callback
     of any slave copies.
     """
@@ -72,9 +50,11 @@ def execute_replication_callbacks(modules):
 class DataParallelWithCallback(DataParallel):
     """
     Data Parallel with a replication callback.
+
     An replication callback `__data_parallel_replicate__` of each module will be invoked after being created by
     original `replicate` function.
     The callback will be invoked with arguments `__data_parallel_replicate__(ctx, copy_id)`
+
     Examples:
         > sync_bn = SynchronizedBatchNorm1d(10, eps=1e-5, affine=False)
         > sync_bn = DataParallelWithCallback(sync_bn, device_ids=[0, 1])
@@ -91,6 +71,7 @@ def patch_replication_callback(data_parallel):
     """
     Monkey-patch an existing `DataParallel` object. Add the replication callback.
     Useful when you have customized `DataParallel` implementation.
+
     Examples:
         > sync_bn = SynchronizedBatchNorm1d(10, eps=1e-5, affine=False)
         > sync_bn = DataParallel(sync_bn, device_ids=[0, 1])

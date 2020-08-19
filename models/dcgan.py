@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes, synchronized_bn):
+    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes):
         super(GenBlock, self).__init__()
         self.conditional_bn = conditional_bn
 
@@ -27,12 +27,9 @@ class GenBlock(nn.Module):
 
         if self.conditional_bn:
             self.bn0 = ConditionalBatchNorm2d(num_features=out_channels, num_classes=num_classes,
-                                              spectral_norm=g_spectral_norm, synchronized_bn=synchronized_bn)
+                                              spectral_norm=g_spectral_norm)
         else:
-            if synchronized_bn:
-                self.bn0 = sync_batchnorm_2d(in_features=out_channels)
-            else:
-                self.bn0 = batchnorm_2d(in_features=out_channels)
+            self.bn0 = batchnorm_2d(in_features=out_channels)
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -58,7 +55,7 @@ class GenBlock(nn.Module):
 class Generator(nn.Module):
     """Generator."""
     def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                 conditional_strategy, num_classes, synchronized_bn, initialize, G_depth):
+                 conditional_strategy, num_classes, initialize, G_depth):
         super(Generator, self).__init__()
         self.in_dims =  [512, 256, 128]
         self.out_dims = [256, 128, 64]
@@ -79,8 +76,7 @@ class Generator(nn.Module):
                                           g_spectral_norm=g_spectral_norm,
                                           activation_fn=activation_fn,
                                           conditional_bn=conditional_bn,
-                                          num_classes=self.num_classes,
-                                          synchronized_bn=synchronized_bn)]]
+                                          num_classes=self.num_classes)]]
 
             if index+1 == attention_after_nth_gen_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], g_spectral_norm)]]
@@ -113,7 +109,7 @@ class Generator(nn.Module):
 
 
 class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn, synchronized_bn):
+    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn):
         super(DiscBlock, self).__init__()
         self.d_spectral_norm = d_spectral_norm
 
@@ -124,12 +120,8 @@ class DiscBlock(nn.Module):
             self.conv0 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
             self.conv1 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=4, stride=2, padding=1)
 
-            if synchronized_bn:
-                self.bn0 = sync_batchnorm_2d(in_features=out_channels)
-                self.bn1 = sync_batchnorm_2d(in_features=out_channels)
-            else:
-                self.bn0 = batchnorm_2d(in_features=out_channels)
-                self.bn1 = batchnorm_2d(in_features=out_channels)
+            self.bn0 = batchnorm_2d(in_features=out_channels)
+            self.bn1 = batchnorm_2d(in_features=out_channels)
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
@@ -157,7 +149,7 @@ class DiscBlock(nn.Module):
 class Discriminator(nn.Module):
     """Discriminator."""
     def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
-                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, synchronized_bn, initialize, D_depth):
+                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, initialize, D_depth):
         super(Discriminator, self).__init__()
         self.in_dims  = [3] + [64, 128]
         self.out_dims = [64, 128, 256]
@@ -173,8 +165,7 @@ class Discriminator(nn.Module):
             self.blocks += [[DiscBlock(in_channels=self.in_dims[index],
                                        out_channels=self.out_dims[index],
                                        d_spectral_norm=d_spectral_norm,
-                                       activation_fn=activation_fn,
-                                       synchronized_bn=synchronized_bn)]]
+                                       activation_fn=activation_fn)]]
 
             if index+1 == attention_after_nth_dis_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], d_spectral_norm)]]
@@ -185,10 +176,7 @@ class Discriminator(nn.Module):
             self.conv = snconv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
         else:
             self.conv = conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
-            if self.synchronized_bn:
-                self.bn = sync_batchnorm_2d(in_features=512)
-            else:
-                self.bn = batchnorm_2d(in_features=512)
+            self.bn = batchnorm_2d(in_features=512)
 
         if activation_fn == "ReLU":
             self.activation = nn.ReLU(inplace=True)
