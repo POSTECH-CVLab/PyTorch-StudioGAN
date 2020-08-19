@@ -52,7 +52,7 @@ class Trainer:
                  total_step, G_loss, D_loss, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
                  gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, prior, truncated_factor,
                  ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device,
-                 second_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
+                 print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -119,7 +119,6 @@ class Trainer:
         self.latent_norm_reg_weight = latent_norm_reg_weight
 
         self.default_device = default_device
-        self.second_device = second_device
         self.print_every = print_every
         self.save_every = save_every
         self.checkpoint_dir = checkpoint_dir
@@ -136,7 +135,7 @@ class Trainer:
         self.ce_loss = torch.nn.CrossEntropyLoss()
 
         if self.conditional_strategy == 'ContraGAN':
-            self.contrastive_criterion = Conditional_Contrastive_loss(self.second_device, self.batch_size, self.pos_collected_numerator)
+            self.contrastive_criterion = Conditional_Contrastive_loss(self.default_device, self.batch_size, self.pos_collected_numerator)
             self.tempering_range = self.end_temperature - self.start_temperature
             assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
                 "tempering_type should be one of constant, continuous, or discrete"
@@ -147,9 +146,9 @@ class Trainer:
                 self.embedding_layer = self.dis_model.module.embedding
             else:
                 self.embedding_layer = self.dis_model.embedding
-            self.NCA_criterion = Proxy_NCA_loss(self.second_device, self.embedding_layer, self.num_classes, self.batch_size)
+            self.NCA_criterion = Proxy_NCA_loss(self.default_device, self.embedding_layer, self.num_classes, self.batch_size)
         elif self.conditional_strategy == 'XT_Xent_GAN':
-            self.XT_Xent_criterion = XT_Xent_loss(self.second_device, self.batch_size)
+            self.XT_Xent_criterion = XT_Xent_loss(self.default_device, self.batch_size)
         else:
             pass
 
@@ -164,7 +163,7 @@ class Trainer:
         self.policy = "color,translation,cutout"
 
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
-                                                                self.num_classes, None, self.second_device, sampler=sampler)
+                                                                self.num_classes, None, self.default_device, sampler=sampler)
 
         if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
             self.num_eval = {'train':50000, 'valid':50000}
@@ -210,12 +209,12 @@ class Trainer:
                         else:
                             real_images, real_labels = next(train_iter)
 
-                    real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
+                    real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
                     if self.diff_aug:
                         real_images = DiffAugment(real_images, policy=self.policy)
 
-                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
-                    real_cls_mask = make_mask(real_labels, self.num_classes, self.second_device)
+                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                    real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
 
                     cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
 
@@ -237,7 +236,7 @@ class Trainer:
                         raise NotImplementedError
 
                     if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
-                        real_images_aug = real_images_aug.to(self.second_device)
+                        real_images_aug = real_images_aug.to(self.default_device)
                         _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(real_images_aug, real_labels)
                         if self.conditional_strategy == "XT_Xent_GAN":
                             dis_acml_loss += self.contrastive_lambda*self.XT_Xent_criterion(cls_real_embed, cls_real_aug_embed, t)
@@ -265,8 +264,8 @@ class Trainer:
             for step_index in range(self.g_steps_per_iter):
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
-                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
-                    fake_cls_mask = make_mask(fake_labels, self.num_classes, self.second_device)
+                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                    fake_cls_mask = make_mask(fake_labels, self.num_classes, self.default_device)
 
                     fake_images = self.gen_model(z, fake_labels)
                     if self.diff_aug:
@@ -361,14 +360,14 @@ class Trainer:
                         else:
                             real_images, real_labels = next(train_iter)
 
-                    real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
+                    real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
                     if self.diff_aug:
                         real_images = DiffAugment(real_images, policy=self.policy)
-                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
+                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
 
                     if self.latent_op:
                         z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                            self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
+                                            self.latent_op_alpha, self.latent_op_beta, False, self.default_device)
 
                     fake_images = self.gen_model(z, fake_labels)
                     if self.diff_aug:
@@ -389,10 +388,10 @@ class Trainer:
                         dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
 
                     if self.gradient_penalty_for_dis:
-                        dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.second_device)
+                        dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.default_device)
 
                     if self.consistency_reg:
-                        real_images_aug = real_images_aug.to(self.second_device)
+                        real_images_aug = real_images_aug.to(self.default_device)
                         if self.conditional_strategy == "ACGAN":
                             cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                         elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
@@ -423,11 +422,11 @@ class Trainer:
             for step_index in range(self.g_steps_per_iter):
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
-                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.second_device)
+                    z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
 
                     if self.latent_op:
                         z, transport_cost = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                                            self.latent_op_alpha, self.latent_op_beta, True, self.second_device)
+                                                            self.latent_op_alpha, self.latent_op_beta, True, self.default_device)
 
                     fake_images = self.gen_model(z, fake_labels)
                     if self.diff_aug:
@@ -571,29 +570,29 @@ class Trainer:
 
             if self.latent_op:
                 self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                                   self.latent_op_alpha, self.latent_op_beta, False, self.second_device)
+                                                   self.latent_op_alpha, self.latent_op_beta, False, self.default_device)
 
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                              self.latent_op_beta, self.second_device, self.mu, self.sigma, self.run_name)
+                                                              self.latent_op_beta, self.default_device, self.mu, self.sigma, self.run_name)
 
             ### pre-calculate an inception score
             ### calculating inception score using the below will give you an underestimated one.
             ### plz use the official tensorflow implementation(inception_tensorflow.py).
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                     self.latent_op_beta, 10, self.second_device)
+                                                     self.latent_op_beta, 10, self.default_device)
 
             real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
-                                                          self.latent_op,self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.second_device,
+                                                          self.latent_op,self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
                                                           consistency_reg=self.consistency_reg, eval_generated_sample=True)
 
             if self.type4eval_dataset == 'train':
                 acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
             else:
                 real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
-                                                   self.latent_op, self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.second_device,
+                                                   self.latent_op, self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
                                                    consistency_reg=self.consistency_reg, eval_generated_sample=False)
                 acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
 
@@ -628,13 +627,13 @@ class Trainer:
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.default_device)
             if self.n_gpus > 1:
-                resnet50_conv = DataParallel(resnet50_conv, output_device=self.second_device)
+                resnet50_conv = DataParallel(resnet50_conv, output_device=self.default_device)
             resnet50_conv.eval()
 
             self.logger.info("Start Nearest Neighbor....")
             for c in tqdm(range(self.num_classes)):
                 fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
-                                                                   self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.second_device)
+                                                                   self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.default_device)
                 fake_image = torch.unsqueeze(fake_image, dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
 
@@ -742,7 +741,7 @@ class Trainer:
                     else:
                         real_images, real_labels = next(train_iter)
 
-                real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
+                real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
 
                 if self.conditional_strategy == "ContraGAN":
                     cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
@@ -769,7 +768,7 @@ class Trainer:
                 else:
                     real_images, real_labels = next(eval_iter)
 
-                real_images, real_labels = real_images.to(self.second_device), real_labels.to(self.second_device)
+                real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
 
                 if self.conditional_strategy == "ContraGAN":
                     cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)

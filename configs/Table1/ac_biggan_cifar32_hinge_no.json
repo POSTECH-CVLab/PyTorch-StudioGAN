@@ -90,9 +90,7 @@
   
         "ema": true,
         "ema_decay": 0.9999,
-        "ema_start": 1000,
-  
-        "synchronized_bn": false
+        "ema_start": 1000
       }
     }
   }

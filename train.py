@@ -14,7 +14,7 @@ from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
 from utils.utils import *
 from utils.biggan_utils import ema_
-from sync_batchnorm.replicate import patch_replication_callback
+from sync_batchnorm.batchnorm import DataParallelWithCallback
 from trainer import Trainer
 
 import glob
@@ -50,7 +50,6 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
     cudnn.deterministic = True
     n_gpus = torch.cuda.device_count()
     default_device = torch.cuda.current_device()
-    second_device = default_device if n_gpus == 1 or conditional_strategy == "Proxy_NCA_GAN" else default_device+1
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
 
     if n_gpus == 1:
@@ -102,13 +101,16 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         Gen_copy, Gen_ema = None, None
 
     if n_gpus > 1:
-        Gen = DataParallel(Gen, output_device=second_device)
-        Dis = DataParallel(Dis, output_device=second_device)
-        if ema:
-            Gen_copy = DataParallel(Gen_copy, output_device=second_device)
         if synchronized_bn:
-            patch_replication_callback(Gen)
-            patch_replication_callback(Dis)
+            Gen = DataParallelWithCallback(Gen)
+            Dis = DataParallelWithCallback(Dis)
+            if ema:
+                Gen_copy = DataParallelWithCallback(Gen_copy, output_device=default_device)
+        else:
+            Gen = DataParallel(Gen, output_device=default_device)
+            Dis = DataParallel(Dis, output_device=default_device)
+            if ema:
+                Gen_copy = DataParallel(Gen_copy, output_device=default_device)
 
     logger.info(count_parameters(Gen))
     logger.info(Gen)
@@ -158,7 +160,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
 
     if train_config['eval']:
         inception_model = InceptionV3().to(default_device)
-        inception_model = DataParallel(inception_model, output_device=second_device)
+        inception_model = DataParallel(inception_model, output_device=default_device)
         mu, sigma, is_score, is_std = prepare_inception_moments_eval_dataset(dataloader=eval_dataloader,
                                                                              generator=Gen,
                                                                              eval_mode=type4eval_dataset,
@@ -166,7 +168,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
                                                                              splits=10,
                                                                              run_name=run_name,
                                                                              logger=logger,
-                                                                             device=second_device)
+                                                                             device=default_device)
     else:
         mu, sigma, inception_model = None, None, None
 
@@ -174,9 +176,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         in_channels = hypersphere_dim if conditional_strategy == "ContraGAN" else Dis.out_dims[-1]
         linear_model = linear_classifier(in_channels=in_channels, num_classes=num_classes).to(default_device)
         if n_gpus > 1:
-            linear_model = DataParallel(linear_model, output_device=second_device)
-            if synchronized_bn:
-                patch_replication_callback(linear_model)
+            linear_model = DataParallel(linear_model, output_device=default_device)
 
         if optimizer == "SGD":
             L_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
@@ -248,7 +248,6 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         latent_op_beta=model_config['training_and_sampling_setting']['latent_op_beta'],
         latent_norm_reg_weight=model_config['training_and_sampling_setting']['latent_norm_reg_weight'],
         default_device=default_device,
-        second_device=second_device,
         print_every=train_config['print_every'],
         save_every=train_config['save_every'],
         checkpoint_dir=checkpoint_dir,

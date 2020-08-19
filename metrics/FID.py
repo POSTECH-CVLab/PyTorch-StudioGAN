@@ -87,12 +87,12 @@ def generate_images(batch_size, gen, dis, truncated_factor, prior, latent_op, la
     else:
         z_dim = gen.z_dim
         num_classes = gen.num_classes
-    
+
     z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
 
     if latent_op:
         z = latent_optimise(z, fake_labels, gen, dis, latent_op_step, 1.0, latent_op_alpha, latent_op_beta, False, device)
-    
+
     with torch.no_grad():
         batch_images = gen(z, fake_labels)
 
@@ -153,10 +153,10 @@ def get_activations(data_loader, generator, discriminator, inception_model, n_ge
                 pred_arr[start:end] = embeddings.cpu().data.numpy().reshape(batch_size, -1)
             else:
                 pred_arr[start:] = embeddings[:total_instance].cpu().data.numpy().reshape(total_instance, -1)
-            
+
             total_instance -= images.shape[0]
         else:
-            try: 
+            try:
                 feed_list = next(data_iter)
                 images = feed_list[0]
                 images = images.to(device)
@@ -168,13 +168,13 @@ def get_activations(data_loader, generator, discriminator, inception_model, n_ge
                 else:
                     pred_arr[start:] = embeddings[:total_instance].cpu().data.numpy().reshape(total_instance, -1)
                 total_instance -= images.shape[0]
-            
+
             except StopIteration:
                 break
     return pred_arr
 
 
-def calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior, 
+def calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
                                     is_generate, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable, run_name=None):
     act = get_activations(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
                           is_generate, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable, run_name)
@@ -183,7 +183,7 @@ def calculate_activation_statistics(data_loader, generator, discriminator, incep
     return mu, sigma
 
 
-def calculate_fid_score(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior, 
+def calculate_fid_score(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
                         latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, pre_cal_mean=None, pre_cal_std=None, run_name=None):
     generator.eval()
     discriminator.eval()
