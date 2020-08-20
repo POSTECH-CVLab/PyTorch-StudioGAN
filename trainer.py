@@ -259,10 +259,16 @@ class Trainer:
 
                         dis_acml_loss = dis_acml_loss/self.accumulation_steps
 
-                    self.dis_scaler.scale(dis_acml_loss).backward()
+                    if self.mixed_precision:
+                        self.dis_scaler.scale(dis_acml_loss).backward()
+                    else:
+                        dis_acml_loss.backward()
 
-                self.dis_scaler.step(self.D_optimizer)
-                self.dis_scaler.update()
+                if self.mixed_precision:
+                    self.dis_scaler.step(self.D_optimizer)
+                    self.dis_scaler.update()
+                else:
+                    self.D_optimizer.step()
 
                 if self.weight_clipping_for_dis:
                     for p in self.dis_model.parameters():
@@ -301,10 +307,16 @@ class Trainer:
 
                         gen_acml_loss = gen_acml_loss/self.accumulation_steps
 
-                    self.gen_scaler.scale(gen_acml_loss).backward()
+                    if self.mixed_precision:
+                        self.gen_scaler.scale(gen_acml_loss).backward()
+                    else:
+                        gen_acml_loss.backward()
 
-                self.gen_scaler.step(self.G_optimizer)
-                self.gen_scaler.update()
+                if self.mixed_precision:
+                    self.gen_scaler.step(self.G_optimizer)
+                    self.gen_scaler.update()
+                else:
+                    self.G_optimizer.step()
 
                 # if ema is True: we update parameters of the Gen_copy in adaptive way.
                 if self.ema:
@@ -422,10 +434,16 @@ class Trainer:
 
                         dis_acml_loss = dis_acml_loss/self.accumulation_steps
 
-                    self.dis_scaler.scale(dis_acml_loss).backward()
+                    if self.mixed_precision:
+                        self.dis_scaler.scale(dis_acml_loss).backward()
+                    else:
+                        dis_acml_loss.backward()
 
-                self.dis_scaler.step(self.D_optimizer)
-                self.dis_scaler.update()
+                if self.mixed_precision:
+                    self.dis_scaler.step(self.D_optimizer)
+                    self.dis_scaler.update()
+                else:
+                    self.D_optimizer.step()
 
                 if self.weight_clipping_for_dis:
                     for p in self.dis_model.parameters():
@@ -468,10 +486,16 @@ class Trainer:
                             gen_acml_loss += transport_cost*self.latent_norm_reg_weight
                         gen_acml_loss = gen_acml_loss/self.accumulation_steps
 
-                    self.gen_scaler.scale(gen_acml_loss).backward()
+                    if self.mixed_precision:
+                        self.gen_scaler.scale(gen_acml_loss).backward()
+                    else:
+                        gen_acml_loss.backward()
 
-                self.gen_scaler.step(self.G_optimizer)
-                self.gen_scaler.update()
+                if self.mixed_precision:
+                    self.gen_scaler.step(self.G_optimizer)
+                    self.gen_scaler.update()
+                else:
+                    self.G_optimizer.step()
 
                 # if ema is True: we update parameters of the Gen_copy in adaptive way.
                 if self.ema:
