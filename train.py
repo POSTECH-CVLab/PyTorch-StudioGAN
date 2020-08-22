@@ -239,6 +239,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         consistency_lambda=model_config['loss_function']['consistency_lambda'],
         diff_aug=model_config['training_and_sampling_setting']['diff_aug'],
         ada=model_config['training_and_sampling_setting']['ada'],
+        fixed_augment_p=model_config['training_and_sampling_setting']['fixed_augment_p'],
         ada_target=model_config['training_and_sampling_setting']['ada_target'],
         ada_length=model_config['training_and_sampling_setting']['ada_length'],
         prior=prior,
