@@ -56,7 +56,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         warnings.warn('You have chosen a specific GPU. This will completely '
                       'disable data parallelism.')
 
-    step, best_step, best_fid, best_fid_checkpoint_path = 0, 0, None, None
+    prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
     run_name = make_run_name(RUN_NAME_FORMAT,
                              framework=config_path.split('/')[3][:-5],
                              phase='train')
@@ -143,8 +143,9 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         checkpoint_dir = make_checkpoint_dir(train_config['checkpoint_folder'], run_name)
         g_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0]
         d_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0]
-        Gen, G_optimizer, trained_seed, run_name, step, best_step = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
-        Dis, D_optimizer, trained_seed, run_name, step, best_step, best_fid, best_fid_checkpoint_path = load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
+        Gen, G_optimizer, trained_seed, run_name, step, prev_ada_p = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
+        Dis, D_optimizer, trained_seed, run_name, step, prev_ada_p, best_step, best_fid, best_fid_checkpoint_path =\
+            load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
         logger = make_logger(run_name, None)
         if ema:
             g_ema_checkpoint_dir = glob.glob(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
@@ -239,6 +240,7 @@ def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_c
         consistency_lambda=model_config['loss_function']['consistency_lambda'],
         diff_aug=model_config['training_and_sampling_setting']['diff_aug'],
         ada=model_config['training_and_sampling_setting']['ada'],
+        prev_ada_p=prev_ada_p,
         fixed_augment_p=model_config['training_and_sampling_setting']['fixed_augment_p'],
         ada_target=model_config['training_and_sampling_setting']['ada_target'],
         ada_length=model_config['training_and_sampling_setting']['ada_length'],

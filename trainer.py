@@ -41,6 +41,7 @@ LOG_FORMAT = (
     "Progress: {progress:<.1%} "
     "Elapsed: {elapsed} "
     "temperature: {temperature:<.6} "
+    "ada_p: {ada_p:<.6} "
     "Discriminator_loss: {dis_loss:<.6} "
     "Generator_loss: {gen_loss:<.6} "
 )
@@ -58,10 +59,10 @@ class Trainer:
                  linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim,
                  d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps,
                  total_step, G_loss, D_loss, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
-                 gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, ada, fixed_augment_p,
-                 ada_target, ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta,
-                 latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision,
-                 train_config, model_config,):
+                 gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, ada, prev_ada_p,
+                 fixed_augment_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval,
+                 latent_op_alpha, latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
+                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -117,6 +118,7 @@ class Trainer:
 
         self.diff_aug = diff_aug
         self.ada = ada
+        self.prev_ada_p = prev_ada_p
         self.fixed_augment_p = fixed_augment_p
         self.ada_target = ada_target
         self.ada_length = ada_length
@@ -176,6 +178,7 @@ class Trainer:
 
         assert int(self.diff_aug)*int(self.ada) == 0, \
             "you can't simultaneously apply differentiable Augmentation (DiffAug) and adaptive augmentation (ADA)"
+
         self.policy = "color,translation,cutout"
 
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
@@ -205,8 +208,13 @@ class Trainer:
 
         if self.ada:
             self.ada_augment = torch.tensor([0.0, 0.0], device = self.default_device)
-            self.ada_aug_p = self.fixed_augment_p if self.fixed_augment_p > 0.0 else 0.0
+            if self.prev_ada_p is not None:
+                self.ada_aug_p = self.prev_ada_p
+            else:
+                self.ada_aug_p = self.fixed_augment_p if self.fixed_augment_p > 0.0 else 0.0
             self.ada_aug_step = self.ada_target/self.ada_length
+        else:
+            self.ada_aug_p = 'No'
         while step_count <= total_step:
             # ================== TRAIN D ================== #
             if self.tempering_type == 'continuous':
@@ -245,7 +253,7 @@ class Trainer:
                         z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
                         real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
 
-                        cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels)
+                        cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels)
 
                         fake_images = self.gen_model(z, fake_labels)
                         if self.diff_aug:
@@ -254,21 +262,21 @@ class Trainer:
                         if self.ada:
                             fake_images, _ = augment(fake_images, self.ada_aug_p)
 
-                        cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
+                        cls_proxies_fake, cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
 
-                        dis_acml_loss = self.D_loss(dis_real_authen_out, dis_fake_authen_out)
+                        dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
                         if self.conditional_strategy == "ContraGAN":
-                            dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_real_embed, cls_real_proxies, real_cls_mask,
+                            dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_real, cls_proxies_real, real_cls_mask,
                                                                                             real_labels, t, self.margin)
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
-                            dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_real_embed, cls_real_proxies, real_labels)
+                            dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_real, cls_proxies_real, real_labels)
                         elif self.conditional_strategy == "XT_Xent_GAN":
                             pass
                         else:
                             raise NotImplementedError
 
                         if self.ada and self.fixed_augment_p == 0.0:
-                            ada_aug_data = torch.tensor((torch.sign(dis_real_authen_out).sum().item(), dis_real_authen_out.shape[0]),
+                            ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]),
                                                         device = self.default_device)
                             self.ada_augment += ada_aug_data
                             if self.ada_augment[1] > (self.batch_size*4 - 1):
@@ -276,16 +284,16 @@ class Trainer:
                                 r_t_stat = authen_out_signs/num_outputs
                                 sign = 1 if r_t_stat > self.ada_target else -1
                                 self.ada_aug_p += sign*self.ada_aug_step*num_outputs
-                                self.ada_aug_p = min(1, max(0, self.ada_aug_p))
-                                self.ada_augment.mul_(0)
+                                self.ada_aug_p = min(1.0, max(0.0, self.ada_aug_p))
+                                self.ada_augment.mul_(0.0)
 
                         if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
                             real_images_aug = real_images_aug.to(self.default_device)
                             _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(real_images_aug, real_labels)
                             if self.conditional_strategy == "XT_Xent_GAN":
-                                dis_acml_loss += self.contrastive_lambda*self.XT_Xent_criterion(cls_real_embed, cls_real_aug_embed, t)
+                                dis_acml_loss += self.contrastive_lambda*self.XT_Xent_criterion(cls_embed_real, cls_real_aug_embed, t)
                             if self.consistency_reg:
-                                consistency_loss = self.l2_loss(dis_real_authen_out, dis_real_aug_authen_out)
+                                consistency_loss = self.l2_loss(dis_out_real, dis_real_aug_authen_out)
                                 dis_acml_loss += self.consistency_lambda*consistency_loss
 
                         dis_acml_loss = dis_acml_loss/self.accumulation_steps
@@ -326,13 +334,13 @@ class Trainer:
 
                         if self.ada:
                             fake_images, _ = augment(fake_images, self.ada_aug_p)
-                        cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
+                        cls_proxies_fake, cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
 
-                        gen_acml_loss = self.G_loss(dis_fake_authen_out)
+                        gen_acml_loss = self.G_loss(dis_out_fake)
                         if self.conditional_strategy == "ContraGAN":
-                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_fake_embed, cls_fake_proxies, fake_cls_mask, fake_labels, t, 0.0)
+                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_out_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, 0.0)
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
-                            gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_fake_embed, cls_fake_proxies, fake_labels)
+                            gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_out_fake, cls_proxies_fake, fake_labels)
                         elif self.conditional_strategy == "XT_Xent_GAN":
                             pass
                         else:
@@ -361,6 +369,7 @@ class Trainer:
                                                 progress=step_count/total_step,
                                                 elapsed=elapsed_time(self.start_time),
                                                 temperature=t,
+                                                ada_p=self.ada_aug_p,
                                                 dis_loss=dis_acml_loss.item(),
                                                 gen_loss=gen_acml_loss.item(),
                                                 )
@@ -372,6 +381,8 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
+                if self.ada:
+                    self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
 
                 with torch.no_grad():
                     self.gen_model.eval()
@@ -407,8 +418,13 @@ class Trainer:
 
         if self.ada:
             self.ada_augment = torch.tensor([0.0, 0.0], device = self.default_device)
-            self.ada_aug_p = self.fixed_augment_p if self.fixed_augment_p > 0.0 else 0.0
+            if self.prev_ada_p is not None:
+                self.ada_aug_p = self.prev_ada_p
+            else:
+                self.ada_aug_p = self.fixed_augment_p if self.fixed_augment_p > 0.0 else 0.0
             self.ada_aug_step = self.ada_target/self.ada_length
+        else:
+            self.ada_aug_p = 'No'
         while step_count <= total_step:
             # ================== TRAIN D ================== #
             toggle_grad(self.dis_model, True)
@@ -467,7 +483,7 @@ class Trainer:
                             dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.default_device)
 
                         if self.ada and self.fixed_augment_p == 0.0:
-                            ada_aug_data = torch.tensor((torch.sign(dis_real_authen_out).sum().item(), dis_real_authen_out.shape[0]),
+                            ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]),
                                                         device = self.default_device)
                             self.ada_augment += ada_aug_data
                             if self.ada_augment[1] > (self.batch_size*4 - 1):
@@ -475,8 +491,8 @@ class Trainer:
                                 r_t_stat = authen_out_signs/num_outputs
                                 sign = 1 if r_t_stat > self.ada_target else -1
                                 self.ada_aug_p += sign*self.ada_aug_step*num_outputs
-                                self.ada_aug_p = min(1, max(0, self.ada_aug_p))
-                                self.ada_augment.mul_(0)
+                                self.ada_aug_p = min(1.0, max(0.0, self.ada_aug_p))
+                                self.ada_augment.mul_(0.0)
 
                         if self.consistency_reg:
                             real_images_aug = real_images_aug.to(self.default_device)
@@ -568,6 +584,7 @@ class Trainer:
                                                 progress=step_count/total_step,
                                                 elapsed=elapsed_time(self.start_time),
                                                 temperature='No',
+                                                ada_p=self.ada_aug_p,
                                                 dis_loss=dis_acml_loss.item(),
                                                 gen_loss=gen_acml_loss.item(),
                                                 )
@@ -579,6 +596,9 @@ class Trainer:
 
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
+                if self.ada:
+                    self.writer.add_scalars('ada_p', self.ada_aug_p, step_count)
+
                 with torch.no_grad():
                     self.gen_model.eval()
                     if self.Gen_copy is not None:
@@ -608,10 +628,10 @@ class Trainer:
             self.Gen_copy.eval()
 
         g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
-                    'state_dict': self.gen_model.state_dict(), 'optimizer': self.G_optimizer.state_dict(),}
+                    'state_dict': self.gen_model.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
 
         d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
-                    'state_dict': self.dis_model.state_dict(), 'optimizer': self.D_optimizer.state_dict(),
+                    'state_dict': self.dis_model.state_dict(), 'optimizer': self.D_optimizer.state_dict(), 'ada_p': self.ada_aug_p,
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
 
         if len(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))) >= 1:
@@ -849,13 +869,13 @@ class Trainer:
                 real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
 
                 if self.conditional_strategy == "ContraGAN":
-                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels, evaluation=True)
+                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
                 elif self.conditional_strategy == "ACGAN":
                     cls_out_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
                 elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
                     dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
 
-                logits = self.linear_model(cls_real_embed)
+                logits = self.linear_model(cls_embed_real)
                 cls_loss = self.ce_loss(logits, real_labels)
 
                 cls_loss.backward()
@@ -876,13 +896,13 @@ class Trainer:
                 real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
 
                 if self.conditional_strategy == "ContraGAN":
-                    cls_real_proxies, cls_real_embed, dis_real_authen_out = self.dis_model(real_images, real_labels, evaluation=True)
+                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
                 elif self.conditional_strategy == "ACGAN":
                     cls_out_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
                 elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
                     dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
 
-                logits_test = self.linear_model(cls_real_embed)
+                logits_test = self.linear_model(cls_embed_real)
                 _, prediction = torch.max(logits_test.data, 1)
                 total += real_labels.size(0)
                 correct += (prediction == real_labels).sum().item()
