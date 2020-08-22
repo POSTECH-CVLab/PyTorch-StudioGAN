@@ -74,8 +74,12 @@
 
     "training_and_sampling_setting":{
       "random_flip_preprocessing": false,
-      "diff_aug":false,
-      
+      "diff_aug": false,
+
+      "ada": true,
+      "ada_target": 0.6,
+      "ada_length": 500000,
+
       "prior": "gaussian",
       "truncated_factor": 1,
 

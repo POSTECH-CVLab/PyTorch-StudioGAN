@@ -7,6 +7,7 @@
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
+from utils.ada import augment
 from utils.biggan_utils import toggle_grad, interp
 from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
 from utils.plot import plot_img_canvas, plot_confidence_histogram, plot_img_canvas
@@ -57,9 +58,10 @@ class Trainer:
                  linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim,
                  d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps,
                  total_step, G_loss, D_loss, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
-                 gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, prior, truncated_factor,
-                 ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,  default_device,
-                 print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
+                 gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, ada, ada_target, ada_length,
+                 prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,
+                 default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config,
+                 model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -114,6 +116,9 @@ class Trainer:
         self.consistency_lambda = consistency_lambda
 
         self.diff_aug = diff_aug
+        self.ada = ada
+        self.ada_target = ada_target
+        self.ada_length = ada_length
         self.prior = prior
         self.truncated_factor = truncated_factor
         self.ema = ema
@@ -194,6 +199,11 @@ class Trainer:
         self.logger.info('Start training...')
         step_count = current_step
         train_iter = iter(self.train_dataloader)
+
+        if self.ada:
+            self.ada_augment = torch.tensor([0.0, 0.0], device = self.default_device)
+            self.ada_aug_p = 0.0
+            self.ada_aug_step = self.ada_target/self.ada_length
         while step_count <= total_step:
             # ================== TRAIN D ================== #
             if self.tempering_type == 'continuous':
@@ -226,6 +236,9 @@ class Trainer:
                         if self.diff_aug:
                             real_images = DiffAugment(real_images, policy=self.policy)
 
+                        if self.ada:
+                            real_images, _ = augment(real_images, self.ada_aug_p)
+
                         z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
                         real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
 
@@ -234,6 +247,9 @@ class Trainer:
                         fake_images = self.gen_model(z, fake_labels)
                         if self.diff_aug:
                             fake_images = DiffAugment(fake_images, policy=self.policy)
+
+                        if self.ada:
+                            fake_images, _ = augment(fake_images, self.ada_aug_p)
 
                         cls_fake_proxies, cls_fake_embed, dis_fake_authen_out = self.dis_model(fake_images, fake_labels)
 
@@ -248,6 +264,10 @@ class Trainer:
                         else:
                             raise NotImplementedError
 
+                        if self.ada and self.ada_aug_p == 0:
+                            ada_aug_data = torch.tensor((torch.sign(dis_real_authen_out).sum().item(), dis_real_authen_out.shape[0]),
+                                                        device = self.default_device)
+                            import pdb; pdb.set_trace()
                         if self.consistency_reg or self.conditional_strategy == "XT_Xent_GAN":
                             real_images_aug = real_images_aug.to(self.default_device)
                             _, cls_real_aug_embed, dis_real_aug_authen_out = self.dis_model(real_images_aug, real_labels)
