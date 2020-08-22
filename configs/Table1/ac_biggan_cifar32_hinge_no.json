@@ -56,29 +56,34 @@
         "tempering_step": "N/A",
         "start_temperature": "N/A",
         "end_temperature": "N/A",
-  
+        
         "weight_clipping_for_dis": false,
         "weight_clipping_bound": "N/A",
-  
+
         "gradient_penalty_for_dis": false,
         "gradient_penelty_lambda": "N/A",
-  
+
         "consistency_reg": false,
         "consistency_lambda":"N/A"
       },
-  
+
       "initialization":{
         "g_init": "ortho",
         "d_init": "ortho"
       },
-  
+
       "training_and_sampling_setting":{
         "random_flip_preprocessing": false,
         "diff_aug":false,
-        
+
+        "ada": false,
+        "fixed_augment_p": "N/A", 
+        "ada_target": "N/A",
+        "ada_length": "N/A",
+
         "prior": "gaussian",
         "truncated_factor": 1,
-  
+
         "latent_op": false,
         "latent_op_rate":"N/A",
         "latent_op_step":"N/A",

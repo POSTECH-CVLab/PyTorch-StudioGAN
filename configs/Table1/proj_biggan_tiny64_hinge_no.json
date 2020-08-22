@@ -75,10 +75,15 @@
       "training_and_sampling_setting":{
         "random_flip_preprocessing": false,
         "diff_aug":false,
-        
+
+        "ada": false,
+        "fixed_augment_p": "N/A", 
+        "ada_target": "N/A",
+        "ada_length": "N/A",
+
         "prior": "gaussian",
         "truncated_factor": 1,
-  
+
         "latent_op": false,
         "latent_op_rate":"N/A",
         "latent_op_step":"N/A",

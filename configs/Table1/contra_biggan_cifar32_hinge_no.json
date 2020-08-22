@@ -76,10 +76,10 @@
       "random_flip_preprocessing": false,
       "diff_aug": false,
 
-      "ada": true,
-      "fixed_augment_p": 0.0, 
-      "ada_target": 0.6,
-      "ada_length": 500000,
+      "ada": false,
+      "fixed_augment_p": "N/A",
+      "ada_target": "N/A",
+      "ada_length": "N/A",
 
       "prior": "gaussian",
       "truncated_factor": 1,
