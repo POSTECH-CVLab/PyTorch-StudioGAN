@@ -66,7 +66,6 @@ def rand_contrast(x):
 
 
 def rand_translation(x, ratio=0.125):
-    import pdb; pdb.set_trace()
     shift_x, shift_y = int(x.size(2) * ratio + 0.5), int(x.size(3) * ratio + 0.5)
     translation_x = torch.randint(-shift_x, shift_x + 1, size=[x.size(0), 1, 1], device=x.device)
     translation_y = torch.randint(-shift_y, shift_y + 1, size=[x.size(0), 1, 1], device=x.device)
