@@ -1,3 +1,10 @@
+# PyTorch StudioGAN: https://github.com/POSTECH-CVLab/PyTorch-StudioGAN
+# The MIT License (MIT)
+# See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
+
+# utils/icr.py
+
+
 import random
 
 import torch
@@ -15,10 +22,12 @@ def ICR_Aug(x, flip=True, translation=True):
     return x
 
 def random_flip(x, p):
-    flip_prob = torch.FloatTensor(x.shape[0], 1).uniform_(0.0, 1.0)
+    n, c, h, w = x.shape[0], x.shape[1], x.shape[2], x.shape[3]
+    flip_prob = torch.FloatTensor(n, 1).uniform_(0.0, 1.0)
     flip_mask = flip_prob < p
-    flip_mask = flip_mask.type(torch.bool).to(x.device)
-    import pdb; pdb.set_trace()
+    flip_mask = flip_mask.type(torch.bool).view(n, 1, 1, 1).repeat(1, c, h, w).to(x.device)
+    x[flip_mask] = torch.flip(x[flip_mask].view(-1, c, h, w), [3]).view(-1)
+    return x
 
 
 def random_translation(x, ratio):
@@ -34,6 +43,6 @@ def random_translation(x, ratio):
 
     grid_x = (grid_x + t_x) + max_t_x
     grid_y = (grid_y + t_y) + max_t_y
-    x_pad = F.pad(x, [max_t_x, max_t_x, max_t_y, max_t_y, 0, 0, 0, 0])
+    x_pad = F.pad(input=x, pad=[max_t_x, max_t_x, max_t_y, max_t_y], mode='reflect')
     x = x_pad.permute(0, 2, 3, 1).contiguous()[grid_batch, grid_x, grid_y].permute(0, 3, 1, 2)
     return x

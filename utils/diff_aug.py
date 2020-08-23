@@ -26,17 +26,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import DataParallel
-from torch import autograd
 
-import numpy as np
 
 
 ### Differentiable Augmentation for Data-Efficient GAN Training (https://arxiv.org/abs/2006.10738)
 ### Shengyu Zhao, Zhijian Liu, Ji Lin, Jun-Yan Zhu, and Song Han
 ### https://github.com/mit-han-lab/data-efficient-gans
+
+
 def DiffAugment(x, policy='', channels_first=True):
     if policy:
         if not channels_first:

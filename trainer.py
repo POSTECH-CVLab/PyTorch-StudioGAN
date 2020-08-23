@@ -15,6 +15,7 @@ from utils.utils import elapsed_time, calculate_all_sn, find_and_remove
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, XT_Xent_loss
 from utils.diff_aug import DiffAugment
+from utils.icr import ICR_Aug
 from utils.calculate_accuracy import calculate_accuracy
 
 
