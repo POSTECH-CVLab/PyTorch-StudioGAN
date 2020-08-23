@@ -62,10 +62,10 @@ class Trainer:
                  linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim,
                  d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps,
                  total_step, G_loss, D_loss, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
-                 gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, diff_aug, ada, prev_ada_p,
-                 fixed_augment_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval,
-                 latent_op_alpha, latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
-                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
+                 gradient_penelty_lambda, weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, bcr, real_lambda, fake_lambda, zcr,
+                 gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, fixed_augment_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op,
+                 latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every,
+                 checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -118,6 +118,13 @@ class Trainer:
         self.weight_clipping_bound = weight_clipping_bound
         self.consistency_reg = consistency_reg
         self.consistency_lambda = consistency_lambda
+        self.bcr = bcr
+        self.real_lambda = real_lambda
+        self.fake_lambda = fake_lambda
+        self.zcr = zcr
+        self.gen_lambda = gen_lambda
+        self.dis_lambda = dis_lambda
+        self.sigma_noise = sigma_noise
 
         self.diff_aug = diff_aug
         self.ada = ada
@@ -253,12 +260,19 @@ class Trainer:
                         if self.ada:
                             real_images, _ = augment(real_images, self.ada_aug_p)
 
-                        z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                        if self.zcr:
+                            z, fake_labels, z_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                                 self.sigma_noise, self.default_device)
+                        else:
+                            z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                            None, self.default_device)
+
                         real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
 
                         cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels)
 
                         fake_images = self.gen_model(z, fake_labels)
+
                         if self.diff_aug:
                             fake_images = DiffAugment(fake_images, policy=self.policy)
 
@@ -266,8 +280,23 @@ class Trainer:
                             fake_images, _ = augment(fake_images, self.ada_aug_p)
 
                         cls_proxies_fake, cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-
                         dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
+
+                        if self.bcr:
+                            real_images_aug = ICR_Aug(real_images)
+                            fake_images_aug = ICR_Aug(fake_images)
+                            cls_proxies_real_aug, cls_embed_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
+                            cls_proxies_fake_aug, cls_embed_fake_aug, dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
+                            bcr_real_loss = self.l2_loss(dis_out_real, dis_out_real_aug)
+                            bcr_fake_loss = self.l2_loss(dis_out_fake, dis_out_fake_aug)
+                            dis_acml_loss += self.real_lambda*bcr_real_loss + self.fake_lambda*bcr_fake_loss
+
+                        if self.zcr:
+                            fake_images_zaug = self.gen_model(z_t, fake_labels)
+                            cls_proxies_fake_zaug, cls_embed_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
+                            zcr_dis_loss = self.l2_loss(dis_out_fake, dis_out_fake_zaug)
+                            dis_acml_loss += self.dis_lambda*zcr_dis_loss
+
                         if self.conditional_strategy == "ContraGAN":
                             dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_real, cls_proxies_real, real_cls_mask,
                                                                                             real_labels, t, self.margin)
@@ -328,7 +357,13 @@ class Trainer:
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
                     with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
-                        z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                        if self.zcr:
+                            z, fake_labels, z_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                                 self.sigma_noise, self.default_device)
+                        else:
+                            z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                            None, self.default_device)
+
                         fake_cls_mask = make_mask(fake_labels, self.num_classes, self.default_device)
 
                         fake_images = self.gen_model(z, fake_labels)
@@ -340,6 +375,12 @@ class Trainer:
                         cls_proxies_fake, cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
 
                         gen_acml_loss = self.G_loss(dis_out_fake)
+
+                        if self.zcr:
+                            fake_images_zaug = self.gen_model(z_t, fake_labels)
+                            zcr_gen_loss = -1 * self.l2_loss(fake_images, fake_images_zaug)
+                            gen_acml_loss += self.gen_lambda*zcr_gen_loss
+
                         if self.conditional_strategy == "ContraGAN":
                             gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_out_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, 0.0)
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
@@ -455,7 +496,12 @@ class Trainer:
                         if self.ada:
                             real_images, _ = augment(real_images, self.ada_aug_p)
 
-                        z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                        if self.zcr:
+                            z, fake_labels, z_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                                 self.sigma_noise, self.default_device)
+                        else:
+                            z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                            None, self.default_device)
 
                         if self.latent_op:
                             z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
@@ -478,6 +524,34 @@ class Trainer:
                             raise NotImplementedError
 
                         dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
+
+                        if self.bcr:
+                            real_images_aug = ICR_Aug(real_images)
+                            fake_images_aug = ICR_Aug(fake_images)
+                            if self.conditional_strategy == "ACGAN":
+                                cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
+                                cls_out_fake_aug, dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
+                            elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
+                                dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
+                                dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
+                            else:
+                                raise NotImplementedError
+
+                            bcr_real_loss = self.l2_loss(dis_out_real, dis_out_real_aug)
+                            bcr_fake_loss = self.l2_loss(dis_out_fake, dis_out_fake_aug)
+                            dis_acml_loss += self.real_lambda*bcr_real_loss + self.fake_lambda*bcr_fake_loss
+
+                        if self.zcr:
+                            fake_images_zaug = self.gen_model(z_t, fake_labels)
+                            if self.conditional_strategy == "ACGAN":
+                                cls_out_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
+                            elif self.conditional_strategy == "cGAN" or self.conditional_strategy == "no":
+                                dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
+                            else:
+                                raise NotImplementedError
+
+                            zcr_dis_loss = self.l2_loss(dis_out_fake, dis_out_fake_zaug)
+                            dis_acml_loss += self.dis_lambda*zcr_dis_loss
 
                         if self.conditional_strategy == "ACGAN":
                             dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
@@ -537,7 +611,12 @@ class Trainer:
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
                     with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
-                        z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None, self.default_device)
+                        if self.zcr:
+                            z, fake_labels, z_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                                 self.sigma_noise, self.default_device)
+                        else:
+                            z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                            None, self.default_device)
 
                         if self.latent_op:
                             z, transport_cost = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
@@ -558,6 +637,12 @@ class Trainer:
                             raise NotImplementedError
 
                         gen_acml_loss = self.G_loss(dis_out_fake)
+
+                        if self.zcr:
+                            fake_images_zaug = self.gen_model(z_t, fake_labels)
+                            zcr_gen_loss = -1 * self.l2_loss(fake_images, fake_images_zaug)
+                            gen_acml_loss += self.gen_lambda*zcr_gen_loss
+
                         if self.conditional_strategy == "ACGAN":
                             gen_acml_loss += self.ce_loss(cls_out_fake, fake_labels)
 

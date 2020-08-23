@@ -64,7 +64,16 @@
       "gradient_penelty_lambda": "N/A",
 
       "consistency_reg": false,
-      "consistency_lambda": "N/A"
+      "consistency_lambda": "N/A",
+
+      "bcr": false,
+      "real_lambda": "N/A",
+      "fake_lambda": "N/A",
+
+      "zcr": false,
+      "gen_lambda": "N/A",
+      "dis_lambda": "N/A",
+      "sigma_noise": "N/A"
     },
 
     "initialization":{

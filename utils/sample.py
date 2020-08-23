@@ -38,7 +38,7 @@ def sample_latents(dist, batch_size, dim, truncated_factor=1, num_classes=None, 
             y_fake = []
             for idx in indices:
                 y_fake += [idx]*8
-            y_fake = torch.tensor(y_fake, dtype=torch.long).to(device) 
+            y_fake = torch.tensor(y_fake, dtype=torch.long).to(device)
     else:
         y_fake = None
 
@@ -54,7 +54,7 @@ def sample_latents(dist, batch_size, dim, truncated_factor=1, num_classes=None, 
         elif dist == "hyper_sphere":
             latent, latent_eps = random_ball(batch_size, dim, perturb=perturb)
             latent, latent_eps = torch.FloatTensor(latent).to(device), torch.FloatTensor(latent_eps).to(device)
-        return latent, y_fake, latent_eps 
+        return latent, y_fake, latent_eps
     else:
         if dist == "gaussian":
             latent = torch.randn(batch_size, dim, device=device)/truncated_factor
@@ -115,7 +115,7 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
 
     if latent_op:
         z = latent_optimise(z, fake_labels, gen_moidel, dis_model, latent_op_step, 1.0, latent_op_alpha, latent_op_beta, False, device)
-    
+
     with torch.no_grad():
         batch_images = gen_model(z, fake_labels)
 
