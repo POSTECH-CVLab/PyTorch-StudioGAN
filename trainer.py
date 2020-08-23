@@ -12,9 +12,11 @@ from utils.biggan_utils import toggle_grad, interp
 from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
 from utils.plot import plot_img_canvas, plot_confidence_histogram, plot_img_canvas
 from utils.utils import elapsed_time, calculate_all_sn, find_and_remove
-from utils.losses import calc_derv4gp, calc_derv, latent_optimise, DiffAugment
+from utils.losses import calc_derv4gp, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, XT_Xent_loss
+from utils.diff_aug import DiffAugment
 from utils.calculate_accuracy import calculate_accuracy
+
 
 import torch
 import torch.nn as nn
