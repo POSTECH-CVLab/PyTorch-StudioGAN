@@ -689,7 +689,7 @@ class Trainer:
                 self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
                                                    'generator': gen_acml_loss.item()}, step_count)
                 if self.ada:
-                    self.writer.add_scalars('ada_p', self.ada_aug_p, step_count)
+                    self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
 
                 with torch.no_grad():
                     self.gen_model.eval()
