@@ -39,15 +39,24 @@ RUN_NAME_FORMAT = (
     "{timestamp}"
 )
 
-def train_framework(seed, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path,
-                    architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn,
-                    attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth,
-                    optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2, total_step, adv_loss, consistency_reg, g_init, d_init,
-                    random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn, mixed_precision,
-                    hdf5_path_train, train_config, model_config, **_):
-    fix_all_seed(seed)
-    cudnn.benchmark = False # Not good Generator for undetermined input size
-    cudnn.deterministic = True
+def train_framework(seed, disable_debugging_API, num_workers, config_path, reduce_train_dataset, load_current, type4eval_dataset,
+                    dataset_name, num_classes, img_size, data_path, architecture, conditional_strategy, hypersphere_dim, nonlinear_embed,
+                    normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block,
+                    attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size,
+                    d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2, total_step, adv_loss, consistency_reg, g_init, d_init,
+                    random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay, ema_start, synchronized_bn,
+                    mixed_precision, hdf5_path_train, train_config, model_config, **_):
+    if seed == 82624:
+        cudnn.benchmark = True # Not good Generator for undetermined input size
+        cudnn.deterministic = False
+    else:
+        fix_all_seed(seed)
+        cudnn.benchmark = False # Not good Generator for undetermined input size
+        cudnn.deterministic = True
+
+    if disable_debugging_API:
+        torch.autograd.set_detect_anomaly(False)
+
     n_gpus = torch.cuda.device_count()
     default_device = torch.cuda.current_device()
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
