@@ -188,6 +188,8 @@ class Trainer:
 
         assert int(self.diff_aug)*int(self.ada) == 0, \
             "you can't simultaneously apply differentiable Augmentation (DiffAug) and adaptive augmentation (ADA)"
+        assert int(self.mixed_precision)*int(self.gradient_penalty_for_dis) == 0, \
+            "you can't simultaneously apply mixed precision training (mpc) and gradient penalty for WGAN-GP"
 
         self.policy = "color,translation,cutout"
 
@@ -195,8 +197,7 @@ class Trainer:
                                                                 self.num_classes, None, self.default_device, sampler=sampler)
 
         if self.mixed_precision:
-            self.dis_scaler = torch.cuda.amp.GradScaler()
-            self.gen_scaler = torch.cuda.amp.GradScaler()
+            self.scaler = torch.cuda.amp.GradScaler()
 
         if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
             self.num_eval = {'train':50000, 'valid':50000}
@@ -252,7 +253,7 @@ class Trainer:
                         else:
                             real_images, real_labels = next(train_iter)
 
-                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
+                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
                         real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
                         if self.diff_aug:
                             real_images = DiffAugment(real_images, policy=self.policy)
@@ -331,13 +332,13 @@ class Trainer:
                         dis_acml_loss = dis_acml_loss/self.accumulation_steps
 
                     if self.mixed_precision:
-                        self.dis_scaler.scale(dis_acml_loss).backward()
+                        self.scaler.scale(dis_acml_loss).backward()
                     else:
                         dis_acml_loss.backward()
 
                 if self.mixed_precision:
-                    self.dis_scaler.step(self.D_optimizer)
-                    self.dis_scaler.update()
+                    self.scaler.step(self.D_optimizer)
+                    self.scaler.update()
                 else:
                     self.D_optimizer.step()
 
@@ -356,7 +357,7 @@ class Trainer:
             for step_index in range(self.g_steps_per_iter):
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
-                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
+                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
                         if self.zcr:
                             z, fake_labels, z_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                                  self.sigma_noise, self.default_device)
@@ -393,13 +394,13 @@ class Trainer:
                         gen_acml_loss = gen_acml_loss/self.accumulation_steps
 
                     if self.mixed_precision:
-                        self.gen_scaler.scale(gen_acml_loss).backward()
+                        self.scaler.scale(gen_acml_loss).backward()
                     else:
                         gen_acml_loss.backward()
 
                 if self.mixed_precision:
-                    self.gen_scaler.step(self.G_optimizer)
-                    self.gen_scaler.update()
+                    self.scaler.step(self.G_optimizer)
+                    self.scaler.update()
                 else:
                     self.G_optimizer.step()
 
@@ -488,7 +489,7 @@ class Trainer:
                         else:
                             real_images, real_labels = next(train_iter)
 
-                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
+                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
                         real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
                         if self.diff_aug:
                             real_images = DiffAugment(real_images, policy=self.policy)
@@ -585,13 +586,13 @@ class Trainer:
                         dis_acml_loss = dis_acml_loss/self.accumulation_steps
 
                     if self.mixed_precision:
-                        self.dis_scaler.scale(dis_acml_loss).backward()
+                        self.scaler.scale(dis_acml_loss).backward()
                     else:
                         dis_acml_loss.backward()
 
                 if self.mixed_precision:
-                    self.dis_scaler.step(self.D_optimizer)
-                    self.dis_scaler.update()
+                    self.scaler.step(self.D_optimizer)
+                    self.scaler.update()
                 else:
                     self.D_optimizer.step()
 
@@ -610,7 +611,7 @@ class Trainer:
             for step_index in range(self.g_steps_per_iter):
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):
-                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mp:
+                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
                         if self.zcr:
                             z, fake_labels, z_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                                  self.sigma_noise, self.default_device)
@@ -651,13 +652,13 @@ class Trainer:
                         gen_acml_loss = gen_acml_loss/self.accumulation_steps
 
                     if self.mixed_precision:
-                        self.gen_scaler.scale(gen_acml_loss).backward()
+                        self.scaler.scale(gen_acml_loss).backward()
                     else:
                         gen_acml_loss.backward()
 
                 if self.mixed_precision:
-                    self.gen_scaler.step(self.G_optimizer)
-                    self.gen_scaler.update()
+                    self.scaler.step(self.G_optimizer)
+                    self.scaler.update()
                 else:
                     self.G_optimizer.step()
 
