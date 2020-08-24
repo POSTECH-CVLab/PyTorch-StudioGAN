@@ -85,9 +85,9 @@
       "random_flip_preprocessing": false,
       "diff_aug": false,
 
-      "ada": true,
-      "ada_target": 0.6,
-      "ada_length": 500000,
+      "ada": false,
+      "ada_target": "N/A",
+      "ada_length": "N/A",
 
       "prior": "gaussian",
       "truncated_factor": 1,
