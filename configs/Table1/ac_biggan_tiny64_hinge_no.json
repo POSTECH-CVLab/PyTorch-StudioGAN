@@ -86,7 +86,6 @@
         "diff_aug":false,
         
         "ada": false,
-        "fixed_augment_p": "N/A", 
         "ada_target": "N/A",
         "ada_length": "N/A",
        

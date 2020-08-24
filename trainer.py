@@ -61,13 +61,13 @@ class Trainer:
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
                  Gen_copy, linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, pos_collected_numerator,
                  z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size,
-                 g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, margin, tempering_type,
-                 tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis, gradient_penelty_lambda, weight_clipping_for_dis,
-                 weight_clipping_bound, consistency_reg, consistency_lambda, bcr, real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda,
-                 sigma_noise, diff_aug, ada, prev_ada_p, fixed_augment_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op,
+                 g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
+                 tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis, gradient_penelty_lambda,
+                 weight_clipping_for_dis, weight_clipping_bound, consistency_reg, consistency_lambda, bcr, real_lambda, fake_lambda, zcr,
+                 gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op,
                  latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight, default_device,
-                 print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision,
-                 train_config, model_config,):
+                 print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config,
+                 model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -108,6 +108,7 @@ class Trainer:
 
         self.G_loss = G_loss
         self.D_loss = D_loss
+        self.ADA_cutoff = ADA_cutoff
         self.contrastive_lambda = contrastive_lambda
         self.margin = margin
         self.tempering_type = tempering_type
@@ -131,7 +132,6 @@ class Trainer:
         self.diff_aug = diff_aug
         self.ada = ada
         self.prev_ada_p = prev_ada_p
-        self.fixed_augment_p = fixed_augment_p
         self.ada_target = ada_target
         self.ada_length = ada_length
         self.prior = prior
@@ -190,6 +190,7 @@ class Trainer:
 
         assert int(self.diff_aug)*int(self.ada) == 0, \
             "you can't simultaneously apply differentiable Augmentation (DiffAug) and adaptive augmentation (ADA)"
+
         assert int(self.mixed_precision)*int(self.gradient_penalty_for_dis) == 0, \
             "you can't simultaneously apply mixed precision training (mpc) and gradient penalty for WGAN-GP"
 
@@ -224,7 +225,7 @@ class Trainer:
             if self.prev_ada_p is not None:
                 self.ada_aug_p = self.prev_ada_p
             else:
-                self.ada_aug_p = self.fixed_augment_p if self.fixed_augment_p > 0.0 else 0.0
+                self.ada_aug_p = 0.0
             self.ada_aug_step = self.ada_target/self.ada_length
         else:
             self.ada_aug_p = 'No'
@@ -310,14 +311,14 @@ class Trainer:
                         else:
                             raise NotImplementedError
 
-                        if self.ada and self.fixed_augment_p == 0.0:
+                        if self.ada:
                             ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]),
                                                         device = self.default_device)
                             self.ada_augment += ada_aug_data
                             if self.ada_augment[1] > (self.batch_size*4 - 1):
                                 authen_out_signs, num_outputs = self.ada_augment.tolist()
                                 r_t_stat = authen_out_signs/num_outputs
-                                sign = 1 if r_t_stat > self.ada_target else -1
+                                sign = 1 if r_t_stat > (self.ADA_cutoff + self.ada_target - 0.5) else -1
                                 self.ada_aug_p += sign*self.ada_aug_step*num_outputs
                                 self.ada_aug_p = min(1.0, max(0.0, self.ada_aug_p))
                                 self.ada_augment.mul_(0.0)
@@ -468,7 +469,7 @@ class Trainer:
             if self.prev_ada_p is not None:
                 self.ada_aug_p = self.prev_ada_p
             else:
-                self.ada_aug_p = self.fixed_augment_p if self.fixed_augment_p > 0.0 else 0.0
+                self.ada_aug_p = 0.0
             self.ada_aug_step = self.ada_target/self.ada_length
         else:
             self.ada_aug_p = 'No'
@@ -562,14 +563,14 @@ class Trainer:
                         if self.gradient_penalty_for_dis:
                             dis_acml_loss += gradient_penelty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.default_device)
 
-                        if self.ada and self.fixed_augment_p == 0.0:
+                        if self.ada:
                             ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]),
                                                         device = self.default_device)
                             self.ada_augment += ada_aug_data
                             if self.ada_augment[1] > (self.batch_size*4 - 1):
                                 authen_out_signs, num_outputs = self.ada_augment.tolist()
                                 r_t_stat = authen_out_signs/num_outputs
-                                sign = 1 if r_t_stat > self.ada_target else -1
+                                sign = 1 if r_t_stat > (self.ADA_cutoff + self.ada_target - 0.5) else -1
                                 self.ada_aug_p += sign*self.ada_aug_step*num_outputs
                                 self.ada_aug_p = min(1.0, max(0.0, self.ada_aug_p))
                                 self.ada_augment.mul_(0.0)
