@@ -241,7 +241,7 @@ def calc_derv4lo(z, fake_labels, netG, netD, device):
     z_rg = autograd.Variable(z, requires_grad=True)
     fake_images = netG(z_rg, fake_labels)
 
-    _, _, dis_fake_out = netD(fake_images, fake_labels)
+    dis_fake_out = netD(fake_images, fake_labels)
 
     gradients = autograd.grad(outputs=dis_fake_out, inputs=z_rg,
                               grad_outputs=torch.ones(dis_fake_out.size()).to(device),
@@ -257,7 +257,7 @@ def calc_derv(inputs, labels, netD, device, netG=None):
 
         X = autograd.Variable(inputs, requires_grad=True)
 
-        _, _, outputs = netD(X, labels)
+        outputs = netD(X, labels)
 
         gradients = autograd.grad(outputs=outputs, inputs=X,
                                 grad_outputs=torch.ones(outputs.size()).to(device),
@@ -274,7 +274,7 @@ def calc_derv(inputs, labels, netD, device, netG=None):
         Z = autograd.Variable(inputs, requires_grad=True)
         fake_images = netG(Z, labels)
 
-        _, _, dis_fake_out = netD(fake_images, labels)
+        dis_fake_out = netD(fake_images, labels)
 
         gradients = autograd.grad(outputs=dis_fake_out, inputs=Z,
                                  grad_outputs=torch.ones(dis_fake_out.size()).to(device),
