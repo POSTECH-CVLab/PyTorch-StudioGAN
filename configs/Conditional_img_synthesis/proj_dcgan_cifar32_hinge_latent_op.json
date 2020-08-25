@@ -99,7 +99,7 @@
         "latent_op_alpha": 0.9,
         "latent_op_beta": 0.1,
         "latent_norm_reg_weight": 0.1,
-  
+
         "ema": false,
         "ema_decay": "N/A",
         "ema_start": "N/A"
