@@ -1,6 +1,6 @@
 ## StudioGAN: A Library for Experiment and Evaluation of GANs (Early Version)
 
-StudioGAN is a Pytorch library providing the implementation of representative Generative Adversarial Networks (GANs) for conditional/unconditional image synthesis. This project aims to help machine learning researchers to compare the new idea with other GANs in the same Pytorch environment. 
+StudioGAN is a Pytorch library providing the implementation of representative Generative Adversarial Networks (GANs) for conditional/unconditional image synthesis. This project aims to help machine learning researchers to compare the new idea with other GANs in the same Pytorch environment.
 
 
 ## 1. Implemented GANs
@@ -18,7 +18,7 @@ StudioGAN is a Pytorch library providing the implementation of representative Ge
 * [CRGAN (Zhang et al.)](https://arxiv.org/abs/1910.12027)
 * [ICRGAN (Zhao et al.)](https://arxiv.org/abs/2002.04724)
 * [DiffAugment (Zhao et al.)](https://arxiv.org/abs/2006.10738)
-* [Adaptive discriminator augmentation (Karras et al.)](https://arxiv.org/abs/2006.06676)
+* [Adaptive Discriminator Augmentation (Karras et al.)](https://arxiv.org/abs/2006.06676)
 * [ContraGAN (Ours)](https://github.com/)
 
 ## 2. To be implemented
@@ -28,9 +28,9 @@ StudioGAN is a Pytorch library providing the implementation of representative Ge
 
 - Anaconda
 - Python > 3.6
-- torch > 1.6.0 
+- torch > 1.6.0
 - torchvision > 0.7.0
-- Pillow < 7 
+- Pillow < 7
 - apex 0.1 (for fused optimiers)
 - tensorboard
 - h5py
