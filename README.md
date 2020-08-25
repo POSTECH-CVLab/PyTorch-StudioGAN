@@ -14,24 +14,24 @@ StudioGAN is a Pytorch library providing the implementation of representative Ge
 * [SNDCGAN,SNResGAN (Miyato et al.)](https://arxiv.org/abs/1802.05957)
 * [SAGAN (Zhang et al.)](https://arxiv.org/abs/1805.08318)
 * [BigGAN (Brock et al.)](https://arxiv.org/abs/1809.11096)
+* [BigGAN-Deep (Brock et al.)](https://arxiv.org/abs/1809.11096)
 * [CRGAN (Zhang et al.)](https://arxiv.org/abs/1910.12027)
+* [ICRGAN (Zhao et al.)](https://arxiv.org/abs/2002.04724)
+* [DiffAugment (Zhao et al.)](https://arxiv.org/abs/2006.10738)
+* [Adaptive discriminator augmentation (Karras et al.)](https://arxiv.org/abs/2006.06676)
 * [ContraGAN (Ours)](https://github.com/)
 
 ## 2. To be implemented
-
-* [DRAGAN (Kodali et al.)](https://arxiv.org/abs/1705.07215)
-* [BigGAN-Deep (Brock et al.)](https://arxiv.org/abs/1809.11096)
-* [ICRGAN (Zhao et al.)](https://arxiv.org/abs/2002.04724)
 * [LOGAN (Wu et al.)](https://arxiv.org/abs/1912.00953)
-* [CntrGAN (Zhao et al.)](https://arxiv.org/abs/2006.02595)
 
 ## 3. Requirements
 
 - Anaconda
 - Python > 3.6
-- torch > 1.3.1 
-- torchvision > 0.4.2
+- torch > 1.6.0 
+- torchvision > 0.7.0
 - Pillow < 7 
+- apex 0.1 (for fused optimiers)
 - tensorboard
 - h5py
 - tqdm
@@ -40,6 +40,11 @@ You can install the recommended environment setting as follows:
 
 ```
 conda env create -f environment.yml -n StudioGAN
+```
+
+or using docker
+```
+docker pull minguk/studio_gan:latest
 ```
 
 ## 4. Dataset(CIFAR10, Tiny ImageNet, ImageNet possible)
@@ -67,24 +72,24 @@ The folder structure of the datasets is shown below:
 For CIFAR10 image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0 python3 main.py --eval -t -c "./configs/Table2/biggan32_cifar_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -rm_API -c "./configs/Table1/contra_biggan_cifar32_hinge_no.json"
 ```
 
 For Tiny ImageNet image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py --eval -t -c "./configs/Table2/biggan64_tiny_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -rm_API -c "./configs/Table1/contra_biggan_tiny32_hinge_no.json"
 ```
 
 For ImageNet image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -c "./configs/Imagenet_experiments/proj_biggan128_imagenet_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -rm_API -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json"
 ```
 
 For ImageNet image generation (loading all images into main memory to reduce I/O bottleneck):
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py --eval -t -l -c "./configs/Imagenet_experiments/proj_biggan128_imagenet_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -rm_API -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -l
 ```
 
 ## 6. About PyTorch FID
@@ -95,6 +100,10 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 ## 6. References
 
 **Self-Attention module:** https://github.com/voletiv/self-attention-GAN-pytorch
+
+**DiffAugment:** https://github.com/mit-han-lab/data-efficient-gans
+
+**Adaptive Discriminator Augmentation:** https://github.com/rosinality/stylegan2-pytorch
 
 **Exponential Moving Average:** https://github.com/ajbrock/BigGAN-PyTorch
 
