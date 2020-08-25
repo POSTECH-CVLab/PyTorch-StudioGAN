@@ -16,16 +16,17 @@ from train import train_framework
 
 def main():
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('-c', '--config_path', type=str, default='./configs/Table1/contra_biggan_cifar32_hinge_no.json')
+    parser.add_argument('-c', '--config_path', type=str, default='./configs/Table1/proj_biggan_cifar32_hinge_no.json')
     parser.add_argument('--checkpoint_folder', type=str, default=None)
     parser.add_argument('-current', '--load_current', action='store_true', help='choose whether you load current or best weights')
     parser.add_argument('--log_output_path', type=str, default=None)
 
     parser.add_argument('--seed', type=int, default=82624, help='seed for generating random number')
-    parser.add_argument('-rm_API', '--disable_debugging_API', action='store_true')
     parser.add_argument('--num_workers', type=int, default=4, help='')
     parser.add_argument('-sync_bn', '--synchronized_bn', action='store_true', help='select whether turn on synchronized batchnorm')
     parser.add_argument('-mpc', '--mixed_precision', action='store_true', help='select whether turn on mixed precision training')
+    parser.add_argument('-rm_API', '--disable_debugging_API', action='store_true', help='whether disable pytorch autograd debugging mode')
+    parser.add_argument('-fz_op', '--fused_optimization', action='store_true', help='using fused optimization for faster training')
 
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')
