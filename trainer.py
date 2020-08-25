@@ -318,7 +318,7 @@ class Trainer:
                             if self.ada_augment[1] > (self.batch_size*4 - 1):
                                 authen_out_signs, num_outputs = self.ada_augment.tolist()
                                 r_t_stat = authen_out_signs/num_outputs
-                                sign = 1 if r_t_stat > (self.ADA_cutoff + self.ada_target - 0.5) else -1
+                                sign = 1 if r_t_stat > self.ada_target else -1
                                 self.ada_aug_p += sign*self.ada_aug_step*num_outputs
                                 self.ada_aug_p = min(1.0, max(0.0, self.ada_aug_p))
                                 self.ada_augment.mul_(0.0)
@@ -570,7 +570,7 @@ class Trainer:
                             if self.ada_augment[1] > (self.batch_size*4 - 1):
                                 authen_out_signs, num_outputs = self.ada_augment.tolist()
                                 r_t_stat = authen_out_signs/num_outputs
-                                sign = 1 if r_t_stat > (self.ADA_cutoff + self.ada_target - 0.5) else -1
+                                sign = 1 if r_t_stat > self.ada_target else -1
                                 self.ada_aug_p += sign*self.ada_aug_step*num_outputs
                                 self.ada_aug_p = min(1.0, max(0.0, self.ada_aug_p))
                                 self.ada_augment.mul_(0.0)
