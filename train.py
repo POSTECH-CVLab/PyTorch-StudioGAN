@@ -210,11 +210,20 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
             linear_model = DataParallel(linear_model, output_device=default_device)
 
         if optimizer == "SGD":
-            L_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
+            if fused_optimization:
+                L_optimizer = apex.optimizers.FusedSGD(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
+            else:
+                L_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
         elif optimizer == "RMSprop":
-            L_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, alpha=alpha)
+            if fused_optimization:
+                raise NotImplementedError
+            else:
+                L_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, alpha=alpha)
         elif optimizer == "Adam":
-            L_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, [beta1, beta2], eps=1e-6)
+            if fused_optimization:
+                L_optimizer = apex.optimizers.FusedAdam(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, [beta1, beta2], eps=1e-6)
+            else:
+                L_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, [beta1, beta2], eps=1e-6)
         else:
             raise NotImplementedError
     else:
