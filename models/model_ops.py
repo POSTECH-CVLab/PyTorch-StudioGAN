@@ -167,6 +167,5 @@ class Self_Attn(nn.Module):
         attn_g = torch.bmm(g, attn.permute(0, 2, 1))
         attn_g = attn_g.view(-1, ch//2, h, w)
         attn_g = self.conv1x1_attn(attn_g)
-        # Out
-        out = x + self.sigma*attn_g
-        return out
+        return x + self.sigma*attn_g
+
