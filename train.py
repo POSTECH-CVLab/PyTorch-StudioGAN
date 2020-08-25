@@ -31,6 +31,11 @@ from torch.backends import cudnn
 from torch.nn import DataParallel
 from torch.utils.tensorboard import SummaryWriter
 
+try:
+    import apex
+except ImportError:
+    apex = None
+
 
 
 RUN_NAME_FORMAT = (
@@ -60,6 +65,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     n_gpus = torch.cuda.device_count()
     default_device = torch.cuda.current_device()
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
+    assert int(fused_optimization)*int(mixed_precision) == 0.0, "can't turn on fused_optimization and mixed_precision together."
 
     if n_gpus == 1:
         warnings.warn('You have chosen a specific GPU. This will completely '
@@ -134,15 +140,28 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     D_loss = {'vanilla': loss_dcgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
     ADA_cutoff = {'vanilla': 0.5, 'hinge': 0.0, 'wasserstein': 0.0}
 
+    import apex
+
     if optimizer == "SGD":
-        G_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
-        D_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, nesterov=nesterov)
+        if fused_optimization:
+            G_optimizer = apex.optimizers.FusedSGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
+            D_optimizer = apex.optimizers.FusedSGD(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, nesterov=nesterov)
+        else:
+            G_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
+            D_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, nesterov=nesterov)
     elif optimizer == "RMSprop":
-        G_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, alpha=alpha)
-        D_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, alpha=alpha)
+        if fused_optimization:
+            raise NotImplementedError
+        else:
+            G_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, alpha=alpha)
+            D_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, alpha=alpha)
     elif optimizer == "Adam":
-        G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, [beta1, beta2], eps=1e-6)
-        D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2], eps=1e-6)
+        if fused_optimization:
+            G_optimizer = apex.optimizers.FusedAdam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, [beta1, beta2], eps=1e-6)
+            D_optimizer = apex.optimizers.FusedAdam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2], eps=1e-6)
+        else:
+            G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, [beta1, beta2], eps=1e-6)
+            D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2], eps=1e-6)
     else:
         raise NotImplementedError
 
