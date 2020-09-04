@@ -27,10 +27,35 @@ def fix_all_seed(seed):
 def count_parameters(module):
     return 'Number of parameters: {}'.format(sum([p.data.nelement() for p in module.parameters()]))
 
+
+def define_sampler(dataset_name, conditional_strategy):
+    if conditional_strategy != "no":
+        if dataset_name == "cifar10":
+            sampler = "class_order_all"
+        else:
+            sampler = "class_order_some"
+    else:
+        sampler = "default"
+    return sampler
+
+def check_flag(temperature_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision, gradient_penalty_for_dis):
+    assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
+        "tempering_type should be one of constant, continuous, or discrete"
+
+    if pos_collected_numerator:
+        assert conditional_strategy == "ContraGAN", "pos_collected_numerator option is not appliable except for ContraGAN."
+
+    assert int(diff_aug)*int(ada) == 0, \
+        "you can't simultaneously apply differentiable Augmentation (DiffAug) and adaptive augmentation (ADA)"
+
+    assert int(mixed_precision)*int(gradient_penalty_for_dis) == 0, \
+        "you can't simultaneously apply mixed precision training (mpc) and gradient penalty for WGAN-GP"
+
 def elapsed_time(start_time):
     now = datetime.now()
     elapsed = now - start_time
     return str(elapsed).split('.')[0]  # remove milliseconds
+
 
 def reshape_weight_to_matrix(weight):
     weight_mat = weight
@@ -81,3 +106,17 @@ def calculate_all_sn(model):
                 weight_v = operation.weight_v
                 sigmas[name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
     return sigmas
+
+
+def change_generator_mode(gen, gen_copy, training):
+    if training:
+        gen.train()
+        if gen_copy is not None:
+            gen_copy.train()
+        generator = gen_copy if gen_copy is not None else gen
+    else:
+        gen.eval()
+        if gen_copy is not None:
+            gen_copy.train()
+        generator = gen_copy if gen_copy is not None else gen
+    return generator

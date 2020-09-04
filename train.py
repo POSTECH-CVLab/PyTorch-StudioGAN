@@ -311,10 +311,8 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         model_config=model_config,
     )
 
-    if conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'NT_Xent_GAN'] and train_config['train']:
+    if train_config['train']:
         step = trainer.run_ours(current_step=step, total_step=total_step)
-    elif train_config['train']:
-        step = trainer.run(current_step=step, total_step=total_step)
 
     if train_config['eval']:
         is_save = trainer.evaluation(step=step)
