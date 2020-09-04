@@ -49,7 +49,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
                     hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention,
                     attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth,
                     D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2, total_step, adv_loss,
-                    consistency_reg, g_init, d_init, random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay,
+                    cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay,
                     ema_start, synchronized_bn, mixed_precision, hdf5_path_train, train_config, model_config, **_):
     if seed == 82624:
         cudnn.benchmark = True # Not good Generator for undetermined input size
@@ -84,7 +84,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
 
     logger.info('Loading train datasets...')
     train_dataset = LoadDataset(dataset_name, data_path, train=True, download=True, resize_size=img_size, conditional_strategy=conditional_strategy,
-                                hdf5_path=hdf5_path_train, consistency_reg=consistency_reg, random_flip=random_flip_preprocessing)
+                                hdf5_path=hdf5_path_train, cr=cr, random_flip=random_flip_preprocessing)
     if reduce_train_dataset < 1.0:
         num_train = int(reduce_train_dataset*len(train_dataset))
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
@@ -93,7 +93,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     logger.info('Loading {mode} datasets...'.format(mode=type4eval_dataset))
     eval_mode = True if type4eval_dataset == 'train' else False
     eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, conditional_strategy="no",
-                               hdf5_path=None, consistency_reg=False, random_flip=False)
+                               hdf5_path=None, cr=False, random_flip=False)
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     logger.info('Building model...')
@@ -139,8 +139,6 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     G_loss = {'vanilla': loss_dcgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
     D_loss = {'vanilla': loss_dcgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
     ADA_cutoff = {'vanilla': 0.5, 'hinge': 0.0, 'wasserstein': 0.0}
-
-    import apex
 
     if optimizer == "SGD":
         if fused_optimization:
@@ -272,11 +270,11 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         start_temperature=model_config['loss_function']['start_temperature'],
         end_temperature=model_config['loss_function']['end_temperature'],
         gradient_penalty_for_dis=model_config['loss_function']['gradient_penalty_for_dis'],
-        gradient_penelty_lambda=model_config['loss_function']['gradient_penelty_lambda'],
+        gradient_penalty_lambda=model_config['loss_function']['gradient_penalty_lambda'],
         weight_clipping_for_dis=model_config['loss_function']['weight_clipping_for_dis'],
         weight_clipping_bound=model_config['loss_function']['weight_clipping_bound'],
-        consistency_reg=consistency_reg,
-        consistency_lambda=model_config['loss_function']['consistency_lambda'],
+        cr=cr,
+        cr_lambda=model_config['loss_function']['cr_lambda'],
         bcr=model_config['loss_function']['bcr'],
         real_lambda=model_config['loss_function']['real_lambda'],
         fake_lambda=model_config['loss_function']['fake_lambda'],
@@ -313,7 +311,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         model_config=model_config,
     )
 
-    if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "XT_Xent_GAN"] and train_config['train']:
+    if conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'NT_Xent_GAN'] and train_config['train']:
         step = trainer.run_ours(current_step=step, total_step=total_step)
     elif train_config['train']:
         step = trainer.run(current_step=step, total_step=total_step)

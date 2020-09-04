@@ -12,7 +12,7 @@
   "train": {
     "model": {
       "architecture": "biggan",
-      "conditional_strategy": "cGAN",
+      "conditional_strategy": "projGAN",
       "pos_collected_numerator": false,
       "hypersphere_dim": "N/A",
       "nonlinear_embed": false,
@@ -61,10 +61,10 @@
       "weight_clipping_bound": "N/A",
 
       "gradient_penalty_for_dis": false,
-      "gradient_penelty_lambda": "N/A",
+      "gradient_penalty_lambda": "N/A",
 
-      "consistency_reg": false,
-      "consistency_lambda":"N/A",
+      "cr": false,
+      "cr_lambda":"N/A",
 
       "bcr": false,
       "real_lambda": "N/A",

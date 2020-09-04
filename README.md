@@ -10,7 +10,7 @@ StudioGAN is a Pytorch library providing the implementation of representative Ge
 * [WGAN Gradient Penalty (Gulrajani et al.)](https://arxiv.org/abs/1704.00028)
 * [ACGAN (Odena et al.)](https://arxiv.org/abs/1610.09585)
 * [Geometric GAN (Lim and Ye)](https://arxiv.org/abs/1705.02894)
-* [cGAN (Miyato and Koyama)](https://arxiv.org/abs/1705.02894)
+* [projGAN (Miyato and Koyama)](https://arxiv.org/abs/1705.02894)
 * [SNDCGAN,SNResGAN (Miyato et al.)](https://arxiv.org/abs/1802.05957)
 * [SAGAN (Zhang et al.)](https://arxiv.org/abs/1805.08318)
 * [BigGAN (Brock et al.)](https://arxiv.org/abs/1809.11096)

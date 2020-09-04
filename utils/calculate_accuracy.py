@@ -19,7 +19,7 @@ from torch.nn import DataParallel
 
 
 def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluate, truncated_factor, prior, latent_op,
-                       latent_op_step, latent_op_alpha, latent_op_beta, device, consistency_reg, eval_generated_sample=False):
+                       latent_op_step, latent_op_alpha, latent_op_beta, device, cr, eval_generated_sample=False):
     generator.eval()
     discriminator.eval()
     data_iter = iter(dataloader)
@@ -54,7 +54,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
             if latent_op:
                 z = latent_optimise(z, fake_labels, generator, discriminator, latent_op_step, 1.0, latent_op_alpha,
                                     latent_op_beta, False, device)
-            if consistency_reg or conditional_strategy == "XT_Xent_GAN":
+            if cr or conditional_strategy == "NT_Xent_GAN":
                 real_images, real_labels, images_aug = next(data_iter)
             else:
                 real_images, real_labels = next(data_iter)
@@ -63,13 +63,13 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
             fake_images = generator(z, fake_labels, evaluation=True)
 
             with torch.no_grad():
-                if conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "XT_Xent_GAN"]:
+                if conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
                     _, _, dis_out_fake = discriminator(fake_images, fake_labels)
                     _, _, dis_out_real = discriminator(real_images, real_labels)
                 elif conditional_strategy == "ACGAN":
                     _, dis_out_fake = discriminator(fake_images, fake_labels)
                     _, dis_out_real = discriminator(real_images, real_labels)
-                elif conditional_strategy == "cGAN" or conditional_strategy == "no":
+                elif conditional_strategy == "projGAN" or conditional_strategy == "no":
                     dis_out_fake = discriminator(fake_images, fake_labels)
                     dis_out_real = discriminator(real_images, real_labels)
                 else:
@@ -104,11 +104,11 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
             real_images, real_labels = real_images.to(device), real_labels.to(device)
 
             with torch.no_grad():
-                if conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "XT_Xent_GAN"]:
+                if conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
                     _, _, dis_out_real = discriminator(real_images, real_labels)
                 elif conditional_strategy == "ACGAN":
                     _, dis_out_real = discriminator(real_images, real_labels)
-                elif conditional_strategy == "cGAN" or conditional_strategy == "no":
+                elif conditional_strategy == "projGAN" or conditional_strategy == "no":
                     dis_out_real = discriminator(real_images, real_labels)
                 else:
                     raise NotImplementedError

@@ -152,9 +152,9 @@ class Proxy_NCA_loss(torch.nn.Module):
         return criterion
 
 
-class XT_Xent_loss(torch.nn.Module):
+class NT_Xent_loss(torch.nn.Module):
     def __init__(self, device, batch_size, use_cosine_similarity=True):
-        super(XT_Xent_loss, self).__init__()
+        super(NT_Xent_loss, self).__init__()
         self.device = device
         self.batch_size = batch_size
         self.softmax = torch.nn.Softmax(dim=-1)
