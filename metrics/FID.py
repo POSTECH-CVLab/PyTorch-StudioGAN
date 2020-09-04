@@ -128,25 +128,12 @@ def get_activations(data_loader, generator, discriminator, inception_model, n_ge
     num_classes = generator.module.num_classes if isinstance(generator, DataParallel) else generator.num_classes
     pred_arr = np.empty((total_instance, 2048))
 
-    directory = join('./generated_images', run_name)
-    if exists(abspath(directory)):
-        shutil.rmtree(abspath(directory))
-    os.makedirs(directory)
-    for f in range(num_classes):
-        os.makedirs(join(directory, str(f)))
-
     for i in tqdm(range(0, n_batches), disable=tqdm_disable):
         start = i*batch_size
         end = start + batch_size
         if is_generate is True:
             images, labels = generate_images(batch_size, generator, discriminator, truncated_factor, prior, latent_op,
                                              latent_op_step, latent_op_alpha, latent_op_beta, device)
-            for idx, img in enumerate(images.detach()):
-                if batch_size*i + idx < n_generate:
-                    save_image((img+1)/2, join(directory, str(labels[idx].item()), '{idx}.png'.format(idx=batch_size*i + idx)))
-                else:
-                    pass
-
             images = images.to(device)
 
             with torch.no_grad():

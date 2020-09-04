@@ -11,7 +11,7 @@ from utils.ada import augment
 from utils.biggan_utils import toggle_grad, interp
 from utils.fns import set_temperature
 from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
-from utils.plot import plot_img_canvas
+from utils.plot import plot_img_canvas, save_images_png
 from utils.utils import elapsed_time, calculate_all_sn, find_and_remove, define_sampler, check_flag, change_generator_mode
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
@@ -561,10 +561,9 @@ class Trainer:
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, training=False)
 
-            if self.latent_op:
-                self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.conditional_strategy,
-                                                   self.dis_model, self.latent_op_step, self.latent_op_rate, self.latent_op_alpha,
-                                                   self.latent_op_beta, False, self.default_device)
+            save_images_png(self.run_name, self.logger, self.eval_dataloader, self.num_eval[self.type4eval_dataset], self.num_classes,
+                            generator, self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
+                            self.latent_op_alpha, self.latent_op_beta, self.default_device)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
