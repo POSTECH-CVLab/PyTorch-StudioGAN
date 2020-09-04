@@ -219,8 +219,7 @@ class Trainer:
             toggle_grad(self.dis_model, True)
             toggle_grad(self.gen_model, False)
 
-            t = set_temperature(self.tempering_type, self.start_temperature, self.end_temperature,
-                                step_count, self.tempering_step, total_step)
+            t = set_temperature(self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
             for step_index in range(self.d_steps_per_iter):
                 self.D_optimizer.zero_grad()
                 for acml_index in range(self.accumulation_steps):

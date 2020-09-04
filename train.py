@@ -190,14 +190,14 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         inception_model = InceptionV3().to(default_device)
         if n_gpus > 1:
             inception_model = DataParallel(inception_model, output_device=default_device)
-        mu, sigma, is_score, is_std = prepare_inception_moments_eval_dataset(dataloader=eval_dataloader,
-                                                                             generator=Gen,
-                                                                             eval_mode=type4eval_dataset,
-                                                                             inception_model=inception_model,
-                                                                             splits=10,
-                                                                             run_name=run_name,
-                                                                             logger=logger,
-                                                                             device=default_device)
+        mu, sigma = prepare_inception_moments_eval_dataset(dataloader=eval_dataloader,
+                                                           generator=Gen,
+                                                           eval_mode=type4eval_dataset,
+                                                           inception_model=inception_model,
+                                                           splits=10,
+                                                           run_name=run_name,
+                                                           logger=logger,
+                                                           device=default_device)
     else:
         mu, sigma, inception_model = None, None, None
 

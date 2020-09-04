@@ -21,7 +21,7 @@ def prepare_inception_moments_eval_dataset(dataloader, eval_mode, generator, inc
     save_path = os.path.abspath(os.path.join("./data", dataset_name + "_" + eval_mode +'_' + 'inception_moments.npz'))
     is_file = os.path.isfile(save_path)
 
-    if is_file is True:
+    if is_file:
         mu = np.load(save_path)['mu']
         sigma = np.load(save_path)['sigma']
     else:
@@ -45,10 +45,13 @@ def prepare_inception_moments_eval_dataset(dataloader, eval_mode, generator, inc
         logger.info('Saving calculated means and covariances to disk...')
         np.savez(save_path, **{'mu': mu, 'sigma': sigma})
 
-    logger.info('calculate inception score of {} dataset'.format(eval_mode))
-    evaluator_instance = evaluator(inception_model, device=device)
-    is_score, is_std = evaluator_instance.eval_dataset(dataloader, splits=splits)
-    logger.info('Inception score={is_score}-Inception_std={is_std}'.format(is_score=is_score, is_std=is_std))
-    return mu, sigma, is_score, is_std
+    if is_file:
+        pass
+    else:
+        logger.info('calculate inception score of {} dataset'.format(eval_mode))
+        evaluator_instance = evaluator(inception_model, device=device)
+        is_score, is_std = evaluator_instance.eval_dataset(dataloader, splits=splits)
+        logger.info('Inception score={is_score}-Inception_std={is_std}'.format(is_score=is_score, is_std=is_std))
+    return mu, sigma
 
 
