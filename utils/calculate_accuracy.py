@@ -54,12 +54,10 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
             if latent_op:
                 z = latent_optimise(z, fake_labels, generator, discriminator, latent_op_step, 1.0, latent_op_alpha,
                                     latent_op_beta, False, device)
-            if cr or conditional_strategy == "NT_Xent_GAN":
-                real_images, real_labels, images_aug = next(data_iter)
-            else:
-                real_images, real_labels = next(data_iter)
 
+            real_images, real_labels = next(data_iter)
             real_images, real_labels = real_images.to(device), real_labels.to(device)
+
             fake_images = generator(z, fake_labels, evaluation=True)
 
             with torch.no_grad():

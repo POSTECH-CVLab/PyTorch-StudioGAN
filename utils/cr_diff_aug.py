@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 
 
-def ICR_Aug(x, flip=True, translation=True):
+def CR_DiffAug(x, flip=True, translation=True):
     if flip:
         x = random_flip(x, 0.5)
     if translation:

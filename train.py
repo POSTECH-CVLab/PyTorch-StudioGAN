@@ -83,8 +83,8 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     logger.info(model_config)
 
     logger.info('Loading train datasets...')
-    train_dataset = LoadDataset(dataset_name, data_path, train=True, download=True, resize_size=img_size, conditional_strategy=conditional_strategy,
-                                hdf5_path=hdf5_path_train, cr=cr, random_flip=random_flip_preprocessing)
+    train_dataset = LoadDataset(dataset_name, data_path, train=True, download=True, resize_size=img_size, hdf5_path=hdf5_path_train,
+                                random_flip=random_flip_preprocessing)
     if reduce_train_dataset < 1.0:
         num_train = int(reduce_train_dataset*len(train_dataset))
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
@@ -92,8 +92,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
 
     logger.info('Loading {mode} datasets...'.format(mode=type4eval_dataset))
     eval_mode = True if type4eval_dataset == 'train' else False
-    eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, conditional_strategy="no",
-                               hdf5_path=None, cr=False, random_flip=False)
+    eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, hdf5_path=None, random_flip=False)
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     logger.info('Building model...')

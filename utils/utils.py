@@ -38,7 +38,9 @@ def define_sampler(dataset_name, conditional_strategy):
         sampler = "default"
     return sampler
 
-def check_flag(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision, gradient_penalty_for_dis):
+
+def check_flag(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision,
+               gradient_penalty_for_dis, cr, bcr, zcr):
     if conditional_strategy == "ContraGAN":
         assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
             "tempering_type should be one of constant, continuous, or discrete"
@@ -51,6 +53,10 @@ def check_flag(tempering_type, pos_collected_numerator, conditional_strategy, di
 
     assert int(mixed_precision)*int(gradient_penalty_for_dis) == 0, \
         "you can't simultaneously apply mixed precision training (mpc) and gradient penalty for WGAN-GP"
+
+    assert int(cr)*int(bcr) == 0 and int(cr)*int(zcr) == 0, \
+        "you can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)"
+
 
 def elapsed_time(start_time):
     now = datetime.now()

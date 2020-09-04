@@ -55,17 +55,14 @@ class CenterCropLongEdge(object):
 
 
 class LoadDataset(Dataset):
-    def __init__(self, dataset_name, data_path, train, download, resize_size, conditional_strategy, hdf5_path=None,
-                 cr=False, random_flip=False):
+    def __init__(self, dataset_name, data_path, train, download, resize_size, hdf5_path=None, random_flip=False):
         super(LoadDataset, self).__init__()
         self.dataset_name = dataset_name
         self.data_path = data_path
         self.train = train
         self.download = download
         self.resize_size = resize_size
-        self.conditional_strategy = conditional_strategy
         self.hdf5_path = hdf5_path
-        self.cr = cr
 
         self.random_flip = random_flip
         self.norm_mean = [0.5,0.5,0.5]
@@ -87,14 +84,6 @@ class LoadDataset(Dataset):
                     self.transforms += [transforms.RandomHorizontalFlip()]
 
         self.transforms = transforms.Compose(self.transforms)
-
-        if self.cr or self.conditional_strategy == "NT_Xent_GAN":
-            self.aug_tranforms = transforms.Compose([transforms.RandomHorizontalFlip(),
-                                                     transforms.RandomCrop((self.resize_size, self.resize_size),
-                                                                            padding=self.pad,
-                                                                            pad_if_needed=True,
-                                                                            padding_mode='reflect')])
-
 
         self.stadard_transform = transforms.Compose([transforms.ToTensor(),
                                                      transforms.Normalize(self.norm_mean, self.norm_std)])
@@ -154,9 +143,5 @@ class LoadDataset(Dataset):
         else:
             img, label = self.data[index]
             img, label = self.transforms(img), int(label)
-
-        if self.cr or self.conditional_strategy == "NT_Xent_GAN":
-            img_aug = self.aug_tranforms(img)
-            return self.stadard_transform(img), label, self.stadard_transform(img_aug)
 
         return self.stadard_transform(img), label

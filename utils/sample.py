@@ -114,7 +114,7 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
     z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
 
     if latent_op:
-        z = latent_optimise(z, fake_labels, gen_moidel, dis_model, latent_op_step, 1.0, latent_op_alpha, latent_op_beta, False, device)
+        z = latent_optimise(z, fake_labels, gen_model, dis_model, latent_op_step, 1.0, latent_op_alpha, latent_op_beta, False, device)
 
     with torch.no_grad():
         batch_images = gen_model(z, fake_labels)
