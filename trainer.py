@@ -572,9 +572,9 @@ class Trainer:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
-            save_images_png(self.run_name, self.logger, self.eval_dataloader, self.num_eval[self.type4eval_dataset], self.num_classes,
-                            generator, self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
-                            self.latent_op_alpha, self.latent_op_beta, self.default_device)
+            save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.type4eval_dataset], self.num_classes, generator,
+                            self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
+                            self.latent_op_beta, self.default_device)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,

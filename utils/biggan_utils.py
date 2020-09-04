@@ -96,8 +96,10 @@ def interp(x0, x1, num_midpoints):
 
 
 def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_classes, device):
+    generator.train()
     generator.apply(reset_bn_stat)
     for i in range(acml_step):
         new_batch_size = random.randint(1, batch_size)
         z, fake_labels = sample_latents(prior, new_batch_size, z_dim, 1, num_classes, None, device)
         generated_images = generator(z, fake_labels)
+    generator.eval()

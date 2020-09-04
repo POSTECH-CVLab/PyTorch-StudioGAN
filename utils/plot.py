@@ -33,7 +33,7 @@ def plot_img_canvas(images, save_path, logger, nrow):
     logger.info("Saved image to {}".format(save_path))
 
 
-def save_images_png(run_name, logger, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
+def save_images_png(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
                     truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
     if is_generate is True:
         batch_size = data_loader.batch_size
@@ -46,7 +46,7 @@ def save_images_png(run_name, logger, data_loader, num_samples, num_classes, gen
 
     data_iter = iter(data_loader)
     mode = "generated" if is_generate is True else "real"
-    logger.info("save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
+    print("save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
 
     directory = join('./generated_images', run_name, mode)
     if exists(abspath(directory)):
