@@ -45,12 +45,12 @@ def loss_wgan_gen(gen_out_fake):
     return -torch.mean(gen_out_fake)
 
 
-def latent_optimise(z, fake_labels, gen_model, dis_model, latent_op_step, latent_op_rate,
+def latent_optimise(z, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, latent_op_rate,
                     latent_op_alpha, latent_op_beta, trans_cost, default_device):
     batch_size = z.shape[0]
     for step in range(latent_op_step):
         drop_mask = (torch.FloatTensor(batch_size, 1).uniform_() > 1 - latent_op_rate).to(default_device)
-        z_gradients, z_gradients_norm = calc_derv(z, fake_labels, dis_model, default_device, gen_model)
+        z_gradients, z_gradients_norm = calc_derv(z, fake_labels, dis_model, conditional_strategy, default_device, gen_model)
         delta_z = latent_op_alpha*z_gradients/(latent_op_beta + z_gradients_norm)
         z = torch.clamp(z + drop_mask*delta_z, -1.0, 1.0)
 
@@ -213,7 +213,7 @@ class NT_Xent_loss(torch.nn.Module):
         return loss / (2 * self.batch_size)
 
 
-def calc_derv4gp(netD, real_data, fake_data, real_labels, device):
+def calc_derv4gp(netD, conditional_strategy, real_data, fake_data, real_labels, device):
     # print "real_data: ", real_data.size(), fake_data.size()
     batch_size, c, h, w = real_data.shape
     alpha = torch.rand(batch_size, 1)
@@ -226,7 +226,14 @@ def calc_derv4gp(netD, real_data, fake_data, real_labels, device):
     interpolates = interpolates.to(device)
     interpolates = autograd.Variable(interpolates, requires_grad=True)
 
-    _, _, disc_interpolates = netD(interpolates, real_labels)
+    if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
+        _, _, disc_interpolates = netD(interpolates, real_labels)
+    elif conditional_strategy in ['projGAN', 'no']:
+            disc_interpolates = netD(interpolates, real_labels)
+    elif conditional_strategy == 'ACGAN':
+        _, disc_interpolates = netD(interpolates, real_labels)
+    else:
+        raise NotImplementedError
 
     gradients = autograd.grad(outputs=disc_interpolates, inputs=interpolates,
                               grad_outputs=torch.ones(disc_interpolates.size()).to(device),
@@ -237,30 +244,23 @@ def calc_derv4gp(netD, real_data, fake_data, real_labels, device):
     return gradient_penalty
 
 
-def calc_derv4lo(z, fake_labels, netG, netD, device):
-    z_rg = autograd.Variable(z, requires_grad=True)
-    fake_images = netG(z_rg, fake_labels)
-
-    dis_fake_out = netD(fake_images, fake_labels)
-
-    gradients = autograd.grad(outputs=dis_fake_out, inputs=z_rg,
-                              grad_outputs=torch.ones(dis_fake_out.size()).to(device),
-                              create_graph=True, retain_graph=True, only_inputs=True)[0]
-
-    gradients_norm = torch.unsqueeze((gradients.norm(2, dim=1) ** 2), dim=1)
-    return gradients, gradients_norm
-
-
-def calc_derv(inputs, labels, netD, device, netG=None):
+def calc_derv(inputs, labels, netD, conditional_strategy, device, netG=None):
     if netG is None:
         netD.eval()
 
         X = autograd.Variable(inputs, requires_grad=True)
 
-        outputs = netD(X, labels)
+        if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
+            _, _, dis_out_real = netD(X, labels)
+        elif conditional_strategy in ['projGAN', 'no']:
+            dis_out_real = netD(X, labels)
+        elif conditional_strategy == 'ACGAN':
+            _, dis_out_real = netD(X, labels)
+        else:
+            raise NotImplementedError
 
-        gradients = autograd.grad(outputs=outputs, inputs=X,
-                                grad_outputs=torch.ones(outputs.size()).to(device),
+        gradients = autograd.grad(outputs=dis_out_real, inputs=X,
+                                grad_outputs=torch.ones(dis_out_real.size()).to(device),
                                 create_graph=True, retain_graph=True, only_inputs=True)[0]
 
         gradients_norm = torch.unsqueeze((gradients.norm(2, dim=1) ** 2), dim=1)
@@ -274,10 +274,17 @@ def calc_derv(inputs, labels, netD, device, netG=None):
         Z = autograd.Variable(inputs, requires_grad=True)
         fake_images = netG(Z, labels)
 
-        dis_fake_out = netD(fake_images, labels)
+        if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
+            _, _, dis_out_fake = netD(fake_images, labels)
+        elif conditional_strategy in ['projGAN', 'no']:
+            dis_out_fake = netD(fake_images, labels)
+        elif conditional_strategy == 'ACGAN':
+            _, dis_out_fake = netD(fake_images, labels)
+        else:
+            raise NotImplementedError
 
-        gradients = autograd.grad(outputs=dis_fake_out, inputs=Z,
-                                 grad_outputs=torch.ones(dis_fake_out.size()).to(device),
+        gradients = autograd.grad(outputs=dis_out_fake, inputs=Z,
+                                 grad_outputs=torch.ones(dis_out_fake.size()).to(device),
                                 create_graph=True, retain_graph=True, only_inputs=True)[0]
 
         gradients_norm = torch.unsqueeze((gradients.norm(2, dim=1) ** 2), dim=1)

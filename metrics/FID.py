@@ -16,7 +16,7 @@ limitations under the License.
 
 
 from utils.sample import sample_latents
-from utils.losses import calc_derv4lo, latent_optimise
+from utils.losses import latent_optimise
 import numpy as np
 from scipy import linalg
 from tqdm import tqdm
@@ -84,14 +84,17 @@ def generate_images(batch_size, gen, dis, truncated_factor, prior, latent_op, la
     if isinstance(gen, DataParallel):
         z_dim = gen.module.z_dim
         num_classes = gen.module.num_classes
+        conditional_strategy = dis.module.conditional_strategy
     else:
         z_dim = gen.z_dim
         num_classes = gen.num_classes
+        conditional_strategy = dis.conditional_strategy
 
     z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
 
     if latent_op:
-        z = latent_optimise(z, fake_labels, gen, dis, latent_op_step, 1.0, latent_op_alpha, latent_op_beta, False, device)
+        z = latent_optimise(z, fake_labels, gen, dis, conditional_strategy, latent_op_step, 1.0, latent_op_alpha,
+                            latent_op_beta, False, device)
 
     with torch.no_grad():
         batch_images = gen(z, fake_labels, evaluation=True)

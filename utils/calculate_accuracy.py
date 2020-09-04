@@ -6,7 +6,7 @@
 
 
 from utils.sample import sample_latents
-from utils.losses import calc_derv4lo, latent_optimise
+from utils.losses import latent_optimise
 
 import numpy as np
 from scipy import linalg
@@ -52,8 +52,8 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
         for batch_id in tqdm(range(total_batch)):
             z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
             if latent_op:
-                z = latent_optimise(z, fake_labels, generator, discriminator, latent_op_step, 1.0, latent_op_alpha,
-                                    latent_op_beta, False, device)
+                z = latent_optimise(z, fake_labels, generator, discriminator, conditional_strategy, latent_op_step,
+                                    1.0, latent_op_alpha, latent_op_beta, False, device)
 
             real_images, real_labels = next(data_iter)
             real_images, real_labels = real_images.to(device), real_labels.to(device)

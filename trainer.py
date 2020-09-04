@@ -243,8 +243,9 @@ class Trainer:
                             z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                             None, self.default_device)
                         if self.latent_op:
-                            z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                                self.latent_op_alpha, self.latent_op_beta, False, self.default_device)
+                            z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                                self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
+                                                False, self.default_device)
 
                         fake_images = self.gen_model(z, fake_labels)
                         if self.diff_aug:
@@ -344,7 +345,8 @@ class Trainer:
                             dis_acml_loss += self.dis_lambda*zcr_dis_loss
 
                         if self.gradient_penalty_for_dis:
-                            dis_acml_loss += self.gradient_penalty_lambda*calc_derv4gp(self.dis_model, real_images, fake_images, real_labels, self.default_device)
+                            dis_acml_loss += self.gradient_penalty_lambda*calc_derv4gp(self.dis_model, self.conditional_strategy, real_images,
+                                                                                       fake_images, real_labels, self.default_device)
 
                         if self.ada:
                             ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]), device = self.default_device)
@@ -393,8 +395,9 @@ class Trainer:
                             z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                             None, self.default_device)
                         if self.latent_op:
-                            z, transport_cost = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                                                self.latent_op_alpha, self.latent_op_beta, True, self.default_device)
+                            z, transport_cost = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                                                self.latent_op_step, self.latent_op_rate, self.latent_op_alpha,
+                                                                self.latent_op_beta, True, self.default_device)
 
                         fake_images = self.gen_model(z, fake_labels)
                         if self.diff_aug:
@@ -559,8 +562,9 @@ class Trainer:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, training=False)
 
             if self.latent_op:
-                self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.dis_model, self.latent_op_step, self.latent_op_rate,
-                                                   self.latent_op_alpha, self.latent_op_beta, False, self.default_device)
+                self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.conditional_strategy,
+                                                   self.dis_model, self.latent_op_step, self.latent_op_rate, self.latent_op_alpha,
+                                                   self.latent_op_beta, False, self.default_device)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
