@@ -5,16 +5,13 @@
 # utils/fns.py
 
 
-def set_temperature(start_temperature, step_count, end_temperature, total_step):
-    tempering_range = end_temperature - start_temperature
-    if tempering_type == 'discrete':
-
-    if self.tempering_type == 'continuous':
-        t = self.start_temperature + step_count*(self.end_temperature - self.start_temperature)/total_step
-    elif self.tempering_type == 'discrete':
+def set_temperature(tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
+    if tempering_type == 'continuous':
+        t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
+    elif tempering_type == 'discrete':
         tempering_interval = total_step//(tempering_step + 1)
-        t = self.start_temperature + \
-            (step_count//self.tempering_interval)*(self.end_temperature-self.start_temperature)/self.tempering_step
+        t = start_temperature + \
+            (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
     else:
-        t = self.start_temperature
+        t = start_temperature
     return t

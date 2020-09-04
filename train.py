@@ -312,7 +312,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     )
 
     if train_config['train']:
-        step = trainer.run_ours(current_step=step, total_step=total_step)
+        step = trainer.run(current_step=step, total_step=total_step)
 
     if train_config['eval']:
         is_save = trainer.evaluation(step=step)

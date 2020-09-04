@@ -38,9 +38,10 @@ def define_sampler(dataset_name, conditional_strategy):
         sampler = "default"
     return sampler
 
-def check_flag(temperature_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision, gradient_penalty_for_dis):
-    assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
-        "tempering_type should be one of constant, continuous, or discrete"
+def check_flag(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision, gradient_penalty_for_dis):
+    if conditional_strategy == "ContraGAN":
+        assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
+            "tempering_type should be one of constant, continuous, or discrete"
 
     if pos_collected_numerator:
         assert conditional_strategy == "ContraGAN", "pos_collected_numerator option is not appliable except for ContraGAN."
