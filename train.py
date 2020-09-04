@@ -43,14 +43,13 @@ RUN_NAME_FORMAT = (
     "{phase}-"
     "{timestamp}"
 )
-
-def train_framework(seed, disable_debugging_API, fused_optimization, num_workers, config_path, reduce_train_dataset, load_current,
-                    type4eval_dataset, dataset_name, num_classes, img_size, data_path, architecture, conditional_strategy,
-                    hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm, d_spectral_norm, activation_fn, attention,
-                    attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim, shared_dim, g_conv_dim, d_conv_dim, G_depth,
-                    D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha, beta1, beta2, total_step, adv_loss,
-                    cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor, latent_op, ema, ema_decay,
-                    ema_start, synchronized_bn, mixed_precision, hdf5_path_train, train_config, model_config, **_):
+def train_framework(seed, disable_debugging_API, fused_optimization, num_workers, config_path, checkpoint_folder, reduce_train_dataset,
+                    acml_bn, acml_stat_step, freeze_dis, freeze_layer, load_current, type4eval_dataset, dataset_name, num_classes, img_size,
+                    data_path, architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
+                    d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim,
+                    shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
+                    beta1, beta2, total_step, adv_loss, cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor,
+                    ema, ema_decay, ema_start, synchronized_bn, mixed_precision, hdf5_path_train, train_config, model_config, **_):
     if seed == 82624:
         cudnn.benchmark = True # Not good Generator for undetermined input size
         cudnn.deterministic = False
@@ -64,8 +63,14 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
 
     n_gpus = torch.cuda.device_count()
     default_device = torch.cuda.current_device()
+
+    check_flag_0(batch_size, n_gpus, fused_optimization, mixed_precision, acml_bn, ema, freeze_dis, checkpoint_folder)
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
     assert int(fused_optimization)*int(mixed_precision) == 0.0, "can't turn on fused_optimization and mixed_precision together."
+    if acml_bn is True:
+        assert ema, "turning on accumulated batch_norm needs EMA update of the generator"
+    if freeze_dis:
+        assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 
     if n_gpus == 1:
         warnings.warn('You have chosen a specific GPU. This will completely '
@@ -162,11 +167,11 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     else:
         raise NotImplementedError
 
-    if train_config['checkpoint_folder'] is not None:
+    if checkpoint_folder is not None:
         when = "current" if load_current is True else "best"
-        if not exists(abspath(train_config['checkpoint_folder'])):
+        if not exists(abspath(checkpoint_folder)):
             raise NotADirectoryError
-        checkpoint_dir = make_checkpoint_dir(train_config['checkpoint_folder'], run_name)
+        checkpoint_dir = make_checkpoint_dir(checkpoint_folder, run_name)
         g_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0]
         d_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0]
         Gen, G_optimizer, trained_seed, run_name, step, prev_ada_p = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
@@ -182,8 +187,10 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         assert seed == trained_seed, "seed for sampling random numbers should be same!"
         logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
+        if freeze_dis:
+            prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
     else:
-        checkpoint_dir = make_checkpoint_dir(train_config['checkpoint_folder'], run_name)
+        checkpoint_dir = make_checkpoint_dir(checkpoint_folder, run_name)
 
     if train_config['eval']:
         inception_model = InceptionV3().to(default_device)
@@ -244,6 +251,10 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         Gen_ema=Gen_ema,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
+        acml_bn=acml_bn,
+        acml_stat_step=acml_stat_step,
+        freeze_dis=freeze_dis,
+        freeze_layer=freeze_layer,
         conditional_strategy=conditional_strategy,
         pos_collected_numerator=model_config['model']['pos_collected_numerator'],
         z_dim=z_dim,
@@ -289,7 +300,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         prior=prior,
         truncated_factor=truncated_factor,
         ema=ema,
-        latent_op=latent_op,
+        latent_op=model_config['training_and_sampling_setting']['latent_op'],
         latent_op_rate=model_config['training_and_sampling_setting']['latent_op_rate'],
         latent_op_step=model_config['training_and_sampling_setting']['latent_op_step'],
         latent_op_step4eval=model_config['training_and_sampling_setting']['latent_op_step4eval'],
