@@ -46,7 +46,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
 
     data_iter = iter(data_loader)
     mode = "generated" if is_generate is True else "real"
-    print("save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
+    print("Save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
 
     directory = join('./generated_images', run_name, mode)
     if exists(abspath(directory)):
