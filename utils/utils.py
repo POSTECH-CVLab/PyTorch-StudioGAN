@@ -131,14 +131,17 @@ def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_s
         gen.train()
         if gen_copy is not None:
             gen_copy.train()
-        generator = gen_copy if gen_copy is not None else gen
+            return gen_copy
+        return gen
     else:
         gen.eval()
         if gen_copy is not None:
             gen_copy.eval()
-        generator = gen_copy if gen_copy is not None else gen
-        if acml_bn:
-            apply_accumulate_stat(generator, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
+            if acml_bn:
+                apply_accumulate_stat(gen_copy, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
+                return gen_copy
+            else:
+                gen_copy.apply(set_bn_train)
+                return gen_copy
         else:
-            generator.apply(set_bn_train)
-    return generator
+            return gen
