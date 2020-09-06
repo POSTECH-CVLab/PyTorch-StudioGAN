@@ -97,6 +97,7 @@ def set_deterministic_op_train(m):
     if isinstance(m, torch.nn.modules.Embedding):
         m.train()
 
+
 def reset_bn_stat(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.reset_running_stats()
