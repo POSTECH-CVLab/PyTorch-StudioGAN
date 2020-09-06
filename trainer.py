@@ -641,7 +641,7 @@ class Trainer:
     ################################################################################################################################
     def Nearest_Neighbor(self, nrow, ncol):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.batch_size, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
