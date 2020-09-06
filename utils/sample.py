@@ -120,7 +120,7 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
                             latent_op_alpha, latent_op_beta, False, device)
 
     with torch.no_grad():
-        batch_images = gen_model(z, fake_labels)
+        batch_images = gen_model(z, fake_labels, evaluation=True)
 
     return batch_images, list(fake_labels.detach().cpu().numpy())
 

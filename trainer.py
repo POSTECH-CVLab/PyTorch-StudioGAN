@@ -696,7 +696,7 @@ class Trainer:
     ################################################################################################################################
     def linear_interpolation(self, nrow, ncol, fix_z, fix_y):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.batch_size, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 

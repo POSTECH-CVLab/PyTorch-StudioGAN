@@ -304,5 +304,6 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         trainer.Nearest_Neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'])
 
     if train_config['interpolation']:
+        assert architecture in ["biggan", "biggan_deep"], "Not supported except for biggan and biggan_deep."
         trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True, fix_y=False)
         trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True)
