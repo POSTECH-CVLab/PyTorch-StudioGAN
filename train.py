@@ -140,9 +140,9 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers, drop_last=True)
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers, drop_last=False)
 
-    G_loss = {'vanilla': loss_dcgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
-    D_loss = {'vanilla': loss_dcgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
-    ADA_cutoff = {'vanilla': 0.5, 'hinge': 0.0, 'wasserstein': 0.0}
+    G_loss = {'vanilla': loss_dcgan_gen, 'least_square': loss_lsgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
+    D_loss = {'vanilla': loss_dcgan_dis, 'least_square': loss_lsgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
+    ADA_cutoff = {'vanilla': 0.5, 'least_square': 0.5, 'hinge': 0.0, 'wasserstein': 0.0}
 
     if optimizer == "SGD":
         if fused_optimization:
