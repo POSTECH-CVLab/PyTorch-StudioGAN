@@ -5,14 +5,17 @@
 # utils/utils.py
 
 
-import numpy as np
-import random
-import os
-from datetime import datetime
+from utils.biggan_utils import set_bn_train, set_deterministic_op_train, apply_accumulate_stat
 
 import torch
 import torch.nn.functional as F
 from torch.nn import DataParallel
+
+
+import numpy as np
+import random
+import os
+from datetime import datetime
 
 
 
@@ -38,16 +41,17 @@ def define_sampler(dataset_name, conditional_strategy):
         sampler = "default"
     return sampler
 
+def check_flag_0(batch_size, n_gpus, fused_optimization, mixed_precision, acml_bn, ema, freeze_dis, checkpoint_folder):
+    assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
+    assert int(fused_optimization)*int(mixed_precision) == 0.0, "can't turn on fused_optimization and mixed_precision together."
+    if acml_bn is True:
+        assert ema, "turning on accumulated batch_norm needs EMA update of the generator"
+    if freeze_dis:
+        assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 
-def check_flag(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision,
-               gradient_penalty_for_dis, cr, bcr, zcr):
-    if conditional_strategy == "ContraGAN":
-        assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
-            "tempering_type should be one of constant, continuous, or discrete"
 
-    if pos_collected_numerator:
-        assert conditional_strategy == "ContraGAN", "pos_collected_numerator option is not appliable except for ContraGAN."
-
+def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision,
+                 gradient_penalty_for_dis, cr, bcr, zcr):
     assert int(diff_aug)*int(ada) == 0, \
         "you can't simultaneously apply differentiable Augmentation (DiffAug) and adaptive augmentation (ADA)"
 
@@ -56,6 +60,13 @@ def check_flag(tempering_type, pos_collected_numerator, conditional_strategy, di
 
     assert int(cr)*int(bcr) == 0 and int(cr)*int(zcr) == 0, \
         "you can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)"
+
+    if conditional_strategy == "ContraGAN":
+        assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
+            "tempering_type should be one of constant, continuous, or discrete"
+
+    if pos_collected_numerator:
+        assert conditional_strategy == "ContraGAN", "pos_collected_numerator option is not appliable except for ContraGAN."
 
 
 def elapsed_time(start_time):
@@ -115,15 +126,26 @@ def calculate_all_sn(model):
     return sigmas
 
 
-def change_generator_mode(gen, gen_copy, training):
+def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_size, z_dim, num_classes, device, training):
     if training:
         gen.train()
         if gen_copy is not None:
             gen_copy.train()
-        generator = gen_copy if gen_copy is not None else gen
+            return gen_copy
+        return gen
     else:
-        gen.eval()
+        if acml_bn:
+            apply_accumulate_stat(gen, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
+        else:
+            gen.eval()
+        gen.apply(set_deterministic_op_train)
         if gen_copy is not None:
-            gen_copy.train()
-        generator = gen_copy if gen_copy is not None else gen
-    return generator
+            if acml_bn:
+                apply_accumulate_stat(gen_copy, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
+            else:
+                gen_copy.eval()
+                gen_copy.apply(set_bn_train)
+            gen_copy.apply(set_deterministic_op_train)
+            return gen_copy
+        else:
+            return gen

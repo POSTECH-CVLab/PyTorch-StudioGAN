@@ -7,17 +7,16 @@
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
+from metrics.calculate_accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import toggle_grad, interp
-from utils.fns import set_temperature
 from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
-from utils.plot import plot_img_canvas
-from utils.utils import elapsed_time, calculate_all_sn, find_and_remove, define_sampler, check_flag, change_generator_mode
+from utils.plot import plot_img_canvas, save_images_png
+from utils.utils import *
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
 from utils.diff_aug import DiffAugment
 from utils.cr_diff_aug import CR_DiffAug
-from utils.calculate_accuracy import calculate_accuracy
 
 
 import torch
@@ -58,17 +57,29 @@ class dummy_context_mgr():
         return False
 
 
+def set_temperature(tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
+    if tempering_type == 'continuous':
+        t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
+    elif tempering_type == 'discrete':
+        tempering_interval = total_step//(tempering_step + 1)
+        t = start_temperature + \
+            (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
+    else:
+        t = start_temperature
+    return t
+
+
 class Trainer:
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, linear_model, Gen_ema, train_dataloader, eval_dataloader, conditional_strategy, pos_collected_numerator,
-                 z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size,
-                 g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
-                 tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis, gradient_penalty_lambda,
-                 weight_clipping_for_dis, weight_clipping_bound, cr, cr_lambda, bcr, real_lambda, fake_lambda, zcr,
-                 gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op,
-                 latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight, default_device,
-                 print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config,
-                 model_config,):
+                 Gen_copy, linear_model, Gen_ema, train_dataloader, eval_dataloader, acml_bn, acml_stat_step, freeze_dis, freeze_layer,
+                 conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm,
+                 G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step,
+                 G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature,
+                 gradient_penalty_for_dis, gradient_penalty_lambda, weight_clipping_for_dis, weight_clipping_bound, cr, cr_lambda, bcr,
+                 real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length,
+                 prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta,
+                 latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
+                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -87,6 +98,11 @@ class Trainer:
 
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
+
+        self.acml_bn = acml_bn
+        self.acml_stat_step = acml_stat_step
+        self.freeze_dis = freeze_dis
+        self.freeze_layer = freeze_layer
 
         self.conditional_strategy = conditional_strategy
         self.pos_collected_numerator = pos_collected_numerator
@@ -166,8 +182,9 @@ class Trainer:
 
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
                                                                   self.num_classes, None, self.default_device, sampler=sampler)
-        check_flag(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
-                   self.mixed_precision, self.gradient_penalty_for_dis, self.cr, self.bcr, self.zcr)
+
+        check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
+                     self.mixed_precision, self.gradient_penalty_for_dis, self.cr, self.bcr, self.zcr)
 
         if self.conditional_strategy == 'ContraGAN':
             self.contrastive_criterion = Conditional_Contrastive_loss(self.default_device, self.batch_size, self.pos_collected_numerator)
@@ -478,10 +495,12 @@ class Trainer:
                     self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
 
                 with torch.no_grad():
-                    generator = change_generator_mode(self.gen_model, self.Gen_copy, training=False)
+                    generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-                    generator = change_generator_mode(self.gen_model, self.Gen_copy, training=True)
+                    generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
@@ -497,7 +516,9 @@ class Trainer:
     def save(self, step, is_best):
         when = "best" if is_best is True else "current"
         self.dis_model.eval()
-        generator = change_generator_mode(self.gen_model, self.Gen_copy, training=False)
+        self.gen_model.eval()
+        if self.Gen_copy is not None:
+            self.Gen_copy.eval()
 
         g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': self.gen_model.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
@@ -548,7 +569,10 @@ class Trainer:
             self.logger.info("Saved model to {}".format(self.checkpoint_dir))
 
         self.dis_model.train()
-        generator = change_generator_mode(self.gen_model, self.Gen_copy, training=True)
+        self.gen_model.train()
+        if self.Gen_copy is not None:
+            self.Gen_copy.train()
+
     ################################################################################################################################
 
 
@@ -559,12 +583,12 @@ class Trainer:
             is_best = False
 
             self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, training=False)
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
-            if self.latent_op:
-                self.fixed_noise = latent_optimise(self.fixed_noise, self.fixed_fake_labels, generator, self.conditional_strategy,
-                                                   self.dis_model, self.latent_op_step, self.latent_op_rate, self.latent_op_alpha,
-                                                   self.latent_op_beta, False, self.default_device)
+            save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.type4eval_dataset], self.num_classes, generator,
+                            self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
+                            self.latent_op_beta, self.default_device)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
@@ -604,7 +628,8 @@ class Trainer:
             self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.type4eval_dataset, FID=self.best_fid))
 
             self.dis_model.train()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, training=True)
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
         return is_best
     ################################################################################################################################
@@ -613,7 +638,8 @@ class Trainer:
     ################################################################################################################################
     def Nearest_Neighbor(self, nrow, ncol):
         with torch.no_grad():
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, training=False)
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.default_device)
@@ -668,42 +694,45 @@ class Trainer:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
-        generator = change_generator_mode(self.gen_model, self.Gen_copy, training=True)
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################
 
 
     ################################################################################################################################
     def linear_interpolation(self, nrow, ncol, fix_z, fix_y):
-        generator = change_generator_mode(self.gen_model, self.Gen_copy, training=False)
-        assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
-
-        self.logger.info("Start Interpolation Analysis....")
-        if fix_z:
-            zs = torch.randn(nrow, 1, generator.z_dim, device=self.default_device)
-            zs = zs.repeat(1, ncol, 1).view(-1, generator.z_dim)
-            name = "fix_z"
-        else:
-            zs = interp(torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
-                        torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
-                        ncol - 2).view(-1, generator.z_dim)
-
-        if fix_y:
-            ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
-            ys = generator.shared(ys).view(nrow, 1, -1)
-            ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
-            name = "fix_y"
-        else:
-            ys = interp(generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                        generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                        ncol-2).view(nrow * (ncol), -1)
-
         with torch.no_grad():
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+            assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
+
+            self.logger.info("Start Interpolation Analysis....")
+            if fix_z:
+                zs = torch.randn(nrow, 1, generator.z_dim, device=self.default_device)
+                zs = zs.repeat(1, ncol, 1).view(-1, generator.z_dim)
+                name = "fix_z"
+            else:
+                zs = interp(torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
+                            torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
+                            ncol - 2).view(-1, generator.z_dim)
+
+            if fix_y:
+                ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
+                ys = generator.shared(ys).view(nrow, 1, -1)
+                ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
+                name = "fix_y"
+            else:
+                ys = interp(generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                            generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                            ncol-2).view(nrow * (ncol), -1)
+
             interpolated_images = generator(zs, None, shared_label=ys, evaluation=True)
 
-        plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
-                        format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
+            plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
+                            format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
 
-        generator = change_generator_mode(self.gen_model, self.Gen_copy, training=True)
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################
 
 
@@ -767,4 +796,6 @@ class Trainer:
 
         self.logger.info("Accuracy of the network on the {total} {type} images: {acc}".\
                          format(total=total, type=self.type4eval_dataset, acc=100*correct/total))
+
+        self.dis_model.train()
     ################################################################################################################################
