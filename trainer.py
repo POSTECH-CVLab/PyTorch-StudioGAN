@@ -178,6 +178,11 @@ class Trainer:
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.policy = "color,translation,cutout"
 
+        if self.acml_bn:
+            self.temp_acml_stat_step = self.acml_stat_step
+        else:
+            self.temp_acml_stat_step = self.batch_size
+
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
 
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
@@ -645,7 +650,7 @@ class Trainer:
     ################################################################################################################################
     def Nearest_Neighbor(self, nrow, ncol):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.batch_size, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.temp_acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
@@ -696,7 +701,7 @@ class Trainer:
     ################################################################################################################################
     def linear_interpolation(self, nrow, ncol, fix_z, fix_y):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.batch_size, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.temp_acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
