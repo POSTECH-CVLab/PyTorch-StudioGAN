@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# utils/calculate_accuracy.py
+# metrics/calculate_accuracy.py
 
 
 from utils.sample import sample_latents
@@ -120,4 +120,3 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
         only_real_acc = len(true_positive)/len(real_confid)
 
         return only_real_acc
-

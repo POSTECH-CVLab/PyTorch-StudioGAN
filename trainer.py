@@ -7,9 +7,9 @@
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
+from metrics.calculate_accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import toggle_grad, interp
-from utils.fns import set_temperature
 from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
 from utils.plot import plot_img_canvas, save_images_png
 from utils.utils import *
@@ -17,7 +17,6 @@ from utils.losses import calc_derv4gp, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
 from utils.diff_aug import DiffAugment
 from utils.cr_diff_aug import CR_DiffAug
-from utils.calculate_accuracy import calculate_accuracy
 
 
 import torch
@@ -56,6 +55,18 @@ class dummy_context_mgr():
         return None
     def __exit__(self, exc_type, exc_value, traceback):
         return False
+
+
+def set_temperature(tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
+    if tempering_type == 'continuous':
+        t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
+    elif tempering_type == 'discrete':
+        tempering_interval = total_step//(tempering_step + 1)
+        t = start_temperature + \
+            (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
+    else:
+        t = start_temperature
+    return t
 
 
 class Trainer:
@@ -786,5 +797,5 @@ class Trainer:
         self.logger.info("Accuracy of the network on the {total} {type} images: {acc}".\
                          format(total=total, type=self.type4eval_dataset, acc=100*correct/total))
 
-        self.dis_model.eval()
+        self.dis_model.train()
     ################################################################################################################################
