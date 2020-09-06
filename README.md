@@ -16,13 +16,11 @@ StudioGAN is a Pytorch library providing the implementation of representative Ge
 * [BigGAN (Brock et al.)](https://arxiv.org/abs/1809.11096)
 * [BigGAN-Deep (Brock et al.)](https://arxiv.org/abs/1809.11096)
 * [CRGAN (Zhang et al.)](https://arxiv.org/abs/1910.12027)
+* [LOGAN (Wu et al.)](https://arxiv.org/abs/1912.00953)
 * [ICRGAN (Zhao et al.)](https://arxiv.org/abs/2002.04724)
 * [DiffAugment (Zhao et al.)](https://arxiv.org/abs/2006.10738)
 * [Adaptive Discriminator Augmentation (Karras et al.)](https://arxiv.org/abs/2006.06676)
 * [ContraGAN (Ours)](https://github.com/)
-
-## 2. To be implemented
-* [LOGAN (Wu et al.)](https://arxiv.org/abs/1912.00953)
 
 ## 3. Requirements
 
