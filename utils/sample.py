@@ -34,7 +34,7 @@ def sample_latents(dist, batch_size, dim, truncated_factor=1, num_classes=None, 
         else:
             raise NotImplementedError
 
-        if sampler == "class_order_some" or sampler == "class_order_all":
+        if sampler in ["class_order_some", "class_order_all"]:
             y_fake = []
             for idx in indices:
                 y_fake += [idx]*8
@@ -120,6 +120,18 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
                             latent_op_alpha, latent_op_beta, False, device)
 
     with torch.no_grad():
-        batch_images = gen_model(z, fake_labels)
+        batch_images = gen_model(z, fake_labels, evaluation=True)
 
     return batch_images, list(fake_labels.detach().cpu().numpy())
+
+
+def target_class_sampler(dataset, target_class):
+    try:
+        targets = dataset.data.targets
+    except:
+        targets = dataset.labels
+    weights = [True if target == target_class else False for target in targets]
+    num_samples = sum(weights)
+    weights = torch.DoubleTensor(weights)
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=False)
+    return num_samples, sampler

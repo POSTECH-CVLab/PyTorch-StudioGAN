@@ -10,7 +10,7 @@ from metrics.FID import calculate_fid_score
 from metrics.calculate_accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import toggle_grad, interp
-from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
+from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler, generate_images_for_KNN
 from utils.plot import plot_img_canvas, save_images_png
 from utils.utils import *
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise
@@ -71,15 +71,15 @@ def set_temperature(tempering_type, start_temperature, end_temperature, step_cou
 
 class Trainer:
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, linear_model, Gen_ema, train_dataloader, eval_dataloader, acml_bn, acml_stat_step, freeze_dis, freeze_layer,
-                 conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm,
-                 G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step,
-                 G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature,
-                 gradient_penalty_for_dis, gradient_penalty_lambda, weight_clipping_for_dis, weight_clipping_bound, cr, cr_lambda, bcr,
-                 real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length,
-                 prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta,
-                 latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
-                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
+                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, acml_bn, acml_stat_step, freeze_dis,
+                 freeze_layer, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm,
+                 G_optimizer, D_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss,
+                 ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
+                 gradient_penalty_lambda, weight_clipping_for_dis, weight_clipping_bound, cr, cr_lambda, bcr, real_lambda, fake_lambda,
+                 zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior, truncated_factor,
+                 ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,
+                 default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision,
+                 train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -93,9 +93,10 @@ class Trainer:
         self.dis_model = dis_model
         self.inception_model = inception_model
         self.Gen_copy = Gen_copy
-        self.linear_model = linear_model
         self.Gen_ema = Gen_ema
 
+        self.train_dataset = train_dataset
+        self.eval_dataset = eval_dataset
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
@@ -114,7 +115,6 @@ class Trainer:
 
         self.G_optimizer = G_optimizer
         self.D_optimizer = D_optimizer
-        self.L_optimizer = L_optimizer
         self.batch_size = batch_size
         self.g_steps_per_iter = g_steps_per_iter
         self.d_steps_per_iter = d_steps_per_iter
@@ -204,10 +204,16 @@ class Trainer:
         if self.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
 
-        if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
+        if self.dataset_name in ["imagenet", "tiny_imagenet"]:
             self.num_eval = {'train':50000, 'valid':50000}
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
+        elif self.dataset_name == "custom":
+            num_train_images = len(self.train_dataset.data)
+            num_eval_images = len(self.eval_dataset.data)
+            self.num_eval = {'train':num_train_images, 'valid':num_eval_images}
+        else:
+            raise NotImplementedError
 
 
 
@@ -578,7 +584,7 @@ class Trainer:
 
     ################################################################################################################################
     def evaluation(self, step):
-        with torch.no_grad():
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
 
@@ -601,19 +607,20 @@ class Trainer:
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                      self.latent_op_beta, 10, self.default_device)
 
-            real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
-                                                          self.latent_op,self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
-                                                          cr=self.cr, eval_generated_sample=True)
+            if self.D_loss.__name__ != "loss_wgan_dis":
+                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.type4eval_dataset],
+                                                              self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
+                                                              self.latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=True)
 
-            if self.type4eval_dataset == 'train':
-                acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
-            else:
-                real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
-                                                   self.latent_op, self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
-                                                   cr=self.cr, eval_generated_sample=False)
-                acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
+                if self.type4eval_dataset == 'train':
+                    acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
+                else:
+                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.type4eval_dataset],
+                                                       self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
+                                                       self. latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=False)
+                    acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
 
-            self.writer.add_scalars('Accuracy', acc_dict, step)
+                self.writer.add_scalars('Accuracy', acc_dict, step)
 
             if self.best_fid is None:
                 self.best_fid, self.best_step, is_best = fid_score, step, True
@@ -637,8 +644,8 @@ class Trainer:
 
     ################################################################################################################################
     def Nearest_Neighbor(self, nrow, ncol):
-        with torch.no_grad():
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.batch_size, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
@@ -651,36 +658,23 @@ class Trainer:
             for c in tqdm(range(self.num_classes)):
                 fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
                                                                    self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.default_device)
-                fake_image = torch.unsqueeze(fake_image, dim=0)
+                fake_image = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
 
-                hit = 0
-                train_iter = iter(self.train_dataloader)
-                for batch_idx in range(len(train_iter)):
+                num_samples, target_sampler = target_class_sampler(self.train_dataset, c)
+                train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, sampler=target_sampler,
+                                                               num_workers=self.train_config['num_workers'], pin_memory=True)
+                train_iter = iter(train_dataloader)
+                for batch_idx in range(num_samples//self.batch_size):
                     real_images, real_labels = next(train_iter)
-
-                    num_cls_in_batch = torch.tensor(real_labels.detach().cpu().numpy() == c).sum().item()
-                    if num_cls_in_batch > 0:
-                        real_images = real_images[torch.tensor(real_labels.detach().cpu().numpy() == c)]
-                        real_images = real_images.to(self.default_device)
-
-                        if hit == 0:
-                            real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
-                            if num_cls_in_batch == 1:
-                                distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy()
-                            else:
-                                distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
-                            holder = real_images.detach().cpu().numpy()
-                            hit += 1
-                        else:
-                            real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
-                            if num_cls_in_batch == 1:
-                                distances = np.append(distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy())
-                            else:
-                                distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
-                            holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
+                    real_images = real_images.to(self.default_device)
+                    real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
+                    if batch_idx == 0:
+                        distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
+                        holder = real_images.detach().cpu().numpy()
                     else:
-                        pass
+                        distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
+                        holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
 
                 nearest_indices = (-distances).argsort()[-(ncol-1):][::-1]
                 if c % nrow == 0:
@@ -701,8 +695,8 @@ class Trainer:
 
     ################################################################################################################################
     def linear_interpolation(self, nrow, ncol, fix_z, fix_y):
-        with torch.no_grad():
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.batch_size, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
@@ -733,69 +727,4 @@ class Trainer:
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
-    ################################################################################################################################
-
-
-    ################################################################################################################################
-    def linear_classification(self, total_step):
-        toggle_grad(self.dis_model, False)
-        self.dis_model.eval()
-        self.linear_model.train()
-
-        self.logger.info("Start training Linear classifier: {run_name}".format(run_name=self.run_name))
-        train_iter = iter(self.train_dataloader)
-        for step in tqdm(range(total_step)):
-            self.L_optimizer.zero_grad()
-            for acml_step in range(self.accumulation_steps):
-                try:
-                    real_images, real_labels = next(train_iter)
-                except StopIteration:
-                    train_iter = iter(self.train_dataloader)
-                    real_images, real_labels = next(train_iter)
-
-                real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
-
-                if self.conditional_strategy == ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-                elif self.conditional_strategy == "ACGAN":
-                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-                elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
-                    dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-
-                logits = self.linear_model(cls_embed_real)
-                cls_loss = self.ce_loss(logits, real_labels)
-
-                cls_loss.backward()
-
-                self.L_optimizer.step()
-
-        self.linear_model.eval()
-        self.logger.info("Start evaluating Linear classifier: {run_name}".format(run_name=self.run_name))
-        correct, total = 0, 0
-        with torch.no_grad():
-            eval_iter = iter(self.eval_dataloader)
-            for i in range(len(self.eval_dataloader)):
-                if self.cr:
-                    real_images, real_labels, real_images_aug = next(eval_iter)
-                else:
-                    real_images, real_labels = next(eval_iter)
-
-                real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
-
-                if self.conditional_strategy == ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-                elif self.conditional_strategy == "ACGAN":
-                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-                elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
-                    dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-
-                logits_test = self.linear_model(cls_embed_real)
-                _, prediction = torch.max(logits_test.data, 1)
-                total += real_labels.size(0)
-                correct += (prediction == real_labels).sum().item()
-
-        self.logger.info("Accuracy of the network on the {total} {type} images: {acc}".\
-                         format(total=total, type=self.type4eval_dataset, acc=100*correct/total))
-
-        self.dis_model.train()
     ################################################################################################################################

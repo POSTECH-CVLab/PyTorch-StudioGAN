@@ -30,19 +30,17 @@ def main():
 
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
     parser.add_argument('-acml_bn', '--acml_bn', action='store_true')
-    parser.add_argument('--acml_stat_step', type=int, default=20, help='# of steps for accumulation batchnorm')
+    parser.add_argument('--acml_stat_step', type=int, default=-1, help='# of steps for accumulation batchnorm')
     parser.add_argument('-freezD', '--freeze_dis', action='store_true')
-    parser.add_argument('--freeze_layer', type=int, default=2, help='# of layers for freezing discriminator')
+    parser.add_argument('--freeze_layer', type=int, default=-1, help='# of layers for freezing discriminator')
 
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')
     parser.add_argument('-t', '--train', action='store_true')
     parser.add_argument('-e', '--eval', action='store_true')
     parser.add_argument('-knn', '--k_nearest_neighbor', action='store_true', help='select whether conduct k-nearest neighbor analysis')
     parser.add_argument('-itp', '--interpolation', action='store_true', help='select whether conduct interpolation analysis')
-    parser.add_argument('-le', '--linear_evaluation', action='store_true', help='select whether conduct linear classification on the feature space')
     parser.add_argument('--nrow', type=int, default=10, help='number of rows to plot image canvas')
     parser.add_argument('--ncol', type=int, default=8, help='number of cols to plot image canvas')
-    parser.add_argument('--step_linear_eval', type=int, default=10000, help='number of steps for the optimization')
 
     parser.add_argument('--print_every', type=int, default=100, help='control log interval')
     parser.add_argument('--save_every', type=int, default=2000, help='control evaluation and save interval')
@@ -58,10 +56,10 @@ def main():
 
     dataset = model_config['data_processing']['dataset_name']
     if dataset == 'cifar10':
-        assert args.type4eval_dataset == 'train' or args.type4eval_dataset == 'test', "cifar10 does not contain dataset for validation"
-    elif dataset == 'imagenet' or dataset == 'tiny_imagenet':
+        assert args.type4eval_dataset in ['train', 'test'], "cifar10 does not contain dataset for validation"
+    elif dataset in ['imagenet', 'tiny_imagenet', 'custom']:
         assert args.type4eval_dataset == 'train' or args.type4eval_dataset == 'valid',\
-             "we do not support the evaluation mode using test images in tiny_imagenet/imagenet dataset"
+             "we do not support the evaluation mode using test images in tiny_imagenet/imagenet/custom dataset"
 
     hdf5_path_train = make_hdf5(**model_config['data_processing'], **train_config, mode='train') if args.load_all_data_in_memory else None
 

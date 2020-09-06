@@ -37,7 +37,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
     else:
         total_batch = num_evaluate//batch_size + 1
 
-    if D_loss.__name__ == "loss_dcgan_dis":
+    if D_loss.__name__ in ["loss_dcgan_dis", "loss_lsgan_dis"]:
         cutoff = 0.5
     elif D_loss.__name__ == "loss_hinge_dis":
         cutoff = 0.0
