@@ -30,12 +30,12 @@ def loss_dcgan_gen(gen_out_fake):
 
 
 def loss_lsgan_dis(dis_out_real, dis_out_fake):
-    dis_loss = 0.5*(F.sigmoid(dis_out_real) - torch.ones_like(dis_out_real))**2 + 0.5*F.sigmoid(dis_out_fake)**2
+    dis_loss = 0.5*(torch.sigmoid(dis_out_real) - torch.ones_like(dis_out_real))**2 + 0.5*torch.sigmoid(dis_out_fake)**2
     return dis_loss.mean()
 
 
 def loss_lsgan_gen(dis_out_fake):
-    gen_loss = 0.5*(F.sigmoid(dis_out_fake) - torch.ones_like(dis_out_fake))**2
+    gen_loss = 0.5*(torch.sigmoid(dis_out_fake) - torch.ones_like(dis_out_fake))**2
     return gen_loss.mean()
 
 
