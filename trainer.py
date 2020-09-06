@@ -657,13 +657,12 @@ class Trainer:
                 fake_image = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
 
-                target_sampler = target_class_sampler(self.train_dataset, c)
+                num_samples, target_sampler = target_class_sampler(self.train_dataset, c)
                 train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, sampler=target_sampler,
                                                                num_workers=self.train_config['num_workers'], pin_memory=True)
                 train_iter = iter(train_dataloader)
-                for batch_idx in range(len(train_iter)):
+                for batch_idx in range(num_samples//self.batch_size):
                     real_images, real_labels = next(train_iter)
-                    num_cls_in_batch = torch.tensor(real_labels.detach().cpu().numpy() == c).sum().item()
                     real_images = real_images.to(self.default_device)
                     real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
                     if batch_idx == 0:
