@@ -130,5 +130,5 @@ def target_class_sampler(dataset, target_class):
     weights = [True if target == target_class else False for target in targets]
     num_samples = sum(weights)
     weights = torch.DoubleTensor(weights)
-    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=False)
     return num_samples, sampler
