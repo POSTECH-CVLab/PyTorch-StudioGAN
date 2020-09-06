@@ -126,7 +126,10 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
 
 
 def target_class_sampler(dataset, target_class):
-    targets = dataset.data.targets
+    try:
+        targets = dataset.data.targets
+    except:
+        targets = dataset.labels
     weights = [True if target == target_class else False for target in targets]
     num_samples = sum(weights)
     weights = torch.DoubleTensor(weights)
