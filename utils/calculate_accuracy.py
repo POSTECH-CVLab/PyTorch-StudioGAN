@@ -20,8 +20,6 @@ from torch.nn import DataParallel
 
 def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluate, truncated_factor, prior, latent_op,
                        latent_op_step, latent_op_alpha, latent_op_beta, device, cr, eval_generated_sample=False):
-    generator.eval()
-    discriminator.eval()
     data_iter = iter(dataloader)
     batch_size = dataloader.batch_size
 
@@ -92,9 +90,6 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
         only_real_acc = len(true_positive)/len(real_confid)
         only_fake_acc = len(true_negative)/len(fake_confid)
 
-        generator.train()
-        discriminator.train()
-
         return only_real_acc, only_fake_acc
     else:
         for batch_id in tqdm(range(total_batch)):
@@ -123,9 +118,6 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
         real_confid = confid[confid_label==1.0]
         true_positive = real_confid[np.where(real_confid>cutoff)]
         only_real_acc = len(true_positive)/len(real_confid)
-
-        generator.train()
-        discriminator.train()
 
         return only_real_acc
 

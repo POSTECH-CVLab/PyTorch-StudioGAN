@@ -147,3 +147,12 @@ def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_s
                 return gen_copy
         else:
             return gen
+
+
+def change_discriminator_mode(dis, training):
+    if training:
+        dis.train()
+    else:
+        dis.eval()
+        dis.apply(set_deterministic_op_train)
+    return dis

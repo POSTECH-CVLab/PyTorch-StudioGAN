@@ -175,8 +175,6 @@ def calculate_activation_statistics(data_loader, generator, discriminator, incep
 
 def calculate_fid_score(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
                         latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, pre_cal_mean=None, pre_cal_std=None, run_name=None):
-    generator.eval()
-    discriminator.eval()
     inception_model.eval()
 
     print("Calculating FID Score....")
@@ -191,6 +189,4 @@ def calculate_fid_score(data_loader, generator, discriminator, inception_model, 
 
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
-    generator.train()
-    discriminator.train()
     return fid_value, m1, s1
