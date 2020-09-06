@@ -84,6 +84,19 @@ def set_bn_train(m):
         m.train()
 
 
+def set_deterministic_op_train(m):
+    if isinstance(m, torch.nn.modules.conv.Conv2d):
+        m.train()
+
+    if isinstance(m, torch.nn.modules.conv.ConvTranspose2d):
+        m.train()
+
+    if isinstance(m, torch.nn.modules.linear.Linear):
+        m.train()
+
+    if isinstance(m, torch.nn.modules.Embedding):
+        m.train()
+
 def reset_bn_stat(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.reset_running_stats()

@@ -5,7 +5,7 @@
 # utils/utils.py
 
 
-from utils.biggan_utils import set_bn_train, apply_accumulate_stat
+from utils.biggan_utils import set_bn_train, set_deterministic_op_train, apply_accumulate_stat
 
 import torch
 import torch.nn.functional as F
@@ -135,8 +135,10 @@ def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_s
         return gen
     else:
         gen.eval()
+        gen.apply(set_deterministic_op_train)
         if gen_copy is not None:
             gen_copy.eval()
+            gen_copy.apply(set_deterministic_op_train)
             if acml_bn:
                 apply_accumulate_stat(gen_copy, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
                 return gen_copy
