@@ -601,19 +601,20 @@ class Trainer:
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                      self.latent_op_beta, 10, self.default_device)
 
-            real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
-                                                          self.latent_op,self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
-                                                          cr=self.cr, eval_generated_sample=True)
+            if self.D_loss.__name__ != "loss_wgan_dis":
+                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
+                                                              self.latent_op,self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
+                                                              cr=self.cr, eval_generated_sample=True)
 
-            if self.type4eval_dataset == 'train':
-                acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
-            else:
-                real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
-                                                   self.latent_op, self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
-                                                   cr=self.cr, eval_generated_sample=False)
-                acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
+                if self.type4eval_dataset == 'train':
+                    acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
+                else:
+                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
+                                                       self.latent_op, self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
+                                                       cr=self.cr, eval_generated_sample=False)
+                    acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
 
-            self.writer.add_scalars('Accuracy', acc_dict, step)
+                self.writer.add_scalars('Accuracy', acc_dict, step)
 
             if self.best_fid is None:
                 self.best_fid, self.best_step, is_best = fid_score, step, True
