@@ -206,10 +206,14 @@ class Trainer:
         if self.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
 
-        if self.dataset_name in ["imagenet", "tiny_imagenet", "custom"]:
+        if self.dataset_name in ["imagenet", "tiny_imagenet"]:
             self.num_eval = {'train':50000, 'valid':50000}
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
+        elif self.dataset_name == "custom":
+            num_train_images = len(self.train_dataset.data)
+            num_eval_images = len(self.eval_dataset.data)
+            self.num_eval = {'train':num_train_images, 'valid':num_eval_images}
         else:
             raise NotImplementedError
 
@@ -606,16 +610,16 @@ class Trainer:
                                                      self.latent_op_beta, 10, self.default_device)
 
             if self.D_loss.__name__ != "loss_wgan_dis":
-                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
-                                                              self.latent_op,self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
-                                                              cr=self.cr, eval_generated_sample=True)
+                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.type4eval_dataset],
+                                                              self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
+                                                              self.latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=True)
 
                 if self.type4eval_dataset == 'train':
                     acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
                 else:
-                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, 10000, self.truncated_factor, self.prior,
-                                                       self.latent_op, self.latent_op_step, self.latent_op_alpha,self. latent_op_beta, self.default_device,
-                                                       cr=self.cr, eval_generated_sample=False)
+                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.type4eval_dataset],
+                                                       self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
+                                                       self. latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=False)
                     acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
 
                 self.writer.add_scalars('Accuracy', acc_dict, step)
