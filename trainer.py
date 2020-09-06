@@ -571,7 +571,7 @@ class Trainer:
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
 
-            self.dis_model = change_discriminator_mode(self.dis_model, training=False)
+            self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
@@ -616,7 +616,7 @@ class Trainer:
             self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.type4eval_dataset]), IS=kl_score))
             self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.type4eval_dataset, FID=self.best_fid))
 
-            self.dis_model = change_discriminator_mode(self.dis_model, training=True)
+            self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
@@ -728,7 +728,7 @@ class Trainer:
     ################################################################################################################################
     def linear_classification(self, total_step):
         toggle_grad(self.dis_model, False)
-        self.dis_model = change_discriminator_mode(self.dis_model, training=False)
+        self.dis_model.eval()
         self.linear_model.train()
 
         self.logger.info("Start training Linear classifier: {run_name}".format(run_name=self.run_name))
@@ -786,5 +786,5 @@ class Trainer:
         self.logger.info("Accuracy of the network on the {total} {type} images: {acc}".\
                          format(total=total, type=self.type4eval_dataset, acc=100*correct/total))
 
-        self.dis_model = change_discriminator_mode(self.dis_model, training=True)
+        self.dis_model.eval()
     ################################################################################################################################

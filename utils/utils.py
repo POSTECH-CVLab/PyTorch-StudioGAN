@@ -134,25 +134,18 @@ def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_s
             return gen_copy
         return gen
     else:
-        gen.eval()
+        if acml_bn:
+            apply_accumulate_stat(gen, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
+        else:
+            gen.eval()
         gen.apply(set_deterministic_op_train)
         if gen_copy is not None:
-            gen_copy.eval()
-            gen_copy.apply(set_deterministic_op_train)
             if acml_bn:
                 apply_accumulate_stat(gen_copy, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
-                return gen_copy
             else:
+                gen_copy.eval()
                 gen_copy.apply(set_bn_train)
-                return gen_copy
+            gen_copy.apply(set_deterministic_op_train)
+            return gen_copy
         else:
             return gen
-
-
-def change_discriminator_mode(dis, training):
-    if training:
-        dis.train()
-    else:
-        dis.eval()
-        dis.apply(set_deterministic_op_train)
-    return dis
