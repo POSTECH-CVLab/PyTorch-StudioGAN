@@ -39,10 +39,8 @@ def main():
     parser.add_argument('-e', '--eval', action='store_true')
     parser.add_argument('-knn', '--k_nearest_neighbor', action='store_true', help='select whether conduct k-nearest neighbor analysis')
     parser.add_argument('-itp', '--interpolation', action='store_true', help='select whether conduct interpolation analysis')
-    parser.add_argument('-le', '--linear_evaluation', action='store_true', help='select whether conduct linear classification on the feature space')
     parser.add_argument('--nrow', type=int, default=10, help='number of rows to plot image canvas')
     parser.add_argument('--ncol', type=int, default=8, help='number of cols to plot image canvas')
-    parser.add_argument('--step_linear_eval', type=int, default=10000, help='number of steps for the optimization')
 
     parser.add_argument('--print_every', type=int, default=100, help='control log interval')
     parser.add_argument('--save_every', type=int, default=2000, help='control evaluation and save interval')

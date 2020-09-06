@@ -207,33 +207,6 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     else:
         mu, sigma, inception_model = None, None, None
 
-    if train_config['linear_evaluation']:
-        in_channels = hypersphere_dim if conditional_strategy == "ContraGAN" else Dis.out_dims[-1]
-        linear_model = linear_classifier(in_channels=in_channels, num_classes=num_classes).to(default_device)
-        if n_gpus > 1:
-            linear_model = DataParallel(linear_model, output_device=default_device)
-
-        if optimizer == "SGD":
-            if fused_optimization:
-                L_optimizer = apex.optimizers.FusedSGD(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
-            else:
-                L_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
-        elif optimizer == "RMSprop":
-            if fused_optimization:
-                raise NotImplementedError
-            else:
-                L_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, momentum=momentum, alpha=alpha)
-        elif optimizer == "Adam":
-            if fused_optimization:
-                L_optimizer = apex.optimizers.FusedAdam(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, [beta1, beta2], eps=1e-6)
-            else:
-                L_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, linear_model.parameters()), g_lr, [beta1, beta2], eps=1e-6)
-        else:
-            raise NotImplementedError
-    else:
-        linear_model = None
-        L_optimizer = None
-
 
     trainer = Trainer(
         run_name=run_name,
@@ -247,7 +220,6 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         dis_model=Dis,
         inception_model=inception_model,
         Gen_copy=Gen_copy,
-        linear_model=linear_model,
         Gen_ema=Gen_ema,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
@@ -266,7 +238,6 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         g_spectral_norm=g_spectral_norm,
         G_optimizer=G_optimizer,
         D_optimizer=D_optimizer,
-        L_optimizer=L_optimizer,
         batch_size=batch_size,
         g_steps_per_iter=model_config['optimization']['g_steps_per_iter'],
         d_steps_per_iter=model_config['optimization']['d_steps_per_iter'],
@@ -335,6 +306,3 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     if train_config['interpolation']:
         trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True, fix_y=False)
         trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True)
-
-    if train_config['linear_evaluation']:
-        trainer.linear_classification(train_config['step_linear_eval'])

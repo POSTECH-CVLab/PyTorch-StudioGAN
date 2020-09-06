@@ -71,15 +71,15 @@ def set_temperature(tempering_type, start_temperature, end_temperature, step_cou
 
 class Trainer:
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, linear_model, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, acml_bn, acml_stat_step,
-                 freeze_dis, freeze_layer, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm,
-                 g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps,
-                 total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature,
-                 end_temperature, gradient_penalty_for_dis, gradient_penalty_lambda, weight_clipping_for_dis, weight_clipping_bound, cr,
-                 cr_lambda, bcr, real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target,
-                 ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha,
-                 latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
-                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
+                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, acml_bn, acml_stat_step, freeze_dis,
+                 freeze_layer, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm,
+                 G_optimizer, D_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss,
+                 ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
+                 gradient_penalty_lambda, weight_clipping_for_dis, weight_clipping_bound, cr, cr_lambda, bcr, real_lambda, fake_lambda,
+                 zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior, truncated_factor,
+                 ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,
+                 default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision,
+                 train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -93,7 +93,6 @@ class Trainer:
         self.dis_model = dis_model
         self.inception_model = inception_model
         self.Gen_copy = Gen_copy
-        self.linear_model = linear_model
         self.Gen_ema = Gen_ema
 
         self.train_dataset = train_dataset
@@ -116,7 +115,6 @@ class Trainer:
 
         self.G_optimizer = G_optimizer
         self.D_optimizer = D_optimizer
-        self.L_optimizer = L_optimizer
         self.batch_size = batch_size
         self.g_steps_per_iter = g_steps_per_iter
         self.d_steps_per_iter = d_steps_per_iter
@@ -729,69 +727,4 @@ class Trainer:
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
-    ################################################################################################################################
-
-
-    ################################################################################################################################
-    def linear_classification(self, total_step):
-        toggle_grad(self.dis_model, False)
-        self.dis_model.eval()
-        self.linear_model.train()
-
-        self.logger.info("Start training Linear classifier: {run_name}".format(run_name=self.run_name))
-        train_iter = iter(self.train_dataloader)
-        for step in tqdm(range(total_step)):
-            self.L_optimizer.zero_grad()
-            for acml_step in range(self.accumulation_steps):
-                try:
-                    real_images, real_labels = next(train_iter)
-                except StopIteration:
-                    train_iter = iter(self.train_dataloader)
-                    real_images, real_labels = next(train_iter)
-
-                real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
-
-                if self.conditional_strategy == ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-                elif self.conditional_strategy == "ACGAN":
-                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-                elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
-                    dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-
-                logits = self.linear_model(cls_embed_real)
-                cls_loss = self.ce_loss(logits, real_labels)
-
-                cls_loss.backward()
-
-                self.L_optimizer.step()
-
-        self.linear_model.eval()
-        self.logger.info("Start evaluating Linear classifier: {run_name}".format(run_name=self.run_name))
-        correct, total = 0, 0
-        with torch.no_grad():
-            eval_iter = iter(self.eval_dataloader)
-            for i in range(len(self.eval_dataloader)):
-                if self.cr:
-                    real_images, real_labels, real_images_aug = next(eval_iter)
-                else:
-                    real_images, real_labels = next(eval_iter)
-
-                real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
-
-                if self.conditional_strategy == ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-                elif self.conditional_strategy == "ACGAN":
-                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-                elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
-                    dis_out_real = self.dis_model(real_images, real_labels, evaluation=True)
-
-                logits_test = self.linear_model(cls_embed_real)
-                _, prediction = torch.max(logits_test.data, 1)
-                total += real_labels.size(0)
-                correct += (prediction == real_labels).sum().item()
-
-        self.logger.info("Accuracy of the network on the {total} {type} images: {acc}".\
-                         format(total=total, type=self.type4eval_dataset, acc=100*correct/total))
-
-        self.dis_model.train()
     ################################################################################################################################
