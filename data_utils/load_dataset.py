@@ -73,12 +73,12 @@ class LoadDataset(Dataset):
             if random_flip:
                 self.transforms += [transforms.RandomHorizontalFlip()]
         else:
-            if self.dataset_name == 'cifar10' or self.dataset_name == 'tiny_imagenet':
+            if self.dataset_name in ['cifar10', 'tiny_imagenet']:
                 self.transforms = []
                 if random_flip:
                     self.transforms += [transforms.RandomHorizontalFlip()]
 
-            if self.dataset_name == 'imagenet':
+            if self.dataset_name in ['imagenet', 'custom']:
                 self.transforms = [CenterCropLongEdge(), transforms.Resize(self.resize_size)]
                 if random_flip:
                     self.transforms += [transforms.RandomHorizontalFlip()]
@@ -123,6 +123,17 @@ class LoadDataset(Dataset):
             else:
                 mode = 'train' if self.train == True else 'valid'
                 root = os.path.join('data','TINY_ILSVRC2012', mode)
+                self.data = ImageFolder(root=root)
+
+        elif self.dataset_name == "custom":
+            if self.hdf5_path is not None:
+                print('Loading %s into memory...' % self.hdf5_path)
+                with h5.File(self.hdf5_path, 'r') as f:
+                    self.data = f['imgs'][:]
+                    self.labels = f['labels'][:]
+            else:
+                mode = 'train' if self.train == True else 'valid'
+                root = os.path.join('data','custom', mode)
                 self.data = ImageFolder(root=root)
         else:
             raise NotImplementedError

@@ -34,7 +34,7 @@ def sample_latents(dist, batch_size, dim, truncated_factor=1, num_classes=None, 
         else:
             raise NotImplementedError
 
-        if sampler == "class_order_some" or sampler == "class_order_all":
+        if sampler in ["class_order_some", "class_order_all"]:
             y_fake = []
             for idx in indices:
                 y_fake += [idx]*8

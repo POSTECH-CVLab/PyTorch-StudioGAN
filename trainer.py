@@ -206,10 +206,12 @@ class Trainer:
         if self.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
 
-        if self.dataset_name == "imagenet" or self.dataset_name == "tiny_imagenet":
+        if self.dataset_name in ["imagenet", "tiny_imagenet", "custom"]:
             self.num_eval = {'train':50000, 'valid':50000}
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
+        else:
+            raise NotImplementedError
 
 
 
