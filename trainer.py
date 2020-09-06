@@ -10,7 +10,7 @@ from metrics.FID import calculate_fid_score
 from metrics.calculate_accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import toggle_grad, interp
-from utils.sample import sample_latents, sample_1hot, make_mask, generate_images_for_KNN
+from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler, generate_images_for_KNN
 from utils.plot import plot_img_canvas, save_images_png
 from utils.utils import *
 from utils.losses import calc_derv4gp, calc_derv, latent_optimise
@@ -71,14 +71,14 @@ def set_temperature(tempering_type, start_temperature, end_temperature, step_cou
 
 class Trainer:
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, linear_model, Gen_ema, train_dataloader, eval_dataloader, acml_bn, acml_stat_step, freeze_dis, freeze_layer,
-                 conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm,
-                 G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step,
-                 G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature,
-                 gradient_penalty_for_dis, gradient_penalty_lambda, weight_clipping_for_dis, weight_clipping_bound, cr, cr_lambda, bcr,
-                 real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length,
-                 prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta,
-                 latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
+                 Gen_copy, linear_model, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, acml_bn, acml_stat_step,
+                 freeze_dis, freeze_layer, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm,
+                 g_spectral_norm, G_optimizer, D_optimizer, L_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps,
+                 total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature,
+                 end_temperature, gradient_penalty_for_dis, gradient_penalty_lambda, weight_clipping_for_dis, weight_clipping_bound, cr,
+                 cr_lambda, bcr, real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target,
+                 ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha,
+                 latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
                  best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
@@ -96,6 +96,8 @@ class Trainer:
         self.linear_model = linear_model
         self.Gen_ema = Gen_ema
 
+        self.train_dataset = train_dataset
+        self.eval_dataset = eval_dataset
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
@@ -652,36 +654,24 @@ class Trainer:
             for c in tqdm(range(self.num_classes)):
                 fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
                                                                    self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.default_device)
-                fake_image = torch.unsqueeze(fake_image, dim=0)
+                fake_image = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
 
-                hit = 0
-                train_iter = iter(self.train_dataloader)
+                target_sampler = target_class_sampler(self.train_dataset, c)
+                train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, sampler=target_sampler,
+                                                               num_workers=self.train_config['num_workers'], pin_memory=True)
+                train_iter = iter(train_dataloader)
                 for batch_idx in range(len(train_iter)):
                     real_images, real_labels = next(train_iter)
-
                     num_cls_in_batch = torch.tensor(real_labels.detach().cpu().numpy() == c).sum().item()
-                    if num_cls_in_batch > 0:
-                        real_images = real_images[torch.tensor(real_labels.detach().cpu().numpy() == c)]
-                        real_images = real_images.to(self.default_device)
-
-                        if hit == 0:
-                            real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
-                            if num_cls_in_batch == 1:
-                                distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy()
-                            else:
-                                distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
-                            holder = real_images.detach().cpu().numpy()
-                            hit += 1
-                        else:
-                            real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
-                            if num_cls_in_batch == 1:
-                                distances = np.append(distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=0).detach().cpu().numpy())
-                            else:
-                                distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
-                            holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
+                    real_images = real_images.to(self.default_device)
+                    real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
+                    if batch_idx == 0:
+                        distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
+                        holder = real_images.detach().cpu().numpy()
                     else:
-                        pass
+                        distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
+                        holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
 
                 nearest_indices = (-distances).argsort()[-(ncol-1):][::-1]
                 if c % nrow == 0:

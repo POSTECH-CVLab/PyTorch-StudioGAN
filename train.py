@@ -249,6 +249,8 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         Gen_copy=Gen_copy,
         linear_model=linear_model,
         Gen_ema=Gen_ema,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
         acml_bn=acml_bn,

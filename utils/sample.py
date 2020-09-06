@@ -103,6 +103,13 @@ def make_mask(labels, n_cls, device):
     return mask_multi.to(device)
 
 
+def target_class_sampler(dataset, target_class):
+    targets = dataset.data.targets
+    weights = [True if target == target_class else False for target in targets]
+    weights = torch.DoubleTensor(weights)
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
+    return sampler
+
 def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
     if isinstance(gen_model, DataParallel):
         z_dim = gen_model.module.z_dim
