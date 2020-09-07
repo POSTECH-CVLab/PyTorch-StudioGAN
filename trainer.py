@@ -186,7 +186,7 @@ class Trainer:
                                                                   self.num_classes, None, self.default_device, sampler=sampler)
 
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
-                     self.mixed_precision, self.gradient_penalty_for_dis, self.cr, self.bcr, self.zcr)
+                     self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr, self.zcr)
 
         if self.conditional_strategy == 'ContraGAN':
             self.contrastive_criterion = Conditional_Contrastive_loss(self.default_device, self.batch_size, self.pos_collected_numerator)

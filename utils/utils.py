@@ -51,7 +51,7 @@ def check_flag_0(batch_size, n_gpus, fused_optimization, mixed_precision, acml_b
 
 
 def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision,
-                 gradient_penalty_for_dis, cr, bcr, zcr):
+                 gradient_penalty_for_dis, deep_regret_analysis_for_dis, cr, bcr, zcr):
     assert int(diff_aug)*int(ada) == 0, \
         "you can't simultaneously apply differentiable Augmentation (DiffAug) and adaptive augmentation (ADA)"
 
@@ -60,6 +60,9 @@ def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, 
 
     assert int(cr)*int(bcr) == 0 and int(cr)*int(zcr) == 0, \
         "you can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)"
+
+    assert int(gradient_penalty_for_dis)*int(deep_regret_analysis_for_dis) == 0, \
+        "you can't simultaneously apply gradient penalty (GP) and deep regret analysis (DRA)"
 
     if conditional_strategy == "ContraGAN":
         assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
