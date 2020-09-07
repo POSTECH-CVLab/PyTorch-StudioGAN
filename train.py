@@ -67,8 +67,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     check_flag_0(batch_size, n_gpus, fused_optimization, mixed_precision, acml_bn, ema, freeze_dis, checkpoint_folder)
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
     assert int(fused_optimization)*int(mixed_precision) == 0.0, "can't turn on fused_optimization and mixed_precision together."
-    if acml_bn is True:
-        assert ema, "turning on accumulated batch_norm needs EMA update of the generator"
+
     if freeze_dis:
         assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 
@@ -252,10 +251,12 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         tempering_step=model_config['loss_function']['tempering_step'],
         start_temperature=model_config['loss_function']['start_temperature'],
         end_temperature=model_config['loss_function']['end_temperature'],
-        gradient_penalty_for_dis=model_config['loss_function']['gradient_penalty_for_dis'],
-        gradient_penalty_lambda=model_config['loss_function']['gradient_penalty_lambda'],
         weight_clipping_for_dis=model_config['loss_function']['weight_clipping_for_dis'],
         weight_clipping_bound=model_config['loss_function']['weight_clipping_bound'],
+        gradient_penalty_for_dis=model_config['loss_function']['gradient_penalty_for_dis'],
+        gradient_penalty_lambda=model_config['loss_function']['gradient_penalty_lambda'],
+        deep_regret_analysis_for_dis=model_config['loss_function']['deep_regret_analysis_for_dis'],
+        regret_penalty_lambda=model_config['loss_function']['regret_penalty_lambda'],
         cr=cr,
         cr_lambda=model_config['loss_function']['cr_lambda'],
         bcr=model_config['loss_function']['bcr'],

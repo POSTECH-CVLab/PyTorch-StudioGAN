@@ -63,6 +63,9 @@
         "gradient_penalty_for_dis": false,
         "gradient_penalty_lambda": "N/A",
 
+        "deep_regret_analysis_for_dis": false,
+        "regret_penalty_lambda": "N/A",
+
         "cr": false,
         "cr_lambda":"N/A",
 

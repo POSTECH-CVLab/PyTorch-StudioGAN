@@ -13,7 +13,7 @@ from utils.biggan_utils import toggle_grad, interp
 from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler, generate_images_for_KNN
 from utils.plot import plot_img_canvas, save_images_png
 from utils.utils import *
-from utils.losses import calc_derv4gp, calc_derv, latent_optimise
+from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
 from utils.diff_aug import DiffAugment
 from utils.cr_diff_aug import CR_DiffAug
@@ -74,12 +74,12 @@ class Trainer:
                  Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, acml_bn, acml_stat_step, freeze_dis,
                  freeze_layer, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm,
                  G_optimizer, D_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss,
-                 ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, gradient_penalty_for_dis,
-                 gradient_penalty_lambda, weight_clipping_for_dis, weight_clipping_bound, cr, cr_lambda, bcr, real_lambda, fake_lambda,
-                 zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior, truncated_factor,
-                 ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight,
-                 default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision,
-                 train_config, model_config,):
+                 ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis,
+                 weight_clipping_bound, gradient_penalty_for_dis, gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda,
+                 cr, cr_lambda, bcr, real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target,
+                 ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha,
+                 latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
+                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -130,10 +130,12 @@ class Trainer:
         self.tempering_step = tempering_step
         self.start_temperature = start_temperature
         self.end_temperature = end_temperature
-        self.gradient_penalty_for_dis = gradient_penalty_for_dis
-        self.gradient_penalty_lambda = gradient_penalty_lambda
         self.weight_clipping_for_dis = weight_clipping_for_dis
         self.weight_clipping_bound = weight_clipping_bound
+        self.gradient_penalty_for_dis = gradient_penalty_for_dis
+        self.gradient_penalty_lambda = gradient_penalty_lambda
+        self.deep_regret_analysis_for_dis = deep_regret_analysis_for_dis
+        self.regret_penalty_lambda = regret_penalty_lambda
         self.cr = cr
         self.cr_lambda = cr_lambda
         self.bcr = bcr
@@ -189,7 +191,7 @@ class Trainer:
                                                                   self.num_classes, None, self.default_device, sampler=sampler)
 
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
-                     self.mixed_precision, self.gradient_penalty_for_dis, self.cr, self.bcr, self.zcr)
+                     self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr, self.zcr)
 
         if self.conditional_strategy == 'ContraGAN':
             self.contrastive_criterion = Conditional_Contrastive_loss(self.default_device, self.batch_size, self.pos_collected_numerator)
@@ -375,7 +377,9 @@ class Trainer:
                         if self.gradient_penalty_for_dis:
                             dis_acml_loss += self.gradient_penalty_lambda*calc_derv4gp(self.dis_model, self.conditional_strategy, real_images,
                                                                                        fake_images, real_labels, self.default_device)
-
+                        if self.deep_regret_analysis_for_dis:
+                            dis_acml_loss += self.regret_penalty_lambda*calc_derv4dra(self.dis_model, self.conditional_strategy, real_images,
+                                                                                      real_labels, self.default_device)
                         if self.ada:
                             ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]), device = self.default_device)
                             self.ada_augment += ada_aug_data
