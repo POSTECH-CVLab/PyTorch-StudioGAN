@@ -58,6 +58,9 @@ def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, 
     assert int(mixed_precision)*int(gradient_penalty_for_dis) == 0, \
         "you can't simultaneously apply mixed precision training (mpc) and gradient penalty for WGAN-GP"
 
+    assert int(mixed_precision)*int(deep_regret_analysis_for_dis) == 0, \
+        "you can't simultaneously apply mixed precision training (mpc) and deep regret analysis for DRAGAN"
+
     assert int(cr)*int(bcr) == 0 and int(cr)*int(zcr) == 0, \
         "you can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)"
 
