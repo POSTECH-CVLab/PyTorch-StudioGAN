@@ -224,7 +224,6 @@ class NT_Xent_loss(torch.nn.Module):
 
 
 def calc_derv4gp(netD, conditional_strategy, real_data, fake_data, real_labels, device):
-    # print "real_data: ", real_data.size(), fake_data.size()
     batch_size, c, h, w = real_data.shape
     alpha = torch.rand(batch_size, 1)
     alpha = alpha.expand(batch_size, real_data.nelement()//batch_size).contiguous().view(batch_size,c,h,w)
@@ -233,6 +232,36 @@ def calc_derv4gp(netD, conditional_strategy, real_data, fake_data, real_labels, 
     real_data = real_data.to(device)
 
     interpolates = alpha * real_data + ((1 - alpha) * fake_data)
+    interpolates = interpolates.to(device)
+    interpolates = autograd.Variable(interpolates, requires_grad=True)
+
+    if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
+        _, _, disc_interpolates = netD(interpolates, real_labels)
+    elif conditional_strategy in ['projGAN', 'no']:
+            disc_interpolates = netD(interpolates, real_labels)
+    elif conditional_strategy == 'ACGAN':
+        _, disc_interpolates = netD(interpolates, real_labels)
+    else:
+        raise NotImplementedError
+
+    gradients = autograd.grad(outputs=disc_interpolates, inputs=interpolates,
+                              grad_outputs=torch.ones(disc_interpolates.size()).to(device),
+                              create_graph=True, retain_graph=True, only_inputs=True)[0]
+    gradients = gradients.view(gradients.size(0), -1)
+
+    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return gradient_penalty
+
+
+def calc_derv4dra(netD, conditional_strategy, real_data, real_labels, device):
+    batch_size, c, h, w = real_data.shape
+    alpha = torch.rand(batch_size, 1, 1, 1)
+    alpha = alpha.to(device)
+
+    real_data = real_data.to(device)
+    differences  = 0.5*real_data.std()*torch.rand(real_data.size()).to(device)
+
+    interpolates = real_data + (alpha*differences)
     interpolates = interpolates.to(device)
     interpolates = autograd.Variable(interpolates, requires_grad=True)
 
