@@ -52,8 +52,7 @@ def make_hdf5(dataset_name, data_path, img_size, batch_size4prcsing, num_workers
     if os.path.isfile(file_path):
         print("{file_name} exist!\nThe file are located in the {file_path}".format(file_name=file_name, file_path=file_path))
     else:
-        dataset = LoadDataset(dataset_name, data_path, train=train, download=True, resize_size=img_size,
-                              conditional_strategy="no", hdf5_path=None, cr=False, random_flip=False)
+        dataset = LoadDataset(dataset_name, data_path, train=train, download=True, resize_size=img_size, hdf5_path=None, random_flip=False)
 
         loader = DataLoader(dataset,
                             batch_size=batch_size4prcsing,

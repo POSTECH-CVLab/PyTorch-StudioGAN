@@ -229,7 +229,7 @@ class Trainer:
         if self.Gen_copy is not None:
             self.Gen_copy.train()
 
-        self.logger.info('Start training...')
+        self.logger.info('Start training....')
         step_count = current_step
         train_iter = iter(self.train_dataloader)
 
@@ -649,6 +649,7 @@ class Trainer:
 
     ################################################################################################################################
     def Nearest_Neighbor(self, nrow, ncol):
+        self.logger.info('Start nearest neighbor analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.temp_acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
@@ -700,29 +701,31 @@ class Trainer:
 
     ################################################################################################################################
     def linear_interpolation(self, nrow, ncol, fix_z, fix_y):
+        self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.temp_acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+            shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
             self.logger.info("Start Interpolation Analysis....")
             if fix_z:
-                zs = torch.randn(nrow, 1, generator.z_dim, device=self.default_device)
-                zs = zs.repeat(1, ncol, 1).view(-1, generator.z_dim)
+                zs = torch.randn(nrow, 1, self.z_dim, device=self.default_device)
+                zs = zs.repeat(1, ncol, 1).view(-1, self.z_dim)
                 name = "fix_z"
             else:
-                zs = interp(torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
-                            torch.randn(nrow, 1, generator.z_dim, device=self.default_device),
-                            ncol - 2).view(-1, generator.z_dim)
+                zs = interp(torch.randn(nrow, 1, self.z_dim, device=self.default_device),
+                            torch.randn(nrow, 1, self.z_dim, device=self.default_device),
+                            ncol - 2).view(-1, self.z_dim)
 
             if fix_y:
                 ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
-                ys = generator.shared(ys).view(nrow, 1, -1)
+                ys = shared(ys).view(nrow, 1, -1)
                 ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
                 name = "fix_y"
             else:
-                ys = interp(generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                            generator.shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                ys = interp(shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                            shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
                             ncol-2).view(nrow * (ncol), -1)
 
             interpolated_images = generator(zs, None, shared_label=ys, evaluation=True)
