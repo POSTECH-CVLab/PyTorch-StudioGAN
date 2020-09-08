@@ -16,13 +16,13 @@ from load_framework import load_frameowrk
 
 def main():
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('-c', '--config_path', type=str, default='./configs/Table1/contra_biggan_cifar32_hinge_no.json')
+    parser.add_argument('-c', '--config_path', type=str, default='./configs/Imagenet_experiments/proj_biggan_imagenet128_hinge_no.json')
     parser.add_argument('--checkpoint_folder', type=str, default=None)
     parser.add_argument('-current', '--load_current', action='store_true', help='choose whether you load current or best weights')
     parser.add_argument('--log_output_path', type=str, default=None)
 
     parser.add_argument('--seed', type=int, default=82624, help='seed for generating random number')
-    parser.add_argument('--num_workers', type=int, default=4, help='')
+    parser.add_argument('--num_workers', type=int, default=8, help='')
     parser.add_argument('-sync_bn', '--synchronized_bn', action='store_true', help='select whether turn on synchronized batchnorm')
     parser.add_argument('-mpc', '--mixed_precision', action='store_true', help='select whether turn on mixed precision training')
     parser.add_argument('-rm_API', '--disable_debugging_API', action='store_true', help='whether disable pytorch autograd debugging mode')
@@ -44,7 +44,7 @@ def main():
 
     parser.add_argument('--print_every', type=int, default=100, help='control log interval')
     parser.add_argument('--save_every', type=int, default=2000, help='control evaluation and save interval')
-    parser.add_argument('--type4eval_dataset', type=str, default='test', help='[train/valid/test]')
+    parser.add_argument('--type4eval_dataset', type=str, default='train', help='[train/valid/test]')
     args = parser.parse_args()
 
     if args.config_path is not None:
