@@ -5,12 +5,12 @@
 # main.py
 
 
-from argparse import ArgumentParser
 import json
 import os
+from argparse import ArgumentParser
 
-from make_hdf5 import make_hdf5
-from train import train_framework
+from utils.make_hdf5 import make_hdf5
+from load_frameowrk import load_frameowrk
 
 
 
@@ -63,14 +63,14 @@ def main():
 
     hdf5_path_train = make_hdf5(**model_config['data_processing'], **train_config, mode='train') if args.load_all_data_in_memory else None
 
-    train_framework(**train_config,
-                    **model_config['data_processing'],
-                    **model_config['train']['model'],
-                    **model_config['train']['optimization'],
-                    **model_config['train']['loss_function'],
-                    **model_config['train']['initialization'],
-                    **model_config['train']['training_and_sampling_setting'],
-                    train_config=train_config, model_config=model_config['train'], hdf5_path_train=hdf5_path_train)
+    load_frameowrk(**train_config,
+                   **model_config['data_processing'],
+                   **model_config['train']['model'],
+                   **model_config['train']['optimization'],
+                   **model_config['train']['loss_function'],
+                   **model_config['train']['initialization'],
+                   **model_config['train']['training_and_sampling_setting'],
+                   train_config=train_config, model_config=model_config['train'], hdf5_path_train=hdf5_path_train)
 
 if __name__ == '__main__':
     main()

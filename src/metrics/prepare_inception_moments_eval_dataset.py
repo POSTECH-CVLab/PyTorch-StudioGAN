@@ -4,13 +4,11 @@
 
 # metrics/prepare_inception_moments_eval_dataset.py
 
-
-from metrics.FID import calculate_activation_statistics
-from metrics.IS import evaluator
-
 import numpy as np
 import os
 
+from metrics.FID import calculate_activation_statistics
+from metrics.IS import evaluator
 
 
 

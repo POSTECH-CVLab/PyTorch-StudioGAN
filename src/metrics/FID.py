@@ -15,15 +15,16 @@ limitations under the License.
 """
 
 
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
 import numpy as np
-from scipy import linalg
-from tqdm import tqdm
 import math
-from os.path import dirname, abspath, exists, join
 import os
 import shutil
+from os.path import dirname, abspath, exists, join
+from scipy import linalg
+from tqdm import tqdm
+
+from utils.sample import sample_latents
+from utils.losses import latent_optimise
 
 import torch
 from torch.nn import DataParallel

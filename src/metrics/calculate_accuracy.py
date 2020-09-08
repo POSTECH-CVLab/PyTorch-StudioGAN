@@ -5,13 +5,13 @@
 # metrics/calculate_accuracy.py
 
 
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
-
 import numpy as np
+import math
 from scipy import linalg
 from tqdm import tqdm
-import math
+
+from utils.sample import sample_latents
+from utils.losses import latent_optimise
 
 import torch
 from torch.nn import DataParallel

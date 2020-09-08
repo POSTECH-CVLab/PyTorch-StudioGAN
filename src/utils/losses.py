@@ -5,15 +5,15 @@
 # utils/losses.py
 
 
-from models.model_ops import snlinear, linear
+import numpy as np
+
+from utils.model_ops import snlinear, linear
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import DataParallel
 from torch import autograd
-
-import numpy as np
 
 
 
