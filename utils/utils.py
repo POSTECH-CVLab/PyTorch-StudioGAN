@@ -178,7 +178,7 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
     mode = "generated" if is_generate is True else "real"
     print("Save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
 
-    directory = join('./generated_images', run_name, mode)
+    directory = join('./generated_npz', run_name, mode)
     if exists(abspath(directory)):
         shutil.rmtree(abspath(directory))
     os.makedirs(directory)
