@@ -2,10 +2,10 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# models/biggan.py
+# models/resgan.py
 
 
-from models.model_ops import *
+from utils.model_ops import *
 
 import torch
 import torch.nn as nn
@@ -21,15 +21,15 @@ class dummy_context_mgr():
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, z_dims_after_concat):
+    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes):
         super(GenBlock, self).__init__()
         self.conditional_bn = conditional_bn
 
         if self.conditional_bn:
-            self.bn1 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=in_channels, z_dims_after_concat=z_dims_after_concat,
-                                                                  spectral_norm=g_spectral_norm)
-            self.bn2 = ConditionalBatchNorm2d_for_skip_and_shared(num_features=out_channels, z_dims_after_concat=z_dims_after_concat,
-                                                                  spectral_norm=g_spectral_norm)
+            self.bn1 = ConditionalBatchNorm2d(num_features=in_channels, num_classes=num_classes,
+                                              spectral_norm=g_spectral_norm)
+            self.bn2 = ConditionalBatchNorm2d(num_features=out_channels, num_classes=num_classes,
+                                              spectral_norm=g_spectral_norm)
         else:
             self.bn1 = batchnorm_2d(in_features=in_channels)
             self.bn2 = batchnorm_2d(in_features=out_channels)
@@ -54,16 +54,15 @@ class GenBlock(nn.Module):
             self.conv2d1 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
             self.conv2d2 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
 
-
     def forward(self, x, label):
         x0 = x
+
         if self.conditional_bn:
             x = self.bn1(x, label)
         else:
             x = self.bn1(x)
-
         x = self.activation(x)
-        x = F.interpolate(x, scale_factor=2, mode='nearest') # upsample
+        x = F.interpolate(x, scale_factor=2, mode='nearest')
         x = self.conv2d1(x)
         if self.conditional_bn:
             x = self.bn2(x, label)
@@ -72,7 +71,7 @@ class GenBlock(nn.Module):
         x = self.activation(x)
         x = self.conv2d2(x)
 
-        x0 = F.interpolate(x0, scale_factor=2, mode='nearest') # upsample
+        x0 = F.interpolate(x0, scale_factor=2, mode='nearest')
         x0 = self.conv2d0(x0)
 
         out = x + x0
@@ -98,7 +97,6 @@ class Generator(nn.Module):
         bottom_collection = {"32": 4, "64": 4, "128": 4, "256": 4, "512": 4}
 
         self.z_dim = z_dim
-        self.shared_dim = shared_dim
         self.num_classes = num_classes
         self.mixed_precision = mixed_precision
         conditional_bn = True if conditional_strategy in ["ACGAN", "projGAN", "ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"] else False
@@ -106,26 +104,20 @@ class Generator(nn.Module):
         self.in_dims =  g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
         self.bottom = bottom_collection[str(img_size)]
-        self.n_blocks = len(self.in_dims)
-        self.chunk_size = z_dim//(self.n_blocks+1)
-        self.z_dims_after_concat = self.chunk_size + self.shared_dim
-        assert self.z_dim % (self.n_blocks+1) == 0, "z_dim should be divided by the number of blocks "
 
         if g_spectral_norm:
-            self.linear0 = snlinear(in_features=self.chunk_size, out_features=self.in_dims[0]*self.bottom*self.bottom)
+            self.linear0 = snlinear(in_features=self.z_dim, out_features=self.in_dims[0]*self.bottom*self.bottom)
         else:
-            self.linear0 = linear(in_features=self.chunk_size, out_features=self.in_dims[0]*self.bottom*self.bottom)
-
-        self.shared = embedding(self.num_classes, self.shared_dim)
+            self.linear0 = linear(in_features=self.z_dim, out_features=self.in_dims[0]*self.bottom*self.bottom)
 
         self.blocks = []
-        for index in range(self.n_blocks):
+        for index in range(len(self.in_dims)):
             self.blocks += [[GenBlock(in_channels=self.in_dims[index],
-                                      out_channels=self.out_dims[index],
-                                      g_spectral_norm=g_spectral_norm,
-                                      activation_fn=activation_fn,
-                                      conditional_bn=conditional_bn,
-                                      z_dims_after_concat=self.z_dims_after_concat)]]
+                                          out_channels=self.out_dims[index],
+                                          g_spectral_norm=g_spectral_norm,
+                                          activation_fn=activation_fn,
+                                          conditional_bn=conditional_bn,
+                                          num_classes=self.num_classes)]]
 
             if index+1 == attention_after_nth_gen_block and attention is True:
                 self.blocks += [[Self_Attn(self.out_dims[index], g_spectral_norm)]]
@@ -156,28 +148,16 @@ class Generator(nn.Module):
         if initialize is not False:
             init_weights(self.modules, initialize)
 
-
-    def forward(self, z, label, shared_label=None, evaluation=False):
+    def forward(self, z, label, evaluation=False):
         with torch.cuda.amp.autocast() if self.mixed_precision is True and evaluation is False else dummy_context_mgr() as mp:
-            zs = torch.split(z, self.chunk_size, 1)
-            z = zs[0]
-            if shared_label is None:
-                shared_label = self.shared(label)
-            else:
-                pass
-            labels = [torch.cat([shared_label, item], 1) for item in zs[1:]]
-
             act = self.linear0(z)
             act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
-            counter = 0
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
                     if isinstance(block, Self_Attn):
                         act = block(act)
                     else:
-                        act = block(act, labels[counter])
-                        counter +=1
-
+                        act = block(act, label)
             act = self.bn4(act)
             act = self.activation(act)
             act = self.conv2d5(act)
@@ -218,6 +198,7 @@ class DiscOptBlock(nn.Module):
 
     def forward(self, x):
         x0 = x
+
         x = self.conv2d1(x)
         if self.d_spectral_norm is False:
             x = self.bn1(x)
@@ -276,7 +257,6 @@ class DiscBlock(nn.Module):
 
     def forward(self, x):
         x0 = x
-
         if self.d_spectral_norm is False:
             x = self.bn1(x)
         x = self.activation(x)
@@ -420,7 +400,7 @@ class Discriminator(nn.Module):
             elif self.conditional_strategy == 'projGAN':
                 authen_output = torch.squeeze(self.linear1(h))
                 proj = torch.sum(torch.mul(self.embedding(label), h), 1)
-                return proj + authen_output
+                return authen_output + proj
 
             elif self.conditional_strategy == 'ACGAN':
                 authen_output = torch.squeeze(self.linear1(h))

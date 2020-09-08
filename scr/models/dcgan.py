@@ -5,7 +5,7 @@
 # models/dcgan.py
 
 
-from models.model_ops import *
+from utils.model_ops import *
 
 import torch
 import torch.nn as nn
