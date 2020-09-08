@@ -70,30 +70,30 @@ The folder structure of the datasets is shown below:
 For CIFAR10 image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -rm_API -c "./configs/Table1/contra_biggan_cifar32_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -rm_API -c "./configs/Table1/contra_biggan_cifar32_hinge_no.json"
 ```
 
 For Tiny ImageNet image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -rm_API -c "./configs/Table1/contra_biggan_tiny32_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -rm_API -c "./configs/Table1/contra_biggan_tiny32_hinge_no.json"
 ```
 
 For ImageNet image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -rm_API -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 src/main.py -t -e -rm_API -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json"
 ```
 
 For ImageNet image generation (loading all images into main memory to reduce I/O bottleneck):
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -rm_API -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -l
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 src/main.py -t -e -rm_API -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -l
 ```
 
 ## 6. About PyTorch FID
 
 FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires a pre-trained inception-V3 network, and approaches use Tensorflow-based FID (https://github.com/bioinf-jku/TTUR), or PyTorch-based FID (https://github.com/mseitzer/pytorch-fid). StudioGAN utilizes the PyTorch-based FID to test GAN models in the same PyTorch environment seamlessly. We show that the PyTorch based FID implementation used in StudioGAN provides almost the same results with the TensorFlow implementation. The results are summarized in the table below.
-<p align="center"><img src = 'figures/Table3.png' height = '140px' width = '520px'>
+<p align="center"><img src = 'docs/figures/Table3.png' height = '140px' width = '520px'>
 
 ## 6. References
 
