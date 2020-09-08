@@ -295,7 +295,7 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
     )
 
     if train_config['train']:
-        step = train_eval.train(current_step=step, total_step=total_step, acml_bn=acml_bn, acml_stat_step=acml_stat_step)
+        step = train_eval.train(current_step=step, total_step=total_step)
 
     if train_config['eval']:
         is_save = train_eval.evaluate(step=step, acml_bn=acml_bn, acml_stat_step=acml_stat_step)
