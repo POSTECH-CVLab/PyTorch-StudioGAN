@@ -298,7 +298,7 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
         step = train_eval.train(current_step=step, total_step=total_step)
 
     if train_config['eval']:
-        is_save = train_eval.evaluate(step=step, acml_bn=acml_bn, acml_stat_step=acml_stat_step)
+        is_save = train_eval.evaluation(step=step, acml_bn=acml_bn, acml_stat_step=acml_stat_step)
 
     if train_config['k_nearest_neighbor']:
         train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], acml_bn=acml_bn, acml_stat_step=acml_stat_step)

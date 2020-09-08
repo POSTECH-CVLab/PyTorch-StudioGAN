@@ -17,6 +17,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 from metrics.FID import generate_images
+from utils.sample import sample_latents
 
 import torch
 import torch.nn.functional as F
@@ -166,6 +167,16 @@ def calculate_all_sn(model):
                 weight_v = operation.weight_v
                 sigmas[name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
     return sigmas
+
+
+def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_classes, device):
+    generator.train()
+    generator.apply(reset_bn_stat)
+    for i in range(acml_step):
+        new_batch_size = random.randint(1, batch_size)
+        z, fake_labels = sample_latents(prior, new_batch_size, z_dim, 1, num_classes, None, device)
+        generated_images = generator(z, fake_labels)
+    generator.eval()
 
 
 def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_size, z_dim, num_classes, device, training):

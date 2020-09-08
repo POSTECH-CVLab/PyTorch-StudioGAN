@@ -77,13 +77,3 @@ def ortho(model, strength=1e-4, blacklist=[]):
 def interp(x0, x1, num_midpoints):
     lerp = torch.linspace(0, 1.0, num_midpoints + 2, device='cuda').to(x0.dtype)
     return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))
-
-
-def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_classes, device):
-    generator.train()
-    generator.apply(reset_bn_stat)
-    for i in range(acml_step):
-        new_batch_size = random.randint(1, batch_size)
-        z, fake_labels = sample_latents(prior, new_batch_size, z_dim, 1, num_classes, None, device)
-        generated_images = generator(z, fake_labels)
-    generator.eval()

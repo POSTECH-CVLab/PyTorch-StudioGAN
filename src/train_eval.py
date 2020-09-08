@@ -506,7 +506,7 @@ class Train_Eval(object):
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
-                    is_best = self.evaluation(step_count)
+                    is_best = self.evaluation(step_count, False, "N/A")
                     self.save(step_count, is_best)
                 else:
                     self.save(step_count, False)
@@ -578,7 +578,7 @@ class Train_Eval(object):
 
 
     ################################################################################################################################
-    def evaluate(self, step, acml_bn, acml_stat_step):
+    def evaluation(self, step, acml_bn, acml_stat_step):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
@@ -650,7 +650,6 @@ class Train_Eval(object):
                 resnet50_conv = DataParallel(resnet50_conv, output_device=self.default_device)
             resnet50_conv.eval()
 
-            self.logger.info("Start Nearest Neighbor....")
             for c in tqdm(range(self.num_classes)):
                 fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
                                                                    self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.default_device)
@@ -698,7 +697,6 @@ class Train_Eval(object):
             shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
-            self.logger.info("Start Interpolation Analysis....")
             if fix_z:
                 zs = torch.randn(nrow, 1, self.z_dim, device=self.default_device)
                 zs = zs.repeat(1, ncol, 1).view(-1, self.z_dim)
