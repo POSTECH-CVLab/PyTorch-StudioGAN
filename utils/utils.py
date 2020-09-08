@@ -5,6 +5,7 @@
 # utils/utils.py
 
 
+from metrics.FID import generate_images
 from utils.biggan_utils import set_bn_train, set_deterministic_op_train, apply_accumulate_stat
 
 import torch
@@ -14,8 +15,13 @@ from torch.nn import DataParallel
 
 import numpy as np
 import random
+import math
 import os
+import shutil
+from os.path import dirname, abspath, exists, join
+from scipy import linalg
 from datetime import datetime
+from tqdm import tqdm
 
 
 
@@ -155,3 +161,50 @@ def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_s
             return gen_copy
         else:
             return gen
+
+
+def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
+                    truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
+    if is_generate is True:
+        batch_size = data_loader.batch_size
+        n_batches = math.ceil(float(num_samples) / float(batch_size))
+    else:
+        batch_size = data_loader.batch_size
+        total_instance = len(data_loader.dataset)
+        n_batches = math.ceil(float(num_samples) / float(batch_size))
+        data_iter = iter(data_loader)
+
+    data_iter = iter(data_loader)
+    mode = "generated" if is_generate is True else "real"
+    print("Save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
+
+    directory = join('./generated_images', run_name, mode)
+    if exists(abspath(directory)):
+        shutil.rmtree(abspath(directory))
+    os.makedirs(directory)
+    for f in range(num_classes):
+        os.makedirs(join(directory, str(f)))
+
+    x = []
+    y = []
+    with torch.no_grad():
+        for i in tqdm(range(0, n_batches), disable=False):
+            start = i*batch_size
+            end = start + batch_size
+            if is_generate:
+                images, labels = generate_images(batch_size, generator, discriminator, truncated_factor, prior, latent_op,
+                                             latent_op_step, latent_op_alpha, latent_op_beta,  device)
+            else:
+                try:
+                    images, labels = next(data_iter)
+                except StopIteration:
+                    break
+
+            x += [np.uint8(255 * (images.detach().cpu().numpy() + 1) / 2.)]
+            y += [labels.detach().cpu().numpy()]
+    x = np.concatenate(x, 0)[:num_samples]
+    y = np.concatenate(y, 0)[:num_samples]
+    print('Images shape: %s, Labels shape: %s' % (x.shape, y.shape))
+    npz_filename = join(directory, "samples.npz")
+    print('Saving npz to %s...' % npz_filename)
+    np.savez(npz_filename, **{'x' : x, 'y' : y})
