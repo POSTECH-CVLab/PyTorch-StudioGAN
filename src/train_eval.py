@@ -2,22 +2,28 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# trainer.py
+# train_eval.py
 
+
+import numpy as np
+import sys
+import glob
+from os.path import join
+from PIL import Image
+from tqdm import tqdm
+from datetime import datetime
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
 from metrics.calculate_accuracy import calculate_accuracy
 from utils.ada import augment
-from utils.biggan_utils import toggle_grad, interp
-from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler, generate_images_for_KNN
-from utils.plot import plot_img_canvas, save_images_png
+from utils.biggan_utils import interp
+from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
 from utils.utils import *
 from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
 from utils.diff_aug import DiffAugment
 from utils.cr_diff_aug import CR_DiffAug
-
 
 import torch
 import torch.nn as nn
@@ -25,16 +31,6 @@ from torch.nn import DataParallel
 import torch.nn.functional as F
 import torchvision
 from torchvision import transforms
-
-import numpy as np
-from PIL import Image
-from tqdm import tqdm
-import sys
-
-from os.path import join
-import glob
-from datetime import datetime
-
 
 
 SAVE_FORMAT = 'step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth'
@@ -69,17 +65,16 @@ def set_temperature(tempering_type, start_temperature, end_temperature, step_cou
     return t
 
 
-class Trainer:
+class Train_Eval(object):
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, acml_bn, acml_stat_step, freeze_dis,
-                 freeze_layer, conditional_strategy, pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm,
-                 G_optimizer, D_optimizer, batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss,
-                 ADA_cutoff, contrastive_lambda, margin, tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis,
-                 weight_clipping_bound, gradient_penalty_for_dis, gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda,
-                 cr, cr_lambda, bcr, real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target,
-                 ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha,
-                 latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
-                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
+                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_dis, freeze_layer, conditional_strategy,
+                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, batch_size,
+                 g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
+                 tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound, gradient_penalty_for_dis,
+                 gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda, cr, cr_lambda, bcr, real_lambda, fake_lambda, zcr, gen_lambda,
+                 dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate,
+                 latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every,
+                 checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -100,8 +95,6 @@ class Trainer:
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
-        self.acml_bn = acml_bn
-        self.acml_stat_step = acml_stat_step
         self.freeze_dis = freeze_dis
         self.freeze_layer = freeze_layer
 
@@ -180,11 +173,6 @@ class Trainer:
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.policy = "color,translation,cutout"
 
-        if self.acml_bn:
-            self.temp_acml_stat_step = self.acml_stat_step
-        else:
-            self.temp_acml_stat_step = self.batch_size
-
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
 
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
@@ -223,9 +211,8 @@ class Trainer:
             raise NotImplementedError
 
 
-
     ################################################################################################################################
-    def run(self, current_step, total_step):
+    def train(self, current_step, total_step):
         self.dis_model.train()
         self.gen_model.train()
         if self.Gen_copy is not None:
@@ -587,18 +574,17 @@ class Trainer:
         self.gen_model.train()
         if self.Gen_copy is not None:
             self.Gen_copy.train()
-
     ################################################################################################################################
 
 
     ################################################################################################################################
-    def evaluation(self, step):
+    def evaluate(self, step, acml_bn, acml_stat_step):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
 
             self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.type4eval_dataset], self.num_classes, generator,
@@ -644,7 +630,7 @@ class Trainer:
             self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.type4eval_dataset, FID=self.best_fid))
 
             self.dis_model.train()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
         return is_best
@@ -652,10 +638,10 @@ class Trainer:
 
 
     ################################################################################################################################
-    def Nearest_Neighbor(self, nrow, ncol):
+    def run_nearest_neighbor(self, nrow, ncol, acml_bn, acml_stat_step):
         self.logger.info('Start nearest neighbor analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.temp_acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
@@ -698,16 +684,16 @@ class Trainer:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################
 
 
     ################################################################################################################################
-    def linear_interpolation(self, nrow, ncol, fix_z, fix_y):
+    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, acml_bn, acml_stat_step):
         self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, True, self.temp_acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
             shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
@@ -737,6 +723,6 @@ class Trainer:
             plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
                             format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.acml_bn, self.acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################

@@ -25,11 +25,11 @@ SOFTWARE.
 """
 
 
+import random
+
 from utils.sample import sample_latents
 
 import torch
-
-import random
 
 
 
@@ -71,36 +71,6 @@ def ortho(model, strength=1e-4, blacklist=[]):
       grad = (2 * torch.mm(torch.mm(w, w.t())
               * (1. - torch.eye(w.shape[0], device=w.device)), w))
       param.grad.data += strength * grad.view(param.shape)
-
-
-# Convenience utility to switch off requires_grad
-def toggle_grad(model, on_or_off):
-    for param in model.parameters():
-        param.requires_grad = on_or_off
-
-
-def set_bn_train(m):
-    if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
-        m.train()
-
-
-def set_deterministic_op_train(m):
-    if isinstance(m, torch.nn.modules.conv.Conv2d):
-        m.train()
-
-    if isinstance(m, torch.nn.modules.conv.ConvTranspose2d):
-        m.train()
-
-    if isinstance(m, torch.nn.modules.linear.Linear):
-        m.train()
-
-    if isinstance(m, torch.nn.modules.Embedding):
-        m.train()
-
-
-def reset_bn_stat(m):
-    if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
-        m.reset_running_stats()
 
 
 # Interp function; expects x0 and x1 to be of shape (shape0, 1, rest_of_shape..)

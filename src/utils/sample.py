@@ -5,12 +5,12 @@
 # utils/sample.py
 
 
-from utils.losses import latent_optimise
-
 import numpy as np
+import random
 from numpy import random, linalg
 from math import sin,cos,sqrt
-import random
+
+from utils.losses import latent_optimise
 
 import torch
 import torch.nn.functional as F
@@ -101,28 +101,6 @@ def make_mask(labels, n_cls, device):
 
     mask_multi = torch.tensor(mask_multi).type(torch.long)
     return mask_multi.to(device)
-
-
-def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
-    if isinstance(gen_model, DataParallel):
-        z_dim = gen_model.module.z_dim
-        num_classes = gen_model.module.num_classes
-        conditional_strategy = dis_model.module.conditional_strategy
-    else:
-        z_dim = gen_model.z_dim
-        num_classes = gen_model.num_classes
-        conditional_strategy = dis_model.conditional_strategy
-
-    z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
-
-    if latent_op:
-        z = latent_optimise(z, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, 1.0,
-                            latent_op_alpha, latent_op_beta, False, device)
-
-    with torch.no_grad():
-        batch_images = gen_model(z, fake_labels, evaluation=True)
-
-    return batch_images, list(fake_labels.detach().cpu().numpy())
 
 
 def target_class_sampler(dataset, target_class):

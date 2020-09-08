@@ -25,10 +25,10 @@ SOFTWARE.
 
 import math
 
+from utils.op import upfirdn2d
+
 import torch
 from torch.nn import functional as F
-
-from utils.op import upfirdn2d
 
 
 

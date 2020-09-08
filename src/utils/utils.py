@@ -5,23 +5,23 @@
 # utils/utils.py
 
 
-from metrics.FID import generate_images
-from utils.biggan_utils import set_bn_train, set_deterministic_op_train, apply_accumulate_stat
-
-import torch
-import torch.nn.functional as F
-from torch.nn import DataParallel
-
-
 import numpy as np
 import random
 import math
 import os
 import shutil
+import matplotlib.pyplot as plt
 from os.path import dirname, abspath, exists, join
 from scipy import linalg
 from datetime import datetime
 from tqdm import tqdm
+
+from metrics.FID import generate_images
+
+import torch
+import torch.nn.functional as F
+from torch.nn import DataParallel
+from torchvision.utils import save_image
 
 
 
@@ -79,6 +79,36 @@ def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, 
 
     if pos_collected_numerator:
         assert conditional_strategy == "ContraGAN", "pos_collected_numerator option is not appliable except for ContraGAN."
+
+
+# Convenience utility to switch off requires_grad
+def toggle_grad(model, on_or_off):
+    for param in model.parameters():
+        param.requires_grad = on_or_off
+
+
+def set_bn_train(m):
+    if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
+        m.train()
+
+
+def set_deterministic_op_train(m):
+    if isinstance(m, torch.nn.modules.conv.Conv2d):
+        m.train()
+
+    if isinstance(m, torch.nn.modules.conv.ConvTranspose2d):
+        m.train()
+
+    if isinstance(m, torch.nn.modules.linear.Linear):
+        m.train()
+
+    if isinstance(m, torch.nn.modules.Embedding):
+        m.train()
+
+
+def reset_bn_stat(m):
+    if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
+        m.reset_running_stats()
 
 
 def elapsed_time(start_time):
@@ -163,6 +193,16 @@ def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_s
             return gen
 
 
+def plot_img_canvas(images, save_path, logger, nrow):
+    directory = dirname(save_path)
+
+    if not exists(abspath(directory)):
+        os.makedirs(directory)
+
+    save_image(images, save_path, padding=0, nrow=nrow)
+    logger.info("Saved image to {}".format(save_path))
+
+
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
                     truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
     if is_generate is True:
@@ -208,3 +248,67 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
     npz_filename = join(directory, "samples.npz")
     print('Saving npz to %s...' % npz_filename)
     np.savez(npz_filename, **{'x' : x, 'y' : y})
+
+
+def save_images_png(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
+                    truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
+    if is_generate is True:
+        batch_size = data_loader.batch_size
+        n_batches = math.ceil(float(num_samples) / float(batch_size))
+    else:
+        batch_size = data_loader.batch_size
+        total_instance = len(data_loader.dataset)
+        n_batches = math.ceil(float(num_samples) / float(batch_size))
+        data_iter = iter(data_loader)
+
+    data_iter = iter(data_loader)
+    mode = "generated" if is_generate is True else "real"
+    print("Save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
+
+    directory = join('./generated_images', run_name, mode)
+    if exists(abspath(directory)):
+        shutil.rmtree(abspath(directory))
+    os.makedirs(directory)
+    for f in range(num_classes):
+        os.makedirs(join(directory, str(f)))
+
+    with torch.no_grad():
+        for i in tqdm(range(0, n_batches), disable=False):
+            start = i*batch_size
+            end = start + batch_size
+            if is_generate:
+                images, labels = generate_images(batch_size, generator, discriminator, truncated_factor, prior, latent_op,
+                                             latent_op_step, latent_op_alpha, latent_op_beta,  device)
+            else:
+                try:
+                    images, labels = next(data_iter)
+                except StopIteration:
+                    break
+
+            for idx, img in enumerate(images.detach()):
+                if batch_size*i + idx < num_samples:
+                    save_image((img+1)/2, join(directory, str(labels[idx].item()), '{idx}.png'.format(idx=batch_size*i + idx)))
+                else:
+                    pass
+
+
+def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
+    if isinstance(gen_model, DataParallel):
+        z_dim = gen_model.module.z_dim
+        num_classes = gen_model.module.num_classes
+        conditional_strategy = dis_model.module.conditional_strategy
+    else:
+        z_dim = gen_model.z_dim
+        num_classes = gen_model.num_classes
+        conditional_strategy = dis_model.conditional_strategy
+
+    z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
+
+    if latent_op:
+        z = latent_optimise(z, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, 1.0,
+                            latent_op_alpha, latent_op_beta, False, device)
+
+    with torch.no_grad():
+        batch_images = gen_model(z, fake_labels, evaluation=True)
+
+    return batch_images, list(fake_labels.detach().cpu().numpy())

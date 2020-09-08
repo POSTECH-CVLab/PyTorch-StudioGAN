@@ -22,15 +22,15 @@ SOFTWARE.
 """
 
 
-from data_utils.load_dataset import LoadDataset
-
 import os
 import sys
-from argparse import ArgumentParser
-from tqdm import tqdm, trange
 import h5py as h5
 import numpy as np
 import PIL
+from argparse import ArgumentParser
+from tqdm import tqdm, trange
+
+from data_utils.load_dataset import LoadDataset
 
 import torch
 import torchvision.transforms as transforms

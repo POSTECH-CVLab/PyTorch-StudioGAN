@@ -5,20 +5,18 @@
 # data_utils/load_dataset.py
 
 
-from torch.utils.data import Dataset
-
 import os
 import h5py as h5
 import numpy as np
 import random
 from scipy import io
+from PIL import ImageOps, Image
 
 import torch
 import torchvision.transforms as transforms
+from torch.utils.data import Dataset
 from torchvision.datasets import CIFAR10, STL10
 from torchvision.datasets import ImageFolder
-
-from PIL import ImageOps, Image
 
 
 

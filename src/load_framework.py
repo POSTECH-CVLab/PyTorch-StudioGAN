@@ -2,27 +2,26 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# train.py
+# load_framework.py
 
+
+import glob
+import os
+import PIL
+import random
+import warnings
+from os.path import dirname, abspath, exists, join
 
 from data_utils.load_dataset import *
 from metrics.inception_network import InceptionV3
 from metrics.prepare_inception_moments_eval_dataset import prepare_inception_moments_eval_dataset
-from models.linear_classifier import linear_classifier
 from utils.log import make_run_name, make_logger, make_checkpoint_dir
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
 from utils.utils import *
 from utils.biggan_utils import ema_
 from sync_batchnorm.batchnorm import convert_model
-from trainer import Trainer
-
-import glob
-import os
-import PIL
-from os.path import dirname, abspath, exists, join
-import random
-import warnings
+from train_eval import Train_Eval
 
 import torch
 from torchvision import transforms
@@ -43,13 +42,13 @@ RUN_NAME_FORMAT = (
     "{phase}-"
     "{timestamp}"
 )
-def train_framework(seed, disable_debugging_API, fused_optimization, num_workers, config_path, checkpoint_folder, reduce_train_dataset,
-                    acml_bn, acml_stat_step, freeze_dis, freeze_layer, load_current, type4eval_dataset, dataset_name, num_classes, img_size,
-                    data_path, architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
-                    d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim,
-                    shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
-                    beta1, beta2, total_step, adv_loss, cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor,
-                    ema, ema_decay, ema_start, synchronized_bn, mixed_precision, hdf5_path_train, train_config, model_config, **_):
+def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers, config_path, checkpoint_folder, reduce_train_dataset,
+                   acml_bn, acml_stat_step, freeze_dis, freeze_layer, load_current, type4eval_dataset, dataset_name, num_classes, img_size,
+                   data_path, architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
+                   d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim,
+                   shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
+                   beta1, beta2, total_step, adv_loss, cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor,
+                   ema, ema_decay, ema_start, synchronized_bn, mixed_precision, hdf5_path_train, train_config, model_config, **_):
     if seed == 82624:
         cudnn.benchmark = True # Not good Generator for undetermined input size
         cudnn.deterministic = False
@@ -76,6 +75,8 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
                       'disable data parallelism.')
 
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
+    acml_stat_step = acml_stat_step if acml_bn is True else batch_size
+
     run_name = make_run_name(RUN_NAME_FORMAT,
                              framework=config_path.split('/')[3][:-5],
                              phase='train')
@@ -207,7 +208,7 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         mu, sigma, inception_model = None, None, None
 
 
-    trainer = Trainer(
+    train_eval = Train_Eval(
         run_name=run_name,
         best_step=best_step,
         dataset_name=dataset_name,
@@ -224,8 +225,6 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
         eval_dataset=eval_dataset,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
-        acml_bn=acml_bn,
-        acml_stat_step=acml_stat_step,
         freeze_dis=freeze_dis,
         freeze_layer=freeze_layer,
         conditional_strategy=conditional_strategy,
@@ -296,15 +295,17 @@ def train_framework(seed, disable_debugging_API, fused_optimization, num_workers
     )
 
     if train_config['train']:
-        step = trainer.run(current_step=step, total_step=total_step)
+        step = train_eval.train(current_step=step, total_step=total_step, acml_bn=acml_bn, acml_stat_step=acml_stat_step)
 
     if train_config['eval']:
-        is_save = trainer.evaluation(step=step)
+        is_save = train_eval.evaluate(step=step, acml_bn=acml_bn, acml_stat_step=acml_stat_step)
 
     if train_config['k_nearest_neighbor']:
-        trainer.Nearest_Neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'])
+        train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], acml_bn=acml_bn, acml_stat_step=acml_stat_step)
 
     if train_config['interpolation']:
         assert architecture in ["biggan", "biggan_deep"], "Not supported except for biggan and biggan_deep."
-        trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True, fix_y=False)
-        trainer.linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True)
+        train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True,
+                                            fix_y=False, acml_bn=acml_bn, acml_stat_step=acml_stat_step)
+        train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True,
+                                            acml_bn=acml_bn, acml_stat_step=acml_stat_step)
