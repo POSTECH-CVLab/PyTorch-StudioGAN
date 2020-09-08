@@ -25,7 +25,7 @@ SOFTWARE.
 
 import math
 
-from utils.op import upfirdn2d
+from utils.ada_op import upfirdn2d
 
 import torch
 from torch.nn import functional as F

@@ -10,7 +10,7 @@ import os
 from argparse import ArgumentParser
 
 from utils.make_hdf5 import make_hdf5
-from load_frameowrk import load_frameowrk
+from load_framework import load_frameowrk
 
 
 
