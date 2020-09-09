@@ -42,7 +42,7 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 ## 4. Requirements
 
 - Anaconda
-- Python > 3.6
+- Python >= 3.6
 - Pillow < 7
 - scipy == 1.1.0 (Recommended)
 - h5py
