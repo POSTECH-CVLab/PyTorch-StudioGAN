@@ -20,7 +20,7 @@ from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
 from utils.utils import *
 from utils.biggan_utils import ema_
-from sync_batchnorm.batchnorm import convert_model, patch_replication_callback
+from sync_batchnorm.batchnorm import convert_model
 from train_eval import Train_Eval
 
 import torch
@@ -126,10 +126,10 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
             Gen_copy = DataParallel(Gen_copy, output_device=default_device)
 
         if synchronized_bn:
-            Gen = patch_replication_callback(convert_model(Gen))
-            Dis = patch_replication_callback(convert_model(Dis))
+            Gen = convert_model(Gen)
+            Dis = convert_model(Dis)
             if ema:
-                Gen_copy = patch_replication_callback(convert_model(Gen_copy))
+                Gen_copy = convert_model(Gen_copy)
 
     logger.info(count_parameters(Gen))
     logger.info(Gen)
