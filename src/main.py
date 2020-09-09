@@ -28,8 +28,8 @@ def main():
     parser.add_argument('-rm_API', '--disable_debugging_API', action='store_true', help='whether disable pytorch autograd debugging mode')
 
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
-    parser.add_argument('-acml_bn', '--acml_bn', action='store_true')
-    parser.add_argument('--acml_stat_step', type=int, default=-1, help='# of steps for accumulation batchnorm')
+    parser.add_argument('-std_stat', '--standing_statistics', action='store_true')
+    parser.add_argument('--standing_setp', type=int, default=-1, help='# of steps for accumulation batchnorm')
     parser.add_argument('--freeze_layers', type=int, default=-1, help='# of layers for freezing discriminator')
 
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')
@@ -42,7 +42,7 @@ def main():
 
     parser.add_argument('--print_every', type=int, default=100, help='control log interval')
     parser.add_argument('--save_every', type=int, default=2000, help='control evaluation and save interval')
-    parser.add_argument('--type4eval_dataset', type=str, default='train', help='[train/valid/test]')
+    parser.add_argument('--eval_dataset', type=str, default='train', help='[train/valid/test]')
     args = parser.parse_args()
 
     if args.config_path is not None:
@@ -54,9 +54,9 @@ def main():
 
     dataset = model_config['data_processing']['dataset_name']
     if dataset == 'cifar10':
-        assert args.type4eval_dataset in ['train', 'test'], "cifar10 does not contain dataset for validation"
+        assert args.eval_dataset in ['train', 'test'], "cifar10 does not contain dataset for validation"
     elif dataset in ['imagenet', 'tiny_imagenet', 'custom']:
-        assert args.type4eval_dataset == 'train' or args.type4eval_dataset == 'valid',\
+        assert args.eval_dataset == 'train' or args.eval_dataset == 'valid',\
              "we do not support the evaluation mode using test images in tiny_imagenet/imagenet/custom dataset"
 
     hdf5_path_train = make_hdf5(**model_config['data_processing'], **train_config, mode='train') if args.load_all_data_in_memory else None

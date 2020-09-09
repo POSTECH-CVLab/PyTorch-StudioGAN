@@ -48,9 +48,9 @@ def define_sampler(dataset_name, conditional_strategy):
         sampler = "default"
     return sampler
 
-def check_flag_0(batch_size, n_gpus, acml_bn, ema, freeze_layers, checkpoint_folder):
+def check_flag_0(batch_size, n_gpus, standing_statistics, ema, freeze_layers, checkpoint_folder):
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
-    if acml_bn is True:
+    if standing_statistics is True:
         assert ema, "turning on accumulated batch_norm needs EMA update of the generator"
     if freeze_layers > -1:
         assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
@@ -194,7 +194,7 @@ def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_cl
     generator.eval()
 
 
-def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_size, z_dim, num_classes, device, training):
+def change_generator_mode(gen, gen_copy, standing_statistics, standing_setp, prior, batch_size, z_dim, num_classes, device, training):
     if training:
         gen.train()
         if gen_copy is not None:
@@ -202,14 +202,14 @@ def change_generator_mode(gen, gen_copy, acml_bn, acml_stat_step, prior, batch_s
             return gen_copy
         return gen
     else:
-        if acml_bn:
-            apply_accumulate_stat(gen, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
+        if standing_statistics:
+            apply_accumulate_stat(gen, standing_setp, prior, batch_size, z_dim, num_classes, device)
         else:
             gen.eval()
         gen.apply(set_deterministic_op_train)
         if gen_copy is not None:
-            if acml_bn:
-                apply_accumulate_stat(gen_copy, acml_stat_step, prior, batch_size, z_dim, num_classes, device)
+            if standing_statistics:
+                apply_accumulate_stat(gen_copy, standing_setp, prior, batch_size, z_dim, num_classes, device)
             else:
                 gen_copy.eval()
                 gen_copy.apply(set_bn_train)

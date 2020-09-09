@@ -66,7 +66,7 @@ def set_temperature(tempering_type, start_temperature, end_temperature, step_cou
 
 
 class Train_Eval(object):
-    def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
+    def __init__(self, run_name, best_step, dataset_name, eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
                  Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
                  pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, batch_size,
                  g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
@@ -79,7 +79,7 @@ class Train_Eval(object):
         self.run_name = run_name
         self.best_step = best_step
         self.dataset_name = dataset_name
-        self.type4eval_dataset = type4eval_dataset
+        self.eval_dataset = eval_dataset
         self.logger = logger
         self.writer = writer
         self.n_gpus = n_gpus
@@ -577,39 +577,39 @@ class Train_Eval(object):
 
 
     ################################################################################################################################
-    def evaluation(self, step, acml_bn, acml_stat_step):
+    def evaluation(self, step, standing_statistics, standing_setp):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
 
             self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
-            save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.type4eval_dataset], self.num_classes, generator,
+            save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_dataset], self.num_classes, generator,
                             self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
                             self.latent_op_beta, self.default_device)
 
-            fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
+            fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_dataset],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                               self.latent_op_beta, self.default_device, self.mu, self.sigma, self.run_name)
 
             ### pre-calculate an inception score
             ### calculating inception score using the below will give you an underestimated one.
             ### plz use the official tensorflow implementation(inception_tensorflow.py).
-            kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.type4eval_dataset],
+            kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_dataset],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                      self.latent_op_beta, 10, self.default_device)
 
             if self.D_loss.__name__ != "loss_wgan_dis":
-                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.type4eval_dataset],
+                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_dataset],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
                                                               self.latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=True)
 
-                if self.type4eval_dataset == 'train':
+                if self.eval_dataset == 'train':
                     acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
                 else:
-                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.type4eval_dataset],
+                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_dataset],
                                                        self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
                                                        self. latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=False)
                     acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
@@ -622,14 +622,14 @@ class Train_Eval(object):
                 if fid_score <= self.best_fid:
                     self.best_fid, self.best_step, is_best = fid_score, step, True
 
-            self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.type4eval_dataset):fid_score}, step)
-            self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.type4eval_dataset])):kl_score}, step)
-            self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.type4eval_dataset, FID=fid_score))
-            self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.type4eval_dataset]), IS=kl_score))
-            self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.type4eval_dataset, FID=self.best_fid))
+            self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.eval_dataset):fid_score}, step)
+            self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_dataset])):kl_score}, step)
+            self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_dataset, FID=fid_score))
+            self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_dataset]), IS=kl_score))
+            self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_dataset, FID=self.best_fid))
 
             self.dis_model.train()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
         return is_best
@@ -637,10 +637,10 @@ class Train_Eval(object):
 
 
     ################################################################################################################################
-    def run_nearest_neighbor(self, nrow, ncol, acml_bn, acml_stat_step):
+    def run_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_setp):
         self.logger.info('Start nearest neighbor analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
@@ -682,16 +682,16 @@ class Train_Eval(object):
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################
 
 
     ################################################################################################################################
-    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, acml_bn, acml_stat_step):
+    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_setp):
         self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
             shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
@@ -720,6 +720,6 @@ class Train_Eval(object):
             plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
                             format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, acml_bn, acml_stat_step, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################
