@@ -56,7 +56,7 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 You can install the recommended environment setting as follows:
 
 ```
-conda env create -f environment.yml -n StudioGAN
+conda env create -f environment.yml -n studiogan
 ```
 
 or using docker
