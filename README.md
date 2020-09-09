@@ -21,7 +21,7 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 * Adaptive Discriminator Augmentation (Karras et al.) [[**Paper**]](https://arxiv.org/abs/2006.06676)[[**Config**]]()
 * Freeze Discriminator (Mo et al.) [[**Paper**]](https://arxiv.org/abs/2002.10964)[[**Config**]]()
 * ACGAN (Odena et al.) [[**Paper**]](https://arxiv.org/abs/1610.09585)[[**config**]]()
-* projection Discriminator (Miyato and Koyama) [[**Paper**]](https://arxiv.org/abs/1802.05637)[[**Config**]]()
+* Projection Discriminator (Miyato and Koyama) [[**Paper**]](https://arxiv.org/abs/1802.05637)[[**Config**]]()
 * ContraGAN (ours) [[**Paper**]](https://arxiv.org/abs/2006.12681)[[**Config**]]()
 
 
