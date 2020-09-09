@@ -89,24 +89,39 @@ The folder structure of the datasets is shown below:
 For CIFAR10 image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -rm_API -c "./configs/Table1/contra_biggan_cifar32_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -c "./configs/Table1/contra_biggan_cifar32_hinge_no.json"
 ```
 
 For Tiny ImageNet image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -rm_API -c "./configs/Table1/contra_biggan_tiny32_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -c "./configs/Table1/contra_biggan_tiny32_hinge_no.json"
 ```
 
 For ImageNet image generation:
 
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -rm_API -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json"
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json"
 ```
 
-For ImageNet image generation (loading all images into main memory to reduce I/O bottleneck):
+For ImageNet image generation (load all images into main memory to reduce I/O bottleneck):
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -rm_API -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -l
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -l
+```
+
+For ImageNet image generation (train a model using PyTorch's mixed precision library):
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -mpc
+```
+
+For ImageNet image generation (train a model using Synchronized Batchnorm):
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -sync_bn
+```
+
+For ImageNet image generation (evaluate a model using Standing Statistics of Batchnorm):
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -std_stat --standing_step STEP
 ```
 
 ## 7. About PyTorch FID
