@@ -4,39 +4,39 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 
 ## 1. Implemented GANs
 
-* Vanilla DCGAN (Radford et al.)[[**Paper**]](https://arxiv.org/abs/1511.06434)[[**Config**]]()
-* LSGAN (Mao et al.)[[**Paper**]](https://arxiv.org/abs/1611.04076)[[**Config**]]()
-* Geometric GAN (Lim and Ye)[[**Paper**]](https://arxiv.org/abs/1705.02894)[[**Config**]]()
-* WGAN Weight Clipping (Arjovsky et al.)[[**Paper**]](https://arxiv.org/abs/1701.07875)[[**Config**]]()
-* WGAN Gradient Penalty (Gulrajani et al.)[[**Paper**]](https://arxiv.org/abs/1704.00028)[[**Config**]]()
-* DRAGAN (Kodali et al.)[[**Paper**]](https://arxiv.org/abs/1705.07215)[[**Config**]]()
-* SNDCGAN,SNResGAN (Miyato et al.)[[**Paper**]](https://arxiv.org/abs/1802.05957)[[**Config**]]()
-* SAGAN (Zhang et al.)[[**Paper**]](https://arxiv.org/abs/1805.08318)[[**Config**]]()
-* BigGAN (Brock et al.)[[**Paper**]](https://arxiv.org/abs/1809.11096)[[**Config**]]()
-* BigGAN-Deep (Brock et al.)[[**Paper**]](https://arxiv.org/abs/1809.11096)[[**Config**]]()
-* CRGAN (Zhang et al.)[[**Paper**]](https://arxiv.org/abs/1910.12027)[[**Config**]]()
-* ICRGAN (Zhao et al.)[[**Paper**]](https://arxiv.org/abs/2002.04724)[[**Config**]]()
-* LOGAN (Wu et al.)[[**Paper**]](https://arxiv.org/abs/1912.00953)[[**Config**]]()
-* DiffAugment (Zhao et al.)[[**Paper**]](https://arxiv.org/abs/2006.10738)[[**Config**]]()
-* Adaptive Discriminator Augmentation (Karras et al.)[[**Paper**]](https://arxiv.org/abs/2006.06676)[[**Config**]]()
-* Freeze Discriminator (Mo et al.)[[**Paper**]](https://arxiv.org/abs/2002.10964)[[**Config**]]()
-* ACGAN (Odena et al.)[[**Paper**]](https://arxiv.org/abs/1610.09585)[[**config**]]()
-* projGAN (Miyato and Koyama)[[**Paper**]](https://arxiv.org/abs/1705.02894)[[**Config**]]()
-* ContraGAN (ours)[[**Paper**]](https://arxiv.org/abs/2006.12681)[[**Config**]]()
+* Vanilla DCGAN (Radford et al.) [[**Paper**]](https://arxiv.org/abs/1511.06434)[[**Config**]]()
+* LSGAN (Mao et al.) [[**Paper**]](https://arxiv.org/abs/1611.04076)[[**Config**]]()
+* Geometric GAN (Lim and Ye) [[**Paper**]](https://arxiv.org/abs/1705.02894)[[**Config**]]()
+* WGAN Weight Clipping (Arjovsky et al.) [[**Paper**]](https://arxiv.org/abs/1701.07875)[[**Config**]]()
+* WGAN Gradient Penalty (Gulrajani et al.) [[**Paper**]](https://arxiv.org/abs/1704.00028)[[**Config**]]()
+* DRAGAN (Kodali et al.) [[**Paper**]](https://arxiv.org/abs/1705.07215)[[**Config**]]()
+* SNDCGAN,SNResGAN (Miyato et al.) [[**Paper**]](https://arxiv.org/abs/1802.05957)[[**Config**]]()
+* SAGAN (Zhang et al.) [[**Paper**]](https://arxiv.org/abs/1805.08318)[[**Config**]]()
+* BigGAN (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)[[**Config**]]()
+* BigGAN-Deep (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)[[**Config**]]()
+* CRGAN (Zhang et al.) [[**Paper**]](https://arxiv.org/abs/1910.12027)[[**Config**]]()
+* ICRGAN (Zhao et al.) [[**Paper**]](https://arxiv.org/abs/2002.04724)[[**Config**]]()
+* LOGAN (Wu et al.) [[**Paper**]](https://arxiv.org/abs/1912.00953)[[**Config**]]()
+* DiffAugment (Zhao et al.) [[**Paper**]](https://arxiv.org/abs/2006.10738)[[**Config**]]()
+* Adaptive Discriminator Augmentation (Karras et al.) [[**Paper**]](https://arxiv.org/abs/2006.06676)[[**Config**]]()
+* Freeze Discriminator (Mo et al.) [[**Paper**]](https://arxiv.org/abs/2002.10964)[[**Config**]]()
+* ACGAN (Odena et al.) [[**Paper**]](https://arxiv.org/abs/1610.09585)[[**config**]]()
+* projection Discriminator (Miyato and Koyama) [[**Paper**]](https://arxiv.org/abs/1802.05637)[[**Config**]]()
+* ContraGAN (ours) [[**Paper**]](https://arxiv.org/abs/2006.12681)[[**Config**]]()
 
 
 ## 2. Implemented training tricks/modules
 
-* Mixed Precision Training (Narang et al.)[[**Paper**]](https://arxiv.org/abs/1710.03740)
-* Exponential Moving Average Update (Yasin Yazıcı et al.)[[**Paper**]](https://arxiv.org/abs/1806.04498)
-* Standing Statistics (Brock et al.)[[**Paper**]](https://arxiv.org/abs/1809.11096)
+* Mixed Precision Training (Narang et al.) [[**Paper**]](https://arxiv.org/abs/1710.03740)
+* Exponential Moving Average Update (Yasin Yazıcı et al.) [[**Paper**]](https://arxiv.org/abs/1806.04498)
+* Standing Statistics (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)
 * Gradient Accumulation
 * Synchronized BatchNorm
 
 
 ## 3. To be Implemented
 
-* WCGAN (Yazıcı et al.)[[**Paper**]](https://arxiv.org/abs/1806.04498)[[**Config**]]()
+* WCGAN (Siarohin et al.) [[**Paper**]](https://arxiv.org/abs/1806.00420)[[**Config**]]()
 
 
 ## 4. Requirements
