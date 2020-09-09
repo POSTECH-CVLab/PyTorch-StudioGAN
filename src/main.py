@@ -29,7 +29,7 @@ def main():
 
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
     parser.add_argument('-std_stat', '--standing_statistics', action='store_true')
-    parser.add_argument('--standing_setp', type=int, default=-1, help='# of steps for accumulation batchnorm')
+    parser.add_argument('--standing_step', type=int, default=-1, help='# of steps for accumulation batchnorm')
     parser.add_argument('--freeze_layers', type=int, default=-1, help='# of layers for freezing discriminator')
 
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')
