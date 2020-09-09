@@ -66,7 +66,7 @@ def set_temperature(tempering_type, start_temperature, end_temperature, step_cou
 
 
 class Train_Eval(object):
-    def __init__(self, run_name, best_step, dataset_name, eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
+    def __init__(self, run_name, best_step, dataset_name, eval_type, logger, writer, n_gpus, gen_model, dis_model, inception_model,
                  Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
                  pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, batch_size,
                  g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
@@ -79,7 +79,7 @@ class Train_Eval(object):
         self.run_name = run_name
         self.best_step = best_step
         self.dataset_name = dataset_name
-        self.eval_dataset = eval_dataset
+        self.eval_type = eval_type
         self.logger = logger
         self.writer = writer
         self.n_gpus = n_gpus
@@ -586,30 +586,30 @@ class Train_Eval(object):
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
-            save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_dataset], self.num_classes, generator,
+            save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
                             self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
                             self.latent_op_beta, self.default_device)
 
-            fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_dataset],
+            fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                               self.latent_op_beta, self.default_device, self.mu, self.sigma, self.run_name)
 
             ### pre-calculate an inception score
             ### calculating inception score using the below will give you an underestimated one.
             ### plz use the official tensorflow implementation(inception_tensorflow.py).
-            kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_dataset],
+            kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                      self.latent_op_beta, 10, self.default_device)
 
             if self.D_loss.__name__ != "loss_wgan_dis":
-                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_dataset],
+                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
                                                               self.latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=True)
 
-                if self.eval_dataset == 'train':
+                if self.eval_type == 'train':
                     acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
                 else:
-                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_dataset],
+                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
                                                        self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
                                                        self. latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=False)
                     acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
@@ -622,11 +622,11 @@ class Train_Eval(object):
                 if fid_score <= self.best_fid:
                     self.best_fid, self.best_step, is_best = fid_score, step, True
 
-            self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.eval_dataset):fid_score}, step)
-            self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_dataset])):kl_score}, step)
-            self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_dataset, FID=fid_score))
-            self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_dataset]), IS=kl_score))
-            self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_dataset, FID=self.best_fid))
+            self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.eval_type):fid_score}, step)
+            self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):kl_score}, step)
+            self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))
+            self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_type]), IS=kl_score))
+            self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
 
             self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,

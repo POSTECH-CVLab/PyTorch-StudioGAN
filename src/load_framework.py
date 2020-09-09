@@ -38,7 +38,7 @@ RUN_NAME_FORMAT = (
     "{timestamp}"
 )
 def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkpoint_folder, reduce_train_dataset, standing_statistics,
-                   standing_setp, freeze_layers, load_current, eval_dataset, dataset_name, num_classes, img_size, data_path,
+                   standing_setp, freeze_layers, load_current, eval_type, dataset_name, num_classes, img_size, data_path,
                    architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
                    d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim,
                    shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
@@ -86,8 +86,8 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
     logger.info('Train dataset size : {dataset_size}'.format(dataset_size=len(train_dataset)))
 
-    logger.info('Loading {mode} datasets...'.format(mode=eval_dataset))
-    eval_mode = True if eval_dataset == 'train' else False
+    logger.info('Loading {mode} datasets...'.format(mode=eval_type))
+    eval_mode = True if eval_type == 'train' else False
     eval_dataset = LoadDataset(dataset_name, data_path, train=eval_mode, download=True, resize_size=img_size, hdf5_path=None, random_flip=False)
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
@@ -178,7 +178,7 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
             inception_model = DataParallel(inception_model, output_device=default_device)
         mu, sigma = prepare_inception_moments_eval_dataset(dataloader=eval_dataloader,
                                                            generator=Gen,
-                                                           eval_mode=eval_dataset,
+                                                           eval_mode=eval_type,
                                                            inception_model=inception_model,
                                                            splits=10,
                                                            run_name=run_name,
@@ -192,7 +192,7 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         run_name=run_name,
         best_step=best_step,
         dataset_name=dataset_name,
-        eval_dataset=eval_dataset,
+        eval_type=eval_type,
         logger=logger,
         writer=writer,
         n_gpus=n_gpus,
