@@ -43,7 +43,7 @@ RUN_NAME_FORMAT = (
     "{timestamp}"
 )
 def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers, config_path, checkpoint_folder, reduce_train_dataset,
-                   acml_bn, acml_stat_step, freeze_dis, freeze_layer, load_current, type4eval_dataset, dataset_name, num_classes, img_size,
+                   acml_bn, acml_stat_step, freeze_dis, freeze_layers, load_current, type4eval_dataset, dataset_name, num_classes, img_size,
                    data_path, architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
                    d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim,
                    shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
@@ -226,7 +226,7 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
         freeze_dis=freeze_dis,
-        freeze_layer=freeze_layer,
+        freeze_layers=freeze_layers,
         conditional_strategy=conditional_strategy,
         pos_collected_numerator=model_config['model']['pos_collected_numerator'],
         z_dim=z_dim,

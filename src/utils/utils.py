@@ -83,10 +83,18 @@ def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, 
 
 
 # Convenience utility to switch off requires_grad
-def toggle_grad(model, on_or_off):
-    for param in model.parameters():
-        param.requires_grad = on_or_off
-
+def toggle_grad(model, on, freeze_layers=-1):
+    assert freeze_layers >= -1, "freeze_layers should be greater than or equal to -1."
+    if freeze_layers == -1:
+        for name, param in model.named_parameters():
+            param.requires_grad = on
+    else:
+        for layer in range(freeze_layers):
+            block = "blocks.{layer}".format(layer=layer)
+            for name, param in model.named_parameters():
+                if block in name:
+                    print(name)
+                    param.requires_grad = False
 
 def set_bn_train(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
