@@ -577,13 +577,13 @@ class Train_Eval(object):
 
 
     ################################################################################################################################
-    def evaluation(self, step, standing_statistics, standing_setp):
+    def evaluation(self, step, standing_statistics, standing_step):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
 
             self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
@@ -629,7 +629,7 @@ class Train_Eval(object):
             self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
 
             self.dis_model.train()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
         return is_best
@@ -637,10 +637,10 @@ class Train_Eval(object):
 
 
     ################################################################################################################################
-    def run_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_setp):
+    def run_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_step):
         self.logger.info('Start nearest neighbor analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
@@ -682,16 +682,16 @@ class Train_Eval(object):
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################
 
 
     ################################################################################################################################
-    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_setp):
+    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step):
         self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
             shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
@@ -720,6 +720,6 @@ class Train_Eval(object):
             plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
                             format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_setp, self.prior,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################

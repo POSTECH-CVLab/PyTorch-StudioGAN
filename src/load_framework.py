@@ -38,7 +38,7 @@ RUN_NAME_FORMAT = (
     "{timestamp}"
 )
 def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkpoint_folder, reduce_train_dataset, standing_statistics,
-                   standing_setp, freeze_layers, load_current, eval_type, dataset_name, num_classes, img_size, data_path,
+                   standing_step, freeze_layers, load_current, eval_type, dataset_name, num_classes, img_size, data_path,
                    architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
                    d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim,
                    shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
@@ -66,7 +66,7 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
                       'disable data parallelism.')
 
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
-    standing_setp = standing_setp if standing_statistics is True else batch_size
+    standing_step = standing_step if standing_statistics is True else batch_size
 
     run_name = make_run_name(RUN_NAME_FORMAT,
                              framework=config_path.split('/')[3][:-5],
@@ -277,14 +277,14 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         step = train_eval.train(current_step=step, total_step=total_step)
 
     if train_config['eval']:
-        is_save = train_eval.evaluation(step=step, standing_statistics=standing_statistics, standing_setp=standing_setp)
+        is_save = train_eval.evaluation(step=step, standing_statistics=standing_statistics, standing_step=standing_step)
 
     if train_config['k_nearest_neighbor']:
-        train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], standing_statistics=standing_statistics, standing_setp=standing_setp)
+        train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], standing_statistics=standing_statistics, standing_step=standing_step)
 
     if train_config['interpolation']:
         assert architecture in ["biggan", "biggan_deep"], "Not supported except for biggan and biggan_deep."
         train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True,
-                                            fix_y=False, standing_statistics=standing_statistics, standing_setp=standing_setp)
+                                            fix_y=False, standing_statistics=standing_statistics, standing_step=standing_step)
         train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True,
-                                            standing_statistics=standing_statistics, standing_setp=standing_setp)
+                                            standing_statistics=standing_statistics, standing_step=standing_step)
