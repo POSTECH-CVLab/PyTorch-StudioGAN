@@ -48,9 +48,8 @@ def define_sampler(dataset_name, conditional_strategy):
         sampler = "default"
     return sampler
 
-def check_flag_0(batch_size, n_gpus, fused_optimization, mixed_precision, acml_bn, ema, freeze_layers, checkpoint_folder):
+def check_flag_0(batch_size, n_gpus, acml_bn, ema, freeze_layers, checkpoint_folder):
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
-    assert int(fused_optimization)*int(mixed_precision) == 0.0, "can't turn on fused_optimization and mixed_precision together."
     if acml_bn is True:
         assert ema, "turning on accumulated batch_norm needs EMA update of the generator"
     if freeze_layers > -1:
