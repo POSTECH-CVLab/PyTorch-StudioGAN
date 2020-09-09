@@ -43,7 +43,7 @@ RUN_NAME_FORMAT = (
     "{timestamp}"
 )
 def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers, config_path, checkpoint_folder, reduce_train_dataset,
-                   acml_bn, acml_stat_step, freeze_dis, freeze_layers, load_current, type4eval_dataset, dataset_name, num_classes, img_size,
+                   acml_bn, acml_stat_step, freeze_layers, load_current, type4eval_dataset, dataset_name, num_classes, img_size,
                    data_path, architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
                    d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim,
                    shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
@@ -63,12 +63,9 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
     n_gpus = torch.cuda.device_count()
     default_device = torch.cuda.current_device()
 
-    check_flag_0(batch_size, n_gpus, fused_optimization, mixed_precision, acml_bn, ema, freeze_dis, checkpoint_folder)
+    check_flag_0(batch_size, n_gpus, fused_optimization, mixed_precision, acml_bn, ema, freeze_layers, checkpoint_folder)
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
     assert int(fused_optimization)*int(mixed_precision) == 0.0, "can't turn on fused_optimization and mixed_precision together."
-
-    if freeze_dis:
-        assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 
     if n_gpus == 1:
         warnings.warn('You have chosen a specific GPU. This will completely '
@@ -187,7 +184,7 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
         assert seed == trained_seed, "seed for sampling random numbers should be same!"
         logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
-        if freeze_dis:
+        if freeze_layers > -1 :
             prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
     else:
         checkpoint_dir = make_checkpoint_dir(checkpoint_folder, run_name)
@@ -225,7 +222,6 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
         eval_dataset=eval_dataset,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
-        freeze_dis=freeze_dis,
         freeze_layers=freeze_layers,
         conditional_strategy=conditional_strategy,
         pos_collected_numerator=model_config['model']['pos_collected_numerator'],

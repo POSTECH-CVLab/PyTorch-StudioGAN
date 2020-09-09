@@ -67,7 +67,7 @@ def set_temperature(tempering_type, start_temperature, end_temperature, step_cou
 
 class Train_Eval(object):
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_dis, freeze_layers, conditional_strategy,
+                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
                  pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, batch_size,
                  g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
                  tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound, gradient_penalty_for_dis,
@@ -95,7 +95,6 @@ class Train_Eval(object):
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
-        self.freeze_dis = freeze_dis
         self.freeze_layers = freeze_layers
 
         self.conditional_strategy = conditional_strategy
