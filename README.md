@@ -109,7 +109,7 @@ For ImageNet image generation (load all images into main memory to reduce I/O bo
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -l
 ```
 
-For ImageNet image generation (train a model using PyTorch's mixed precision library):
+For ImageNet image generation (train a model using PyTorch's Mixed Precision library):
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -mpc
 ```
@@ -119,9 +119,14 @@ For ImageNet image generation (train a model using Synchronized Batchnorm):
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -sync_bn
 ```
 
-For ImageNet image generation (evaluate a model using Standing Statistics of Batchnorm):
+For ImageNet image evaluation (evaluate a model using Standing Statistics of Batchnorm):
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -std_stat --standing_step STEP
+```
+
+For ImageNet image evaluation (calculate FID value of a model using moments of train/valid/test dataset):
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -e --eval_dataset 'train/valid/test' -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json"
 ```
 
 ## 7. About PyTorch FID
