@@ -89,7 +89,6 @@ def toggle_grad(model, on, freeze_layers=-1):
     else:
         num_blocks = len(model.in_dims)
 
-    assert freeze_layers >= -1, "freeze_layers should be greater than or equal to -1."
     assert freeze_layers < num_blocks,\
         "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freeze_layers, nb=num_blocks)
 
@@ -103,6 +102,7 @@ def toggle_grad(model, on, freeze_layers=-1):
                 block = "blocks.{layer}".format(layer=layer)
                 if block in name:
                     param.requires_grad = False
+
 
 def set_bn_train(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
