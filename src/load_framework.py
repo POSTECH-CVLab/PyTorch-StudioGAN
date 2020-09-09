@@ -126,10 +126,10 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
             Gen_copy = DataParallel(Gen_copy, output_device=default_device)
 
         if synchronized_bn:
-            Gen = convert_model(Gen)
-            Dis = convert_model(Dis)
+            Gen = convert_model(Gen).to(default_device)
+            Dis = convert_model(Dis).to(default_device)
             if ema:
-                Gen_copy = convert_model(Gen_copy)
+                Gen_copy = convert_model(Gen_copy).to(default_device)
 
     logger.info(count_parameters(Gen))
     logger.info(Gen)
