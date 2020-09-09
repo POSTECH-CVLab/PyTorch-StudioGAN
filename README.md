@@ -64,7 +64,7 @@ or using docker
 docker pull mgkang/studiogan:0.1
 ```
 
-## 5. Dataset (CIFAR10, Tiny ImageNet, ImageNet, and Custom dataset possible)
+## 5. Dataset (CIFAR10, Tiny ImageNet, and ImageNet possible)
 The folder structure of the datasets is shown below:
 ```
 ├── data
