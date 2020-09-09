@@ -44,13 +44,13 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 - Anaconda
 - Python > 3.6
 - Pillow < 7
-- scipy==1.1.0 (recommended)
+- scipy == 1.1.0 (recommended)
 - h5py
 - tqdm
 - torch >= 1.6.0
 - torchvision >= 0.7.0
 - tensorboard
-- gcc
+- gcc <= 7.4.0
 
 
 You can install the recommended environment setting as follows:
