@@ -32,10 +32,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
         num_classes = generator.num_classes
         conditional_strategy = discriminator.conditional_strategy
 
-    if num_evaluate % batch_size == 0:
-        total_batch = num_evaluate//batch_size
-    else:
-        total_batch = num_evaluate//batch_size + 1
+    total_batch = num_evaluate//batch_size
 
     if D_loss.__name__ in ["loss_dcgan_dis", "loss_lsgan_dis"]:
         cutoff = 0.5
