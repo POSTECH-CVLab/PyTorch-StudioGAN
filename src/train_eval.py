@@ -67,7 +67,7 @@ def set_temperature(tempering_type, start_temperature, end_temperature, step_cou
 
 class Train_Eval(object):
     def __init__(self, run_name, best_step, dataset_name, type4eval_dataset, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_dis, freeze_layer, conditional_strategy,
+                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
                  pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, batch_size,
                  g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
                  tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound, gradient_penalty_for_dis,
@@ -95,8 +95,7 @@ class Train_Eval(object):
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
-        self.freeze_dis = freeze_dis
-        self.freeze_layer = freeze_layer
+        self.freeze_layers = freeze_layers
 
         self.conditional_strategy = conditional_strategy
         self.pos_collected_numerator = pos_collected_numerator
@@ -233,8 +232,8 @@ class Train_Eval(object):
             self.ada_aug_p = 'No'
         while step_count <= total_step:
             # ================== TRAIN D ================== #
-            toggle_grad(self.dis_model, True)
-            toggle_grad(self.gen_model, False)
+            toggle_grad(self.dis_model, True, freeze_layers=self.freeze_layers)
+            toggle_grad(self.gen_model, False, freeze_layers=-1)
             if self.conditional_strategy == "ContraGAN":
                 t = set_temperature(self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
             for step_index in range(self.d_steps_per_iter):
@@ -401,8 +400,8 @@ class Train_Eval(object):
                     self.writer.add_scalars('SN_of_dis', dis_sigmas, step_count)
 
             # ================== TRAIN G ================== #
-            toggle_grad(self.dis_model, False)
-            toggle_grad(self.gen_model, True)
+            toggle_grad(self.dis_model, False, freeze_layers=-1)
+            toggle_grad(self.gen_model, True, freeze_layers=-1)
             for step_index in range(self.g_steps_per_iter):
                 self.G_optimizer.zero_grad()
                 for acml_step in range(self.accumulation_steps):

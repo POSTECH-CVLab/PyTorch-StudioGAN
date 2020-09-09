@@ -30,11 +30,6 @@ from torch.backends import cudnn
 from torch.nn import DataParallel
 from torch.utils.tensorboard import SummaryWriter
 
-try:
-    import apex
-except ImportError:
-    apex = None
-
 
 
 RUN_NAME_FORMAT = (
@@ -42,9 +37,9 @@ RUN_NAME_FORMAT = (
     "{phase}-"
     "{timestamp}"
 )
-def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers, config_path, checkpoint_folder, reduce_train_dataset,
-                   acml_bn, acml_stat_step, freeze_dis, freeze_layer, load_current, type4eval_dataset, dataset_name, num_classes, img_size,
-                   data_path, architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
+def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkpoint_folder, reduce_train_dataset, acml_bn,
+                   acml_stat_step, freeze_layers, load_current, type4eval_dataset, dataset_name, num_classes, img_size, data_path,
+                   architecture, conditional_strategy, hypersphere_dim, nonlinear_embed, normalize_embed, g_spectral_norm,
                    d_spectral_norm, activation_fn, attention, attention_after_nth_gen_block, attention_after_nth_dis_block, z_dim,
                    shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
                    beta1, beta2, total_step, adv_loss, cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor,
@@ -63,12 +58,8 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
     n_gpus = torch.cuda.device_count()
     default_device = torch.cuda.current_device()
 
-    check_flag_0(batch_size, n_gpus, fused_optimization, mixed_precision, acml_bn, ema, freeze_dis, checkpoint_folder)
+    check_flag_0(batch_size, n_gpus, acml_bn, ema, freeze_layers, checkpoint_folder)
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
-    assert int(fused_optimization)*int(mixed_precision) == 0.0, "can't turn on fused_optimization and mixed_precision together."
-
-    if freeze_dis:
-        assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 
     if n_gpus == 1:
         warnings.warn('You have chosen a specific GPU. This will completely '
@@ -126,10 +117,10 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
             Gen_copy = DataParallel(Gen_copy, output_device=default_device)
 
         if synchronized_bn:
-            Gen = convert_model(Gen)
-            Dis = convert_model(Dis)
+            Gen = convert_model(Gen).to(default_device)
+            Dis = convert_model(Dis).to(default_device)
             if ema:
-                Gen_copy = convert_model(Gen_copy)
+                Gen_copy = convert_model(Gen_copy).to(default_device)
 
     logger.info(count_parameters(Gen))
     logger.info(Gen)
@@ -145,25 +136,14 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
     ADA_cutoff = {'vanilla': 0.5, 'least_square': 0.5, 'hinge': 0.0, 'wasserstein': 0.0}
 
     if optimizer == "SGD":
-        if fused_optimization:
-            G_optimizer = apex.optimizers.FusedSGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
-            D_optimizer = apex.optimizers.FusedSGD(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, nesterov=nesterov)
-        else:
-            G_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
-            D_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, nesterov=nesterov)
+        G_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
+        D_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, nesterov=nesterov)
     elif optimizer == "RMSprop":
-        if fused_optimization:
-            raise NotImplementedError
-        else:
-            G_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, alpha=alpha)
-            D_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, alpha=alpha)
+        G_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, alpha=alpha)
+        D_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, momentum=momentum, alpha=alpha)
     elif optimizer == "Adam":
-        if fused_optimization:
-            G_optimizer = apex.optimizers.FusedAdam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, [beta1, beta2], eps=1e-6)
-            D_optimizer = apex.optimizers.FusedAdam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2], eps=1e-6)
-        else:
-            G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, [beta1, beta2], eps=1e-6)
-            D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2], eps=1e-6)
+        G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, [beta1, beta2], eps=1e-6)
+        D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), d_lr, [beta1, beta2], eps=1e-6)
     else:
         raise NotImplementedError
 
@@ -187,7 +167,7 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
         assert seed == trained_seed, "seed for sampling random numbers should be same!"
         logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
-        if freeze_dis:
+        if freeze_layers > -1 :
             prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
     else:
         checkpoint_dir = make_checkpoint_dir(checkpoint_folder, run_name)
@@ -225,8 +205,7 @@ def load_frameowrk(seed, disable_debugging_API, fused_optimization, num_workers,
         eval_dataset=eval_dataset,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
-        freeze_dis=freeze_dis,
-        freeze_layer=freeze_layer,
+        freeze_layers=freeze_layers,
         conditional_strategy=conditional_strategy,
         pos_collected_numerator=model_config['model']['pos_collected_numerator'],
         z_dim=z_dim,

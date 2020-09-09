@@ -1,13 +1,12 @@
-## StudioGAN: A Library for Experiment and Evaluation of GANs (Early Version)
+## StudioGAN: A Library for Experiment and Evaluation of GANs
 
-StudioGAN is a Pytorch library providing the implementation of representative Generative Adversarial Networks (GANs) for conditional/unconditional image synthesis. This project aims to help machine learning researchers to compare the new idea with other GANs in the same Pytorch environment.
-
+StudioGAN is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. This project aims to help machine learning researchers to compare a new idea with other GANs in the same Pytorch environment.
 
 ## 1. Implemented GANs
 
-* [Vanilla DCGAN (Radford et al.)](https://arxiv.org/abs/1511.06434)
-* [WGAN Weight Clipping (Arjovsky et al.)](https://arxiv.org/abs/1701.07875)
-* [WGAN Gradient Penalty (Gulrajani et al.)](https://arxiv.org/abs/1704.00028)
+* Vanilla DCGAN (Radford et al.)[paper](https://arxiv.org/abs/1511.06434)[config]()
+* WGAN Weight Clipping (Arjovsky et al.)[paper](https://arxiv.org/abs/1701.07875)[config]()
+* WGAN Gradient Penalty (Gulrajani et al.)[paper](https://arxiv.org/abs/1704.00028)[config]()
 * [ACGAN (Odena et al.)](https://arxiv.org/abs/1610.09585)
 * [Geometric GAN (Lim and Ye)](https://arxiv.org/abs/1705.02894)
 * [projGAN (Miyato and Koyama)](https://arxiv.org/abs/1705.02894)
@@ -26,13 +25,14 @@ StudioGAN is a Pytorch library providing the implementation of representative Ge
 
 - Anaconda
 - Python > 3.6
-- torch > 1.6.0
-- torchvision > 0.7.0
+- torch >= 1.6.0
+- torchvision >= 0.7.0
 - Pillow < 7
 - apex 0.1 (for fused optimiers)
 - tensorboard
 - h5py
 - tqdm
+- scipy==1.1.0 (recommended)
 
 You can install the recommended environment setting as follows:
 
