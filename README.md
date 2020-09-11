@@ -25,6 +25,30 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 * ContraGAN (ours) [[**Paper**]](https://arxiv.org/abs/2006.12681)[[**Config**]]()
 
 
+| Abbrev. | Name | Venue | Architecture | G_condition*| D_condition**|
+|:-----------:|:---------------------------------------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| DCGAN | Deep Convolutional GAN | arXiv' 15 | CNN | Unconditional | Unconditional |
+| LSGAN | Least Squares GAN | ICCV' 17 | CNN | Unconditional | Unconditional |
+| GGAN | Geometric GAN | arXiv' 17 | CNN | Unconditional | Unconditional |
+| WGAN-WC | Wasserstein GAN with Weight Clipping| ICLR' 17 | ResNet | Unconditional | Unconditional |
+| WGAN-GP | Wasserstein GAN with Gradient Penalty | NIPS' 17 | ResNet | Unconditional | Unconditional |
+| WGAN-DRA | Wasserstein GAN with Deep Regret Analysis | arXiv' 17 | ResNet | Unconditional | Unconditional |
+| SNGAN | Spectral Normalization GAN | ICLR' 18 | ResNet | cBN | Projection |
+| SAGAN | Self-Attention GAN | ICML' 19 | ResNet | cBN | Projection |
+| BigGAN | Large Scale GAN Training | ICLR' 18 | Big ResNet | cBN | Projection |
+| BigGAN-Deep | Large Scale GAN Training | ICLR' 18 | Big&Deep ResNet | cBN | Projection |
+| CRGAN | Consistency Regularization for GAN | ICLR' 20 | Big&Deep ResNet | cBN | Projection |
+| ICRGAN | Improved Consistency Regularization for GAN | arXiv' 20 | Big&Deep ResNet | cBN | Projection |
+| LOGAN | Latent Optimisation for GAN | arXiv' 20 | Big&Deep ResNet | cBN | Projection |
+| ProjGAN | Conditional GAN with Projection Discriminator | ICLR' 18 | ResNet | cBN | Projection |
+
+
+
+
+
+**Conditional GAN scores are only reported for labelled datasets.*
+
+
 ## 2. Implemented training tricks/modules
 
 * Mixed Precision Training (Narang et al.) [[**Paper**]](https://arxiv.org/abs/1710.03740)
