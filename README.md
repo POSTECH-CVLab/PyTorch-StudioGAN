@@ -4,35 +4,35 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 
 ## 1. Implemented GANs
 
-| Abbrev. | Name | Venue | Architecture | G_condition*| D_condition**|
-|:-----------:|:---------------------------------------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | Deep Convolutional GAN | arXiv' 15 | CNN | Unconditional | Unconditional |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | Least Squares GAN | ICCV' 17 | CNN | Unconditional | Unconditional |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | Geometric GAN | arXiv' 17 | CNN | Unconditional | Unconditional |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | Wasserstein GAN with Weight Clipping| ICLR' 17 | ResNet | Unconditional | Unconditional |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | Wasserstein GAN with Gradient Penalty | NIPS' 17 | ResNet | Unconditional | Unconditional |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | Wasserstein GAN with Deep Regret Analysis | arXiv' 17 | ResNet | Unconditional | Unconditional |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | Auxiliary Classifier GAN | ICML' 17 | ResNet | cBN | Auxiliary Classifier |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | Conditional GAN with Projection Discriminator | ICLR' 18 | ResNet | cBN | Projection |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | Spectral Normalization GAN | ICLR' 18 | ResNet | cBN | Projection |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | Self-Attention GAN | ICML' 19 | ResNet | cBN | Projection |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | Large Scale GAN Training | ICLR' 18 | Big ResNet | cBN | Projection |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | Large Scale GAN Training | ICLR' 18 | Big & Deep ResNet | cBN | Projection |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | Consistency Regularization for GAN | ICLR' 20 | Big ResNet | cBN | Projection |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | Improved Consistency Regularization for GAN | arXiv' 20 | Big ResNet | cBN | Projection |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | Latent Optimisation for GAN | arXiv' 19 | Big ResNet | cBN | Projection |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | Differentiable Augmentation for GAN | arXiv' 20 | Big ResNet | cBN | Projection |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | Adaptive Discriminator Augmentation for GAN | arXiv' 20 | Big ResNet | cBN | Projection |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Contrastive GAN | arXiv' 20 | Big ResNet | cBN | Contrastive Learning |
-| [**FreezeD**](https://arxiv.org/abs/2002.10964) | Freeze Discriminator for Fine-Tuning GAN | CVPRW' 20 | - | - | - |
+| Name| Venue | Architecture | G_condition*| D_condition**|
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv' 15 | CNN | Unconditional | Unconditional |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | CNN | Unconditional | Unconditional |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | CNN | Unconditional | Unconditional |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | ICLR' 17 | ResNet | Unconditional | Unconditional |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS' 17 | ResNet | Unconditional | Unconditional |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv' 17 | ResNet | Unconditional | Unconditional |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | ICML' 17 | ResNet | cBN | Auxiliary Classifier |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR' 18 | ResNet | cBN | Projection |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR' 18 | ResNet | cBN | Projection |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML' 19 | ResNet | cBN | Projection |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Big ResNet | cBN | Projection |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Big & Deep ResNet | cBN | Projection |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 | Big ResNet | cBN | Projection |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 | Big ResNet | cBN | Projection |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 | Big ResNet | cBN | Projection |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | arXiv' 20 | Big ResNet | cBN | Projection |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | arXiv' 20 | Big ResNet | cBN | Projection |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Big ResNet | cBN | Contrastive Learning |
+| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | - | - | - |
 
 **Conditional GAN scores are only reported for labelled datasets.*
 
 ## 2. To be Implemented
 
-| Abbrev. | Name | Venue | Architecture | G_condition*| D_condition**|
-|:-----------:|:---------------------------------------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**WCGAN**](https://arxiv.org/abs/1806.00420) | Whitening and Coloring Batch transform for GAN | ICLR' 18 | Big ResNet | WCBN | Projection |
+| Name | Venue | Architecture | G_condition*| D_condition**|
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | WCBN | Projection |
 
 
 ## 3. Implemented training tricks/modules
