@@ -45,11 +45,11 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
                    beta1, beta2, total_step, adv_loss, cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor,
                    ema, ema_decay, ema_start, synchronized_bn, mixed_precision, hdf5_path_train, train_config, model_config, **_):
     if seed == 82624:
-        cudnn.benchmark = True # Not good Generator for undetermined input size
+        cudnn.benchmark = True
         cudnn.deterministic = False
     else:
         fix_all_seed(seed)
-        cudnn.benchmark = False # Not good Generator for undetermined input size
+        cudnn.benchmark = False
         cudnn.deterministic = True
 
     if disable_debugging_API:

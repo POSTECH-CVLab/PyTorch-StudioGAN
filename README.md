@@ -4,63 +4,44 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 
 ## 1. Implemented GANs
 
-* Vanilla DCGAN (Radford et al.) [[**Paper**]](https://arxiv.org/abs/1511.06434)[[**Config**]]()
-* LSGAN (Mao et al.) [[**Paper**]](https://arxiv.org/abs/1611.04076)[[**Config**]]()
-* Geometric GAN (Lim and Ye) [[**Paper**]](https://arxiv.org/abs/1705.02894)[[**Config**]]()
-* WGAN Weight Clipping (Arjovsky et al.) [[**Paper**]](https://arxiv.org/abs/1701.07875)[[**Config**]]()
-* WGAN Gradient Penalty (Gulrajani et al.) [[**Paper**]](https://arxiv.org/abs/1704.00028)[[**Config**]]()
-* DRAGAN (Kodali et al.) [[**Paper**]](https://arxiv.org/abs/1705.07215)[[**Config**]]()
-* SNDCGAN,SNResGAN (Miyato et al.) [[**Paper**]](https://arxiv.org/abs/1802.05957)[[**Config**]]()
-* SAGAN (Zhang et al.) [[**Paper**]](https://arxiv.org/abs/1805.08318)[[**Config**]]()
-* BigGAN (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)[[**Config**]]()
-* BigGAN-Deep (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)[[**Config**]]()
-* CRGAN (Zhang et al.) [[**Paper**]](https://arxiv.org/abs/1910.12027)[[**Config**]]()
-* ICRGAN (Zhao et al.) [[**Paper**]](https://arxiv.org/abs/2002.04724)[[**Config**]]()
-* LOGAN (Wu et al.) [[**Paper**]](https://arxiv.org/abs/1912.00953)[[**Config**]]()
-* DiffAugment (Zhao et al.) [[**Paper**]](https://arxiv.org/abs/2006.10738)[[**Config**]]()
-* Adaptive Discriminator Augmentation (Karras et al.) [[**Paper**]](https://arxiv.org/abs/2006.06676)[[**Config**]]()
-* Freeze Discriminator (Mo et al.) [[**Paper**]](https://arxiv.org/abs/2002.10964)[[**Config**]]()
-* ACGAN (Odena et al.) [[**Paper**]](https://arxiv.org/abs/1610.09585)[[**config**]]()
-* Projection Discriminator (Miyato and Koyama) [[**Paper**]](https://arxiv.org/abs/1802.05637)[[**Config**]]()
-* ContraGAN (ours) [[**Paper**]](https://arxiv.org/abs/2006.12681)[[**Config**]]()
-
-
 | Abbrev. | Name | Venue | Architecture | G_condition*| D_condition**|
 |:-----------:|:---------------------------------------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| DCGAN | Deep Convolutional GAN | arXiv' 15 | CNN | Unconditional | Unconditional |
-| LSGAN | Least Squares GAN | ICCV' 17 | CNN | Unconditional | Unconditional |
-| GGAN | Geometric GAN | arXiv' 17 | CNN | Unconditional | Unconditional |
-| WGAN-WC | Wasserstein GAN with Weight Clipping| ICLR' 17 | ResNet | Unconditional | Unconditional |
-| WGAN-GP | Wasserstein GAN with Gradient Penalty | NIPS' 17 | ResNet | Unconditional | Unconditional |
-| WGAN-DRA | Wasserstein GAN with Deep Regret Analysis | arXiv' 17 | ResNet | Unconditional | Unconditional |
-| SNGAN | Spectral Normalization GAN | ICLR' 18 | ResNet | cBN | Projection |
-| SAGAN | Self-Attention GAN | ICML' 19 | ResNet | cBN | Projection |
-| BigGAN | Large Scale GAN Training | ICLR' 18 | Big ResNet | cBN | Projection |
-| BigGAN-Deep | Large Scale GAN Training | ICLR' 18 | Big&Deep ResNet | cBN | Projection |
-| CRGAN | Consistency Regularization for GAN | ICLR' 20 | Big&Deep ResNet | cBN | Projection |
-| ICRGAN | Improved Consistency Regularization for GAN | arXiv' 20 | Big&Deep ResNet | cBN | Projection |
-| LOGAN | Latent Optimisation for GAN | arXiv' 20 | Big&Deep ResNet | cBN | Projection |
-| ProjGAN | Conditional GAN with Projection Discriminator | ICLR' 18 | ResNet | cBN | Projection |
-
-
-
-
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | Deep Convolutional GAN | arXiv' 15 | CNN | Unconditional | Unconditional |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | Least Squares GAN | ICCV' 17 | CNN | Unconditional | Unconditional |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | Geometric GAN | arXiv' 17 | CNN | Unconditional | Unconditional |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | Wasserstein GAN with Weight Clipping| ICLR' 17 | ResNet | Unconditional | Unconditional |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | Wasserstein GAN with Gradient Penalty | NIPS' 17 | ResNet | Unconditional | Unconditional |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | Wasserstein GAN with Deep Regret Analysis | arXiv' 17 | ResNet | Unconditional | Unconditional |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | Auxiliary Classifier GAN | ICML' 17 | ResNet | cBN | Auxiliary Classifier |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | Conditional GAN with Projection Discriminator | ICLR' 18 | ResNet | cBN | Projection |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | Spectral Normalization GAN | ICLR' 18 | ResNet | cBN | Projection |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | Self-Attention GAN | ICML' 19 | ResNet | cBN | Projection |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | Large Scale GAN Training | ICLR' 18 | Big ResNet | cBN | Projection |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | Large Scale GAN Training | ICLR' 18 | Big & Deep ResNet | cBN | Projection |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | Consistency Regularization for GAN | ICLR' 20 | Big ResNet | cBN | Projection |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | Improved Consistency Regularization for GAN | arXiv' 20 | Big ResNet | cBN | Projection |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | Latent Optimisation for GAN | arXiv' 19 | Big ResNet | cBN | Projection |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | Differentiable Augmentation for GAN | arXiv' 20 | Big ResNet | cBN | Projection |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | Adaptive Discriminator Augmentation for GAN | arXiv' 20 | Big ResNet | cBN | Projection |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Contrastive GAN | arXiv' 20 | Big ResNet | cBN | Contrastive Learning |
+| [**FreezeD**](https://arxiv.org/abs/2002.10964) | Freeze Discriminator for Fine-Tuning GAN | CVPRW' 20 | - | - | - |
 
 **Conditional GAN scores are only reported for labelled datasets.*
 
+## 2. To be Implemented
 
-## 2. Implemented training tricks/modules
+| Abbrev. | Name | Venue | Architecture | G_condition*| D_condition**|
+|:-----------:|:---------------------------------------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**WCGAN**](https://arxiv.org/abs/1806.00420) | Whitening and Coloring Batch transform for GAN | ICLR' 18 | Big ResNet | WCBN | Projection |
+
+
+## 3. Implemented training tricks/modules
 
 * Mixed Precision Training (Narang et al.) [[**Paper**]](https://arxiv.org/abs/1710.03740)
 * Exponential Moving Average Update (Yasin Yazıcı et al.) [[**Paper**]](https://arxiv.org/abs/1806.04498)
 * Standing Statistics (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)
 * Gradient Accumulation
 * Synchronized BatchNorm
-
-
-## 3. To be Implemented
-
-* WCGAN (Siarohin et al.) [[**Paper**]](https://arxiv.org/abs/1806.00420)[[**Config**]]()
 
 
 ## 4. Requirements
