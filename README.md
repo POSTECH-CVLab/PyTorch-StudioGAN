@@ -4,35 +4,35 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 
 ## 1. Implemented GANs
 
-| Name| Venue | Architecture | G_condition*| D_condition**|
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv' 15 | CNN | Unconditional | Unconditional |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | CNN | Unconditional | Unconditional |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | CNN | Unconditional | Unconditional |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | ICLR' 17 | ResNet | Unconditional | Unconditional |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS' 17 | ResNet | Unconditional | Unconditional |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv' 17 | ResNet | Unconditional | Unconditional |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | ICML' 17 | ResNet | cBN | Auxiliary Classifier |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR' 18 | ResNet | cBN | Projection |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR' 18 | ResNet | cBN | Projection |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML' 19 | ResNet | cBN | Projection |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Big ResNet | cBN | Projection |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Big & Deep ResNet | cBN | Projection |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 | Big ResNet | cBN | Projection |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 | Big ResNet | cBN | Projection |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 | Big ResNet | cBN | Projection |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | arXiv' 20 | Big ResNet | cBN | Projection |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | arXiv' 20 | Big ResNet | cBN | Projection |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Big ResNet | cBN | Contrastive Learning |
-| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | - | - | - |
+| Name| Venue | Implementation |Architecture | G_condition*| D_condition**| 
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) |arXiv' 15 | Scratch | CNN | Unconditional | Unconditional |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | Scratch | CNN | Unconditional | Unconditional |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | Scratch | CNN | Unconditional | Unconditional |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | ICLR' 17 | Scratch | ResNet | Unconditional | Unconditional |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS' 17 | Scratch | ResNet | Unconditional | Unconditional |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv' 17 | Scratch | ResNet | Unconditional | Unconditional |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | ICML' 17 | Scratch | ResNet | cBN | Auxiliary Classifier |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR' 18 | Scratch | ResNet | cBN | Projection |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR' 18 | Scratch | ResNet | cBN | Projection |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML' 19 | Partially Borrowed | ResNet | cBN | Projection |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Partially Borrowed | Big ResNet | cBN | Projection |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Partially Borrowed | Big & Deep ResNet | cBN | Projection |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 | Scratch | Big ResNet | cBN | Projection |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 | Scratch | Big ResNet | cBN | Projection |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 | Scratch | Big ResNet | cBN | Projection |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | arXiv' 20 | Borrowed | Big ResNet | cBN | Projection |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | arXiv' 20 | Borrowed | Big ResNet | cBN | Projection |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Scratch | Big ResNet | cBN | Contrastive Learning |
+| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | Scratch |  - | - | - |
 
 **Conditional GAN scores are only reported for labelled datasets.*
 
 ## 2. To be Implemented
 
-| Name | Venue | Architecture | G_condition*| D_condition**|
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | WCBN | Projection |
+| Name| Venue | Implementation |Architecture | G_condition*| D_condition**| 
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | - | Big ResNet | WCBN | Projection |
 
 
 ## 3. Implemented training tricks/modules
