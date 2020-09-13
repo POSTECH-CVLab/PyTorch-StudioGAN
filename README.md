@@ -152,6 +152,22 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 #### ※ NOTE
 #### We always welcome your contribution if you find any wrong implementation, bug, misreported score.
 
+#### We report the best IS, FID, and PR values during training.  
+
+#### We don't apply Synchronized Batch Normalization to all models.
+
+#### You can conduct image generation experiments using below command:
+
+Singe GPU:
+```
+CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+```
+
+Multi GPUs (e.g. 4 GPUs):
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+```
+
 ### 7-1. CIFAR10
 | Name | Res. | IS (No split) | FID | PR | n_real (type) | n_fake | Config | Checkpoint |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
