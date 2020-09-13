@@ -15,7 +15,7 @@ from datetime import datetime
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
-from metrics.calculate_accuracy import calculate_accuracy
+from metrics.Accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import interp
 from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
@@ -588,10 +588,6 @@ class Train_Eval(object):
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
-            save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
-                            self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
-                            self.latent_op_beta, self.default_device)
-
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                               self.latent_op_beta, self.default_device, self.mu, self.sigma, self.run_name)
@@ -601,7 +597,7 @@ class Train_Eval(object):
             ### plz use the official tensorflow implementation(inception_tensorflow.py).
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                     self.latent_op_beta, 10, self.default_device)
+                                                     self.latent_op_beta, 1, self.default_device)
 
             if self.D_loss.__name__ != "loss_wgan_dis":
                 real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
@@ -635,6 +631,24 @@ class Train_Eval(object):
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
         return is_best
+    ################################################################################################################################
+
+
+    ################################################################################################################################
+    def save_images(self, png=True, npz=True):
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
+            self.dis_model.eval()
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+
+            if png:
+                save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
+                            self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
+                            self.latent_op_beta, self.default_device)
+            if npz:
+                save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
+                            self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
+                            self.latent_op_beta, self.default_device)
     ################################################################################################################################
 
 

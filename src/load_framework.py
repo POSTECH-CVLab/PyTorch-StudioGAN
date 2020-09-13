@@ -14,7 +14,7 @@ from os.path import dirname, abspath, exists, join
 
 from data_utils.load_dataset import *
 from metrics.inception_network import InceptionV3
-from metrics.prepare_inception_moments_eval_dataset import prepare_inception_moments_eval_dataset
+from metrics.prepare_inception_moments import prepare_inception_moments
 from utils.log import make_run_name, make_logger, make_checkpoint_dir
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
@@ -176,14 +176,14 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         inception_model = InceptionV3().to(default_device)
         if n_gpus > 1:
             inception_model = DataParallel(inception_model, output_device=default_device)
-        mu, sigma = prepare_inception_moments_eval_dataset(dataloader=eval_dataloader,
-                                                           generator=Gen,
-                                                           eval_mode=eval_type,
-                                                           inception_model=inception_model,
-                                                           splits=10,
-                                                           run_name=run_name,
-                                                           logger=logger,
-                                                           device=default_device)
+        mu, sigma = prepare_inception_moments(dataloader=eval_dataloader,
+                                              generator=Gen,
+                                              eval_mode=eval_type,
+                                              inception_model=inception_model,
+                                              splits=10,
+                                              run_name=run_name,
+                                              logger=logger,
+                                              device=default_device)
     else:
         mu, sigma, inception_model = None, None, None
 
@@ -278,6 +278,9 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
 
     if train_config['eval']:
         is_save = train_eval.evaluation(step=step, standing_statistics=standing_statistics, standing_step=standing_step)
+    
+    if train_config['save_images']:
+        train_eval.save_images(png=True, npz=True)
 
     if train_config['k_nearest_neighbor']:
         train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], standing_statistics=standing_statistics, standing_step=standing_step)

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# metrics/prepare_inception_moments_eval_dataset.py
+# metrics/prepare_inception_moments.py
 
 import numpy as np
 import os
@@ -12,7 +12,7 @@ from metrics.IS import evaluator
 
 
 
-def prepare_inception_moments_eval_dataset(dataloader, eval_mode, generator, inception_model, splits, run_name, logger, device):
+def prepare_inception_moments(dataloader, eval_mode, generator, inception_model, splits, run_name, logger, device):
     dataset_name = dataloader.dataset.dataset_name
     inception_model.eval()
 

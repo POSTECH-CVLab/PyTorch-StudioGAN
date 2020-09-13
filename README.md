@@ -26,22 +26,13 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Big ResNet | cBN | CL | Hinge | True |
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | - | - | - | - | - |
 
-
-## 2. To be Implemented
-
-| Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
-| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
-
 **G/D_type indicates the way how we inject label information to the Generator or Discriminator.*
 
 ***EMA means applying an exponential moving average update to the generator.*
 
-###  [Abbreviation Details]
+#### Abbreviation Details:
 
 [cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization 
-
-[cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform
 
 [AC](https://arxiv.org/abs/1610.09585) : Auxiliary Classifier
 
@@ -49,23 +40,35 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 
 [CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning (Ours)
 
+
+## 2. To be Implemented
+
+| Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
+| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
+
+#### Abbreviation Details:
+
+[cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform
+
+
 ## 3. Implemented training tricks/modules
 
 * Mixed Precision Training (Narang et al.) [[**Paper**]](https://arxiv.org/abs/1710.03740)
   ```
-  python3 main.py -t -mpc -c "CONFIG_PATH"
+  python3 main.py -t -mpc -c CONFIG_PATH
   ```
 * Standing Statistics (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)
   ```
-  python3 main.py -std_stat --standing_step STEP -c "CONFIG_PATH"
+  python3 main.py -std_stat --standing_step STEP -c CONFIG_PATH
   ```
 * Synchronized BatchNorm
   ```
-  python3 main.py -sync_bn -c "CONFIG_PATH"
+  python3 main.py -sync_bn -c CONFIG_PATH
   ```
 * load all data in main memory
   ```
-  python3 main.py -l -c "CONFIG_PATH"
+  python3 main.py -l -c CONFIG_PATH
   ```
 
 ## 4. Requirements
@@ -131,29 +134,29 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 ## 7. Results
 
 #### ※ NOTE
-#### We always welcome your contribution if you find any wrong implementation, bug, misreported score, etc. of the StudioGAN.
+#### We always welcome your contribution if you find any wrong implementation, bug, misreported score.
 
 ### 7-1. CIFAR10
 | Name | Res. | IS (No split) | FID | PR | n_real (type) | n_fake | Config | Checkpoint |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 32 | - | - | - | 10K (Valid) | 10K| [Link]() |  - |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() | - |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 32 | - | - | - | 10K (Test) | 10K| [Link]() |  - |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 32 | - | - | - | 10K (Test) | 10K | [Link]() | - |
 
 ### 7-2. Tiny ImageNet
 | Name | Res. | IS (No split) | FID | PR | n_real (type) | n_fake | Config | Checkpoint |

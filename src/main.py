@@ -35,6 +35,7 @@ def main():
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')
     parser.add_argument('-t', '--train', action='store_true')
     parser.add_argument('-e', '--eval', action='store_true')
+    parser.add_argument('-s', '--save_images', action='store_true')
     parser.add_argument('-knn', '--k_nearest_neighbor', action='store_true', help='select whether conduct k-nearest neighbor analysis')
     parser.add_argument('-itp', '--interpolation', action='store_true', help='select whether conduct interpolation analysis')
     parser.add_argument('--nrow', type=int, default=10, help='number of rows to plot image canvas')
