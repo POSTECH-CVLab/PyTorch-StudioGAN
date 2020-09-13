@@ -5,7 +5,7 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 ##  1. Implemented GANs
 
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv' 15 | CNN | N/A | N/A | Vanilla | False |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | CNN | N/A | N/A | Least Sqaure | False |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | CNN | N/A | N/A | Hinge | False |
@@ -30,7 +30,7 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 ## 2. To be Implemented
 
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
 
 **G/D_type indicates the way how we inject label information to the Generator or Discriminator.*
