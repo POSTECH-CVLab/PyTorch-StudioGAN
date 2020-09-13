@@ -53,15 +53,18 @@ class dummy_context_mgr():
         return False
 
 
-def set_temperature(tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
-    if tempering_type == 'continuous':
-        t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
-    elif tempering_type == 'discrete':
-        tempering_interval = total_step//(tempering_step + 1)
-        t = start_temperature + \
-            (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
+def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
+    if conditional_strategy == 'ContraGAN':
+        if tempering_type == 'continuous':
+            t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
+        elif tempering_type == 'discrete':
+            tempering_interval = total_step//(tempering_step + 1)
+            t = start_temperature + \
+                (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
+        else:
+            t = start_temperature
     else:
-        t = start_temperature
+        t = 'no'
     return t
 
 
@@ -234,8 +237,7 @@ class Train_Eval(object):
             # ================== TRAIN D ================== #
             toggle_grad(self.dis_model, True, freeze_layers=self.freeze_layers)
             toggle_grad(self.gen_model, False, freeze_layers=-1)
-            if self.conditional_strategy == "ContraGAN":
-                t = set_temperature(self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
+            t = set_temperature(self.conditional_strategy, self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
             for step_index in range(self.d_steps_per_iter):
                 self.D_optimizer.zero_grad()
                 for acml_index in range(self.accumulation_steps):
@@ -479,7 +481,7 @@ class Train_Eval(object):
                 log_message = LOG_FORMAT.format(step=step_count,
                                                 progress=step_count/total_step,
                                                 elapsed=elapsed_time(self.start_time),
-                                                temperature='No',
+                                                temperature=t,
                                                 ada_p=self.ada_aug_p,
                                                 dis_loss=dis_acml_loss.item(),
                                                 gen_loss=gen_acml_loss.item(),

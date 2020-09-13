@@ -2,47 +2,76 @@
 
 StudioGAN is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. This project aims to help machine learning researchers to compare a new idea with other GANs in the same Pytorch environment.
 
-## 1. Implemented GANs
+##  1. Implemented GANs
 
-| Name| Venue | Implementation | Architecture | G_type*| D_type**| 
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) |arXiv' 15 | Scratch | CNN | Uncond. | Uncond. |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | Scratch | CNN | Uncond. | Uncond. |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | Scratch | CNN | Uncond. | Uncond. |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | ICLR' 17 | Scratch | ResNet | Uncond. | Uncond. |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS' 17 | Scratch | ResNet | Uncond. | Uncond. |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv' 17 | Scratch | ResNet | Uncond. | Uncond. |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | ICML' 17 | Scratch | ResNet | cBN | Auxiliary Classifier |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR' 18 | Scratch | ResNet | cBN | Projection |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR' 18 | Scratch | ResNet | cBN | Projection |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML' 19 | Partially Borrowed | ResNet | cBN | Projection |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Partially Borrowed | Big ResNet | cBN | Projection |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Partially Borrowed | Deep & Big ResNet | cBN | Projection |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 | Scratch | Big ResNet | cBN | Projection |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 | Scratch | Big ResNet | cBN | Projection |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 | Scratch | Big ResNet | cBN | Projection |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | arXiv' 20 | Borrowed | Big ResNet | cBN | Projection |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | arXiv' 20 | Borrowed | Big ResNet | cBN | Projection |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Scratch | Big ResNet | cBN | Contrastive Learning |
-| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | Scratch |  - | - | - |
+| Name| Venue | Implementation | Architecture | G_type*| D_type*| Loss | EMA**|
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) |arXiv' 15 | Scratch | CNN | N/A | N/A | Vanilla | False |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | Scratch | CNN | N/A | N/A | Least Sqaure | False |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | Scratch | CNN | N/A | N/A | Hinge | False |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | ICLR' 17 | Scratch | ResNet | N/A | N/A | Wasserstein | False |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS' 17 | Scratch | ResNet | N/A | N/A | Wasserstein |  False |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv' 17 | Scratch | ResNet | N/A | N/A | Wasserstein | False |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | ICML' 17 | Scratch | ResNet | cBN | AC | Hinge | False |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR' 18 | Scratch | ResNet | cBN | PD | Hinge | False |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR' 18 | Scratch | ResNet | cBN | PD | Hinge | False |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML' 19 | Partially Borrowed | ResNet | cBN | PD | Hinge | False |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Partially Borrowed | Big ResNet | cBN | PD | Hinge | True |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Partially Borrowed | Deep & Big ResNet | cBN | PD | Hinge | True |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 | Scratch | Big ResNet | cBN | PD | Hinge | True |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 | Scratch | Big ResNet | cBN | PD | Hinge | True |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 | Scratch | Big ResNet | cBN | PD | Hinge | True |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | arXiv' 20 | Borrowed | Big ResNet | cBN | PD | Hinge | True |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | arXiv' 20 | Borrowed | Big ResNet | cBN | PD | Hinge | True |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Scratch | Big ResNet | cBN | CL | Hinge | True |
+| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | Scratch |  - | - | - | - | - |
 
-**Conditional GAN scores are only reported for labelled datasets.*
 
 ## 2. To be Implemented
 
-| Name| Venue | Implementation | Architecture | G_type*| D_type**| 
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | - | Big ResNet | WCBN | Projection |
+| Name| Venue | Implementation | Architecture | G_type*| D_type*| Loss | EMA**|
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | - | Big ResNet | cWC | PD | Hinge | True |
 
+**G/D_type indicates the way how we inject label information to the Generator or Discriminator.*
+
+***EMA means applying an exponential moving average update to the generator.*
+
+※ NOTE: We will conduct a huge amount of experiments to compare each method to each other. 
+
+We always welcome your contribution if you find any wrong implementation, bug, misreported score, etc. of the StudioGAN.
+
+
+###  [Abbreviation Details]
+
+cBN: conditional Batch Normalization 
+
+cWC: conditional Whitening and Coloring batch transform
+
+AC: Auxiliary Classifier
+
+PD: Projection Discriminator
+
+CL: Contrastive Learning (Ours)
 
 ## 3. Implemented training tricks/modules
 
 * Mixed Precision Training (Narang et al.) [[**Paper**]](https://arxiv.org/abs/1710.03740)
-* Exponential Moving Average Update (Yasin Yazıcı et al.) [[**Paper**]](https://arxiv.org/abs/1806.04498)
+  ```
+  python3 main.py -t -mpc -c "CONFIG_PATH"
+  ```
 * Standing Statistics (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)
-* Gradient Accumulation
+  ```
+  python3 main.py -std_stat --standing_step STEP -c "CONFIG_PATH"
+  ```
 * Synchronized BatchNorm
-
+  ```
+  python3 main.py -sync_bn -c "CONFIG_PATH"
+  ```
+* load all data in main memory
+  ```
+  python3 main.py -l -c "CONFIG_PATH"
+  ```
 
 ## 4. Requirements
 
@@ -69,93 +98,110 @@ or using docker
 docker pull mgkang/studiogan:0.1
 ```
 
-## 5. Dataset (CIFAR10, Tiny ImageNet, and ImageNet possible)
-The folder structure of the datasets is shown below:
+## 5. Dataset (CIFAR10, Tiny ImageNet, ImageNet, and Custom)
+CIFAR10: StudioGAN will automatically download the dataset.
+
+Tiny Imagenet, Imagenet, or Custom dataset: 
+  * First, download [Tiny Imagenet](https://tiny-imagenet.herokuapp.com), [Imagenet](http://www.image-net.org), or your own dataset.
+  * Second, make the folder structure of a dataset as follows:
+
 ```
 ├── data
-   └── ILSVRC2012
+   └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
        ├── train
-           ├── n01443537
-     	        ├── image1.png
-     	        ├── image2.png
-		└── ...
-           ├── n01629819
+           ├── cls0
+     	        ├── train0.png
+     	        ├── train1.png
+                └── ...
+           ├── cls99
            └── ...
        ├── valid
-           └── val_folder
-	        ├── val1.png
-     	        ├── val2.png
-		└── ...
+           └── cls0
+	            ├── valid0.png
+     	        ├── valid1.png
+		        └── ...
+           ├── cls99
+           └── ...
 ```
 
+##  6. Metrics
 
-## 6. How to run
+### 6-1. Inception Score (IS)
+Inception Score (IS) is a widely used metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires a pre-trained inception-V3 network, and approaches use OpenAI's TensorFlow implementation (https://github.com/openai/improved-gan). For monitoring purpose, we calculate IS using our PyTorch code and re-compute IS using the OpenAI's implementation after training is done.
 
-For CIFAR10 image generation:
+### 6-2. Frechet Inception Distance (FID)
+FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires a pre-trained inception-V3 network, and approaches use Tensorflow-based FID (https://github.com/bioinf-jku/TTUR), or PyTorch-based FID (https://github.com/mseitzer/pytorch-fid). StudioGAN utilizes the PyTorch-based FID to test GAN models in the same PyTorch environment seamlessly. We show that the PyTorch based FID implementation used in StudioGAN provides almost the same results with the TensorFlow implementation. The results are summarized in the appendix of our paper.
+### 6-3. Precision and Recall (PR)
 
-```
-CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -c "./configs/Table1/contra_biggan_cifar32_hinge_no.json"
-```
+## 7. Results
 
-For Tiny ImageNet image generation:
+#### ※ NOTE: We always welcome your contribution if you find any wrong implementation, bug, misreported score, etc. of the StudioGAN.
 
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -c "./configs/Table1/contra_biggan_tiny32_hinge_no.json"
-```
+### 7-1. CIFAR10
+| Name | Res. | IS (No split) | FID | PR | n_real (type) | n_fake | Config | Checkpoint |
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 32 | - | - | - | 10K (Valid) | 10K| [Link]() |  - |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() | - |
 
-For ImageNet image generation:
+### 7-2. Tiny ImageNet
+| Name | Res. | IS (No split) | FID | PR | n_real (type) | n_fake | Config | Checkpoint |
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() | - |
 
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json"
-```
-
-For ImageNet image generation (load all images into main memory to reduce I/O bottleneck):
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -l
-```
-
-For ImageNet image generation (train a model using PyTorch's Mixed Precision library):
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -mpc
-```
-
-For ImageNet image generation (train a model using Synchronized Batchnorm):
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -t -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -sync_bn
-```
-
-For ImageNet image evaluation (evaluate a model using Standing Statistics of Batchnorm):
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -e -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json" -std_stat --standing_step STEP
-```
-
-For ImageNet image evaluation (calculate FID value of a model using moments of train dataset):
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 main.py -e --eval_type 'train' -c "./configs/Imagenet_experiments/contra_biggan_imagenet128_hinge_no.json"
-```
-
-## 7. About PyTorch FID
-
-FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires a pre-trained inception-V3 network, and approaches use Tensorflow-based FID (https://github.com/bioinf-jku/TTUR), or PyTorch-based FID (https://github.com/mseitzer/pytorch-fid). StudioGAN utilizes the PyTorch-based FID to test GAN models in the same PyTorch environment seamlessly. We show that the PyTorch based FID implementation used in StudioGAN provides almost the same results with the TensorFlow implementation. The results are summarized in the table below.
-<p align="center"><img src = 'docs/figures/Table3.png' height = '140px' width = '520px'>
 
 ## 8. References
 
-**Self-Attention module:** https://github.com/voletiv/self-attention-GAN-pytorch
+**[1] Exponential Moving Average:** https://github.com/ajbrock/BigGAN-PyTorch
 
-**DiffAugment:** https://github.com/mit-han-lab/data-efficient-gans
+**[2] Synchronized BatchNorm:** https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
 
-**Adaptive Discriminator Augmentation:** https://github.com/rosinality/stylegan2-pytorch
+**[3] Self-Attention module:** https://github.com/voletiv/self-attention-GAN-pytorch
 
-**Exponential Moving Average:** https://github.com/ajbrock/BigGAN-PyTorch
+**[4] Implementation Details:** https://github.com/ajbrock/BigGAN-PyTorch
 
-**Tensorflow FID:** https://github.com/bioinf-jku/TTUR
+**[5] DiffAugment:** https://github.com/mit-han-lab/data-efficient-gans
 
-**Pytorch FID:** https://github.com/mseitzer/pytorch-fid
+**[6] Adaptive Discriminator Augmentation:** https://github.com/rosinality/stylegan2-pytorch
 
-**Synchronized BatchNorm:** https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+**[7] Tensorflow IS:** https://github.com/openai/improved-gan
 
-**Implementation Details:** https://github.com/ajbrock/BigGAN-PyTorch
+**[8] Tensorflow FID:** https://github.com/bioinf-jku/TTUR
+
+**[9] Pytorch FID:** https://github.com/mseitzer/pytorch-fid
+
 
 ## Citation
 StudioGAN is established for the following research project. Please cite our work if you use StudioGAN.
