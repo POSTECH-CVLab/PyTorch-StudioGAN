@@ -6,10 +6,10 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv' 15 | CNN | N/A | N/A | Vanilla | False |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | CNN | N/A | N/A | Least Sqaure | False |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | CNN | N/A | N/A | Hinge | False |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | ICLR' 17 |  ResNet | N/A | N/A | Wasserstein | False |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv' 15 | CNN/ResNet*** | N/A | N/A | Vanilla | False |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | CNN/ResNet*** | N/A | N/A | Least Sqaure | False |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | CNN/ResNet*** | N/A | N/A | Hinge | False |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | ICLR' 17 |  ResNet | N/A | N/A | Wasserstein | False |
 | [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS' 17 |  ResNet | N/A | N/A | Wasserstein |  False |
 | [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv' 17 |  ResNet | N/A | N/A | Wasserstein | False |
 | [**ACGAN**](https://arxiv.org/abs/1610.09585) | ICML' 17 |  ResNet | cBN | AC | Hinge | False |
@@ -17,7 +17,7 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR' 18 |  ResNet | cBN | PD | Hinge | False |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML' 19 |  ResNet | cBN | PD | Hinge | False |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR' 18 |  Big ResNet | cBN | PD | Hinge | True |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 |  Deep & Big ResNet | cBN | PD | Hinge | True |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 |  Big ResNet Deep | cBN | PD | Hinge | True |
 | [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 |  Big ResNet | cBN | PD | Hinge | True |
 | [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 |  Big ResNet | cBN | PD | Hinge | True |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 |  Big ResNet | cBN | PD | Hinge | True |
@@ -29,6 +29,8 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 **G/D_type indicates the way how we inject label information to the Generator or Discriminator.*
 
 ***EMA means applying an exponential moving average update to the generator.*
+
+****Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.*
 
 #### Abbreviation details:
 
@@ -150,7 +152,7 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
 | [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
 | [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
 | [**ACGAN**](https://arxiv.org/abs/1610.09585) | 32 | - | - | - | 10K (Test) | 10K | [Link]() |  - |
@@ -172,7 +174,7 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**ACGAN**](https://arxiv.org/abs/1610.09585) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
@@ -194,12 +196,6 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() | - |
 
 ## 8. References

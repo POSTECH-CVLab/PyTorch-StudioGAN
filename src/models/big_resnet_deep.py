@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# models/biggan_deep.py
+# models/big_resnet_deep.py
 
 
 from utils.model_ops import *

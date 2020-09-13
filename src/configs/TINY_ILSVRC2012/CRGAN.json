@@ -1,4 +1,4 @@
-{
+{ 
     "data_processing":{
       "dataset_name": "tiny_imagenet",
       "data_path": "./data/TINY_ILSVRC2012",

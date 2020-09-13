@@ -1,5 +1,5 @@
 {
-    "data_processing":{
+    "data_processing":{ 
       "dataset_name": "cifar10",
       "data_path": "./data/cifar10",
       "img_size": 32,
@@ -35,16 +35,16 @@
         "optimizer": "Adam",
         "batch_size": 64,
         "accumulation_steps": 1,
-        "d_lr": 0.0004,
-        "g_lr": 0.0001,
+        "d_lr": 0.0002,
+        "g_lr": 0.0002,
         "momentum": "N/A",
         "nesterov": "N/A",
         "alpha": "N/A",
         "beta1": 0.5,
         "beta2": 0.999,
         "g_steps_per_iter": 1,
-        "d_steps_per_iter": 1,
-        "total_step": 1000000
+        "d_steps_per_iter": 5,
+        "total_step": 100000
       },
   
       "loss_function": {

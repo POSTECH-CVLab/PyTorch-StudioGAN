@@ -71,13 +71,14 @@ def set_temperature(conditional_strategy, tempering_type, start_temperature, end
 class Train_Eval(object):
     def __init__(self, run_name, best_step, dataset_name, eval_type, logger, writer, n_gpus, gen_model, dis_model, inception_model,
                  Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
-                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, batch_size,
-                 g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
-                 tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound, gradient_penalty_for_dis,
-                 gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda, cr, cr_lambda, bcr, real_lambda, fake_lambda, zcr, gen_lambda,
-                 dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate,
-                 latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every,
-                 checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
+                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, 
+                 batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, margin,
+                 tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound,
+                 gradient_penalty_for_dis, gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda, cr, cr_lambda, bcr,
+                 real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior,
+                 truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta,
+                 latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
+                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -118,7 +119,6 @@ class Train_Eval(object):
 
         self.G_loss = G_loss
         self.D_loss = D_loss
-        self.ADA_cutoff = ADA_cutoff
         self.contrastive_lambda = contrastive_lambda
         self.margin = margin
         self.tempering_type = tempering_type

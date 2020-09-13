@@ -1,5 +1,5 @@
 {
-    "data_processing":{
+    "data_processing":{ 
       "dataset_name": "imagenet",
       "data_path": "./data/ILSVRC2012",
       "img_size": 128,

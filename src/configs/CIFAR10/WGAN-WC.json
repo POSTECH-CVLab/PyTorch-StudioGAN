@@ -1,5 +1,5 @@
 {
-    "data_processing":{
+    "data_processing":{ 
       "dataset_name": "cifar10",
       "data_path": "./data/cifar10",
       "img_size": 32,
