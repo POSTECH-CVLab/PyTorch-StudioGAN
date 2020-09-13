@@ -4,55 +4,50 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 
 ##  1. Implemented GANs
 
-| Name| Venue | Implementation | Architecture | G_type*| D_type*| Loss | EMA**|
+| Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) |arXiv' 15 | Scratch | CNN | N/A | N/A | Vanilla | False |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | Scratch | CNN | N/A | N/A | Least Sqaure | False |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | Scratch | CNN | N/A | N/A | Hinge | False |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | ICLR' 17 | Scratch | ResNet | N/A | N/A | Wasserstein | False |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS' 17 | Scratch | ResNet | N/A | N/A | Wasserstein |  False |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv' 17 | Scratch | ResNet | N/A | N/A | Wasserstein | False |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | ICML' 17 | Scratch | ResNet | cBN | AC | Hinge | False |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR' 18 | Scratch | ResNet | cBN | PD | Hinge | False |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR' 18 | Scratch | ResNet | cBN | PD | Hinge | False |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML' 19 | Partially Borrowed | ResNet | cBN | PD | Hinge | False |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Partially Borrowed | Big ResNet | cBN | PD | Hinge | True |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 | Partially Borrowed | Deep & Big ResNet | cBN | PD | Hinge | True |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 | Scratch | Big ResNet | cBN | PD | Hinge | True |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 | Scratch | Big ResNet | cBN | PD | Hinge | True |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 | Scratch | Big ResNet | cBN | PD | Hinge | True |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | arXiv' 20 | Borrowed | Big ResNet | cBN | PD | Hinge | True |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | arXiv' 20 | Borrowed | Big ResNet | cBN | PD | Hinge | True |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Scratch | Big ResNet | cBN | CL | Hinge | True |
-| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | Scratch |  - | - | - | - | - |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv' 15 | CNN | N/A | N/A | Vanilla | False |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | CNN | N/A | N/A | Least Sqaure | False |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | CNN | N/A | N/A | Hinge | False |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.07875) | ICLR' 17 |  ResNet | N/A | N/A | Wasserstein | False |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS' 17 |  ResNet | N/A | N/A | Wasserstein |  False |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv' 17 |  ResNet | N/A | N/A | Wasserstein | False |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | ICML' 17 |  ResNet | cBN | AC | Hinge | False |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR' 18 |  ResNet | cBN | PD | Hinge | False |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR' 18 |  ResNet | cBN | PD | Hinge | False |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML' 19 |  ResNet | cBN | PD | Hinge | False |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR' 18 |  Big ResNet | cBN | PD | Hinge | True |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR' 18 |  Deep & Big ResNet | cBN | PD | Hinge | True |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 |  Big ResNet | cBN | PD | Hinge | True |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 |  Big ResNet | cBN | PD | Hinge | True |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 |  Big ResNet | cBN | PD | Hinge | True |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | arXiv' 20 |  Big ResNet | cBN | PD | Hinge | True |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | arXiv' 20 |  Big ResNet | cBN | PD | Hinge | True |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Big ResNet | cBN | CL | Hinge | True |
+| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | - | - | - | - | - |
 
 
 ## 2. To be Implemented
 
-| Name| Venue | Implementation | Architecture | G_type*| D_type*| Loss | EMA**|
+| Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | - | Big ResNet | cWC | PD | Hinge | True |
+| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
 
 **G/D_type indicates the way how we inject label information to the Generator or Discriminator.*
 
 ***EMA means applying an exponential moving average update to the generator.*
 
-※ NOTE: We will conduct a huge amount of experiments to compare each method to each other. 
-
-We always welcome your contribution if you find any wrong implementation, bug, misreported score, etc. of the StudioGAN.
-
-
 ###  [Abbreviation Details]
 
-cBN: conditional Batch Normalization 
+[cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization 
 
-cWC: conditional Whitening and Coloring batch transform
+[cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform
 
-AC: Auxiliary Classifier
+[AC](https://arxiv.org/abs/1610.09585) : Auxiliary Classifier
 
-PD: Projection Discriminator
+[PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator
 
-CL: Contrastive Learning (Ours)
+[CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning (Ours)
 
 ## 3. Implemented training tricks/modules
 
@@ -135,11 +130,12 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 
 ## 7. Results
 
-#### ※ NOTE: We always welcome your contribution if you find any wrong implementation, bug, misreported score, etc. of the StudioGAN.
+#### ※ NOTE
+#### We always welcome your contribution if you find any wrong implementation, bug, misreported score, etc. of the StudioGAN.
 
 ### 7-1. CIFAR10
 | Name | Res. | IS (No split) | FID | PR | n_real (type) | n_fake | Config | Checkpoint |
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | - | - | 10K (Valid) | 10K | [Link]() |  - |
@@ -161,7 +157,7 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 
 ### 7-2. Tiny ImageNet
 | Name | Res. | IS (No split) | FID | PR | n_real (type) | n_fake | Config | Checkpoint |
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
