@@ -30,7 +30,7 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 
 ***EMA means applying an exponential moving average update to the generator.*
 
-#### Abbreviation Details:
+#### Abbreviation details:
 
 [cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization 
 
@@ -47,7 +47,7 @@ StudioGAN is a Pytorch library providing implementations of representative Gener
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
 
-#### Abbreviation Details:
+#### Abbreviation details:
 
 [cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform
 
@@ -126,9 +126,17 @@ Tiny Imagenet, Imagenet, or Custom dataset:
 
 ### 6-1. Inception Score (IS)
 Inception Score (IS) is a widely used metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires a pre-trained inception-V3 network, and approaches use OpenAI's TensorFlow implementation (https://github.com/openai/improved-gan). For monitoring purpose, we calculate IS using our PyTorch code and re-compute IS using the OpenAI's implementation after training is done.
+```
+python3 main.py -s -current -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+```
+Keep in mind that you will need to have TensorFlow 1.3 or earlier version installed!
 
+python3 inception_tf13.py --run_name RUN_NAME --type TYPE
+```
 ### 6-2. Frechet Inception Distance (FID)
 FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires a pre-trained inception-V3 network, and approaches use Tensorflow-based FID (https://github.com/bioinf-jku/TTUR), or PyTorch-based FID (https://github.com/mseitzer/pytorch-fid). StudioGAN utilizes the PyTorch-based FID to test GAN models in the same PyTorch environment seamlessly. We show that the PyTorch based FID implementation used in StudioGAN provides almost the same results with the TensorFlow implementation. The results are summarized in the appendix of our paper.
+
 ### 6-3. Precision and Recall (PR)
 
 ## 7. Results

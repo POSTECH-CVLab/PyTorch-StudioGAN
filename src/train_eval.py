@@ -592,9 +592,6 @@ class Train_Eval(object):
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                               self.latent_op_beta, self.default_device, self.mu, self.sigma, self.run_name)
 
-            ### pre-calculate an inception score
-            ### calculating inception score using the below will give you an underestimated one.
-            ### plz use the official tensorflow implementation(inception_tensorflow.py).
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                      self.latent_op_beta, 1, self.default_device)
@@ -635,7 +632,7 @@ class Train_Eval(object):
 
 
     ################################################################################################################################
-    def save_images(self, png=True, npz=True):
+    def save_images(self, is_generate, png=True, npz=True):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
@@ -643,12 +640,12 @@ class Train_Eval(object):
 
             if png:
                 save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
-                            self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
-                            self.latent_op_beta, self.default_device)
+                                self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
+                                self.latent_op_alpha, self.latent_op_beta, self.default_device)
             if npz:
                 save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
-                            self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
-                            self.latent_op_beta, self.default_device)
+                                self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
+                                self.latent_op_alpha, self.latent_op_beta, self.default_device)
     ################################################################################################################################
 
 
