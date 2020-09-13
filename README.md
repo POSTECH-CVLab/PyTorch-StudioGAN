@@ -149,7 +149,7 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 
 ## 7. Results
 
-#### ※ Note: We always welcome your contribution if you find any wrong implementation, bug, misreported score.
+#### ※ Note: we always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
 We report the best IS, FID, and PR values during training.  
 
