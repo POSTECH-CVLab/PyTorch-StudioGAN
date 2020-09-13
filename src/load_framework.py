@@ -133,7 +133,6 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
 
     G_loss = {'vanilla': loss_dcgan_gen, 'least_square': loss_lsgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
     D_loss = {'vanilla': loss_dcgan_dis, 'least_square': loss_lsgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
-    ADA_cutoff = {'vanilla': 0.5, 'least_square': 0.5, 'hinge': 0.0, 'wasserstein': 0.0}
 
     if optimizer == "SGD":
         G_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
@@ -222,7 +221,6 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         total_step = total_step,
         G_loss=G_loss[adv_loss],
         D_loss=D_loss[adv_loss],
-        ADA_cutoff=ADA_cutoff[adv_loss],
         contrastive_lambda=model_config['loss_function']['contrastive_lambda'],
         margin=model_config['loss_function']['margin'],
         tempering_type=model_config['loss_function']['tempering_type'],
@@ -286,7 +284,7 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], standing_statistics=standing_statistics, standing_step=standing_step)
 
     if train_config['interpolation']:
-        assert architecture in ["biggan", "biggan_deep"], "Not supported except for biggan and biggan_deep."
+        assert architecture in ["big_resnet", "biggan_deep"], "Not supported except for biggan and biggan_deep."
         train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True,
                                             fix_y=False, standing_statistics=standing_statistics, standing_step=standing_step)
         train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True,

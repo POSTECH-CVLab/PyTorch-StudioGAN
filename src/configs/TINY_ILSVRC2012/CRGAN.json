@@ -11,12 +11,12 @@
   
     "train": {
       "model": {
-        "architecture": "biggan",
-        "conditional_strategy": "ContraGAN",
-        "pos_collected_numerator": true,
-        "hypersphere_dim": 768,
+        "architecture": "big_resnet",
+        "conditional_strategy": "projGAN",
+        "pos_collected_numerator": false,
+        "hypersphere_dim": "N/A",
         "nonlinear_embed": false,
-        "normalize_embed": true,
+        "normalize_embed": false,
         "g_spectral_norm": true,
         "d_spectral_norm": true,
         "activation_fn": "ReLU",
@@ -33,8 +33,8 @@
   
       "optimization": {
         "optimizer": "Adam",
-        "batch_size": 256,
-        "accumulation_steps": 1, 
+        "batch_size": 1024,
+        "accumulation_steps": 1,
         "d_lr": 0.0004,
         "g_lr": 0.0001,
         "momentum": "N/A",
@@ -50,12 +50,12 @@
       "loss_function": {
         "adv_loss": "hinge",
   
-        "contrastive_lambda": 1.0,
-        "margin": 1.0, 
-        "tempering_type": "constant",
+        "contrastive_lambda": "N/A",
+        "margin": "N/A", 
+        "tempering_type": "N/A",
         "tempering_step": "N/A",
-        "start_temperature": 1.0,
-        "end_temperature": 1.0,
+        "start_temperature": "N/A",
+        "end_temperature": "N/A",
   
         "weight_clipping_for_dis": false,
         "weight_clipping_bound": "N/A",
@@ -66,8 +66,8 @@
         "deep_regret_analysis_for_dis": false,
         "regret_penalty_lambda": "N/A",
   
-        "cr": false,
-        "cr_lambda": "N/A",
+        "cr": true,
+        "cr_lambda": 10.0,
 
         "bcr": false,
         "real_lambda": "N/A",
@@ -85,16 +85,16 @@
       },
   
       "training_and_sampling_setting":{
-        "random_flip_preprocessing": false,
-        "diff_aug":false,
+        "random_flip_preprocessing": true,
+        "diff_aug": false,
 
         "ada": false,
         "ada_target": "N/A",
         "ada_length": "N/A",
-   
+
         "prior": "gaussian",
         "truncated_factor": 1,
-  
+
         "latent_op": false,
         "latent_op_rate":"N/A",
         "latent_op_step":"N/A",

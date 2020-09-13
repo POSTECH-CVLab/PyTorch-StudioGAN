@@ -129,9 +129,9 @@ Inception Score (IS) is a widely used metric to measure how much GAN generates h
 ```
 python3 main.py -s -current -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
-```
-Keep in mind that you will need to have TensorFlow 1.3 or earlier version installed!
 
+Keep in mind that you will need to have TensorFlow 1.3 or earlier version installed!
+```
 python3 inception_tf13.py --run_name RUN_NAME --type TYPE
 ```
 ### 6-2. Frechet Inception Distance (FID)
@@ -188,6 +188,19 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 | [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | - | - | - | 50K (Valid) | 50K | [Link]() | - |
 
+### 7-3. ImageNet
+| Name | Res. | IS (No split) | FID | PR | n_real (type) | n_fake | Config | Checkpoint |
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() |  - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | - | - | - | 50K (Valid) | 50K | [Link]() | - |
 
 ## 8. References
 
