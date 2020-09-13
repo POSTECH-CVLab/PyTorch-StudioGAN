@@ -131,7 +131,7 @@ Inception Score (IS) is a widely used metric to measure how much GAN generates h
 
 To compute official IS, you have to make a "samples.npz" file using the below command:
 ```
-python3 main.py -s -best -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+python3 main.py -s -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 It will automatically create the samples.npz file in the path ./samples/RUN_NAME/fake/npz/samples.npz .
