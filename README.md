@@ -1,4 +1,4 @@
-# StudioGAN: A Library for Experiment and Evaluation of GANs
+## StudioGAN: A Library for Experiment and Evaluation of GANs
 
 StudioGAN is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. This project aims to help machine learning researchers to compare a new idea with other GANs in the same Pytorch environment.
 
