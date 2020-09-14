@@ -15,6 +15,7 @@ from datetime import datetime
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
+from metrics.F_beta import calculate_f_beta_score
 from metrics.Accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import interp
@@ -71,7 +72,7 @@ def set_temperature(conditional_strategy, tempering_type, start_temperature, end
 class Train_Eval(object):
     def __init__(self, run_name, best_step, dataset_name, eval_type, logger, writer, n_gpus, gen_model, dis_model, inception_model,
                  Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
-                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, 
+                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer,
                  batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, margin,
                  tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound,
                  gradient_penalty_for_dis, gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda, cr, cr_lambda, bcr,
@@ -583,6 +584,7 @@ class Train_Eval(object):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
+            num_split, num_run4PR, num_cluster4PR, beta4PR = 1, 10, 20, 8
 
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
@@ -594,8 +596,12 @@ class Train_Eval(object):
 
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                     self.latent_op_beta, 1, self.default_device)
+                                                     self.latent_op_beta, num_split, self.default_device)
 
+            precision, recall, f_beta, f_beta_inv = calculate_f_beta_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
+                                                                           num_run4PR, num_cluster4PR, beta4PR, self.truncated_factor, self.prior, self.latent_op,
+                                                                           self.latent_op_step4eval, self.latent_op_alpha, self.latent_op_beta, self.default_device)
+            PR_Curve = plot_pr_curve(precision, recall, self.run_name, self.logger)
             if self.D_loss.__name__ != "loss_wgan_dis":
                 real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
@@ -612,13 +618,18 @@ class Train_Eval(object):
                 self.writer.add_scalars('Accuracy', acc_dict, step)
 
             if self.best_fid is None:
-                self.best_fid, self.best_step, is_best = fid_score, step, True
+                self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best = fid_score, step, True, f_beta, f_beta_inv
             else:
                 if fid_score <= self.best_fid:
-                    self.best_fid, self.best_step, is_best = fid_score, step, True
+                    self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best = fid_score, step, True, f_beta, f_beta_inv
 
             self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.eval_type):fid_score}, step)
+            self.writer.add_scalars('F_beta score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta}, step)
+            self.writer.add_scalars('F_beta_inv score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta_inv}, step)
             self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):kl_score}, step)
+            self.writer.add_figure('PR_Curve', PR_Curve, global_step=step)
+            self.logger.info('F_{beta} score (Step: {step}, Using {type} images): {F_beta}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta=f_beta))
+            self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
             self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))
             self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_type]), IS=kl_score))
             self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))

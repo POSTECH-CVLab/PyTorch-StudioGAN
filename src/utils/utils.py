@@ -228,6 +228,26 @@ def plot_img_canvas(images, save_path, logger, nrow):
     save_image(images, save_path, padding=0, nrow=nrow)
     logger.info("Saved image to {}".format(save_path))
 
+def plot_pr_curve(precision, recall, run_name, logger, log=False):
+    directory = join('./figures', run_name)
+
+    if not exists(abspath(directory)):
+        os.makedirs(directory)
+
+    save_path = join(directory, "pr_curve.png")
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1], linestyle='--')
+    ax.plot(recall, precision)
+    ax.grid(True)
+    ax.set_xlabel('Recall (Higher is better)', fontsize=15)
+    ax.set_ylabel('Precision (Higher is better)', fontsize=15)
+    fig.tight_layout()
+    fig.savefig(save_path)
+    if log:
+        logger.info("Saved image to {}".format(save_path))
+    return fig
+
 
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
                     truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
