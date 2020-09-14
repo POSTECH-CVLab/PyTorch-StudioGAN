@@ -68,19 +68,19 @@
 
 * Mixed Precision Training (Narang et al.) [[**Paper**]](https://arxiv.org/abs/1710.03740)
   ```
-  python3 main.py -t -mpc -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -t -mpc -c CONFIG_PATH
   ```
 * Standing Statistics (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)
   ```
-  python3 main.py -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
   ```
 * Synchronized BatchNorm
   ```
-  python3 main.py -sync_bn -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -sync_bn -c CONFIG_PATH
   ```
 * load all data in main memory
   ```
-  python3 main.py -l -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -l -c CONFIG_PATH
   ```
 
 ## Requirements
@@ -145,7 +145,7 @@ Inception Score (IS) is a metric to measure how much GAN generates high-fidelity
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
 ```
-python3 main.py -s -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -s -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 It will automatically create the samples.npz file in the path ./samples/RUN_NAME/fake/npz/samples.npz .
@@ -154,7 +154,7 @@ Then, execute TensorFlow official IS implementation.
 
 Keep in mind that you need to have TensorFlow 1.3 or earlier version installed!
 ```
-python3 inception_tf13.py --run_name RUN_NAME --type "fake"
+CUDA_VISIBLE_DEVICES=0,1,... python3 inception_tf13.py --run_name RUN_NAME --type "fake"
 ```
 
 Note that StudioGAN logs Pytorch-based IS during the training.
