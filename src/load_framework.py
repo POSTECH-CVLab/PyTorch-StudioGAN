@@ -148,8 +148,9 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
 
     if checkpoint_folder is not None:
         when = "current" if load_current is True else "best"
-        if not exists(abspath(checkpoint_folder)):
-            raise NotADirectoryError
+        os.makedirs(abspath(checkpoint_folder), exist_ok=True)
+        #if not exists(abspath(checkpoint_folder)):
+        #    raise NotADirectoryError
         checkpoint_dir = make_checkpoint_dir(checkpoint_folder, run_name)
         g_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0]
         d_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0]
