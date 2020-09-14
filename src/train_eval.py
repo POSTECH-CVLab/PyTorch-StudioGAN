@@ -598,10 +598,10 @@ class Train_Eval(object):
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                      self.latent_op_beta, num_split, self.default_device)
 
-            f_beta, f_beta_inv = calculate_f_beta_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
-                                                        num_run4PR, num_cluster4PR, beta4PR, self.truncated_factor, self.prior, self.latent_op,
-                                                        self.latent_op_step4eval, self.latent_op_alpha, self.latent_op_beta, self.default_device)
-
+            precision, recall, f_beta, f_beta_inv = calculate_f_beta_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
+                                                                           num_run4PR, num_cluster4PR, beta4PR, self.truncated_factor, self.prior, self.latent_op,
+                                                                           self.latent_op_step4eval, self.latent_op_alpha, self.latent_op_beta, self.default_device)
+            PR_Curve = plot_pr_curve(precision, recall, self.run_name, self.logger)
             if self.D_loss.__name__ != "loss_wgan_dis":
                 real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
@@ -624,9 +624,10 @@ class Train_Eval(object):
                     self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best = fid_score, step, True, f_beta, f_beta_inv
 
             self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.eval_type):fid_score}, step)
-            self.writer.add_scalars('F_{beta} score', {'{num} generated images'.format(beta=beta4PR, num=str(self.num_eval[self.eval_type])):f_beta}, step)
-            self.writer.add_scalars('F_1/{beta} score', {'{num} generated images'.format(beta=beta4PR, num=str(self.num_eval[self.eval_type])):f_beta_inv}, step)
+            self.writer.add_scalars('F_beta score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta}, step)
+            self.writer.add_scalars('F_beta_inv score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta_inv}, step)
             self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):kl_score}, step)
+            self.writer.add_figure('PR_Curve', PR_Curve, global_step=step)
             self.logger.info('F_{beta} score (Step: {step}, Using {type} images): {F_beta}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta=f_beta))
             self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
             self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))

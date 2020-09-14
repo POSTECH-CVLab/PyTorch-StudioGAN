@@ -149,7 +149,7 @@ def calculate_f_beta_score(dataloader, gen, dis, inception_model, num_generate, 
 
     batch_size = dataloader.batch_size
     PR = precision_recall(inception_model, device=device)
-    print("Calculating F_beta({beta}) Score....".format(beta=beta))
+    print("Calculating F_beta Score....")
     precision, recall = PR.compute_precision_recall(dataloader, gen, dis, num_generate, num_runs, num_clusters, truncated_factor,
                                                     prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size)
 
@@ -162,5 +162,4 @@ def calculate_f_beta_score(dataloader, gen, dis, inception_model, num_generate, 
 
     f_beta = np.max(PR.compute_f_beta(precision, recall, beta=beta))
     f_beta_inv = np.max(PR.compute_f_beta(precision, recall, beta=1/beta))
-
-    return f_beta, f_beta_inv
+    return precision, recall, f_beta, f_beta_inv
