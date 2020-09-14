@@ -328,4 +328,5 @@ dependencies:
   - pip:
     - pillow==6.2.2
     - scipy==1.1.0
+    - sklearn==0.0
 prefix: /root/anaconda3
