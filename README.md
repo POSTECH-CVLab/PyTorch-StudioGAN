@@ -48,8 +48,6 @@
 [PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator.
 [CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning (Ours).
 
-[PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator
-
 ## To be Implemented
 
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
