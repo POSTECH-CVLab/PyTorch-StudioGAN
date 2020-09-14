@@ -643,7 +643,7 @@ class Train_Eval(object):
 
 
     ################################################################################################################################
-    def save_images(self, is_generate, png=True, npz=True):
+    def save_images(self, is_generate, standing_statistics, standing_step, png=True, npz=True):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,

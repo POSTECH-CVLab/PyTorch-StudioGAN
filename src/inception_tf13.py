@@ -21,7 +21,7 @@ import numpy as np
 from six.moves import urllib
 import tensorflow as tf
 
-MODEL_DIR = ''
+MODEL_DIR = './inception_model'
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
 softmax = None
 
@@ -116,7 +116,7 @@ def run(config):
   # if softmax is None: # No need to functionalize like this.
   _init_inception()
 
-  fname = '%s/%s/%s/%s/samples.npz' % ("samples", config['run_name_name'], config['type'], "npz")
+  fname = '%s/%s/%s/%s/samples.npz' % ("samples", config['run_name'], config['type'], "npz")
   print('loading %s ...'%fname)
   ims = np.load(fname)['x']
   import time

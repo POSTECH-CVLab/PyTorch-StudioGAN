@@ -278,7 +278,7 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         is_save = train_eval.evaluation(step=step, standing_statistics=standing_statistics, standing_step=standing_step)
     
     if train_config['save_images']:
-        train_eval.save_images(is_generate=True, png=True, npz=True)
+        train_eval.save_images(is_generate=True, png=True, npz=True, standing_statistics=standing_statistics, standing_step=standing_step)
 
     if train_config['k_nearest_neighbor']:
         train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], standing_statistics=standing_statistics, standing_step=standing_step)
