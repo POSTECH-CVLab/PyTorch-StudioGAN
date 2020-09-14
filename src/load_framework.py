@@ -14,7 +14,7 @@ from os.path import dirname, abspath, exists, join
 
 from data_utils.load_dataset import *
 from metrics.inception_network import InceptionV3
-from metrics.prepare_inception_moments_eval_dataset import prepare_inception_moments_eval_dataset
+from metrics.prepare_inception_moments import prepare_inception_moments
 from utils.log import make_run_name, make_logger, make_checkpoint_dir
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
@@ -45,11 +45,11 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
                    beta1, beta2, total_step, adv_loss, cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor,
                    ema, ema_decay, ema_start, synchronized_bn, mixed_precision, hdf5_path_train, train_config, model_config, **_):
     if seed == 82624:
-        cudnn.benchmark = True # Not good Generator for undetermined input size
+        cudnn.benchmark = True
         cudnn.deterministic = False
     else:
         fix_all_seed(seed)
-        cudnn.benchmark = False # Not good Generator for undetermined input size
+        cudnn.benchmark = False
         cudnn.deterministic = True
 
     if disable_debugging_API:
@@ -133,7 +133,6 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
 
     G_loss = {'vanilla': loss_dcgan_gen, 'least_square': loss_lsgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
     D_loss = {'vanilla': loss_dcgan_dis, 'least_square': loss_lsgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
-    ADA_cutoff = {'vanilla': 0.5, 'least_square': 0.5, 'hinge': 0.0, 'wasserstein': 0.0}
 
     if optimizer == "SGD":
         G_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Gen.parameters()), g_lr, momentum=momentum, nesterov=nesterov)
@@ -176,14 +175,14 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         inception_model = InceptionV3().to(default_device)
         if n_gpus > 1:
             inception_model = DataParallel(inception_model, output_device=default_device)
-        mu, sigma = prepare_inception_moments_eval_dataset(dataloader=eval_dataloader,
-                                                           generator=Gen,
-                                                           eval_mode=eval_type,
-                                                           inception_model=inception_model,
-                                                           splits=10,
-                                                           run_name=run_name,
-                                                           logger=logger,
-                                                           device=default_device)
+        mu, sigma = prepare_inception_moments(dataloader=eval_dataloader,
+                                              generator=Gen,
+                                              eval_mode=eval_type,
+                                              inception_model=inception_model,
+                                              splits=10,
+                                              run_name=run_name,
+                                              logger=logger,
+                                              device=default_device)
     else:
         mu, sigma, inception_model = None, None, None
 
@@ -222,7 +221,6 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
         total_step = total_step,
         G_loss=G_loss[adv_loss],
         D_loss=D_loss[adv_loss],
-        ADA_cutoff=ADA_cutoff[adv_loss],
         contrastive_lambda=model_config['loss_function']['contrastive_lambda'],
         margin=model_config['loss_function']['margin'],
         tempering_type=model_config['loss_function']['tempering_type'],
@@ -278,12 +276,15 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
 
     if train_config['eval']:
         is_save = train_eval.evaluation(step=step, standing_statistics=standing_statistics, standing_step=standing_step)
+    
+    if train_config['save_images']:
+        train_eval.save_images(is_generate=True, png=True, npz=True)
 
     if train_config['k_nearest_neighbor']:
         train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], standing_statistics=standing_statistics, standing_step=standing_step)
 
     if train_config['interpolation']:
-        assert architecture in ["biggan", "biggan_deep"], "Not supported except for biggan and biggan_deep."
+        assert architecture in ["big_resnet", "biggan_deep"], "Not supported except for biggan and biggan_deep."
         train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=True,
                                             fix_y=False, standing_statistics=standing_statistics, standing_step=standing_step)
         train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True,

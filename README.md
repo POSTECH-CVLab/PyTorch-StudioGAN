@@ -48,6 +48,7 @@
 [PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator.
 [CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning (Ours).
 
+[PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator
 
 ## To be Implemented
 
@@ -111,6 +112,7 @@ Tiny Imagenet, Imagenet, or a custom dataset:
   1. download [Tiny Imagenet](https://tiny-imagenet.herokuapp.com) and [Imagenet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
+To compute official IS, you have to make a "samples.npz" file using the below command:
 ```
 ┌── src
 ├── doc

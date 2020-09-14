@@ -16,7 +16,7 @@ from load_framework import load_frameowrk
 
 def main():
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('-c', '--config_path', type=str, default='./configs/Imagenet_experiments/proj_biggan_imagenet128_hinge_no.json')
+    parser.add_argument('-c', '--config_path', type=str, default='./configs/CIFAR10/ContraGAN.json')
     parser.add_argument('--checkpoint_folder', type=str, default=None)
     parser.add_argument('-current', '--load_current', action='store_true', help='choose whether you load current or best weights')
     parser.add_argument('--log_output_path', type=str, default=None)
@@ -35,6 +35,7 @@ def main():
     parser.add_argument('-l', '--load_all_data_in_memory', action='store_true')
     parser.add_argument('-t', '--train', action='store_true')
     parser.add_argument('-e', '--eval', action='store_true')
+    parser.add_argument('-s', '--save_images', action='store_true')
     parser.add_argument('-knn', '--k_nearest_neighbor', action='store_true', help='select whether conduct k-nearest neighbor analysis')
     parser.add_argument('-itp', '--interpolation', action='store_true', help='select whether conduct interpolation analysis')
     parser.add_argument('--nrow', type=int, default=10, help='number of rows to plot image canvas')
@@ -42,7 +43,7 @@ def main():
 
     parser.add_argument('--print_every', type=int, default=100, help='control log interval')
     parser.add_argument('--save_every', type=int, default=2000, help='control evaluation and save interval')
-    parser.add_argument('--eval_type', type=str, default='train', help='[train/valid/test]')
+    parser.add_argument('--eval_type', type=str, default='test', help='[train/valid/test]')
     args = parser.parse_args()
 
     if args.config_path is not None:

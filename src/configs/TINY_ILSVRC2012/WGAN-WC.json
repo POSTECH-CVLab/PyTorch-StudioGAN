@@ -1,0 +1,111 @@
+{
+  "data_processing":{ 
+      "dataset_name": "tiny_imagenet",
+      "data_path": "./data/TINY_ILSVRC2012",
+      "img_size": 64,
+      "num_classes": 200,
+      "batch_size4prcsing": 256,
+      "chunk_size": 500,
+      "compression": false
+    },
+
+  "train": {
+    "model": {
+      "architecture": "resnet",
+      "conditional_strategy": "no",
+      "pos_collected_numerator": false,
+      "hypersphere_dim": "N/A",
+      "nonlinear_embed": false,
+      "normalize_embed": false,
+      "g_spectral_norm": false,
+      "d_spectral_norm": false,
+      "activation_fn": "ReLU",
+      "attention": false,
+      "attention_after_nth_gen_block": "N/A",
+      "attention_after_nth_dis_block": "N/A",
+      "z_dim": 128,
+      "shared_dim": "N/A",
+      "g_conv_dim": 64,
+      "d_conv_dim": 64,
+      "G_depth": "N/A",
+      "D_depth": "N/A"
+    },
+
+    "optimization": {
+      "optimizer": "Adam",
+      "batch_size": 256,
+      "accumulation_steps": 1,
+      "d_lr": 0.0004,
+      "g_lr": 0.0001,
+      "momentum": "N/A",
+      "nesterov": "N/A",
+      "alpha": "N/A",
+      "beta1": 0.0,
+      "beta2": 0.999,
+      "g_steps_per_iter": 1,
+      "d_steps_per_iter": 1,
+      "total_step": 100000
+    },
+
+    "loss_function": {
+      "adv_loss": "wasserstein",
+
+      "contrastive_lambda": "N/A",
+      "margin": "N/A", 
+      "tempering_type": "N/A",
+      "tempering_step": "N/A",
+      "start_temperature": "N/A",
+      "end_temperature": "N/A",
+
+      "weight_clipping_for_dis": false,
+      "weight_clipping_bound": "N/A",
+
+      "gradient_penalty_for_dis": true,
+      "gradient_penalty_lambda": 10.0,
+
+      "deep_regret_analysis_for_dis": false,
+      "regret_penalty_lambda": "N/A",
+
+      "cr": false,
+      "cr_lambda": "N/A",
+
+      "bcr": false,
+      "real_lambda": "N/A",
+      "fake_lambda": "N/A",
+
+      "zcr": false,
+      "gen_lambda": "N/A",
+      "dis_lambda": "N/A",
+      "sigma_noise": "N/A"
+    },
+
+    "initialization":{
+      "g_init": "ortho",
+      "d_init": "ortho"
+    },
+
+    "training_and_sampling_setting":{
+      "random_flip_preprocessing": true,
+      "diff_aug": false,
+
+      "ada": false,
+      "ada_target": "N/A",
+      "ada_length": "N/A",
+
+      "prior": "gaussian",
+      "truncated_factor": 1,
+
+      "latent_op": false,
+      "latent_op_rate":"N/A",
+      "latent_op_step":"N/A",
+      "latent_op_step4eval":"N/A",
+      "latent_op_alpha":"N/A",
+      "latent_op_beta":"N/A",
+      "latent_norm_reg_weight":"N/A",
+
+      "ema": false,
+      "ema_decay": "N/A",
+      "ema_start": "N/A"
+    }
+  }
+}

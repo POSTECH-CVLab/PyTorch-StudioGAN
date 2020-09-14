@@ -15,7 +15,7 @@ from datetime import datetime
 
 from metrics.IS import calculate_incep_score
 from metrics.FID import calculate_fid_score
-from metrics.calculate_accuracy import calculate_accuracy
+from metrics.Accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import interp
 from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
@@ -53,28 +53,32 @@ class dummy_context_mgr():
         return False
 
 
-def set_temperature(tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
-    if tempering_type == 'continuous':
-        t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
-    elif tempering_type == 'discrete':
-        tempering_interval = total_step//(tempering_step + 1)
-        t = start_temperature + \
-            (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
+def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
+    if conditional_strategy == 'ContraGAN':
+        if tempering_type == 'continuous':
+            t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
+        elif tempering_type == 'discrete':
+            tempering_interval = total_step//(tempering_step + 1)
+            t = start_temperature + \
+                (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
+        else:
+            t = start_temperature
     else:
-        t = start_temperature
+        t = 'no'
     return t
 
 
 class Train_Eval(object):
     def __init__(self, run_name, best_step, dataset_name, eval_type, logger, writer, n_gpus, gen_model, dis_model, inception_model,
                  Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
-                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, batch_size,
-                 g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, ADA_cutoff, contrastive_lambda, margin,
-                 tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound, gradient_penalty_for_dis,
-                 gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda, cr, cr_lambda, bcr, real_lambda, fake_lambda, zcr, gen_lambda,
-                 dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior, truncated_factor, ema, latent_op, latent_op_rate,
-                 latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta, latent_norm_reg_weight, default_device, print_every, save_every,
-                 checkpoint_dir, evaluate, mu, sigma, best_fid, best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
+                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer, 
+                 batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, margin,
+                 tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound,
+                 gradient_penalty_for_dis, gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda, cr, cr_lambda, bcr,
+                 real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior,
+                 truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta,
+                 latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
+                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
 
         self.run_name = run_name
         self.best_step = best_step
@@ -115,7 +119,6 @@ class Train_Eval(object):
 
         self.G_loss = G_loss
         self.D_loss = D_loss
-        self.ADA_cutoff = ADA_cutoff
         self.contrastive_lambda = contrastive_lambda
         self.margin = margin
         self.tempering_type = tempering_type
@@ -234,8 +237,7 @@ class Train_Eval(object):
             # ================== TRAIN D ================== #
             toggle_grad(self.dis_model, True, freeze_layers=self.freeze_layers)
             toggle_grad(self.gen_model, False, freeze_layers=-1)
-            if self.conditional_strategy == "ContraGAN":
-                t = set_temperature(self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
+            t = set_temperature(self.conditional_strategy, self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
             for step_index in range(self.d_steps_per_iter):
                 self.D_optimizer.zero_grad()
                 for acml_index in range(self.accumulation_steps):
@@ -479,7 +481,7 @@ class Train_Eval(object):
                 log_message = LOG_FORMAT.format(step=step_count,
                                                 progress=step_count/total_step,
                                                 elapsed=elapsed_time(self.start_time),
-                                                temperature='No',
+                                                temperature=t,
                                                 ada_p=self.ada_aug_p,
                                                 dis_loss=dis_acml_loss.item(),
                                                 gen_loss=gen_acml_loss.item(),
@@ -586,20 +588,13 @@ class Train_Eval(object):
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
 
-            save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
-                            self.dis_model, True, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
-                            self.latent_op_beta, self.default_device)
-
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
                                                               self.latent_op_beta, self.default_device, self.mu, self.sigma, self.run_name)
 
-            ### pre-calculate an inception score
-            ### calculating inception score using the below will give you an underestimated one.
-            ### plz use the official tensorflow implementation(inception_tensorflow.py).
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                     self.latent_op_beta, 10, self.default_device)
+                                                     self.latent_op_beta, 1, self.default_device)
 
             if self.D_loss.__name__ != "loss_wgan_dis":
                 real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
@@ -633,6 +628,24 @@ class Train_Eval(object):
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
         return is_best
+    ################################################################################################################################
+
+
+    ################################################################################################################################
+    def save_images(self, is_generate, png=True, npz=True):
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
+            self.dis_model.eval()
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+
+            if png:
+                save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
+                                self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
+                                self.latent_op_alpha, self.latent_op_beta, self.default_device)
+            if npz:
+                save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
+                                self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
+                                self.latent_op_alpha, self.latent_op_beta, self.default_device)
     ################################################################################################################################
 
 

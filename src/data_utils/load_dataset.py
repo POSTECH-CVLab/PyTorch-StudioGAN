@@ -123,7 +123,7 @@ class LoadDataset(Dataset):
                 root = os.path.join('data','TINY_ILSVRC2012', mode)
                 self.data = ImageFolder(root=root)
 
-        elif self.dataset_name == "custom":
+        elif self.dataset_name == "CUSTOM":
             if self.hdf5_path is not None:
                 print('Loading %s into memory...' % self.hdf5_path)
                 with h5.File(self.hdf5_path, 'r') as f:
@@ -131,7 +131,7 @@ class LoadDataset(Dataset):
                     self.labels = f['labels'][:]
             else:
                 mode = 'train' if self.train == True else 'valid'
-                root = os.path.join('data','custom', mode)
+                root = os.path.join('data','CUSTOM', mode)
                 self.data = ImageFolder(root=root)
         else:
             raise NotImplementedError

@@ -241,10 +241,10 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
         data_iter = iter(data_loader)
 
     data_iter = iter(data_loader)
-    mode = "generated" if is_generate is True else "real"
-    print("Save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
+    type = "fake" if is_generate is True else "real"
+    print("Save {num_samples} {type} images....".format(num_samples=num_samples, type=type))
 
-    directory = join('./generated_npz', run_name, mode)
+    directory = join('./samples', run_name, type, "npz")
     if exists(abspath(directory)):
         shutil.rmtree(abspath(directory))
     os.makedirs(directory)
@@ -288,10 +288,10 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
         data_iter = iter(data_loader)
 
     data_iter = iter(data_loader)
-    mode = "generated" if is_generate is True else "real"
-    print("Save {num_samples} {mode} images....".format(num_samples=num_samples, mode=mode))
+    type = "fake" if is_generate is True else "real"
+    print("Save {num_samples} {type} images....".format(num_samples=num_samples, type=type))
 
-    directory = join('./generated_images', run_name, mode)
+    directory = join('./samples', run_name, type, "png")
     if exists(abspath(directory)):
         shutil.rmtree(abspath(directory))
     os.makedirs(directory)
