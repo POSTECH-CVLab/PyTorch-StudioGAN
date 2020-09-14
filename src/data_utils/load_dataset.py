@@ -123,7 +123,7 @@ class LoadDataset(Dataset):
                 root = os.path.join('data','TINY_ILSVRC2012', mode)
                 self.data = ImageFolder(root=root)
 
-        elif self.dataset_name == "CUSTOM":
+        elif self.dataset_name == "custom":
             if self.hdf5_path is not None:
                 print('Loading %s into memory...' % self.hdf5_path)
                 with h5.File(self.hdf5_path, 'r') as f:
