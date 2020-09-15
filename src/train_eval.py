@@ -524,11 +524,17 @@ class Train_Eval(object):
         if self.Gen_copy is not None:
             self.Gen_copy.eval()
 
+        if isinstance(self.gen_model, DataParallel):
+            gen = self.gen_model.module
+            dis = self.dis_model.module
+            if self.Gen_copy is not None:
+                gen_copy = self.Gen_copy.module
+
         g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
-                    'state_dict': self.gen_model.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
+                    'state_dict': gen.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
 
         d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
-                    'state_dict': self.dis_model.state_dict(), 'optimizer': self.D_optimizer.state_dict(), 'ada_p': self.ada_aug_p,
+                    'state_dict': dis.state_dict(), 'optimizer': self.D_optimizer.state_dict(), 'ada_p': self.ada_aug_p,
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
 
         if len(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))) >= 1:
@@ -553,7 +559,7 @@ class Train_Eval(object):
         torch.save(d_states, d_checkpoint_output_path)
 
         if self.Gen_copy is not None:
-            g_ema_states = {'state_dict': self.Gen_copy.state_dict()}
+            g_ema_states = {'state_dict': gen_copy.state_dict()}
             if len(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))) >= 1:
                 find_and_remove(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0])
 
