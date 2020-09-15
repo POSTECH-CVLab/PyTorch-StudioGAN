@@ -529,6 +529,10 @@ class Train_Eval(object):
             dis = self.dis_model.module
             if self.Gen_copy is not None:
                 gen_copy = self.Gen_copy.module
+        else:
+            gen, dis = self.gen_model, self.dis_model
+            if self.Gen_copy is not None:
+                gen_copy = self.Gen_copy
 
         g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': gen.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
