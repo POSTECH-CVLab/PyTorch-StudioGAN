@@ -110,18 +110,6 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
     else:
         Gen_copy, Gen_ema = None, None
 
-    if n_gpus > 1:
-        Gen = DataParallel(Gen, output_device=default_device)
-        Dis = DataParallel(Dis, output_device=default_device)
-        if ema:
-            Gen_copy = DataParallel(Gen_copy, output_device=default_device)
-
-        if synchronized_bn:
-            Gen = convert_model(Gen).to(default_device)
-            Dis = convert_model(Dis).to(default_device)
-            if ema:
-                Gen_copy = convert_model(Gen_copy).to(default_device)
-
     logger.info(count_parameters(Gen))
     logger.info(Gen)
 
@@ -170,6 +158,18 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
             prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
     else:
         checkpoint_dir = make_checkpoint_dir(checkpoint_folder, run_name)
+
+    if n_gpus > 1:
+        Gen = DataParallel(Gen, output_device=default_device)
+        Dis = DataParallel(Dis, output_device=default_device)
+        if ema:
+            Gen_copy = DataParallel(Gen_copy, output_device=default_device)
+
+        if synchronized_bn:
+            Gen = convert_model(Gen).to(default_device)
+            Dis = convert_model(Dis).to(default_device)
+            if ema:
+                Gen_copy = convert_model(Gen_copy).to(default_device)
 
     if train_config['eval']:
         inception_model = InceptionV3().to(default_device)
