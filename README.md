@@ -70,7 +70,7 @@
 - torch >= 1.6.0
 - torchvision >= 0.7.0
 - tensorboard
-- 6.0.0 <= gcc <= 7.4.0 (Recommended for proper use of [adaptive discriminator augmentation module](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/tree/master/src/utils/ada_op))
+- 5.4.0 <= gcc <= 7.4.0 (Recommended for proper use of [adaptive discriminator augmentation module](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/tree/master/src/utils/ada_op))
 
 
 You can install the recommended environment as follows:
