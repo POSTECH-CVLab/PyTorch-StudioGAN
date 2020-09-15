@@ -228,6 +228,7 @@ def plot_img_canvas(images, save_path, logger, nrow):
     save_image(images, save_path, padding=0, nrow=nrow)
     logger.info("Saved image to {}".format(save_path))
 
+
 def plot_pr_curve(precision, recall, run_name, logger, log=False):
     directory = join('./figures', run_name)
 
@@ -268,8 +269,6 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
     if exists(abspath(directory)):
         shutil.rmtree(abspath(directory))
     os.makedirs(directory)
-    for f in range(num_classes):
-        os.makedirs(join(directory, str(f)))
 
     x = []
     y = []
