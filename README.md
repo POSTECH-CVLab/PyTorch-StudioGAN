@@ -1,12 +1,12 @@
 <p align="center">
-  <img width="60%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/readme/docs/figures/studiogan_logo.jpg" />
+  <img width="60%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/studiogan_logo.jpg" />
 </p>
 
 --------------------------------------------------------------------------------
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze the new idea.
 
-##  Features
+##  Feature
 - Extensive GAN implementations for Pytorch
 - Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets (being updated)
 - Better performance and lower memory consumption than original implementations
@@ -40,18 +40,13 @@
 
 #### Abbreviation details:
 **G/D_type indicates the way how we inject label information to the Generator or Discriminator.*
-
-***EMA means applying an exponential moving average update to the generator.*\
-
+***EMA means applying an exponential moving average update to the generator.*
 ****Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.*
 
-[cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization. 
-
+[cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization.
 [AC](https://arxiv.org/abs/1610.09585) : Auxiliary Classifier.
-
 [PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator.
-
-[CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning (Ours).
+[CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning.
 
 ## To be Implemented
 
@@ -62,26 +57,6 @@
 #### Abbreviation details:
 
 [cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform
-
-
-## Implemented training tricks/modules
-
-* Mixed Precision Training (Narang et al.) [[**Paper**]](https://arxiv.org/abs/1710.03740)
-  ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -t -mpc -c CONFIG_PATH
-  ```
-* Standing Statistics (Brock et al.) [[**Paper**]](https://arxiv.org/abs/1809.11096)
-  ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
-  ```
-* Synchronized BatchNorm
-  ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -sync_bn -c CONFIG_PATH
-  ```
-* load all data in main memory
-  ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -l -c CONFIG_PATH
-  ```
 
 ## Requirements
 
@@ -95,7 +70,7 @@
 - torch >= 1.6.0
 - torchvision >= 0.7.0
 - tensorboard
-- 6.0.0 <= gcc <= 7.4.0
+- 6.0.0 <= gcc <= 7.4.0 (Recommended for proper use of [adaptive discriminator augmentation module](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/tree/master/src/utils/ada_op))
 
 
 You can install the recommended environment as follows:
@@ -109,14 +84,21 @@ With docker, you can use:
 docker pull mgkang/studiogan:0.1
 ```
 
-## Dataset (CIFAR10, Tiny ImageNet, ImageNet, and Custom)
-CIFAR10: StudioGAN will automatically download the dataset once you execute ``main.py``.
+## Quick Start
 
-Tiny Imagenet, Imagenet, or a custom dataset: 
+Train (``-t``) the model defined in ``CONFIG_PATH`` with evaluation (``-e``) using GPU ``0``.
+
+  ```
+  CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e CONFIG_PATH
+  ```
+
+## Dataset
+* CIFAR10: StudioGAN will automatically download the dataset once you execute ``main.py``.
+
+* Tiny Imagenet, Imagenet, or a custom dataset: 
   1. download [Tiny Imagenet](https://tiny-imagenet.herokuapp.com) and [Imagenet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
-To compute official IS, you have to make a "samples.npz" file using the below command:
 ```
 ┌── src
 ├── doc
@@ -138,6 +120,25 @@ To compute official IS, you have to make a "samples.npz" file using the below co
             └── ...
 ```
 
+## Implemented training tricks/modules
+
+* Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740)) 
+  ```
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -t -mpc -c CONFIG_PATH
+  ```
+* Standing Statistics ([Brock et al.](https://arxiv.org/abs/1809.11096)) 
+  ```
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+  ```
+* Synchronized BatchNorm
+  ```
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -sync_bn -c CONFIG_PATH
+  ```
+* Load all data in main memory
+  ```
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -l -c CONFIG_PATH
+  ```
+
 ##  Metrics
 
 ### Inception Score (IS)
@@ -148,14 +149,12 @@ To compute official IS, you have to make a "samples.npz" file using the command 
 CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -s -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
-It will automatically create the samples.npz file in the path ./samples/RUN_NAME/fake/npz/samples.npz .
-
-Then, execute TensorFlow official IS implementation. 
-
-Keep in mind that you need to have TensorFlow 1.3 or earlier version installed!
+It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
+After that, execute TensorFlow official IS implementation. 
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 inception_tf13.py --run_name RUN_NAME --type "fake"
 ```
+Keep in mind that you need to have TensorFlow 1.3 or earlier version installed!
 
 Note that StudioGAN logs Pytorch-based IS during the training.
 
@@ -165,31 +164,31 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 ### Precision and Recall (PR)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035). 
 
+## Image Generation
+
+You can conduct image generation experiments using the below command:
+
+* Singe GPU
+```
+CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+```
+
+* Multi GPUs (e.g. 4 GPUs)
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+```
+
+Via Tensorboard, you can see generated images and can plot trends of IS, FID, F_beta, Authenticity Accuracies, and the largest singular values:
+```
+~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
+```
+
 ## Results
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
 We report the best IS, FID, and F_beta values of various GANs.  
-
 We don't apply Synchronized Batch Normalization to all experiments.
-
-You can conduct image generation experiments using the below command:
-
-Singe GPU
-```
-CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
-```
-
-Multi GPUs (e.g. 4 GPUs)
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
-```
-
-You can also visualize generated images and can plot trends of IS, FID, F_beta, Authenticity Accuracies, and the largest singular values using the Tensorboard:
-```
-~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
-```
-
 
 ### CIFAR10
 | Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Checkpoint |
