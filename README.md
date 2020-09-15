@@ -89,7 +89,7 @@ docker pull mgkang/studiogan:0.1
 Train (``-t``) the model defined in ``CONFIG_PATH`` with evaluation (``-e``) using GPU ``0``.
 
   ```
-  CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -c CONFIG_PATH
   ```
 
 ## Dataset
