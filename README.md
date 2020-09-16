@@ -150,7 +150,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -s -std_stat --standing_step STANDI
 ```
 
 It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
-After that, execute TensorFlow official IS implementation. 
+After that, execute TensorFlow official IS implementation. Note that we do not split a dataset into ten folds to calculate IS ten times. We use the entire dataset to compute IS only once, which is the evaluation method used in the [CompareGAN repository](https://github.com/google/compare_gan).  
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 inception_tf13.py --run_name RUN_NAME --type "fake"
 ```
@@ -164,9 +164,9 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 ### Precision and Recall (PR)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035). 
 
-## Image Generation
+## Run GANs
 
-You can conduct image generation experiments using the below command:
+You can train GANs through the command below:
 
 * Singe GPU
 ```
@@ -178,12 +178,36 @@ CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -l -rm_API -std_stat --standing_ste
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
 ```
 
-Via Tensorboard, you can see generated images and can plot trends of IS, FID, F_beta, Authenticity Accuracies, and the largest singular values:
+Via Tensorboard, you can see generated images and can plot trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
 ```
 ~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
 ```
 
-## Results
+## Quantitative Results
+
+The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``.
+
+* Image visualization
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* K-nearest neighbor analysis (we have fixed K=7)
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* Linear interpolation (applicable only to conditional models.)
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* Frequency analysis
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+## Qualitative Results
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
@@ -193,9 +217,9 @@ We don't apply Synchronized Batch Normalization to all experiments.
 ### CIFAR10
 | Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Checkpoint |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | 6.697 | 50.281 | 0.851 | 0.788 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/DCGAN.json) | DCGAN-train-2020_09_15_13_23_51(26번) |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | 67.229 | 0.790 |  0.702 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/LSGAN.json) |  LSGAN-train-2020_09_15_23_40_37(153번) |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | 43.008 | 0.907 |0.835 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/GGAN.json) |  GGAN-train-2020_09_15_23_11_09(154번) |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | 6.697 | 50.281 | 0.851 | 0.788 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/DCGAN.json) | DCGAN-train-2020_09_15_13_23_51 |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | 5.537 | 67.229 | 0.790 |  0.702 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/LSGAN.json) |  LSGAN-train-2020_09_15_23_40_37 |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | 6.175 | 43.008 | 0.907 | 0.835 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/GGAN.json) |  GGAN-train-2020_09_15_23_11_09 |
 | [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 32 | - | - | - | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-WC.json) |  - |
 | [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | - | - |- | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-GP.json) |  - |
 | [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | - | - |- | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-DRA.json) |  - |

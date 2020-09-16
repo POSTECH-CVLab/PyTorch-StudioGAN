@@ -50,8 +50,6 @@ def define_sampler(dataset_name, conditional_strategy):
 
 def check_flag_0(batch_size, n_gpus, standing_statistics, ema, freeze_layers, checkpoint_folder):
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
-    if standing_statistics is True:
-        assert ema, "turning on accumulated batch_norm needs EMA update of the generator"
     if freeze_layers > -1:
         assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 
@@ -335,7 +333,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
                     save_image((img+1)/2, join(directory, str(labels[idx].item()), '{idx}.png'.format(idx=batch_size*i + idx)))
                 else:
                     pass
-    print('Saving png to .generated_images/%s' % run_name)
+    print('Saving png to ./generated_images/%s' % run_name)
 
 
 def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
