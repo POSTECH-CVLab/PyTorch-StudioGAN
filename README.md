@@ -183,7 +183,7 @@ Via Tensorboard, you can see generated images and can plot trends of ``IS, FID, 
 ~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
 ```
 
-## Quantitative Results
+## To see and analyze generated images
 
 The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
 
@@ -207,7 +207,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -itp -std_stat --standing_step STAN
 CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
-## Qualitative Results
+## Benchmark
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
