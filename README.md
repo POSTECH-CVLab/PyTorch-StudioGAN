@@ -150,7 +150,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -s -std_stat --standing_step STANDI
 ```
 
 It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
-After that, execute TensorFlow official IS implementation. Note that we do not split a dataset into ten folds to calculate IS ten times. We use the entire dataset to compute IS only once, which is the evaluation method used in the [CompareGAN repository](https://github.com/google/compare_gan).  
+After that, execute TensorFlow official IS implementation. Note that we do not split a dataset into ten folds to calculate IS ten times. We use the entire dataset to compute IS only once, which is the evaluation method used in the [CompareGAN](https://github.com/google/compare_gan) repository.  
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 inception_tf13.py --run_name RUN_NAME --type "fake"
 ```
@@ -276,17 +276,19 @@ We don't apply Synchronized Batch Normalization to all experiments.
 
 **[4] Implementation Details:** https://github.com/ajbrock/BigGAN-PyTorch
 
-**[5] DiffAugment:** https://github.com/mit-han-lab/data-efficient-gans
+**[5] Architecture Details:** https://github.com/google/compare_gan
 
-**[6] Adaptive Discriminator Augmentation:** https://github.com/rosinality/stylegan2-pytorch
+**[6] DiffAugment:** https://github.com/mit-han-lab/data-efficient-gans
 
-**[7] Tensorflow IS:** https://github.com/openai/improved-gan
+**[7] Adaptive Discriminator Augmentation:** https://github.com/rosinality/stylegan2-pytorch
 
-**[8] Tensorflow FID:** https://github.com/bioinf-jku/TTUR
+**[8] Tensorflow IS:** https://github.com/openai/improved-gan
 
-**[9] Pytorch FID:** https://github.com/mseitzer/pytorch-fid
+**[9] Tensorflow FID:** https://github.com/bioinf-jku/TTUR
 
-**[10] Tensorflow Precision and Recall:** https://github.com/msmsajjadi/precision-recall-distributions
+**[10] Pytorch FID:** https://github.com/mseitzer/pytorch-fid
+
+**[11] Tensorflow Precision and Recall:** https://github.com/msmsajjadi/precision-recall-distributions
 
 
 ## Citation

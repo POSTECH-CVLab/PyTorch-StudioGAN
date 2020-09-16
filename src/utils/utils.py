@@ -248,6 +248,24 @@ def plot_pr_curve(precision, recall, run_name, logger, log=False):
     return fig
 
 
+def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger):
+    directory = join('./figures', run_name)
+
+    if not exists(abspath(directory)):
+        os.makedirs(directory)
+
+    save_path = join(directory, "dfft_spectrum.png")
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+    ax1.imshow(real_spectrum)
+    ax2.imshow(fake_spectrum)
+    plt.grid(False)
+    fig.savefig(save_path)
+    logger.info("Saved image to {}".format(save_path))
+
+
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
                     truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
     if is_generate is True:
