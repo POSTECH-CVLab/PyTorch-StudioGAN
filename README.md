@@ -112,7 +112,7 @@ Train (``-t``) the model defined in ``CONFIG_PATH`` with evaluation (``-e``) usi
             │   ├── cls99
             │   └── ...
             └── valid
-                └── cls0
+                ├── cls0
                 │   ├── valid0.png
                 │   ├── valid1.png
                 │   └── ...
