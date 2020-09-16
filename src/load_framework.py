@@ -295,4 +295,4 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
                                             standing_statistics=standing_statistics, standing_step=standing_step)
 
     if train_config['frequency_analysis']:
-        train_eval.run_frequency_analysis(num_images=len(eval_dataset)//num_classes, standing_statistics=standing_statistics, standing_step=standing_step)
+        train_eval.run_frequency_analysis(num_images=len(train_dataset)//num_classes, standing_statistics=standing_statistics, standing_step=standing_step)
