@@ -100,24 +100,24 @@ Train (``-t``) the model defined in ``CONFIG_PATH`` with evaluation (``-e``) usi
   2. make the folder structure of the dataset as follows:
 
 ```
-┌── src
-├── doc
-└── data
-    └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
-        ├── train
-        │   ├── cls0
-        │   │   ├── train0.png
-        │   │   ├── train1.png
-        │   │   └── ...
-        │   ├── cls99
-        │   └── ...
-        └── valid
-            └── cls0
-            │   ├── valid0.png
-            │   ├── valid1.png
+┌── docs
+└── src
+    └── data
+        └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
+            ├── train
+            │   ├── cls0
+            │   │   ├── train0.png
+            │   │   ├── train1.png
+            │   │   └── ...
+            │   ├── cls99
             │   └── ...
-            ├── cls99
-            └── ...
+            └── valid
+                └── cls0
+                │   ├── valid0.png
+                │   ├── valid1.png
+                │   └── ...
+                ├── cls99
+                └── ...
 ```
 
 ## Implemented training tricks/modules
