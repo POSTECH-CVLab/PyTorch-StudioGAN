@@ -151,7 +151,8 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
             Gen_ema.source, Gen_ema.target = Gen, Gen_copy
 
         writer = SummaryWriter(log_dir=join('./logs', run_name))
-        assert seed == trained_seed, "seed for sampling random numbers should be same!"
+        if train_config['train']:
+            assert seed == trained_seed, "seed for sampling random numbers should be same!"
         logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
         if freeze_layers > -1 :
