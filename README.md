@@ -185,7 +185,7 @@ Via Tensorboard, you can see generated images and can plot trends of ``IS, FID, 
 
 ## Quantitative Results
 
-The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME``.
+The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
 
 * Image visualization
 ```
