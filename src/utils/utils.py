@@ -259,9 +259,12 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger):
     fig = plt.figure()
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
+
     ax1.imshow(real_spectrum)
+    ax1.set_title("Spectrum of Real images")
+
     ax2.imshow(fake_spectrum)
-    plt.grid(False)
+    ax2.set_title("Spectrum of Fake images")
     fig.savefig(save_path)
     logger.info("Saved image to {}".format(save_path))
 
@@ -364,13 +367,13 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
         num_classes = gen_model.num_classes
         conditional_strategy = dis_model.conditional_strategy
 
-    z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
+    zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
 
     if latent_op:
-        z = latent_optimise(z, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, 1.0,
+        zs = latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, 1.0,
                             latent_op_alpha, latent_op_beta, False, device)
 
     with torch.no_grad():
-        batch_images = gen_model(z, fake_labels, evaluation=True)
+        batch_images = gen_model(zs, fake_labels, evaluation=True)
 
     return batch_images, list(fake_labels.detach().cpu().numpy())

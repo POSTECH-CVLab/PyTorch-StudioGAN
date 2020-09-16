@@ -51,5 +51,3 @@ def prepare_inception_moments(dataloader, eval_mode, generator, inception_model,
         is_score, is_std = evaluator_instance.eval_dataset(dataloader, splits=splits)
         logger.info('Inception score={is_score}-Inception_std={is_std}'.format(is_score=is_score, is_std=is_std))
     return mu, sigma
-
-

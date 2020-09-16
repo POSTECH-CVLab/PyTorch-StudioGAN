@@ -51,7 +51,11 @@ def main():
 
     if not args.train and \
             not args.eval and \
-            not args.save_images:
+            not args.save_images and \
+            not args.image_visualization and \
+            not args.k_nearest_neighbor and \
+            not args.interpolation and \
+            not args.frequency_analysis:
         parser.print_help(sys.stderr)
         sys.exit(1)
 

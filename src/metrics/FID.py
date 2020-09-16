@@ -91,14 +91,14 @@ def generate_images(batch_size, gen, dis, truncated_factor, prior, latent_op, la
         num_classes = gen.num_classes
         conditional_strategy = dis.conditional_strategy
 
-    z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
+    zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
 
     if latent_op:
-        z = latent_optimise(z, fake_labels, gen, dis, conditional_strategy, latent_op_step, 1.0, latent_op_alpha,
+        zs = latent_optimise(zs, fake_labels, gen, dis, conditional_strategy, latent_op_step, 1.0, latent_op_alpha,
                             latent_op_beta, False, device)
 
     with torch.no_grad():
-        batch_images = gen(z, fake_labels, evaluation=True)
+        batch_images = gen(zs, fake_labels, evaluation=True)
 
     return batch_images, fake_labels
 

@@ -55,23 +55,23 @@ def loss_wgan_gen(gen_out_fake):
     return -torch.mean(gen_out_fake)
 
 
-def latent_optimise(z, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, latent_op_rate,
+def latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, latent_op_rate,
                     latent_op_alpha, latent_op_beta, trans_cost, default_device):
-    batch_size = z.shape[0]
+    batch_size = zs.shape[0]
     for step in range(latent_op_step):
         drop_mask = (torch.FloatTensor(batch_size, 1).uniform_() > 1 - latent_op_rate).to(default_device)
-        z_gradients, z_gradients_norm = calc_derv(z, fake_labels, dis_model, conditional_strategy, default_device, gen_model)
+        z_gradients, z_gradients_norm = calc_derv(zs, fake_labels, dis_model, conditional_strategy, default_device, gen_model)
         delta_z = latent_op_alpha*z_gradients/(latent_op_beta + z_gradients_norm)
-        z = torch.clamp(z + drop_mask*delta_z, -1.0, 1.0)
+        zs = torch.clamp(zs + drop_mask*delta_z, -1.0, 1.0)
 
         if trans_cost:
             if step == 0:
                 transport_cost = (delta_z.norm(2, dim=1)**2).mean()
             else:
                 transport_cost += (delta_z.norm(2, dim=1)**2).mean()
-            return z, trans_cost
+            return zs, trans_cost
         else:
-            return z
+            return zs
 
 
 class Cross_Entropy_loss(torch.nn.Module):
@@ -284,8 +284,8 @@ def calc_derv4dra(netD, conditional_strategy, real_data, real_labels, device):
 
 
 def calc_derv(inputs, labels, netD, conditional_strategy, device, netG=None):
-    z = autograd.Variable(inputs, requires_grad=True)
-    fake_images = netG(z, labels)
+    zs = autograd.Variable(inputs, requires_grad=True)
+    fake_images = netG(zs, labels)
 
     if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
         _, _, dis_out_fake = netD(fake_images, labels)
@@ -296,7 +296,7 @@ def calc_derv(inputs, labels, netD, conditional_strategy, device, netG=None):
     else:
         raise NotImplementedError
 
-    gradients = autograd.grad(outputs=dis_out_fake, inputs=z,
+    gradients = autograd.grad(outputs=dis_out_fake, inputs=zs,
                               grad_outputs=torch.ones(dis_out_fake.size()).to(device),
                               create_graph=True, retain_graph=True, only_inputs=True)[0]
 
