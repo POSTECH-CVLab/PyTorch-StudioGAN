@@ -197,7 +197,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -iv -std_stat --standing_step STAND
 CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
-* Linear interpolation (applicable only to conditional models.)
+* Linear interpolation (applicable only to conditional Big ResNet models)
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
