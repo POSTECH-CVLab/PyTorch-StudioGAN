@@ -642,7 +642,8 @@ class Train_Eval(object):
             self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
             self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))
             self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_type]), IS=kl_score))
-            self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
+            if self.train:
+                self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
 
             self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,

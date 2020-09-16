@@ -193,9 +193,9 @@ We don't apply Synchronized Batch Normalization to all experiments.
 ### CIFAR10
 | Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Checkpoint |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | - | - | - | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/DCGAN.json) |  - |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | - | - |  - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/LSGAN.json) |  - |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | - | - |- | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/GGAN.json) |  - |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | 6.697 | 50.281 | 0.851 | 0.788 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/DCGAN.json) | DCGAN-train-2020_09_15_13_23_51(26번) |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | 67.229 | 0.790 |  0.702 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/LSGAN.json) |  LSGAN-train-2020_09_15_23_40_37(153번) |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | 43.008 | 0.907 |0.835 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/GGAN.json) |  GGAN-train-2020_09_15_23_11_09(154번) |
 | [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 32 | - | - | - | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-WC.json) |  - |
 | [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | - | - |- | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-GP.json) |  - |
 | [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | - | - |- | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-DRA.json) |  - |

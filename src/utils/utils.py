@@ -263,7 +263,7 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
 
     data_iter = iter(data_loader)
     type = "fake" if is_generate is True else "real"
-    print("Save {num_samples} {type} images....".format(num_samples=num_samples, type=type))
+    print("Save {num_samples} {type} images in npz format....".format(num_samples=num_samples, type=type))
 
     directory = join('./samples', run_name, type, "npz")
     if exists(abspath(directory)):
@@ -291,7 +291,7 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
     y = np.concatenate(y, 0)[:num_samples]
     print('Images shape: %s, Labels shape: %s' % (x.shape, y.shape))
     npz_filename = join(directory, "samples.npz")
-    print('Saving npz to %s...' % npz_filename)
+    print('Saving npz to %s' % npz_filename)
     np.savez(npz_filename, **{'x' : x, 'y' : y})
 
 
@@ -308,7 +308,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
 
     data_iter = iter(data_loader)
     type = "fake" if is_generate is True else "real"
-    print("Save {num_samples} {type} images....".format(num_samples=num_samples, type=type))
+    print("Save {num_samples} {type} images in png format....".format(num_samples=num_samples, type=type))
 
     directory = join('./samples', run_name, type, "png")
     if exists(abspath(directory)):
@@ -335,6 +335,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
                     save_image((img+1)/2, join(directory, str(labels[idx].item()), '{idx}.png'.format(idx=batch_size*i + idx)))
                 else:
                     pass
+    print('Saving png to .generated_images/%s' % run_name)
 
 
 def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
