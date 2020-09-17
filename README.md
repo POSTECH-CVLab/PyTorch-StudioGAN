@@ -6,7 +6,7 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze the new idea.
 
-##  Feature
+##  Features
 - Extensive GAN implementations for Pytorch
 - Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets (being updated)
 - Better performance and lower memory consumption than original implementations
@@ -37,14 +37,15 @@
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Big ResNet | cBN | CL | Hinge | True |
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | - | - | - | - | - |
 
-**G/D_type indicates the way how we inject label information to the Generator or Discriminator.*
-***EMA means applying an exponential moving average update to the generator.*
-****Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.*
+**G/D_type indicates the way how we inject label information to the Generator or Discriminator.
+***EMA means applying an exponential moving average update to the generator.
+****Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.
 
-[cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization.
-[AC](https://arxiv.org/abs/1610.09585) : Auxiliary Classifier.
-[PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator.
-[CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning.
+[cBN](https://arxiv.org/abs/1610.07629) : Conditional batch normalization.
+[AC](https://arxiv.org/abs/1610.09585) : Auxiliary classifier.
+[PD](https://arxiv.org/abs/1802.05637) : Projection discriminator.
+[CL](https://arxiv.org/abs/2006.12681) : Contrastive learning.
+
 
 ## To be Implemented
 
@@ -53,6 +54,7 @@
 | [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
 
 [cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform
+
 
 ## Requirements
 
@@ -79,6 +81,29 @@ With docker, you can use:
 ```
 docker pull mgkang/studiogan:0.1
 ```
+
+
+## Quick Start
+
+You can train GANs through the command below:
+
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``
+```
+CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+```
+
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)``
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+```
+
+Via Tensorboard, you can monitor generated images and trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
+```
+~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
+```
+
+Try ``python3 main.py`` to see available options.
+
 
 ## Dataset
 
@@ -109,23 +134,6 @@ docker pull mgkang/studiogan:0.1
                 └── ...
 ```
 
-## Quick Start
-
-* Train (``-t``) and evaluate (``-e``) model defined in ``CONFIG_PATH`` using GPU ``0``
-```
-CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -c CONFIG_PATH
-```
-
-* Train (``-t``) and evaluate (``-e``) model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)``
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -c CONFIG_PATH
-```
-
-Via Tensorboard, you can visualize generated images and trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
-```
-~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
-```
-
 ## Supported Training Techniques
 
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740)) 
@@ -145,7 +153,8 @@ Via Tensorboard, you can visualize generated images and trends of ``IS, FID, F_b
   CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -l -c CONFIG_PATH
   ```
 
-## Visualize and Analyze Generated Images
+
+## To Visualize and Analyze Generated Images
 
 The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
 
@@ -190,6 +199,7 @@ Note that StudioGAN logs Pytorch-based IS during the training.
 
 ### Frechet Inception Distance (FID)
 FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires the pre-trained Inception-V3 network, and modern approaches use [Tensorflow-based FID](https://github.com/bioinf-jku/TTUR). StudioGAN utilizes the [PyTorch-based FID](https://github.com/mseitzer/pytorch-fid) to test GAN models in the same PyTorch environment. We show that the PyTorch based FID implementation provides [almost the same results](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Table3.png) with the TensorFlow implementation (See Appendix F of [our paper](https://arxiv.org/abs/2006.12681)).
+
 
 ### Precision and Recall (PR)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035). 
