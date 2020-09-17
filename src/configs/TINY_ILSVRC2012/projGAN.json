@@ -96,12 +96,12 @@
       "truncated_factor": 1,
 
       "latent_op": false,
-      "latent_op_rate":"N/A",
-      "latent_op_step":"N/A",
-      "latent_op_step4eval":"N/A",
-      "latent_op_alpha":"N/A",
-      "latent_op_beta":"N/A",
-      "latent_norm_reg_weight":"N/A",
+      "latent_op_rate": "N/A",
+      "latent_op_step": "N/A",
+      "latent_op_step4eval": "N/A",
+      "latent_op_alpha": "N/A",
+      "latent_op_beta": "N/A",
+      "latent_norm_reg_weight": "N/A",
 
       "ema": false,
       "ema_decay": "N/A",
