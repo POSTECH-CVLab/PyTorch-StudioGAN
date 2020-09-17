@@ -50,8 +50,6 @@ def define_sampler(dataset_name, conditional_strategy):
 
 def check_flag_0(batch_size, n_gpus, standing_statistics, ema, freeze_layers, checkpoint_folder):
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
-    if standing_statistics is True:
-        assert ema, "turning on accumulated batch_norm needs EMA update of the generator"
     if freeze_layers > -1:
         assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 
@@ -250,6 +248,27 @@ def plot_pr_curve(precision, recall, run_name, logger, log=False):
     return fig
 
 
+def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger):
+    directory = join('./figures', run_name)
+
+    if not exists(abspath(directory)):
+        os.makedirs(directory)
+
+    save_path = join(directory, "dfft_spectrum.png")
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+
+    ax1.imshow(real_spectrum)
+    ax1.set_title("Spectrum of Real images")
+
+    ax2.imshow(fake_spectrum)
+    ax2.set_title("Spectrum of Fake images")
+    fig.savefig(save_path)
+    logger.info("Saved image to {}".format(save_path))
+
+
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
                     truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
     if is_generate is True:
@@ -263,7 +282,7 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
 
     data_iter = iter(data_loader)
     type = "fake" if is_generate is True else "real"
-    print("Save {num_samples} {type} images....".format(num_samples=num_samples, type=type))
+    print("Save {num_samples} {type} images in npz format....".format(num_samples=num_samples, type=type))
 
     directory = join('./samples', run_name, type, "npz")
     if exists(abspath(directory)):
@@ -291,7 +310,7 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
     y = np.concatenate(y, 0)[:num_samples]
     print('Images shape: %s, Labels shape: %s' % (x.shape, y.shape))
     npz_filename = join(directory, "samples.npz")
-    print('Saving npz to %s...' % npz_filename)
+    print('Saving npz to %s' % npz_filename)
     np.savez(npz_filename, **{'x' : x, 'y' : y})
 
 
@@ -308,7 +327,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
 
     data_iter = iter(data_loader)
     type = "fake" if is_generate is True else "real"
-    print("Save {num_samples} {type} images....".format(num_samples=num_samples, type=type))
+    print("Save {num_samples} {type} images in png format....".format(num_samples=num_samples, type=type))
 
     directory = join('./samples', run_name, type, "png")
     if exists(abspath(directory)):
@@ -335,6 +354,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
                     save_image((img+1)/2, join(directory, str(labels[idx].item()), '{idx}.png'.format(idx=batch_size*i + idx)))
                 else:
                     pass
+    print('Saving png to ./generated_images/%s' % run_name)
 
 
 def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
@@ -347,13 +367,13 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
         num_classes = gen_model.num_classes
         conditional_strategy = dis_model.conditional_strategy
 
-    z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
+    zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
 
     if latent_op:
-        z = latent_optimise(z, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, 1.0,
+        zs = latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, 1.0,
                             latent_op_alpha, latent_op_beta, False, device)
 
     with torch.no_grad():
-        batch_images = gen_model(z, fake_labels, evaluation=True)
+        batch_images = gen_model(zs, fake_labels, evaluation=True)
 
     return batch_images, list(fake_labels.detach().cpu().numpy())

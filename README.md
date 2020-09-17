@@ -100,24 +100,24 @@ Train (``-t``) the model defined in ``CONFIG_PATH`` with evaluation (``-e``) usi
   2. make the folder structure of the dataset as follows:
 
 ```
-┌── src
-├── doc
-└── data
-    └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
-        ├── train
-        │   ├── cls0
-        │   │   ├── train0.png
-        │   │   ├── train1.png
-        │   │   └── ...
-        │   ├── cls99
-        │   └── ...
-        └── valid
-            └── cls0
-            │   ├── valid0.png
-            │   ├── valid1.png
+┌── docs
+└── src
+    └── data
+        └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
+            ├── train
+            │   ├── cls0
+            │   │   ├── train0.png
+            │   │   ├── train1.png
+            │   │   └── ...
+            │   ├── cls99
             │   └── ...
-            ├── cls99
-            └── ...
+            └── valid
+                ├── cls0
+                │   ├── valid0.png
+                │   ├── valid1.png
+                │   └── ...
+                ├── cls99
+                └── ...
 ```
 
 ## Implemented training tricks/modules
@@ -150,7 +150,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -s -std_stat --standing_step STANDI
 ```
 
 It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
-After that, execute TensorFlow official IS implementation. 
+After that, execute TensorFlow official IS implementation. Note that we do not split a dataset into ten folds to calculate IS ten times. We use the entire dataset to compute IS only once, which is the evaluation method used in the [CompareGAN](https://github.com/google/compare_gan) repository.  
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 inception_tf13.py --run_name RUN_NAME --type "fake"
 ```
@@ -164,9 +164,9 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 ### Precision and Recall (PR)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035). 
 
-## Image Generation
+## Run GANs
 
-You can conduct image generation experiments using the below command:
+You can train GANs through the command below:
 
 * Singe GPU
 ```
@@ -178,12 +178,36 @@ CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -l -rm_API -std_stat --standing_ste
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
 ```
 
-Via Tensorboard, you can see generated images and can plot trends of IS, FID, F_beta, Authenticity Accuracies, and the largest singular values:
+Via Tensorboard, you can see generated images and can plot trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
 ```
 ~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
 ```
 
-## Results
+## To see and analyze generated images
+
+The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
+
+* Image visualization
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* K-nearest neighbor analysis (we have fixed K=7)
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* Linear interpolation (applicable only to conditional Big ResNet models)
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* Frequency analysis
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+## Benchmark
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
@@ -191,11 +215,11 @@ We report the best IS, FID, and F_beta values of various GANs.
 We don't apply Synchronized Batch Normalization to all experiments.
 
 ### CIFAR10
-| Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Checkpoint |
+| Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | - | - | - | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/DCGAN.json) |  - |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | - | - | - |  - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/LSGAN.json) |  - |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | - | - | - |- | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/GGAN.json) |  - |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | 6.697 | 50.281 | 0.851 | 0.788 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/DCGAN.json) | Down |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | 5.537 | 67.229 | 0.790 |  0.702 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/LSGAN.json) |  Down |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | 6.175 | 43.008 | 0.907 | 0.835 | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/GGAN.json) |  Down |
 | [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 32 | - | - | - | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-WC.json) |  - |
 | [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | - | - |- | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-GP.json) |  - |
 | [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | - | - |- | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/WGAN-DRA.json) |  - |
@@ -213,7 +237,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 32 | - |- | - | - | 10K (Test) | 10K | [Link](./src/configs/CIFAR10/ContraGAN.json) | - |
 
 ### Tiny ImageNet
-| Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Checkpoint |
+| Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | - | - | - | - | 50K (Valid) | 50K | [Link](./src/configs/TINY_ILSVRC2012/DCGAN.json) |  - |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | - | - | - | - | 50K (Valid) | 50K | [Link](./src/configs/TINY_ILSVRC2012/LSGAN.json) |  - |
@@ -235,7 +259,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | - | - | - | - | 50K (Valid) | 50K | [Link](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | - |
 
 ### ImageNet
-| Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Checkpoint |
+| Name | Res. | IS | FID | F_1/8 | F_8 | n_real (type) | n_fake | Config | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | - | - | - | - | 50K (Valid) | 50K | [Link](./src/configs/ILSVRC2012/SNGAN.json) |  - |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | - | - | - | - | 50K (Valid) | 50K | [Link](./src/configs/ILSVRC2012/SAGAN.json) |  - |
@@ -252,17 +276,19 @@ We don't apply Synchronized Batch Normalization to all experiments.
 
 **[4] Implementation Details:** https://github.com/ajbrock/BigGAN-PyTorch
 
-**[5] DiffAugment:** https://github.com/mit-han-lab/data-efficient-gans
+**[5] Architecture Details:** https://github.com/google/compare_gan
 
-**[6] Adaptive Discriminator Augmentation:** https://github.com/rosinality/stylegan2-pytorch
+**[6] DiffAugment:** https://github.com/mit-han-lab/data-efficient-gans
 
-**[7] Tensorflow IS:** https://github.com/openai/improved-gan
+**[7] Adaptive Discriminator Augmentation:** https://github.com/rosinality/stylegan2-pytorch
 
-**[8] Tensorflow FID:** https://github.com/bioinf-jku/TTUR
+**[8] Tensorflow IS:** https://github.com/openai/improved-gan
 
-**[9] Pytorch FID:** https://github.com/mseitzer/pytorch-fid
+**[9] Tensorflow FID:** https://github.com/bioinf-jku/TTUR
 
-**[10] Tensorflow Precision and Recall:** https://github.com/msmsajjadi/precision-recall-distributions
+**[10] Pytorch FID:** https://github.com/mseitzer/pytorch-fid
+
+**[11] Tensorflow Precision and Recall:** https://github.com/msmsajjadi/precision-recall-distributions
 
 
 ## Citation

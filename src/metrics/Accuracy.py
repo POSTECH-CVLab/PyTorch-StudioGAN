@@ -45,15 +45,15 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
 
     if eval_generated_sample:
         for batch_id in tqdm(range(total_batch)):
-            z, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
+            zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
             if latent_op:
-                z = latent_optimise(z, fake_labels, generator, discriminator, conditional_strategy, latent_op_step,
-                                    1.0, latent_op_alpha, latent_op_beta, False, device)
+                zs = latent_optimise(zs, fake_labels, generator, discriminator, conditional_strategy, latent_op_step,
+                                     1.0, latent_op_alpha, latent_op_beta, False, device)
 
             real_images, real_labels = next(data_iter)
             real_images, real_labels = real_images.to(device), real_labels.to(device)
 
-            fake_images = generator(z, fake_labels, evaluation=True)
+            fake_images = generator(zs, fake_labels, evaluation=True)
 
             with torch.no_grad():
                 if conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:

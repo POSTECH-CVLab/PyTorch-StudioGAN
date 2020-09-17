@@ -151,7 +151,8 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
             Gen_ema.source, Gen_ema.target = Gen, Gen_copy
 
         writer = SummaryWriter(log_dir=join('./logs', run_name))
-        assert seed == trained_seed, "seed for sampling random numbers should be same!"
+        if train_config['train']:
+            assert seed == trained_seed, "seed for sampling random numbers should be same!"
         logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
         if freeze_layers > -1 :
@@ -276,9 +277,12 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
 
     if train_config['eval']:
         is_save = train_eval.evaluation(step=step, standing_statistics=standing_statistics, standing_step=standing_step)
-    
+
     if train_config['save_images']:
         train_eval.save_images(is_generate=True, png=True, npz=True, standing_statistics=standing_statistics, standing_step=standing_step)
+
+    if train_config['image_visualization']:
+        train_eval.run_image_visualization(nrow=train_config['nrow'], ncol=train_config['ncol'], standing_statistics=standing_statistics, standing_step=standing_step)
 
     if train_config['k_nearest_neighbor']:
         train_eval.run_nearest_neighbor(nrow=train_config['nrow'], ncol=train_config['ncol'], standing_statistics=standing_statistics, standing_step=standing_step)
@@ -289,3 +293,6 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
                                             fix_y=False, standing_statistics=standing_statistics, standing_step=standing_step)
         train_eval.run_linear_interpolation(nrow=train_config['nrow'], ncol=train_config['ncol'], fix_z=False, fix_y=True,
                                             standing_statistics=standing_statistics, standing_step=standing_step)
+
+    if train_config['frequency_analysis']:
+        train_eval.run_frequency_analysis(num_images=len(train_dataset)//num_classes, standing_statistics=standing_statistics, standing_step=standing_step)

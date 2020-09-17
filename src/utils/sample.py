@@ -44,25 +44,25 @@ def sample_latents(dist, batch_size, dim, truncated_factor=1, num_classes=None, 
 
     if isinstance(perturb, float) and perturb > 0.0:
         if dist == "gaussian":
-            latent = torch.randn(batch_size, dim, device=device)/truncated_factor
+            latents = torch.randn(batch_size, dim, device=device)/truncated_factor
             eps = perturb*torch.randn(batch_size, dim, device=device)
-            latent_eps = latent + eps
+            latents_eps = latents + eps
         elif dist == "uniform":
-            latent = torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
+            latents = torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
             eps = perturb*torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
-            latent_eps = latent + eps
+            latents_eps = latents + eps
         elif dist == "hyper_sphere":
-            latent, latent_eps = random_ball(batch_size, dim, perturb=perturb)
-            latent, latent_eps = torch.FloatTensor(latent).to(device), torch.FloatTensor(latent_eps).to(device)
-        return latent, y_fake, latent_eps
+            latents, latents_eps = random_ball(batch_size, dim, perturb=perturb)
+            latents, latents_eps = torch.FloatTensor(latents).to(device), torch.FloatTensor(latents_eps).to(device)
+        return latents, y_fake, latents_eps
     else:
         if dist == "gaussian":
-            latent = torch.randn(batch_size, dim, device=device)/truncated_factor
+            latents = torch.randn(batch_size, dim, device=device)/truncated_factor
         elif dist == "uniform":
-            latent = torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
+            latents = torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
         elif dist == "hyper_sphere":
-            latent = random_ball(batch_size, dim, perturb=perturb).to(device)
-        return latent, y_fake
+            latents = random_ball(batch_size, dim, perturb=perturb).to(device)
+        return latents, y_fake
 
 
 def random_ball(batch_size, z_dim, perturb=False):
@@ -70,19 +70,19 @@ def random_ball(batch_size, z_dim, perturb=False):
         normal = np.random.normal(size=(z_dim, batch_size))
         random_directions = normal/linalg.norm(normal, axis=0)
         random_radii = random.random(batch_size) ** (1/z_dim)
-        z = 1.0 * (random_directions * random_radii).T
+        zs = 1.0 * (random_directions * random_radii).T
 
         normal_perturb = normal + 0.05*np.random.normal(size=(z_dim, batch_size))
         perturb_random_directions = normal_perturb/linalg.norm(normal_perturb, axis=0)
         perturb_random_radii = random.random(batch_size) ** (1/z_dim)
-        z_perturb = 1.0 * (perturb_random_directions * perturb_random_radii).T
-        return z, z_perturb
+        zs_perturb = 1.0 * (perturb_random_directions * perturb_random_radii).T
+        return zs, zs_perturb
     else:
         normal = np.random.normal(size=(z_dim, batch_size))
         random_directions = normal/linalg.norm(normal, axis=0)
         random_radii = random.random(batch_size) ** (1/z_dim)
-        z = 1.0 * (random_directions * random_radii).T
-        return z
+        zs = 1.0 * (random_directions * random_radii).T
+        return zs
 
 
 # Convenience function to sample an index, not actually a 1-hot

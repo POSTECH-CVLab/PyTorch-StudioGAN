@@ -8,6 +8,7 @@
 import numpy as np
 import sys
 import glob
+from scipy import ndimage
 from os.path import join
 from PIL import Image
 from tqdm import tqdm
@@ -256,17 +257,17 @@ class Train_Eval(object):
                             real_images, _ = augment(real_images, self.ada_aug_p)
 
                         if self.zcr:
-                            z, fake_labels, z_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                                 self.sigma_noise, self.default_device)
+                            zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                                   self.sigma_noise, self.default_device)
                         else:
-                            z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                            None, self.default_device)
+                            zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                             None, self.default_device)
                         if self.latent_op:
-                            z = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
-                                                self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                                False, self.default_device)
+                            zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                                 self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
+                                                 False, self.default_device)
 
-                        fake_images = self.gen_model(z, fake_labels)
+                        fake_images = self.gen_model(zs, fake_labels)
                         if self.diff_aug:
                             fake_images = DiffAugment(fake_images, policy=self.policy)
                         if self.ada:
@@ -346,7 +347,7 @@ class Train_Eval(object):
                             dis_acml_loss += self.real_lambda*bcr_real_loss + self.fake_lambda*bcr_fake_loss
 
                         if self.zcr:
-                            fake_images_zaug = self.gen_model(z_t, fake_labels)
+                            fake_images_zaug = self.gen_model(zs_t, fake_labels)
                             if self.conditional_strategy == "ACGAN":
                                 cls_out_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
                                 cls_zcr_dis_loss = self.l2_loss(cls_out_fake, cls_out_fake_zaug)
@@ -410,17 +411,17 @@ class Train_Eval(object):
                 for acml_step in range(self.accumulation_steps):
                     with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
                         if self.zcr:
-                            z, fake_labels, z_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                                 self.sigma_noise, self.default_device)
+                            zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                                   self.sigma_noise, self.default_device)
                         else:
-                            z, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                            None, self.default_device)
+                            zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                             None, self.default_device)
                         if self.latent_op:
-                            z, transport_cost = latent_optimise(z, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
-                                                                self.latent_op_step, self.latent_op_rate, self.latent_op_alpha,
-                                                                self.latent_op_beta, True, self.default_device)
+                            zs, transport_cost = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                                                 self.latent_op_step, self.latent_op_rate, self.latent_op_alpha,
+                                                                 self.latent_op_beta, True, self.default_device)
 
-                        fake_images = self.gen_model(z, fake_labels)
+                        fake_images = self.gen_model(zs, fake_labels)
                         if self.diff_aug:
                             fake_images = DiffAugment(fake_images, policy=self.policy)
                         if self.ada:
@@ -442,7 +443,7 @@ class Train_Eval(object):
                             gen_acml_loss += transport_cost*self.latent_norm_reg_weight
 
                         if self.zcr:
-                            fake_images_zaug = self.gen_model(z_t, fake_labels)
+                            fake_images_zaug = self.gen_model(zs_t, fake_labels)
                             zcr_gen_loss = -1 * self.l2_loss(fake_images, fake_images_zaug)
                             gen_acml_loss += self.gen_lambda*zcr_gen_loss
 
@@ -642,7 +643,8 @@ class Train_Eval(object):
             self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
             self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))
             self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_type]), IS=kl_score))
-            self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
+            if self.train:
+                self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
 
             self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
@@ -667,6 +669,69 @@ class Train_Eval(object):
                 save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
                                 self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
                                 self.latent_op_alpha, self.latent_op_beta, self.default_device)
+    ################################################################################################################################
+
+
+    ################################################################################################################################
+    def run_image_visualization(self, nrow, ncol, standing_statistics, standing_step):
+        self.logger.info('Start visualizing images....')
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+
+            sampler = "default" if self.conditional_strategy == "no" else "class_order_some"
+            if self.zcr:
+                zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                     self.sigma_noise, self.default_device, sampler=sampler)
+            else:
+                zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                None, self.default_device, sampler=sampler)
+
+            generated_images = generator(zs, fake_labels, evaluation=True)
+
+            plot_img_canvas((generated_images.detach().cpu()+1)/2, "./figures/{run_name}/generated_canvas.png".\
+                            format(run_name=self.run_name), self.logger, ncol)
+
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
+    ################################################################################################################################
+
+
+    ################################################################################################################################
+    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step):
+        self.logger.info('Start linear interpolation analysis....')
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+            shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
+            assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
+
+            if fix_z:
+                zs = torch.randn(nrow, 1, self.z_dim, device=self.default_device)
+                zs = zs.repeat(1, ncol, 1).view(-1, self.z_dim)
+                name = "fix_z"
+            else:
+                zs = interp(torch.randn(nrow, 1, self.z_dim, device=self.default_device),
+                            torch.randn(nrow, 1, self.z_dim, device=self.default_device),
+                            ncol - 2).view(-1, self.z_dim)
+
+            if fix_y:
+                ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
+                ys = shared(ys).view(nrow, 1, -1)
+                ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
+                name = "fix_y"
+            else:
+                ys = interp(shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                            shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                            ncol-2).view(nrow * (ncol), -1)
+
+            interpolated_images = generator(zs, None, shared_label=ys, evaluation=True)
+
+            plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
+                            format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
+
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
     ################################################################################################################################
 
 
@@ -722,37 +787,55 @@ class Train_Eval(object):
 
 
     ################################################################################################################################
-    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step):
+    def run_frequency_analysis(self, num_images, standing_statistics, standing_step):
         self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
-            shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
-            assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
-            if fix_z:
-                zs = torch.randn(nrow, 1, self.z_dim, device=self.default_device)
-                zs = zs.repeat(1, ncol, 1).view(-1, self.z_dim)
-                name = "fix_z"
-            else:
-                zs = interp(torch.randn(nrow, 1, self.z_dim, device=self.default_device),
-                            torch.randn(nrow, 1, self.z_dim, device=self.default_device),
-                            ncol - 2).view(-1, self.z_dim)
+            train_iter = iter(self.train_dataloader)
+            num_batches = num_images//self.batch_size
+            for i in range(num_batches):
+                if self.zcr:
+                    zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                           self.sigma_noise, self.default_device)
+                else:
+                    zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                     None, self.default_device)
 
-            if fix_y:
-                ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
-                ys = shared(ys).view(nrow, 1, -1)
-                ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
-                name = "fix_y"
-            else:
-                ys = interp(shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                            shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                            ncol-2).view(nrow * (ncol), -1)
+                real_images, real_labels = next(train_iter)
+                fake_images = generator(zs, fake_labels, evaluation=True).detach().cpu().numpy()
 
-            interpolated_images = generator(zs, None, shared_label=ys, evaluation=True)
+                real_images = np.asarray((real_images + 1)*127.5, np.uint8)
+                fake_images = np.asarray((fake_images + 1)*127.5, np.uint8)
 
-            plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
-                            format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
+                if i == 0:
+                    real_array = real_images
+                    fake_array = fake_images
+                else:
+                    real_array = np.concatenate([real_array, real_images], axis = 0)
+                    fake_array = np.concatenate([fake_array, fake_images], axis = 0)
+
+            N, C, H, W = np.shape(real_array)
+            real_r, real_g, real_b = real_array[:,0,:,:], real_array[:,1,:,:], real_array[:,2,:,:]
+            real_gray = 0.2989 * real_r + 0.5870 * real_g + 0.1140 * real_b
+            fake_r, fake_g, fake_b = fake_array[:,0,:,:], fake_array[:,1,:,:], fake_array[:,2,:,:]
+            fake_gray = 0.2989 * fake_r + 0.5870 * fake_g + 0.1140 * fake_b
+            for j in tqdm(range(N)):
+                real_gray_f = np.fft.fft2(real_gray[j] - ndimage.median_filter(real_gray[j], size= H//8))
+                fake_gray_f = np.fft.fft2(fake_gray[j] - ndimage.median_filter(fake_gray[j], size=H//8))
+
+                real_gray_f_shifted = np.fft.fftshift(real_gray_f)
+                fake_gray_f_shifted = np.fft.fftshift(fake_gray_f)
+
+                if j == 0:
+                    real_gray_spectrum = 20*np.log(np.abs(real_gray_f_shifted))/N
+                    fake_gray_spectrum = 20*np.log(np.abs(fake_gray_f_shifted))/N
+                else:
+                    real_gray_spectrum += 20*np.log(np.abs(real_gray_f_shifted))/N
+                    fake_gray_spectrum += 20*np.log(np.abs(fake_gray_f_shifted))/N
+
+            plot_spectrum_image(real_gray_spectrum, fake_gray_spectrum, self.run_name, self.logger)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)

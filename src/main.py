@@ -37,8 +37,10 @@ def main():
     parser.add_argument('-t', '--train', action='store_true')
     parser.add_argument('-e', '--eval', action='store_true')
     parser.add_argument('-s', '--save_images', action='store_true')
+    parser.add_argument('-iv', '--image_visualization', action='store_true', help='select whether conduct image visualization')
     parser.add_argument('-knn', '--k_nearest_neighbor', action='store_true', help='select whether conduct k-nearest neighbor analysis')
     parser.add_argument('-itp', '--interpolation', action='store_true', help='whether conduct interpolation analysis')
+    parser.add_argument('-fa', '--frequency_analysis', action='store_true', help='whether conduct frequency analysis')
     parser.add_argument('--nrow', type=int, default=10, help='number of rows to plot image canvas')
     parser.add_argument('--ncol', type=int, default=8, help='number of cols to plot image canvas')
 
@@ -49,7 +51,11 @@ def main():
 
     if not args.train and \
             not args.eval and \
-            not args.save_images:
+            not args.save_images and \
+            not args.image_visualization and \
+            not args.k_nearest_neighbor and \
+            not args.interpolation and \
+            not args.frequency_analysis:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
