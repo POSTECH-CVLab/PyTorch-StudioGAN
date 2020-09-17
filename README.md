@@ -37,16 +37,14 @@
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Big ResNet | cBN | CL | Hinge | True |
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | - | - | - | - | - |
 
+**G/D_type indicates the way how we inject label information to the Generator or Discriminator.
+***EMA means applying an exponential moving average update to the generator.
+****Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.
 
-#### Abbreviation details:
-**G/D_type indicates the way how we inject label information to the Generator or Discriminator.*
-***EMA means applying an exponential moving average update to the generator.*
-****Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.*
-
-[cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization.
-[AC](https://arxiv.org/abs/1610.09585) : Auxiliary Classifier.
-[PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator.
-[CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning.
+[cBN](https://arxiv.org/abs/1610.07629) : Conditional batch normalization.
+[AC](https://arxiv.org/abs/1610.09585) : Auxiliary classifier.
+[PD](https://arxiv.org/abs/1802.05637) : Projection discriminator.
+[CL](https://arxiv.org/abs/2006.12681) : Contrastive learning.
 
 ## To be Implemented
 
@@ -54,9 +52,7 @@
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
 
-#### Abbreviation details:
-
-[cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform
+[cWC](https://arxiv.org/abs/1806.00420) : Conditional whitening and coloring batch transform
 
 ## Requirements
 
@@ -86,11 +82,25 @@ docker pull mgkang/studiogan:0.1
 
 ## Quick Start
 
-Train (``-t``) the model defined in ``CONFIG_PATH`` with evaluation (``-e``) using GPU ``0``.
+You can train GANs through the command below:
 
-  ```
-  CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -c CONFIG_PATH
-  ```
+* Singe GPU
+```
+CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+```
+
+* Multi GPUs (e.g. 4 GPUs)
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+```
+
+Via Tensorboard, you can monitor generated images and trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
+```
+~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
+```
+
+Try ``python3 main.py`` to see available options.
+
 
 ## Dataset
 * CIFAR10: StudioGAN will automatically download the dataset once you execute ``main.py``.
@@ -139,6 +149,30 @@ Train (``-t``) the model defined in ``CONFIG_PATH`` with evaluation (``-e``) usi
   CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -l -c CONFIG_PATH
   ```
 
+## To See and Analyze Generated Images
+
+The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
+
+* Image visualization
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* K-nearest neighbor analysis (we have fixed K=7)
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* Linear interpolation (applicable only to conditional Big ResNet models)
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
+* Frequency analysis
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+```
+
 ##  Metrics
 
 ### Inception Score (IS)
@@ -163,49 +197,6 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 
 ### Precision and Recall (PR)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035). 
-
-## Run GANs
-
-You can train GANs through the command below:
-
-* Singe GPU
-```
-CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
-```
-
-* Multi GPUs (e.g. 4 GPUs)
-```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -l -rm_API -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
-```
-
-Via Tensorboard, you can see generated images and can plot trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
-```
-~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
-```
-
-## To see and analyze generated images
-
-The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
-
-* Image visualization
-```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
-```
-
-* K-nearest neighbor analysis (we have fixed K=7)
-```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
-```
-
-* Linear interpolation (applicable only to conditional Big ResNet models)
-```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
-```
-
-* Frequency analysis
-```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
-```
 
 ## Benchmark
 
