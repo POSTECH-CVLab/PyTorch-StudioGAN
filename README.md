@@ -37,9 +37,9 @@
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Big ResNet | cBN | CL | Hinge | True |
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | - | - | - | - | - |
 
-**G/D_type indicates the way how we inject label information to the Generator or Discriminator.
-***EMA means applying an exponential moving average update to the generator.
-****Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.
+*G/D_type indicates the way how we inject label information to the Generator or Discriminator.
+**EMA means applying an exponential moving average update to the generator.
+***Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.
 
 [cBN](https://arxiv.org/abs/1610.07629) : Conditional batch normalization.
 [AC](https://arxiv.org/abs/1610.09585) : Auxiliary classifier.
@@ -140,15 +140,15 @@ Try ``python3 main.py`` to see available options.
   ```
 * Standing Statistics ([Brock et al.](https://arxiv.org/abs/1809.11096)) 
   ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -e -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
   ```
 * Synchronized BatchNorm
   ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -sync_bn -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -t -sync_bn -c CONFIG_PATH
   ```
-* Load all data in main memory
+* Load All Data in Main Memory
   ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -l -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -t -l -c CONFIG_PATH
   ```
 
 
@@ -156,22 +156,22 @@ Try ``python3 main.py`` to see available options.
 
 The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
 
-* Image visualization
+* Image Visualization
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
-* K-nearest neighbor analysis (we have fixed K=7)
+* K-Nearest Neighbor Analysis (we have fixed K=7)
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
-* Linear interpolation (applicable only to conditional Big ResNet models)
+* Linear Interpolation (applicable only to conditional Big ResNet models)
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
-* Frequency analysis
+* Frequency Analysis
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
@@ -216,8 +216,8 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | 64 |  5.537 | 67.229 | 0.790 |  0.702 | [Link](./src/configs/CIFAR10/LSGAN.json) |  - | - |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | 64 |  6.175 | 43.008 | 0.907 | 0.835 |  [Link](./src/configs/CIFAR10/GGAN.json) |  - | - |
 | [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 32 | 64 |  - | - | - | - | [Link](./src/configs/CIFAR10/WGAN-WC.json) |  - | - |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | 64 |  - | - |- | - | [Link](./src/configs/CIFAR10/WGAN-GP.json) |  - | - |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | 64 |  - | - |- | - |  [Link](./src/configs/CIFAR10/WGAN-DRA.json) |  - | - |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | 64 |  7.281 | 25.883 | 0.959 | 0.927 | [Link](./src/configs/CIFAR10/WGAN-GP.json) |  - | - |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | 64 |  6.452 | 41.633 | 0.925 | 0.861 |  [Link](./src/configs/CIFAR10/WGAN-DRA.json) |  - | - |
 | [**ACGAN**](https://arxiv.org/abs/1610.09585) | 32 | 64 |  - | - | - |- | [Link](./src/configs/CIFAR10/ACGAN.json) |  - | - |
 | [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 32 | 64 |  - | - |- | - | [Link](./src/configs/CIFAR10/ProjGAN.json) |  - | - |
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 32 | 64 |  - | - |- | - | [Link](./src/configs/CIFAR10/SNGAN.json) |  - | - |
