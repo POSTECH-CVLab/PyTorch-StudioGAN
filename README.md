@@ -53,7 +53,7 @@
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
 
-[cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform
+[cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform.
 
 
 ## Requirements
