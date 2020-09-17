@@ -261,10 +261,10 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger):
     ax2 = fig.add_subplot(122)
 
     ax1.imshow(real_spectrum)
-    ax1.set_title("Spectrum of Real images")
+    ax1.set_title("Spectrum of real images")
 
     ax2.imshow(fake_spectrum)
-    ax2.set_title("Spectrum of Fake images")
+    ax2.set_title("Spectrum of fake images")
     fig.savefig(save_path)
     logger.info("Saved image to {}".format(save_path))
 

@@ -35,7 +35,7 @@
       "optimization": {
         "optimizer": "Adam",
         "batch_size": 256,
-        "accumulation_steps": 8, 
+        "accumulation_steps": 1, 
         "d_lr": 0.0002,
         "g_lr": 0.00005,
         "momentum": "N/A",
@@ -44,7 +44,7 @@
         "beta1": 0.0,
         "beta2": 0.999,
         "g_steps_per_iter": 1,
-        "d_steps_per_iter": 1,
+        "d_steps_per_iter": 2,
         "total_step": 200000
       },
   
