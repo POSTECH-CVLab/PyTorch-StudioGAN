@@ -237,7 +237,7 @@ def calc_derv4gp(netD, conditional_strategy, real_data, fake_data, real_labels, 
 
     if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
         _, _, disc_interpolates = netD(interpolates, real_labels)
-    elif conditional_strategy in ['projGAN', 'no']:
+    elif conditional_strategy in ['ProjGAN', 'no']:
             disc_interpolates = netD(interpolates, real_labels)
     elif conditional_strategy == 'ACGAN':
         _, disc_interpolates = netD(interpolates, real_labels)
@@ -267,7 +267,7 @@ def calc_derv4dra(netD, conditional_strategy, real_data, real_labels, device):
 
     if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
         _, _, disc_interpolates = netD(interpolates, real_labels)
-    elif conditional_strategy in ['projGAN', 'no']:
+    elif conditional_strategy in ['ProjGAN', 'no']:
             disc_interpolates = netD(interpolates, real_labels)
     elif conditional_strategy == 'ACGAN':
         _, disc_interpolates = netD(interpolates, real_labels)
@@ -289,7 +289,7 @@ def calc_derv(inputs, labels, netD, conditional_strategy, device, netG=None):
 
     if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
         _, _, dis_out_fake = netD(fake_images, labels)
-    elif conditional_strategy in ['projGAN', 'no']:
+    elif conditional_strategy in ['ProjGAN', 'no']:
         dis_out_fake = netD(fake_images, labels)
     elif conditional_strategy == 'ACGAN':
         _, dis_out_fake = netD(fake_images, labels)

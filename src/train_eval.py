@@ -276,7 +276,7 @@ class Train_Eval(object):
                         if self.conditional_strategy == "ACGAN":
                             cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
                             cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                        elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                             dis_out_real = self.dis_model(real_images, real_labels)
                             dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
@@ -307,7 +307,7 @@ class Train_Eval(object):
                             if self.conditional_strategy == "ACGAN":
                                 cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                                 cls_consistency_loss = self.l2_loss(cls_out_real, cls_out_real_aug)
-                            elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                                 dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                             elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
                                 _, cls_embed_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
@@ -328,7 +328,7 @@ class Train_Eval(object):
                                 cls_out_fake_aug, dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
                                 cls_bcr_real_loss = self.l2_loss(cls_out_real, cls_out_real_aug)
                                 cls_bcr_fake_loss = self.l2_loss(cls_out_fake, cls_out_fake_aug)
-                            elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                                 dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                                 dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
                             elif self.conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
@@ -351,7 +351,7 @@ class Train_Eval(object):
                             if self.conditional_strategy == "ACGAN":
                                 cls_out_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
                                 cls_zcr_dis_loss = self.l2_loss(cls_out_fake, cls_out_fake_zaug)
-                            elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                                 dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
                             elif self.conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
                                 cls_proxies_fake_zaug, cls_embed_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
@@ -429,7 +429,7 @@ class Train_Eval(object):
 
                         if self.conditional_strategy == "ACGAN":
                             cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                        elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                             dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
                             fake_cls_mask = make_mask(fake_labels, self.num_classes, self.default_device)

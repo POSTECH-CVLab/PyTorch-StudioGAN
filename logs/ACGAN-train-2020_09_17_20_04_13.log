@@ -1,0 +1,1475 @@
+[INFO] 2020-09-17 20:04:13 > Run name : ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:04:13 > {'config_path': './configs/CIFAR10/ACGAN.json', 'checkpoint_folder': None, 'load_current': False, 'log_output_path': None, 'seed': 82624, 'num_workers': 8, 'synchronized_bn': False, 'mixed_precision': False, 'disable_debugging_API': True, 'reduce_train_dataset': 1.0, 'standing_statistics': False, 'standing_step': -1, 'freeze_layers': -1, 'load_all_data_in_memory': True, 'train': True, 'eval': True, 'save_images': False, 'image_visualization': False, 'k_nearest_neighbor': False, 'interpolation': False, 'frequency_analysis': False, 'nrow': 10, 'ncol': 8, 'print_every': 100, 'save_every': 2000, 'eval_type': 'test'}
+[INFO] 2020-09-17 20:04:13 > {'model': {'architecture': 'resnet', 'conditional_strategy': 'ACGAN', 'pos_collected_numerator': False, 'hypersphere_dim': 'N/A', 'nonlinear_embed': False, 'normalize_embed': False, 'g_spectral_norm': False, 'd_spectral_norm': False, 'activation_fn': 'ReLU', 'attention': False, 'attention_after_nth_gen_block': 'N/A', 'attention_after_nth_dis_block': 'N/A', 'z_dim': 128, 'shared_dim': 'N/A', 'g_conv_dim': 64, 'd_conv_dim': 64, 'G_depth': 'N/A', 'D_depth': 'N/A'}, 'optimization': {'optimizer': 'Adam', 'batch_size': 64, 'accumulation_steps': 1, 'd_lr': 0.0002, 'g_lr': 0.0002, 'momentum': 'N/A', 'nesterov': 'N/A', 'alpha': 'N/A', 'beta1': 0.5, 'beta2': 0.999, 'g_steps_per_iter': 1, 'd_steps_per_iter': 5, 'total_step': 100000}, 'loss_function': {'adv_loss': 'hinge', 'contrastive_lambda': 'N/A', 'margin': 'N/A', 'tempering_type': 'N/A', 'tempering_step': 'N/A', 'start_temperature': 'N/A', 'end_temperature': 'N/A', 'weight_clipping_for_dis': False, 'weight_clipping_bound': 'N/A', 'gradient_penalty_for_dis': False, 'gradient_penalty_lambda': 'N/A', 'deep_regret_analysis_for_dis': False, 'regret_penalty_lambda': 'N/A', 'cr': False, 'cr_lambda': 'N/A', 'bcr': False, 'real_lambda': 'N/A', 'fake_lambda': 'N/A', 'zcr': False, 'gen_lambda': 'N/A', 'dis_lambda': 'N/A', 'sigma_noise': 'N/A'}, 'initialization': {'g_init': 'ortho', 'd_init': 'ortho'}, 'training_and_sampling_setting': {'random_flip_preprocessing': True, 'diff_aug': False, 'ada': False, 'ada_target': 'N/A', 'ada_length': 'N/A', 'prior': 'gaussian', 'truncated_factor': 1, 'latent_op': False, 'latent_op_rate': 'N/A', 'latent_op_step': 'N/A', 'latent_op_step4eval': 'N/A', 'latent_op_alpha': 'N/A', 'latent_op_beta': 'N/A', 'latent_norm_reg_weight': 'N/A', 'ema': False, 'ema_decay': 'N/A', 'ema_start': 'N/A'}}
+[INFO] 2020-09-17 20:04:13 > Loading train datasets...
+[INFO] 2020-09-17 20:04:13 > Train dataset size : 50000
+[INFO] 2020-09-17 20:04:13 > Loading test datasets...
+[INFO] 2020-09-17 20:04:14 > Eval dataset size : 10000
+[INFO] 2020-09-17 20:04:14 > Building model...
+[INFO] 2020-09-17 20:04:14 > Modules are located on models.resnet
+[INFO] 2020-09-17 20:04:18 > Number of parameters: 4304387
+[INFO] 2020-09-17 20:04:18 > Generator(
+  (linear0): Linear(in_features=128, out_features=4096, bias=True)
+  (blocks): ModuleList(
+    (0): ModuleList(
+      (0): GenBlock(
+        (bn1): ConditionalBatchNorm2d(
+          (bn): BatchNorm2d(256, eps=0.0001, momentum=0.1, affine=False, track_running_stats=True)
+          (embed0): Embedding(10, 256)
+          (embed1): Embedding(10, 256)
+        )
+        (bn2): ConditionalBatchNorm2d(
+          (bn): BatchNorm2d(256, eps=0.0001, momentum=0.1, affine=False, track_running_stats=True)
+          (embed0): Embedding(10, 256)
+          (embed1): Embedding(10, 256)
+        )
+        (activation): ReLU(inplace=True)
+        (conv2d0): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+        (conv2d1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (conv2d2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+    )
+    (1): ModuleList(
+      (0): GenBlock(
+        (bn1): ConditionalBatchNorm2d(
+          (bn): BatchNorm2d(256, eps=0.0001, momentum=0.1, affine=False, track_running_stats=True)
+          (embed0): Embedding(10, 256)
+          (embed1): Embedding(10, 256)
+        )
+        (bn2): ConditionalBatchNorm2d(
+          (bn): BatchNorm2d(256, eps=0.0001, momentum=0.1, affine=False, track_running_stats=True)
+          (embed0): Embedding(10, 256)
+          (embed1): Embedding(10, 256)
+        )
+        (activation): ReLU(inplace=True)
+        (conv2d0): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+        (conv2d1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (conv2d2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+    )
+    (2): ModuleList(
+      (0): GenBlock(
+        (bn1): ConditionalBatchNorm2d(
+          (bn): BatchNorm2d(256, eps=0.0001, momentum=0.1, affine=False, track_running_stats=True)
+          (embed0): Embedding(10, 256)
+          (embed1): Embedding(10, 256)
+        )
+        (bn2): ConditionalBatchNorm2d(
+          (bn): BatchNorm2d(256, eps=0.0001, momentum=0.1, affine=False, track_running_stats=True)
+          (embed0): Embedding(10, 256)
+          (embed1): Embedding(10, 256)
+        )
+        (activation): ReLU(inplace=True)
+        (conv2d0): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+        (conv2d1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (conv2d2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+    )
+  )
+  (bn4): BatchNorm2d(256, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+  (activation): ReLU(inplace=True)
+  (conv2d5): Conv2d(256, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+  (tanh): Tanh()
+)
+[INFO] 2020-09-17 20:04:18 > Number of parameters: 1057169
+[INFO] 2020-09-17 20:04:18 > Discriminator(
+  (blocks): ModuleList(
+    (0): ModuleList(
+      (0): DiscOptBlock(
+        (conv2d0): Conv2d(3, 128, kernel_size=(1, 1), stride=(1, 1))
+        (conv2d1): Conv2d(3, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (conv2d2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (bn0): BatchNorm2d(3, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (bn1): BatchNorm2d(128, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (activation): ReLU(inplace=True)
+        (average_pooling): AvgPool2d(kernel_size=2, stride=2, padding=0)
+      )
+    )
+    (1): ModuleList(
+      (0): DiscBlock(
+        (activation): ReLU(inplace=True)
+        (conv2d0): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1))
+        (conv2d1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (conv2d2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (bn0): BatchNorm2d(128, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (bn1): BatchNorm2d(128, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (bn2): BatchNorm2d(128, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (average_pooling): AvgPool2d(kernel_size=2, stride=2, padding=0)
+      )
+    )
+    (2): ModuleList(
+      (0): DiscBlock(
+        (activation): ReLU(inplace=True)
+        (conv2d1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (conv2d2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (bn1): BatchNorm2d(128, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (bn2): BatchNorm2d(128, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (average_pooling): AvgPool2d(kernel_size=2, stride=2, padding=0)
+      )
+    )
+    (3): ModuleList(
+      (0): DiscBlock(
+        (activation): ReLU(inplace=True)
+        (conv2d1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (conv2d2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (bn1): BatchNorm2d(128, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (bn2): BatchNorm2d(128, eps=0.0001, momentum=0.1, affine=True, track_running_stats=True)
+        (average_pooling): AvgPool2d(kernel_size=2, stride=2, padding=0)
+      )
+    )
+  )
+  (activation): ReLU(inplace=True)
+  (linear1): Linear(in_features=128, out_features=1, bias=True)
+  (linear4): Linear(in_features=128, out_features=10, bias=True)
+)
+[INFO] 2020-09-17 20:04:21 > Start training....
+[INFO] 2020-09-17 20:04:38 > Step:     100 Progress: 0.1% Elapsed: 0:00:17 temperature: no ada_p: No Discriminator_loss: 2.77901 Generator_loss: 5.1875 
+[INFO] 2020-09-17 20:04:55 > Step:     200 Progress: 0.2% Elapsed: 0:00:34 temperature: no ada_p: No Discriminator_loss: 2.07571 Generator_loss: 2.73206 
+[INFO] 2020-09-17 20:05:12 > Step:     300 Progress: 0.3% Elapsed: 0:00:51 temperature: no ada_p: No Discriminator_loss: 2.15699 Generator_loss: 3.2981 
+[INFO] 2020-09-17 20:05:29 > Step:     400 Progress: 0.4% Elapsed: 0:01:08 temperature: no ada_p: No Discriminator_loss: 2.15328 Generator_loss: 4.00752 
+[INFO] 2020-09-17 20:05:46 > Step:     500 Progress: 0.5% Elapsed: 0:01:25 temperature: no ada_p: No Discriminator_loss: 2.10509 Generator_loss: 3.85899 
+[INFO] 2020-09-17 20:06:03 > Step:     600 Progress: 0.6% Elapsed: 0:01:42 temperature: no ada_p: No Discriminator_loss: 1.40465 Generator_loss: 2.78493 
+[INFO] 2020-09-17 20:06:20 > Step:     700 Progress: 0.7% Elapsed: 0:01:59 temperature: no ada_p: No Discriminator_loss: 1.58379 Generator_loss: 3.40783 
+[INFO] 2020-09-17 20:06:37 > Step:     800 Progress: 0.8% Elapsed: 0:02:16 temperature: no ada_p: No Discriminator_loss: 1.10998 Generator_loss: 4.24557 
+[INFO] 2020-09-17 20:06:53 > Step:     900 Progress: 0.9% Elapsed: 0:02:32 temperature: no ada_p: No Discriminator_loss: 1.49282 Generator_loss: 3.39719 
+[INFO] 2020-09-17 20:07:11 > Step:    1000 Progress: 1.0% Elapsed: 0:02:50 temperature: no ada_p: No Discriminator_loss: 1.22484 Generator_loss: 3.25818 
+[INFO] 2020-09-17 20:07:28 > Step:    1100 Progress: 1.1% Elapsed: 0:03:07 temperature: no ada_p: No Discriminator_loss: 1.53083 Generator_loss: 2.65603 
+[INFO] 2020-09-17 20:07:44 > Step:    1200 Progress: 1.2% Elapsed: 0:03:23 temperature: no ada_p: No Discriminator_loss: 1.74488 Generator_loss: 3.33479 
+[INFO] 2020-09-17 20:08:01 > Step:    1300 Progress: 1.3% Elapsed: 0:03:40 temperature: no ada_p: No Discriminator_loss: 1.53285 Generator_loss: 2.86526 
+[INFO] 2020-09-17 20:08:18 > Step:    1400 Progress: 1.4% Elapsed: 0:03:57 temperature: no ada_p: No Discriminator_loss: 1.22419 Generator_loss: 3.87075 
+[INFO] 2020-09-17 20:08:35 > Step:    1500 Progress: 1.5% Elapsed: 0:04:14 temperature: no ada_p: No Discriminator_loss: 1.27703 Generator_loss: 3.02415 
+[INFO] 2020-09-17 20:08:52 > Step:    1600 Progress: 1.6% Elapsed: 0:04:31 temperature: no ada_p: No Discriminator_loss: 1.03536 Generator_loss: 4.78864 
+[INFO] 2020-09-17 20:09:09 > Step:    1700 Progress: 1.7% Elapsed: 0:04:48 temperature: no ada_p: No Discriminator_loss: 0.860047 Generator_loss: 4.77454 
+[INFO] 2020-09-17 20:09:26 > Step:    1800 Progress: 1.8% Elapsed: 0:05:05 temperature: no ada_p: No Discriminator_loss: 1.24077 Generator_loss: 5.50569 
+[INFO] 2020-09-17 20:09:43 > Step:    1900 Progress: 1.9% Elapsed: 0:05:22 temperature: no ada_p: No Discriminator_loss: 1.03788 Generator_loss: 4.67668 
+[INFO] 2020-09-17 20:10:00 > Step:    2000 Progress: 2.0% Elapsed: 0:05:38 temperature: no ada_p: No Discriminator_loss: 0.895183 Generator_loss: 3.79393 
+[INFO] 2020-09-17 20:10:00 > Start Evaluation (2000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:11:36 > F_8 score (Step: 2000, Using test images): 0.7573717366279009
+[INFO] 2020-09-17 20:11:36 > F_1/8 score (Step: 2000, Using test images): 0.8082985654923779
+[INFO] 2020-09-17 20:11:36 > FID score (Step: 2000, Using test moments): 56.493740972420596
+[INFO] 2020-09-17 20:11:36 > Inception score (Step: 2000, 10000 generated images): 5.504762172698975
+[INFO] 2020-09-17 20:11:36 > Best FID score (Step: 2000, Using test moments): 56.493740972420596
+[INFO] 2020-09-17 20:11:37 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:11:54 > Step:    2100 Progress: 2.1% Elapsed: 0:07:33 temperature: no ada_p: No Discriminator_loss: 0.851201 Generator_loss: 5.11479 
+[INFO] 2020-09-17 20:12:11 > Step:    2200 Progress: 2.2% Elapsed: 0:07:50 temperature: no ada_p: No Discriminator_loss: 0.856164 Generator_loss: 1.63253 
+[INFO] 2020-09-17 20:12:27 > Step:    2300 Progress: 2.3% Elapsed: 0:08:06 temperature: no ada_p: No Discriminator_loss: 2.58717 Generator_loss: 1.36781 
+[INFO] 2020-09-17 20:12:44 > Step:    2400 Progress: 2.4% Elapsed: 0:08:23 temperature: no ada_p: No Discriminator_loss: 2.7795 Generator_loss: 8.05062 
+[INFO] 2020-09-17 20:13:01 > Step:    2500 Progress: 2.5% Elapsed: 0:08:40 temperature: no ada_p: No Discriminator_loss: 0.931642 Generator_loss: 5.5701 
+[INFO] 2020-09-17 20:13:18 > Step:    2600 Progress: 2.6% Elapsed: 0:08:57 temperature: no ada_p: No Discriminator_loss: 0.671791 Generator_loss: 3.25438 
+[INFO] 2020-09-17 20:13:35 > Step:    2700 Progress: 2.7% Elapsed: 0:09:14 temperature: no ada_p: No Discriminator_loss: 0.814994 Generator_loss: 5.48391 
+[INFO] 2020-09-17 20:13:52 > Step:    2800 Progress: 2.8% Elapsed: 0:09:30 temperature: no ada_p: No Discriminator_loss: 0.961476 Generator_loss: 9.19081 
+[INFO] 2020-09-17 20:14:09 > Step:    2900 Progress: 2.9% Elapsed: 0:09:47 temperature: no ada_p: No Discriminator_loss: 0.632897 Generator_loss: 8.19901 
+[INFO] 2020-09-17 20:14:26 > Step:    3000 Progress: 3.0% Elapsed: 0:10:04 temperature: no ada_p: No Discriminator_loss: 1.20444 Generator_loss: 6.26936 
+[INFO] 2020-09-17 20:14:42 > Step:    3100 Progress: 3.1% Elapsed: 0:10:21 temperature: no ada_p: No Discriminator_loss: 0.96052 Generator_loss: 7.14669 
+[INFO] 2020-09-17 20:14:59 > Step:    3200 Progress: 3.2% Elapsed: 0:10:38 temperature: no ada_p: No Discriminator_loss: 0.729539 Generator_loss: 4.06067 
+[INFO] 2020-09-17 20:15:16 > Step:    3300 Progress: 3.3% Elapsed: 0:10:55 temperature: no ada_p: No Discriminator_loss: 0.525454 Generator_loss: 6.88187 
+[INFO] 2020-09-17 20:15:33 > Step:    3400 Progress: 3.4% Elapsed: 0:11:12 temperature: no ada_p: No Discriminator_loss: 0.529296 Generator_loss: 6.02766 
+[INFO] 2020-09-17 20:15:50 > Step:    3500 Progress: 3.5% Elapsed: 0:11:29 temperature: no ada_p: No Discriminator_loss: 0.724602 Generator_loss: 6.3863 
+[INFO] 2020-09-17 20:16:07 > Step:    3600 Progress: 3.6% Elapsed: 0:11:46 temperature: no ada_p: No Discriminator_loss: 1.90071 Generator_loss: 2.02917 
+[INFO] 2020-09-17 20:16:24 > Step:    3700 Progress: 3.7% Elapsed: 0:12:03 temperature: no ada_p: No Discriminator_loss: 0.844412 Generator_loss: 4.52947 
+[INFO] 2020-09-17 20:16:41 > Step:    3800 Progress: 3.8% Elapsed: 0:12:20 temperature: no ada_p: No Discriminator_loss: 0.508282 Generator_loss: 5.30378 
+[INFO] 2020-09-17 20:16:57 > Step:    3900 Progress: 3.9% Elapsed: 0:12:36 temperature: no ada_p: No Discriminator_loss: 0.493667 Generator_loss: 5.39321 
+[INFO] 2020-09-17 20:17:14 > Step:    4000 Progress: 4.0% Elapsed: 0:12:53 temperature: no ada_p: No Discriminator_loss: 0.498928 Generator_loss: 5.38538 
+[INFO] 2020-09-17 20:17:14 > Start Evaluation (4000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:18:51 > F_8 score (Step: 4000, Using test images): 0.8091593403444676
+[INFO] 2020-09-17 20:18:51 > F_1/8 score (Step: 4000, Using test images): 0.9043558764517408
+[INFO] 2020-09-17 20:18:51 > FID score (Step: 4000, Using test moments): 49.310842902189165
+[INFO] 2020-09-17 20:18:51 > Inception score (Step: 4000, 10000 generated images): 6.7490234375
+[INFO] 2020-09-17 20:18:51 > Best FID score (Step: 4000, Using test moments): 49.310842902189165
+[INFO] 2020-09-17 20:18:51 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:19:08 > Step:    4100 Progress: 4.1% Elapsed: 0:14:47 temperature: no ada_p: No Discriminator_loss: 0.784645 Generator_loss: 3.00357 
+[INFO] 2020-09-17 20:19:24 > Step:    4200 Progress: 4.2% Elapsed: 0:15:03 temperature: no ada_p: No Discriminator_loss: 0.475382 Generator_loss: 5.955 
+[INFO] 2020-09-17 20:19:41 > Step:    4300 Progress: 4.3% Elapsed: 0:15:20 temperature: no ada_p: No Discriminator_loss: 0.409526 Generator_loss: 6.09493 
+[INFO] 2020-09-17 20:19:58 > Step:    4400 Progress: 4.4% Elapsed: 0:15:37 temperature: no ada_p: No Discriminator_loss: 0.542708 Generator_loss: 8.22726 
+[INFO] 2020-09-17 20:20:15 > Step:    4500 Progress: 4.5% Elapsed: 0:15:54 temperature: no ada_p: No Discriminator_loss: 0.462887 Generator_loss: 4.03374 
+[INFO] 2020-09-17 20:20:32 > Step:    4600 Progress: 4.6% Elapsed: 0:16:11 temperature: no ada_p: No Discriminator_loss: 0.388394 Generator_loss: 5.76362 
+[INFO] 2020-09-17 20:20:49 > Step:    4700 Progress: 4.7% Elapsed: 0:16:28 temperature: no ada_p: No Discriminator_loss: 0.614447 Generator_loss: 3.19348 
+[INFO] 2020-09-17 20:21:06 > Step:    4800 Progress: 4.8% Elapsed: 0:16:45 temperature: no ada_p: No Discriminator_loss: 0.468118 Generator_loss: 4.91869 
+[INFO] 2020-09-17 20:21:23 > Step:    4900 Progress: 4.9% Elapsed: 0:17:02 temperature: no ada_p: No Discriminator_loss: 0.573516 Generator_loss: 4.37727 
+[INFO] 2020-09-17 20:21:40 > Step:    5000 Progress: 5.0% Elapsed: 0:17:19 temperature: no ada_p: No Discriminator_loss: 0.354008 Generator_loss: 4.79903 
+[INFO] 2020-09-17 20:21:57 > Step:    5100 Progress: 5.1% Elapsed: 0:17:36 temperature: no ada_p: No Discriminator_loss: 0.507927 Generator_loss: 5.80721 
+[INFO] 2020-09-17 20:22:14 > Step:    5200 Progress: 5.2% Elapsed: 0:17:53 temperature: no ada_p: No Discriminator_loss: 0.433076 Generator_loss: 4.22473 
+[INFO] 2020-09-17 20:22:30 > Step:    5300 Progress: 5.3% Elapsed: 0:18:09 temperature: no ada_p: No Discriminator_loss: 0.41964 Generator_loss: 6.33809 
+[INFO] 2020-09-17 20:22:47 > Step:    5400 Progress: 5.4% Elapsed: 0:18:26 temperature: no ada_p: No Discriminator_loss: 0.239119 Generator_loss: 4.31089 
+[INFO] 2020-09-17 20:23:04 > Step:    5500 Progress: 5.5% Elapsed: 0:18:43 temperature: no ada_p: No Discriminator_loss: 4.52329 Generator_loss: 1.02537 
+[INFO] 2020-09-17 20:23:21 > Step:    5600 Progress: 5.6% Elapsed: 0:19:00 temperature: no ada_p: No Discriminator_loss: 0.401006 Generator_loss: 2.82244 
+[INFO] 2020-09-17 20:23:38 > Step:    5700 Progress: 5.7% Elapsed: 0:19:17 temperature: no ada_p: No Discriminator_loss: 0.636017 Generator_loss: 2.67821 
+[INFO] 2020-09-17 20:23:55 > Step:    5800 Progress: 5.8% Elapsed: 0:19:34 temperature: no ada_p: No Discriminator_loss: 0.748205 Generator_loss: 8.79273 
+[INFO] 2020-09-17 20:24:11 > Step:    5900 Progress: 5.9% Elapsed: 0:19:50 temperature: no ada_p: No Discriminator_loss: 0.449772 Generator_loss: 4.55502 
+[INFO] 2020-09-17 20:24:29 > Step:    6000 Progress: 6.0% Elapsed: 0:20:07 temperature: no ada_p: No Discriminator_loss: 0.461887 Generator_loss: 6.77862 
+[INFO] 2020-09-17 20:24:29 > Start Evaluation (6000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:26:06 > F_8 score (Step: 6000, Using test images): 0.732839106615975
+[INFO] 2020-09-17 20:26:06 > F_1/8 score (Step: 6000, Using test images): 0.870962644610167
+[INFO] 2020-09-17 20:26:06 > FID score (Step: 6000, Using test moments): 53.29163874840037
+[INFO] 2020-09-17 20:26:06 > Inception score (Step: 6000, 10000 generated images): 5.742431163787842
+[INFO] 2020-09-17 20:26:06 > Best FID score (Step: 4000, Using test moments): 49.310842902189165
+[INFO] 2020-09-17 20:26:06 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:26:23 > Step:    6100 Progress: 6.1% Elapsed: 0:22:02 temperature: no ada_p: No Discriminator_loss: 0.398009 Generator_loss: 2.73738 
+[INFO] 2020-09-17 20:26:40 > Step:    6200 Progress: 6.2% Elapsed: 0:22:19 temperature: no ada_p: No Discriminator_loss: 0.277183 Generator_loss: 2.9341 
+[INFO] 2020-09-17 20:26:57 > Step:    6300 Progress: 6.3% Elapsed: 0:22:36 temperature: no ada_p: No Discriminator_loss: 0.388243 Generator_loss: 5.58198 
+[INFO] 2020-09-17 20:27:14 > Step:    6400 Progress: 6.4% Elapsed: 0:22:53 temperature: no ada_p: No Discriminator_loss: 1.25687 Generator_loss: 8.12218 
+[INFO] 2020-09-17 20:27:31 > Step:    6500 Progress: 6.5% Elapsed: 0:23:10 temperature: no ada_p: No Discriminator_loss: 0.424674 Generator_loss: 9.70623 
+[INFO] 2020-09-17 20:27:48 > Step:    6600 Progress: 6.6% Elapsed: 0:23:27 temperature: no ada_p: No Discriminator_loss: 0.614608 Generator_loss: 4.84413 
+[INFO] 2020-09-17 20:28:05 > Step:    6700 Progress: 6.7% Elapsed: 0:23:44 temperature: no ada_p: No Discriminator_loss: 0.34675 Generator_loss: 5.4122 
+[INFO] 2020-09-17 20:28:22 > Step:    6800 Progress: 6.8% Elapsed: 0:24:01 temperature: no ada_p: No Discriminator_loss: 0.317586 Generator_loss: 8.2468 
+[INFO] 2020-09-17 20:28:39 > Step:    6900 Progress: 6.9% Elapsed: 0:24:18 temperature: no ada_p: No Discriminator_loss: 0.78236 Generator_loss: 8.19464 
+[INFO] 2020-09-17 20:28:56 > Step:    7000 Progress: 7.0% Elapsed: 0:24:35 temperature: no ada_p: No Discriminator_loss: 0.596287 Generator_loss: 6.00634 
+[INFO] 2020-09-17 20:29:13 > Step:    7100 Progress: 7.1% Elapsed: 0:24:52 temperature: no ada_p: No Discriminator_loss: 0.42574 Generator_loss: 5.25288 
+[INFO] 2020-09-17 20:29:30 > Step:    7200 Progress: 7.2% Elapsed: 0:25:09 temperature: no ada_p: No Discriminator_loss: 0.194448 Generator_loss: 7.51033 
+[INFO] 2020-09-17 20:29:47 > Step:    7300 Progress: 7.3% Elapsed: 0:25:26 temperature: no ada_p: No Discriminator_loss: 0.900215 Generator_loss: 6.92087 
+[INFO] 2020-09-17 20:30:04 > Step:    7400 Progress: 7.4% Elapsed: 0:25:43 temperature: no ada_p: No Discriminator_loss: 0.166975 Generator_loss: 4.44835 
+[INFO] 2020-09-17 20:30:21 > Step:    7500 Progress: 7.5% Elapsed: 0:26:00 temperature: no ada_p: No Discriminator_loss: 0.323982 Generator_loss: 8.30844 
+[INFO] 2020-09-17 20:30:37 > Step:    7600 Progress: 7.6% Elapsed: 0:26:16 temperature: no ada_p: No Discriminator_loss: 0.497023 Generator_loss: 6.6854 
+[INFO] 2020-09-17 20:30:54 > Step:    7700 Progress: 7.7% Elapsed: 0:26:33 temperature: no ada_p: No Discriminator_loss: 0.423631 Generator_loss: 5.84129 
+[INFO] 2020-09-17 20:31:11 > Step:    7800 Progress: 7.8% Elapsed: 0:26:50 temperature: no ada_p: No Discriminator_loss: 0.592063 Generator_loss: 6.81551 
+[INFO] 2020-09-17 20:31:28 > Step:    7900 Progress: 7.9% Elapsed: 0:27:07 temperature: no ada_p: No Discriminator_loss: 0.502104 Generator_loss: 4.41227 
+[INFO] 2020-09-17 20:31:45 > Step:    8000 Progress: 8.0% Elapsed: 0:27:24 temperature: no ada_p: No Discriminator_loss: 0.291384 Generator_loss: 4.73841 
+[INFO] 2020-09-17 20:31:45 > Start Evaluation (8000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:33:19 > F_8 score (Step: 8000, Using test images): 0.8415992650832779
+[INFO] 2020-09-17 20:33:19 > F_1/8 score (Step: 8000, Using test images): 0.8728746822186667
+[INFO] 2020-09-17 20:33:19 > FID score (Step: 8000, Using test moments): 46.653224213479746
+[INFO] 2020-09-17 20:33:19 > Inception score (Step: 8000, 10000 generated images): 6.71652364730835
+[INFO] 2020-09-17 20:33:19 > Best FID score (Step: 8000, Using test moments): 46.653224213479746
+[INFO] 2020-09-17 20:33:20 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:33:36 > Step:    8100 Progress: 8.1% Elapsed: 0:29:15 temperature: no ada_p: No Discriminator_loss: 2.00042 Generator_loss: 0.358257 
+[INFO] 2020-09-17 20:33:53 > Step:    8200 Progress: 8.2% Elapsed: 0:29:32 temperature: no ada_p: No Discriminator_loss: 0.389187 Generator_loss: 7.82457 
+[INFO] 2020-09-17 20:34:10 > Step:    8300 Progress: 8.3% Elapsed: 0:29:49 temperature: no ada_p: No Discriminator_loss: 0.483346 Generator_loss: 7.9183 
+[INFO] 2020-09-17 20:34:27 > Step:    8400 Progress: 8.4% Elapsed: 0:30:06 temperature: no ada_p: No Discriminator_loss: 0.332449 Generator_loss: 8.5006 
+[INFO] 2020-09-17 20:34:44 > Step:    8500 Progress: 8.5% Elapsed: 0:30:23 temperature: no ada_p: No Discriminator_loss: 0.20214 Generator_loss: 5.4852 
+[INFO] 2020-09-17 20:35:01 > Step:    8600 Progress: 8.6% Elapsed: 0:30:40 temperature: no ada_p: No Discriminator_loss: 0.375327 Generator_loss: 5.15224 
+[INFO] 2020-09-17 20:35:17 > Step:    8700 Progress: 8.7% Elapsed: 0:30:56 temperature: no ada_p: No Discriminator_loss: 0.264872 Generator_loss: 9.06309 
+[INFO] 2020-09-17 20:35:35 > Step:    8800 Progress: 8.8% Elapsed: 0:31:13 temperature: no ada_p: No Discriminator_loss: 0.0779809 Generator_loss: 8.52885 
+[INFO] 2020-09-17 20:35:51 > Step:    8900 Progress: 8.9% Elapsed: 0:31:30 temperature: no ada_p: No Discriminator_loss: 0.337399 Generator_loss: 8.656 
+[INFO] 2020-09-17 20:36:08 > Step:    9000 Progress: 9.0% Elapsed: 0:31:47 temperature: no ada_p: No Discriminator_loss: 0.328691 Generator_loss: 3.40676 
+[INFO] 2020-09-17 20:36:26 > Step:    9100 Progress: 9.1% Elapsed: 0:32:04 temperature: no ada_p: No Discriminator_loss: 0.436432 Generator_loss: 8.03618 
+[INFO] 2020-09-17 20:36:42 > Step:    9200 Progress: 9.2% Elapsed: 0:32:21 temperature: no ada_p: No Discriminator_loss: 0.25389 Generator_loss: 5.14291 
+[INFO] 2020-09-17 20:36:59 > Step:    9300 Progress: 9.3% Elapsed: 0:32:38 temperature: no ada_p: No Discriminator_loss: 0.27807 Generator_loss: 7.03268 
+[INFO] 2020-09-17 20:37:16 > Step:    9400 Progress: 9.4% Elapsed: 0:32:55 temperature: no ada_p: No Discriminator_loss: 0.0857955 Generator_loss: 6.95609 
+[INFO] 2020-09-17 20:37:33 > Step:    9500 Progress: 9.5% Elapsed: 0:33:12 temperature: no ada_p: No Discriminator_loss: 0.539076 Generator_loss: 4.17552 
+[INFO] 2020-09-17 20:37:50 > Step:    9600 Progress: 9.6% Elapsed: 0:33:29 temperature: no ada_p: No Discriminator_loss: 0.257589 Generator_loss: 4.9286 
+[INFO] 2020-09-17 20:38:07 > Step:    9700 Progress: 9.7% Elapsed: 0:33:46 temperature: no ada_p: No Discriminator_loss: 0.406322 Generator_loss: 7.70942 
+[INFO] 2020-09-17 20:38:24 > Step:    9800 Progress: 9.8% Elapsed: 0:34:03 temperature: no ada_p: No Discriminator_loss: 0.36678 Generator_loss: 4.77403 
+[INFO] 2020-09-17 20:38:41 > Step:    9900 Progress: 9.9% Elapsed: 0:34:20 temperature: no ada_p: No Discriminator_loss: 0.239284 Generator_loss: 6.93832 
+[INFO] 2020-09-17 20:38:58 > Step:   10000 Progress: 10.0% Elapsed: 0:34:37 temperature: no ada_p: No Discriminator_loss: 0.13395 Generator_loss: 6.52999 
+[INFO] 2020-09-17 20:38:58 > Start Evaluation (10000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:40:35 > F_8 score (Step: 10000, Using test images): 0.8133491537083477
+[INFO] 2020-09-17 20:40:35 > F_1/8 score (Step: 10000, Using test images): 0.884753432343233
+[INFO] 2020-09-17 20:40:35 > FID score (Step: 10000, Using test moments): 48.610634038794615
+[INFO] 2020-09-17 20:40:35 > Inception score (Step: 10000, 10000 generated images): 6.381164073944092
+[INFO] 2020-09-17 20:40:35 > Best FID score (Step: 8000, Using test moments): 46.653224213479746
+[INFO] 2020-09-17 20:40:35 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:40:51 > Step:   10100 Progress: 10.1% Elapsed: 0:36:30 temperature: no ada_p: No Discriminator_loss: 0.200639 Generator_loss: 6.54563 
+[INFO] 2020-09-17 20:41:08 > Step:   10200 Progress: 10.2% Elapsed: 0:36:47 temperature: no ada_p: No Discriminator_loss: 0.257323 Generator_loss: 8.79579 
+[INFO] 2020-09-17 20:41:25 > Step:   10300 Progress: 10.3% Elapsed: 0:37:04 temperature: no ada_p: No Discriminator_loss: 0.236954 Generator_loss: 6.4121 
+[INFO] 2020-09-17 20:41:42 > Step:   10400 Progress: 10.4% Elapsed: 0:37:21 temperature: no ada_p: No Discriminator_loss: 0.164038 Generator_loss: 8.03578 
+[INFO] 2020-09-17 20:41:59 > Step:   10500 Progress: 10.5% Elapsed: 0:37:38 temperature: no ada_p: No Discriminator_loss: 0.262692 Generator_loss: 8.22315 
+[INFO] 2020-09-17 20:42:16 > Step:   10600 Progress: 10.6% Elapsed: 0:37:55 temperature: no ada_p: No Discriminator_loss: 0.22151 Generator_loss: 5.09631 
+[INFO] 2020-09-17 20:42:33 > Step:   10700 Progress: 10.7% Elapsed: 0:38:12 temperature: no ada_p: No Discriminator_loss: 0.265916 Generator_loss: 2.4249 
+[INFO] 2020-09-17 20:42:50 > Step:   10800 Progress: 10.8% Elapsed: 0:38:29 temperature: no ada_p: No Discriminator_loss: 0.638124 Generator_loss: 8.15998 
+[INFO] 2020-09-17 20:43:06 > Step:   10900 Progress: 10.9% Elapsed: 0:38:45 temperature: no ada_p: No Discriminator_loss: 0.384008 Generator_loss: 4.70104 
+[INFO] 2020-09-17 20:43:23 > Step:   11000 Progress: 11.0% Elapsed: 0:39:02 temperature: no ada_p: No Discriminator_loss: 0.225285 Generator_loss: 6.05529 
+[INFO] 2020-09-17 20:43:40 > Step:   11100 Progress: 11.1% Elapsed: 0:39:19 temperature: no ada_p: No Discriminator_loss: 0.390659 Generator_loss: 8.07999 
+[INFO] 2020-09-17 20:43:57 > Step:   11200 Progress: 11.2% Elapsed: 0:39:36 temperature: no ada_p: No Discriminator_loss: 0.371228 Generator_loss: 5.25 
+[INFO] 2020-09-17 20:44:14 > Step:   11300 Progress: 11.3% Elapsed: 0:39:53 temperature: no ada_p: No Discriminator_loss: 0.376715 Generator_loss: 6.8324 
+[INFO] 2020-09-17 20:44:31 > Step:   11400 Progress: 11.4% Elapsed: 0:40:10 temperature: no ada_p: No Discriminator_loss: 0.136407 Generator_loss: 6.22231 
+[INFO] 2020-09-17 20:44:48 > Step:   11500 Progress: 11.5% Elapsed: 0:40:27 temperature: no ada_p: No Discriminator_loss: 0.185918 Generator_loss: 10.1278 
+[INFO] 2020-09-17 20:45:05 > Step:   11600 Progress: 11.6% Elapsed: 0:40:44 temperature: no ada_p: No Discriminator_loss: 0.203759 Generator_loss: 3.52593 
+[INFO] 2020-09-17 20:45:21 > Step:   11700 Progress: 11.7% Elapsed: 0:41:00 temperature: no ada_p: No Discriminator_loss: 0.258803 Generator_loss: 14.5793 
+[INFO] 2020-09-17 20:45:38 > Step:   11800 Progress: 11.8% Elapsed: 0:41:17 temperature: no ada_p: No Discriminator_loss: 0.223409 Generator_loss: 8.10356 
+[INFO] 2020-09-17 20:45:56 > Step:   11900 Progress: 11.9% Elapsed: 0:41:34 temperature: no ada_p: No Discriminator_loss: 0.364122 Generator_loss: 7.47635 
+[INFO] 2020-09-17 20:46:12 > Step:   12000 Progress: 12.0% Elapsed: 0:41:51 temperature: no ada_p: No Discriminator_loss: 0.199822 Generator_loss: 7.34288 
+[INFO] 2020-09-17 20:46:12 > Start Evaluation (12000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:47:49 > F_8 score (Step: 12000, Using test images): 0.8380584272501087
+[INFO] 2020-09-17 20:47:49 > F_1/8 score (Step: 12000, Using test images): 0.917124234639652
+[INFO] 2020-09-17 20:47:49 > FID score (Step: 12000, Using test moments): 46.27133546806385
+[INFO] 2020-09-17 20:47:49 > Inception score (Step: 12000, 10000 generated images): 7.078865051269531
+[INFO] 2020-09-17 20:47:49 > Best FID score (Step: 12000, Using test moments): 46.27133546806385
+[INFO] 2020-09-17 20:47:49 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:48:06 > Step:   12100 Progress: 12.1% Elapsed: 0:43:45 temperature: no ada_p: No Discriminator_loss: 0.372986 Generator_loss: 3.85544 
+[INFO] 2020-09-17 20:48:23 > Step:   12200 Progress: 12.2% Elapsed: 0:44:02 temperature: no ada_p: No Discriminator_loss: 0.171366 Generator_loss: 2.27189 
+[INFO] 2020-09-17 20:48:40 > Step:   12300 Progress: 12.3% Elapsed: 0:44:19 temperature: no ada_p: No Discriminator_loss: 0.156011 Generator_loss: 4.68031 
+[INFO] 2020-09-17 20:48:57 > Step:   12400 Progress: 12.4% Elapsed: 0:44:36 temperature: no ada_p: No Discriminator_loss: 0.200945 Generator_loss: 5.07908 
+[INFO] 2020-09-17 20:49:14 > Step:   12500 Progress: 12.5% Elapsed: 0:44:53 temperature: no ada_p: No Discriminator_loss: 0.107328 Generator_loss: 5.42241 
+[INFO] 2020-09-17 20:49:31 > Step:   12600 Progress: 12.6% Elapsed: 0:45:10 temperature: no ada_p: No Discriminator_loss: 0.0960339 Generator_loss: 4.56493 
+[INFO] 2020-09-17 20:49:48 > Step:   12700 Progress: 12.7% Elapsed: 0:45:27 temperature: no ada_p: No Discriminator_loss: 0.282506 Generator_loss: 4.18098 
+[INFO] 2020-09-17 20:50:04 > Step:   12800 Progress: 12.8% Elapsed: 0:45:43 temperature: no ada_p: No Discriminator_loss: 0.532855 Generator_loss: 6.7637 
+[INFO] 2020-09-17 20:50:21 > Step:   12900 Progress: 12.9% Elapsed: 0:46:00 temperature: no ada_p: No Discriminator_loss: 0.182519 Generator_loss: 4.44461 
+[INFO] 2020-09-17 20:50:38 > Step:   13000 Progress: 13.0% Elapsed: 0:46:17 temperature: no ada_p: No Discriminator_loss: 0.204083 Generator_loss: 10.9927 
+[INFO] 2020-09-17 20:50:55 > Step:   13100 Progress: 13.1% Elapsed: 0:46:34 temperature: no ada_p: No Discriminator_loss: 0.330333 Generator_loss: 6.96782 
+[INFO] 2020-09-17 20:51:12 > Step:   13200 Progress: 13.2% Elapsed: 0:46:51 temperature: no ada_p: No Discriminator_loss: 0.200268 Generator_loss: 8.59419 
+[INFO] 2020-09-17 20:51:29 > Step:   13300 Progress: 13.3% Elapsed: 0:47:08 temperature: no ada_p: No Discriminator_loss: 1.29806 Generator_loss: 9.22172 
+[INFO] 2020-09-17 20:51:46 > Step:   13400 Progress: 13.4% Elapsed: 0:47:25 temperature: no ada_p: No Discriminator_loss: 0.136761 Generator_loss: 4.7183 
+[INFO] 2020-09-17 20:52:03 > Step:   13500 Progress: 13.5% Elapsed: 0:47:42 temperature: no ada_p: No Discriminator_loss: 0.313798 Generator_loss: 9.20351 
+[INFO] 2020-09-17 20:52:20 > Step:   13600 Progress: 13.6% Elapsed: 0:47:59 temperature: no ada_p: No Discriminator_loss: 0.274788 Generator_loss: 8.06488 
+[INFO] 2020-09-17 20:52:36 > Step:   13700 Progress: 13.7% Elapsed: 0:48:15 temperature: no ada_p: No Discriminator_loss: 0.263408 Generator_loss: 2.94018 
+[INFO] 2020-09-17 20:52:53 > Step:   13800 Progress: 13.8% Elapsed: 0:48:32 temperature: no ada_p: No Discriminator_loss: 0.113946 Generator_loss: 10.5915 
+[INFO] 2020-09-17 20:53:10 > Step:   13900 Progress: 13.9% Elapsed: 0:48:49 temperature: no ada_p: No Discriminator_loss: 0.188102 Generator_loss: 6.63674 
+[INFO] 2020-09-17 20:53:27 > Step:   14000 Progress: 14.0% Elapsed: 0:49:06 temperature: no ada_p: No Discriminator_loss: 0.213656 Generator_loss: 9.20188 
+[INFO] 2020-09-17 20:53:27 > Start Evaluation (14000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:55:03 > F_8 score (Step: 14000, Using test images): 0.8467247980384803
+[INFO] 2020-09-17 20:55:03 > F_1/8 score (Step: 14000, Using test images): 0.857303499340187
+[INFO] 2020-09-17 20:55:03 > FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 20:55:03 > Inception score (Step: 14000, 10000 generated images): 6.628693580627441
+[INFO] 2020-09-17 20:55:03 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 20:55:03 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 20:55:20 > Step:   14100 Progress: 14.1% Elapsed: 0:50:59 temperature: no ada_p: No Discriminator_loss: 0.143242 Generator_loss: 7.82994 
+[INFO] 2020-09-17 20:55:37 > Step:   14200 Progress: 14.2% Elapsed: 0:51:16 temperature: no ada_p: No Discriminator_loss: 0.45216 Generator_loss: 7.86107 
+[INFO] 2020-09-17 20:55:54 > Step:   14300 Progress: 14.3% Elapsed: 0:51:33 temperature: no ada_p: No Discriminator_loss: 0.200345 Generator_loss: 4.20423 
+[INFO] 2020-09-17 20:56:11 > Step:   14400 Progress: 14.4% Elapsed: 0:51:50 temperature: no ada_p: No Discriminator_loss: 0.143021 Generator_loss: 4.6451 
+[INFO] 2020-09-17 20:56:28 > Step:   14500 Progress: 14.5% Elapsed: 0:52:07 temperature: no ada_p: No Discriminator_loss: 0.296031 Generator_loss: 4.02119 
+[INFO] 2020-09-17 20:56:45 > Step:   14600 Progress: 14.6% Elapsed: 0:52:24 temperature: no ada_p: No Discriminator_loss: 0.112148 Generator_loss: 4.37774 
+[INFO] 2020-09-17 20:57:02 > Step:   14700 Progress: 14.7% Elapsed: 0:52:41 temperature: no ada_p: No Discriminator_loss: 0.299707 Generator_loss: 3.06006 
+[INFO] 2020-09-17 20:57:18 > Step:   14800 Progress: 14.8% Elapsed: 0:52:57 temperature: no ada_p: No Discriminator_loss: 0.259245 Generator_loss: 7.02387 
+[INFO] 2020-09-17 20:57:35 > Step:   14900 Progress: 14.9% Elapsed: 0:53:14 temperature: no ada_p: No Discriminator_loss: 0.365006 Generator_loss: 7.70706 
+[INFO] 2020-09-17 20:57:53 > Step:   15000 Progress: 15.0% Elapsed: 0:53:32 temperature: no ada_p: No Discriminator_loss: 0.120813 Generator_loss: 4.84331 
+[INFO] 2020-09-17 20:58:09 > Step:   15100 Progress: 15.1% Elapsed: 0:53:48 temperature: no ada_p: No Discriminator_loss: 0.191984 Generator_loss: 7.60742 
+[INFO] 2020-09-17 20:58:26 > Step:   15200 Progress: 15.2% Elapsed: 0:54:05 temperature: no ada_p: No Discriminator_loss: 0.0706748 Generator_loss: 5.83035 
+[INFO] 2020-09-17 20:58:43 > Step:   15300 Progress: 15.3% Elapsed: 0:54:22 temperature: no ada_p: No Discriminator_loss: 0.528729 Generator_loss: 8.49903 
+[INFO] 2020-09-17 20:59:00 > Step:   15400 Progress: 15.4% Elapsed: 0:54:39 temperature: no ada_p: No Discriminator_loss: 0.117732 Generator_loss: 4.06856 
+[INFO] 2020-09-17 20:59:17 > Step:   15500 Progress: 15.5% Elapsed: 0:54:56 temperature: no ada_p: No Discriminator_loss: 0.294868 Generator_loss: 4.24281 
+[INFO] 2020-09-17 20:59:34 > Step:   15600 Progress: 15.6% Elapsed: 0:55:13 temperature: no ada_p: No Discriminator_loss: 0.126267 Generator_loss: 2.35393 
+[INFO] 2020-09-17 20:59:51 > Step:   15700 Progress: 15.7% Elapsed: 0:55:30 temperature: no ada_p: No Discriminator_loss: 0.132631 Generator_loss: 6.48752 
+[INFO] 2020-09-17 21:00:08 > Step:   15800 Progress: 15.8% Elapsed: 0:55:47 temperature: no ada_p: No Discriminator_loss: 0.704359 Generator_loss: 4.48647 
+[INFO] 2020-09-17 21:00:25 > Step:   15900 Progress: 15.9% Elapsed: 0:56:04 temperature: no ada_p: No Discriminator_loss: 0.137823 Generator_loss: 7.54437 
+[INFO] 2020-09-17 21:00:42 > Step:   16000 Progress: 16.0% Elapsed: 0:56:21 temperature: no ada_p: No Discriminator_loss: 0.155428 Generator_loss: 6.51272 
+[INFO] 2020-09-17 21:00:42 > Start Evaluation (16000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:02:19 > F_8 score (Step: 16000, Using test images): 0.7385964768175964
+[INFO] 2020-09-17 21:02:19 > F_1/8 score (Step: 16000, Using test images): 0.8291462812203808
+[INFO] 2020-09-17 21:02:19 > FID score (Step: 16000, Using test moments): 55.0338651656578
+[INFO] 2020-09-17 21:02:19 > Inception score (Step: 16000, 10000 generated images): 6.281068801879883
+[INFO] 2020-09-17 21:02:19 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 21:02:19 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:02:36 > Step:   16100 Progress: 16.1% Elapsed: 0:58:15 temperature: no ada_p: No Discriminator_loss: 0.146909 Generator_loss: 4.18722 
+[INFO] 2020-09-17 21:02:53 > Step:   16200 Progress: 16.2% Elapsed: 0:58:32 temperature: no ada_p: No Discriminator_loss: 0.1402 Generator_loss: 7.05272 
+[INFO] 2020-09-17 21:03:10 > Step:   16300 Progress: 16.3% Elapsed: 0:58:49 temperature: no ada_p: No Discriminator_loss: 0.144714 Generator_loss: 10.365 
+[INFO] 2020-09-17 21:03:27 > Step:   16400 Progress: 16.4% Elapsed: 0:59:06 temperature: no ada_p: No Discriminator_loss: 0.171881 Generator_loss: 5.49214 
+[INFO] 2020-09-17 21:03:44 > Step:   16500 Progress: 16.5% Elapsed: 0:59:23 temperature: no ada_p: No Discriminator_loss: 0.195034 Generator_loss: 8.74429 
+[INFO] 2020-09-17 21:04:01 > Step:   16600 Progress: 16.6% Elapsed: 0:59:40 temperature: no ada_p: No Discriminator_loss: 0.0567987 Generator_loss: 7.39222 
+[INFO] 2020-09-17 21:04:17 > Step:   16700 Progress: 16.7% Elapsed: 0:59:56 temperature: no ada_p: No Discriminator_loss: 0.105018 Generator_loss: 7.46217 
+[INFO] 2020-09-17 21:04:34 > Step:   16800 Progress: 16.8% Elapsed: 1:00:13 temperature: no ada_p: No Discriminator_loss: 0.119105 Generator_loss: 7.04604 
+[INFO] 2020-09-17 21:04:51 > Step:   16900 Progress: 16.9% Elapsed: 1:00:30 temperature: no ada_p: No Discriminator_loss: 0.0810914 Generator_loss: 7.98908 
+[INFO] 2020-09-17 21:05:08 > Step:   17000 Progress: 17.0% Elapsed: 1:00:47 temperature: no ada_p: No Discriminator_loss: 0.145381 Generator_loss: 8.9978 
+[INFO] 2020-09-17 21:05:25 > Step:   17100 Progress: 17.1% Elapsed: 1:01:04 temperature: no ada_p: No Discriminator_loss: 0.249741 Generator_loss: 8.9796 
+[INFO] 2020-09-17 21:05:42 > Step:   17200 Progress: 17.2% Elapsed: 1:01:21 temperature: no ada_p: No Discriminator_loss: 0.0778031 Generator_loss: 5.77852 
+[INFO] 2020-09-17 21:05:59 > Step:   17300 Progress: 17.3% Elapsed: 1:01:38 temperature: no ada_p: No Discriminator_loss: 0.283667 Generator_loss: 6.71733 
+[INFO] 2020-09-17 21:06:16 > Step:   17400 Progress: 17.4% Elapsed: 1:01:55 temperature: no ada_p: No Discriminator_loss: 0.516198 Generator_loss: 3.06026 
+[INFO] 2020-09-17 21:06:33 > Step:   17500 Progress: 17.5% Elapsed: 1:02:12 temperature: no ada_p: No Discriminator_loss: 0.160766 Generator_loss: 6.31519 
+[INFO] 2020-09-17 21:06:49 > Step:   17600 Progress: 17.6% Elapsed: 1:02:28 temperature: no ada_p: No Discriminator_loss: 0.129619 Generator_loss: 8.15449 
+[INFO] 2020-09-17 21:07:06 > Step:   17700 Progress: 17.7% Elapsed: 1:02:45 temperature: no ada_p: No Discriminator_loss: 0.407681 Generator_loss: 8.53181 
+[INFO] 2020-09-17 21:07:23 > Step:   17800 Progress: 17.8% Elapsed: 1:03:02 temperature: no ada_p: No Discriminator_loss: 0.350115 Generator_loss: 8.97902 
+[INFO] 2020-09-17 21:07:40 > Step:   17900 Progress: 17.9% Elapsed: 1:03:19 temperature: no ada_p: No Discriminator_loss: 0.23512 Generator_loss: 9.94123 
+[INFO] 2020-09-17 21:07:57 > Step:   18000 Progress: 18.0% Elapsed: 1:03:36 temperature: no ada_p: No Discriminator_loss: 0.4208 Generator_loss: 6.82555 
+[INFO] 2020-09-17 21:07:57 > Start Evaluation (18000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:09:32 > F_8 score (Step: 18000, Using test images): 0.2078822267325984
+[INFO] 2020-09-17 21:09:32 > F_1/8 score (Step: 18000, Using test images): 0.26735219925073017
+[INFO] 2020-09-17 21:09:32 > FID score (Step: 18000, Using test moments): 146.41123387460186
+[INFO] 2020-09-17 21:09:32 > Inception score (Step: 18000, 10000 generated images): 3.720787763595581
+[INFO] 2020-09-17 21:09:32 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 21:09:32 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:09:49 > Step:   18100 Progress: 18.1% Elapsed: 1:05:28 temperature: no ada_p: No Discriminator_loss: 0.345486 Generator_loss: 8.17572 
+[INFO] 2020-09-17 21:10:06 > Step:   18200 Progress: 18.2% Elapsed: 1:05:45 temperature: no ada_p: No Discriminator_loss: 0.375138 Generator_loss: 4.27412 
+[INFO] 2020-09-17 21:10:23 > Step:   18300 Progress: 18.3% Elapsed: 1:06:02 temperature: no ada_p: No Discriminator_loss: 0.162547 Generator_loss: 5.85325 
+[INFO] 2020-09-17 21:10:40 > Step:   18400 Progress: 18.4% Elapsed: 1:06:19 temperature: no ada_p: No Discriminator_loss: 0.349011 Generator_loss: 10.0801 
+[INFO] 2020-09-17 21:10:57 > Step:   18500 Progress: 18.5% Elapsed: 1:06:36 temperature: no ada_p: No Discriminator_loss: 0.373631 Generator_loss: 12.9372 
+[INFO] 2020-09-17 21:11:14 > Step:   18600 Progress: 18.6% Elapsed: 1:06:53 temperature: no ada_p: No Discriminator_loss: 0.171122 Generator_loss: 7.11038 
+[INFO] 2020-09-17 21:11:31 > Step:   18700 Progress: 18.7% Elapsed: 1:07:10 temperature: no ada_p: No Discriminator_loss: 0.240568 Generator_loss: 5.64086 
+[INFO] 2020-09-17 21:11:48 > Step:   18800 Progress: 18.8% Elapsed: 1:07:27 temperature: no ada_p: No Discriminator_loss: 0.247477 Generator_loss: 5.43973 
+[INFO] 2020-09-17 21:12:05 > Step:   18900 Progress: 18.9% Elapsed: 1:07:43 temperature: no ada_p: No Discriminator_loss: 0.301122 Generator_loss: 4.40235 
+[INFO] 2020-09-17 21:12:22 > Step:   19000 Progress: 19.0% Elapsed: 1:08:01 temperature: no ada_p: No Discriminator_loss: 0.131792 Generator_loss: 7.43968 
+[INFO] 2020-09-17 21:12:39 > Step:   19100 Progress: 19.1% Elapsed: 1:08:18 temperature: no ada_p: No Discriminator_loss: 0.115905 Generator_loss: 4.06393 
+[INFO] 2020-09-17 21:12:55 > Step:   19200 Progress: 19.2% Elapsed: 1:08:34 temperature: no ada_p: No Discriminator_loss: 0.35839 Generator_loss: 7.30773 
+[INFO] 2020-09-17 21:13:13 > Step:   19300 Progress: 19.3% Elapsed: 1:08:51 temperature: no ada_p: No Discriminator_loss: 0.0835137 Generator_loss: 5.90678 
+[INFO] 2020-09-17 21:13:30 > Step:   19400 Progress: 19.4% Elapsed: 1:09:09 temperature: no ada_p: No Discriminator_loss: 0.142994 Generator_loss: 4.14803 
+[INFO] 2020-09-17 21:13:46 > Step:   19500 Progress: 19.5% Elapsed: 1:09:25 temperature: no ada_p: No Discriminator_loss: 0.288682 Generator_loss: 10.0135 
+[INFO] 2020-09-17 21:14:03 > Step:   19600 Progress: 19.6% Elapsed: 1:09:42 temperature: no ada_p: No Discriminator_loss: 0.159472 Generator_loss: 5.3908 
+[INFO] 2020-09-17 21:14:20 > Step:   19700 Progress: 19.7% Elapsed: 1:09:59 temperature: no ada_p: No Discriminator_loss: 0.292256 Generator_loss: 10.2793 
+[INFO] 2020-09-17 21:14:37 > Step:   19800 Progress: 19.8% Elapsed: 1:10:16 temperature: no ada_p: No Discriminator_loss: 0.248373 Generator_loss: 6.40904 
+[INFO] 2020-09-17 21:14:54 > Step:   19900 Progress: 19.9% Elapsed: 1:10:33 temperature: no ada_p: No Discriminator_loss: 0.171667 Generator_loss: 9.05971 
+[INFO] 2020-09-17 21:15:11 > Step:   20000 Progress: 20.0% Elapsed: 1:10:50 temperature: no ada_p: No Discriminator_loss: 0.146773 Generator_loss: 8.75866 
+[INFO] 2020-09-17 21:15:11 > Start Evaluation (20000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:16:46 > F_8 score (Step: 20000, Using test images): 0.07850619541227515
+[INFO] 2020-09-17 21:16:46 > F_1/8 score (Step: 20000, Using test images): 0.27483160241306126
+[INFO] 2020-09-17 21:16:46 > FID score (Step: 20000, Using test moments): 142.98304064005848
+[INFO] 2020-09-17 21:16:46 > Inception score (Step: 20000, 10000 generated images): 3.5827748775482178
+[INFO] 2020-09-17 21:16:46 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 21:16:46 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:17:03 > Step:   20100 Progress: 20.1% Elapsed: 1:12:42 temperature: no ada_p: No Discriminator_loss: 0.173942 Generator_loss: 6.22485 
+[INFO] 2020-09-17 21:17:20 > Step:   20200 Progress: 20.2% Elapsed: 1:12:59 temperature: no ada_p: No Discriminator_loss: 0.13716 Generator_loss: 6.18916 
+[INFO] 2020-09-17 21:17:36 > Step:   20300 Progress: 20.3% Elapsed: 1:13:15 temperature: no ada_p: No Discriminator_loss: 0.206658 Generator_loss: 3.47903 
+[INFO] 2020-09-17 21:17:54 > Step:   20400 Progress: 20.4% Elapsed: 1:13:32 temperature: no ada_p: No Discriminator_loss: 0.268072 Generator_loss: 7.27752 
+[INFO] 2020-09-17 21:18:11 > Step:   20500 Progress: 20.5% Elapsed: 1:13:50 temperature: no ada_p: No Discriminator_loss: 0.173272 Generator_loss: 6.02487 
+[INFO] 2020-09-17 21:18:27 > Step:   20600 Progress: 20.6% Elapsed: 1:14:06 temperature: no ada_p: No Discriminator_loss: 0.193747 Generator_loss: 17.7071 
+[INFO] 2020-09-17 21:18:44 > Step:   20700 Progress: 20.7% Elapsed: 1:14:23 temperature: no ada_p: No Discriminator_loss: 0.168966 Generator_loss: 7.24872 
+[INFO] 2020-09-17 21:19:01 > Step:   20800 Progress: 20.8% Elapsed: 1:14:40 temperature: no ada_p: No Discriminator_loss: 0.262492 Generator_loss: 6.48707 
+[INFO] 2020-09-17 21:19:18 > Step:   20900 Progress: 20.9% Elapsed: 1:14:57 temperature: no ada_p: No Discriminator_loss: 0.22827 Generator_loss: 5.51892 
+[INFO] 2020-09-17 21:19:35 > Step:   21000 Progress: 21.0% Elapsed: 1:15:14 temperature: no ada_p: No Discriminator_loss: 0.187389 Generator_loss: 9.50156 
+[INFO] 2020-09-17 21:19:52 > Step:   21100 Progress: 21.1% Elapsed: 1:15:31 temperature: no ada_p: No Discriminator_loss: 0.0795256 Generator_loss: 4.44451 
+[INFO] 2020-09-17 21:20:09 > Step:   21200 Progress: 21.2% Elapsed: 1:15:48 temperature: no ada_p: No Discriminator_loss: 0.263558 Generator_loss: 5.62838 
+[INFO] 2020-09-17 21:20:26 > Step:   21300 Progress: 21.3% Elapsed: 1:16:05 temperature: no ada_p: No Discriminator_loss: 0.145043 Generator_loss: 6.32592 
+[INFO] 2020-09-17 21:20:43 > Step:   21400 Progress: 21.4% Elapsed: 1:16:22 temperature: no ada_p: No Discriminator_loss: 0.30893 Generator_loss: 3.51875 
+[INFO] 2020-09-17 21:21:00 > Step:   21500 Progress: 21.5% Elapsed: 1:16:39 temperature: no ada_p: No Discriminator_loss: 0.191513 Generator_loss: 7.76342 
+[INFO] 2020-09-17 21:21:17 > Step:   21600 Progress: 21.6% Elapsed: 1:16:56 temperature: no ada_p: No Discriminator_loss: 0.23811 Generator_loss: 4.59315 
+[INFO] 2020-09-17 21:21:33 > Step:   21700 Progress: 21.7% Elapsed: 1:17:12 temperature: no ada_p: No Discriminator_loss: 0.228451 Generator_loss: 3.63314 
+[INFO] 2020-09-17 21:21:51 > Step:   21800 Progress: 21.8% Elapsed: 1:17:30 temperature: no ada_p: No Discriminator_loss: 0.272185 Generator_loss: 7.79331 
+[INFO] 2020-09-17 21:22:08 > Step:   21900 Progress: 21.9% Elapsed: 1:17:47 temperature: no ada_p: No Discriminator_loss: 0.156673 Generator_loss: 7.26 
+[INFO] 2020-09-17 21:22:24 > Step:   22000 Progress: 22.0% Elapsed: 1:18:03 temperature: no ada_p: No Discriminator_loss: 0.2049 Generator_loss: 4.32711 
+[INFO] 2020-09-17 21:22:24 > Start Evaluation (22000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:23:58 > F_8 score (Step: 22000, Using test images): 0.24212909713858857
+[INFO] 2020-09-17 21:23:58 > F_1/8 score (Step: 22000, Using test images): 0.3214616857043875
+[INFO] 2020-09-17 21:23:58 > FID score (Step: 22000, Using test moments): 130.7512688571019
+[INFO] 2020-09-17 21:23:58 > Inception score (Step: 22000, 10000 generated images): 5.468390941619873
+[INFO] 2020-09-17 21:23:58 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 21:23:58 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:24:15 > Step:   22100 Progress: 22.1% Elapsed: 1:19:54 temperature: no ada_p: No Discriminator_loss: 0.223876 Generator_loss: 4.44781 
+[INFO] 2020-09-17 21:24:32 > Step:   22200 Progress: 22.2% Elapsed: 1:20:11 temperature: no ada_p: No Discriminator_loss: 0.258796 Generator_loss: 14.1339 
+[INFO] 2020-09-17 21:24:49 > Step:   22300 Progress: 22.3% Elapsed: 1:20:28 temperature: no ada_p: No Discriminator_loss: 0.247583 Generator_loss: 5.87655 
+[INFO] 2020-09-17 21:25:06 > Step:   22400 Progress: 22.4% Elapsed: 1:20:45 temperature: no ada_p: No Discriminator_loss: 0.278223 Generator_loss: 7.82257 
+[INFO] 2020-09-17 21:25:23 > Step:   22500 Progress: 22.5% Elapsed: 1:21:02 temperature: no ada_p: No Discriminator_loss: 0.18399 Generator_loss: 8.30315 
+[INFO] 2020-09-17 21:25:39 > Step:   22600 Progress: 22.6% Elapsed: 1:21:18 temperature: no ada_p: No Discriminator_loss: 0.203352 Generator_loss: 9.24095 
+[INFO] 2020-09-17 21:25:56 > Step:   22700 Progress: 22.7% Elapsed: 1:21:35 temperature: no ada_p: No Discriminator_loss: 0.116368 Generator_loss: 4.79429 
+[INFO] 2020-09-17 21:26:13 > Step:   22800 Progress: 22.8% Elapsed: 1:21:52 temperature: no ada_p: No Discriminator_loss: 0.284927 Generator_loss: 2.21062 
+[INFO] 2020-09-17 21:26:30 > Step:   22900 Progress: 22.9% Elapsed: 1:22:09 temperature: no ada_p: No Discriminator_loss: 0.259749 Generator_loss: 5.9117 
+[INFO] 2020-09-17 21:26:47 > Step:   23000 Progress: 23.0% Elapsed: 1:22:26 temperature: no ada_p: No Discriminator_loss: 0.110428 Generator_loss: 5.82214 
+[INFO] 2020-09-17 21:27:04 > Step:   23100 Progress: 23.1% Elapsed: 1:22:43 temperature: no ada_p: No Discriminator_loss: 0.238535 Generator_loss: 10.6817 
+[INFO] 2020-09-17 21:27:21 > Step:   23200 Progress: 23.2% Elapsed: 1:23:00 temperature: no ada_p: No Discriminator_loss: 0.45754 Generator_loss: 16.2746 
+[INFO] 2020-09-17 21:27:38 > Step:   23300 Progress: 23.3% Elapsed: 1:23:17 temperature: no ada_p: No Discriminator_loss: 0.346991 Generator_loss: 11.7289 
+[INFO] 2020-09-17 21:27:55 > Step:   23400 Progress: 23.4% Elapsed: 1:23:34 temperature: no ada_p: No Discriminator_loss: 0.188131 Generator_loss: 7.71789 
+[INFO] 2020-09-17 21:28:12 > Step:   23500 Progress: 23.5% Elapsed: 1:23:51 temperature: no ada_p: No Discriminator_loss: 0.548691 Generator_loss: 5.35063 
+[INFO] 2020-09-17 21:28:29 > Step:   23600 Progress: 23.6% Elapsed: 1:24:08 temperature: no ada_p: No Discriminator_loss: 0.0883693 Generator_loss: 5.47163 
+[INFO] 2020-09-17 21:28:46 > Step:   23700 Progress: 23.7% Elapsed: 1:24:25 temperature: no ada_p: No Discriminator_loss: 0.22337 Generator_loss: 4.61 
+[INFO] 2020-09-17 21:29:03 > Step:   23800 Progress: 23.8% Elapsed: 1:24:42 temperature: no ada_p: No Discriminator_loss: 0.253583 Generator_loss: 4.86119 
+[INFO] 2020-09-17 21:29:20 > Step:   23900 Progress: 23.9% Elapsed: 1:24:59 temperature: no ada_p: No Discriminator_loss: 0.0656727 Generator_loss: 3.9206 
+[INFO] 2020-09-17 21:29:36 > Step:   24000 Progress: 24.0% Elapsed: 1:25:15 temperature: no ada_p: No Discriminator_loss: 0.310775 Generator_loss: 4.51386 
+[INFO] 2020-09-17 21:29:36 > Start Evaluation (24000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:31:13 > F_8 score (Step: 24000, Using test images): 0.11232925250489266
+[INFO] 2020-09-17 21:31:13 > F_1/8 score (Step: 24000, Using test images): 0.17487165842966176
+[INFO] 2020-09-17 21:31:13 > FID score (Step: 24000, Using test moments): 169.26530298516542
+[INFO] 2020-09-17 21:31:13 > Inception score (Step: 24000, 10000 generated images): 3.1648976802825928
+[INFO] 2020-09-17 21:31:13 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 21:31:13 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:31:30 > Step:   24100 Progress: 24.1% Elapsed: 1:27:09 temperature: no ada_p: No Discriminator_loss: 0.272869 Generator_loss: 10.9534 
+[INFO] 2020-09-17 21:31:47 > Step:   24200 Progress: 24.2% Elapsed: 1:27:26 temperature: no ada_p: No Discriminator_loss: 0.183665 Generator_loss: 4.12599 
+[INFO] 2020-09-17 21:32:04 > Step:   24300 Progress: 24.3% Elapsed: 1:27:43 temperature: no ada_p: No Discriminator_loss: 0.21256 Generator_loss: 3.94396 
+[INFO] 2020-09-17 21:32:21 > Step:   24400 Progress: 24.4% Elapsed: 1:28:00 temperature: no ada_p: No Discriminator_loss: 0.144967 Generator_loss: 4.74838 
+[INFO] 2020-09-17 21:32:37 > Step:   24500 Progress: 24.5% Elapsed: 1:28:16 temperature: no ada_p: No Discriminator_loss: 0.188582 Generator_loss: 3.49593 
+[INFO] 2020-09-17 21:32:54 > Step:   24600 Progress: 24.6% Elapsed: 1:28:33 temperature: no ada_p: No Discriminator_loss: 0.21798 Generator_loss: 7.85679 
+[INFO] 2020-09-17 21:33:11 > Step:   24700 Progress: 24.7% Elapsed: 1:28:50 temperature: no ada_p: No Discriminator_loss: 0.275015 Generator_loss: 5.11542 
+[INFO] 2020-09-17 21:33:28 > Step:   24800 Progress: 24.8% Elapsed: 1:29:07 temperature: no ada_p: No Discriminator_loss: 0.193877 Generator_loss: 5.34166 
+[INFO] 2020-09-17 21:33:45 > Step:   24900 Progress: 24.9% Elapsed: 1:29:24 temperature: no ada_p: No Discriminator_loss: 0.187268 Generator_loss: 10.7855 
+[INFO] 2020-09-17 21:34:02 > Step:   25000 Progress: 25.0% Elapsed: 1:29:41 temperature: no ada_p: No Discriminator_loss: 0.25801 Generator_loss: 4.50155 
+[INFO] 2020-09-17 21:34:19 > Step:   25100 Progress: 25.1% Elapsed: 1:29:58 temperature: no ada_p: No Discriminator_loss: 0.274575 Generator_loss: 6.13536 
+[INFO] 2020-09-17 21:34:36 > Step:   25200 Progress: 25.2% Elapsed: 1:30:15 temperature: no ada_p: No Discriminator_loss: 0.0612281 Generator_loss: 9.23423 
+[INFO] 2020-09-17 21:34:52 > Step:   25300 Progress: 25.3% Elapsed: 1:30:31 temperature: no ada_p: No Discriminator_loss: 0.120165 Generator_loss: 3.13086 
+[INFO] 2020-09-17 21:35:10 > Step:   25400 Progress: 25.4% Elapsed: 1:30:48 temperature: no ada_p: No Discriminator_loss: 0.13996 Generator_loss: 6.36461 
+[INFO] 2020-09-17 21:35:27 > Step:   25500 Progress: 25.5% Elapsed: 1:31:06 temperature: no ada_p: No Discriminator_loss: 0.551068 Generator_loss: 3.16543 
+[INFO] 2020-09-17 21:35:43 > Step:   25600 Progress: 25.6% Elapsed: 1:31:22 temperature: no ada_p: No Discriminator_loss: 0.287558 Generator_loss: 8.27591 
+[INFO] 2020-09-17 21:36:00 > Step:   25700 Progress: 25.7% Elapsed: 1:31:39 temperature: no ada_p: No Discriminator_loss: 0.0973489 Generator_loss: 5.95673 
+[INFO] 2020-09-17 21:36:17 > Step:   25800 Progress: 25.8% Elapsed: 1:31:56 temperature: no ada_p: No Discriminator_loss: 0.187495 Generator_loss: 6.33355 
+[INFO] 2020-09-17 21:36:34 > Step:   25900 Progress: 25.9% Elapsed: 1:32:13 temperature: no ada_p: No Discriminator_loss: 0.231638 Generator_loss: 4.85116 
+[INFO] 2020-09-17 21:36:51 > Step:   26000 Progress: 26.0% Elapsed: 1:32:30 temperature: no ada_p: No Discriminator_loss: 0.195056 Generator_loss: 3.89892 
+[INFO] 2020-09-17 21:36:51 > Start Evaluation (26000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:38:25 > F_8 score (Step: 26000, Using test images): 0.1295250560341157
+[INFO] 2020-09-17 21:38:25 > F_1/8 score (Step: 26000, Using test images): 0.10910064524214078
+[INFO] 2020-09-17 21:38:25 > FID score (Step: 26000, Using test moments): 196.15955323162262
+[INFO] 2020-09-17 21:38:25 > Inception score (Step: 26000, 10000 generated images): 3.843453884124756
+[INFO] 2020-09-17 21:38:25 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 21:38:25 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:38:42 > Step:   26100 Progress: 26.1% Elapsed: 1:34:21 temperature: no ada_p: No Discriminator_loss: 0.211292 Generator_loss: 2.47751 
+[INFO] 2020-09-17 21:38:59 > Step:   26200 Progress: 26.2% Elapsed: 1:34:38 temperature: no ada_p: No Discriminator_loss: 0.298208 Generator_loss: 6.65938 
+[INFO] 2020-09-17 21:39:16 > Step:   26300 Progress: 26.3% Elapsed: 1:34:55 temperature: no ada_p: No Discriminator_loss: 0.219918 Generator_loss: 6.57814 
+[INFO] 2020-09-17 21:39:33 > Step:   26400 Progress: 26.4% Elapsed: 1:35:12 temperature: no ada_p: No Discriminator_loss: 0.265938 Generator_loss: 4.54297 
+[INFO] 2020-09-17 21:39:50 > Step:   26500 Progress: 26.5% Elapsed: 1:35:29 temperature: no ada_p: No Discriminator_loss: 0.197193 Generator_loss: 3.39803 
+[INFO] 2020-09-17 21:40:07 > Step:   26600 Progress: 26.6% Elapsed: 1:35:46 temperature: no ada_p: No Discriminator_loss: 0.107713 Generator_loss: 10.0549 
+[INFO] 2020-09-17 21:40:23 > Step:   26700 Progress: 26.7% Elapsed: 1:36:02 temperature: no ada_p: No Discriminator_loss: 0.122897 Generator_loss: 7.18129 
+[INFO] 2020-09-17 21:40:40 > Step:   26800 Progress: 26.8% Elapsed: 1:36:19 temperature: no ada_p: No Discriminator_loss: 0.285518 Generator_loss: 5.22183 
+[INFO] 2020-09-17 21:40:57 > Step:   26900 Progress: 26.9% Elapsed: 1:36:36 temperature: no ada_p: No Discriminator_loss: 0.165533 Generator_loss: 8.75478 
+[INFO] 2020-09-17 21:41:14 > Step:   27000 Progress: 27.0% Elapsed: 1:36:53 temperature: no ada_p: No Discriminator_loss: 0.249713 Generator_loss: 10.2945 
+[INFO] 2020-09-17 21:41:31 > Step:   27100 Progress: 27.1% Elapsed: 1:37:10 temperature: no ada_p: No Discriminator_loss: 0.384935 Generator_loss: 6.10079 
+[INFO] 2020-09-17 21:41:48 > Step:   27200 Progress: 27.2% Elapsed: 1:37:27 temperature: no ada_p: No Discriminator_loss: 0.274527 Generator_loss: 4.84027 
+[INFO] 2020-09-17 21:42:05 > Step:   27300 Progress: 27.3% Elapsed: 1:37:44 temperature: no ada_p: No Discriminator_loss: 0.359526 Generator_loss: 4.64971 
+[INFO] 2020-09-17 21:42:22 > Step:   27400 Progress: 27.4% Elapsed: 1:38:01 temperature: no ada_p: No Discriminator_loss: 0.275965 Generator_loss: 6.6391 
+[INFO] 2020-09-17 21:42:39 > Step:   27500 Progress: 27.5% Elapsed: 1:38:18 temperature: no ada_p: No Discriminator_loss: 1.093 Generator_loss: 3.29955 
+[INFO] 2020-09-17 21:42:56 > Step:   27600 Progress: 27.6% Elapsed: 1:38:35 temperature: no ada_p: No Discriminator_loss: 0.948046 Generator_loss: 19.3747 
+[INFO] 2020-09-17 21:43:13 > Step:   27700 Progress: 27.7% Elapsed: 1:38:52 temperature: no ada_p: No Discriminator_loss: 0.162872 Generator_loss: 5.06922 
+[INFO] 2020-09-17 21:43:30 > Step:   27800 Progress: 27.8% Elapsed: 1:39:09 temperature: no ada_p: No Discriminator_loss: 0.115088 Generator_loss: 4.26817 
+[INFO] 2020-09-17 21:43:47 > Step:   27900 Progress: 27.9% Elapsed: 1:39:26 temperature: no ada_p: No Discriminator_loss: 0.0598549 Generator_loss: 3.9257 
+[INFO] 2020-09-17 21:44:04 > Step:   28000 Progress: 28.0% Elapsed: 1:39:43 temperature: no ada_p: No Discriminator_loss: 0.237762 Generator_loss: 4.31778 
+[INFO] 2020-09-17 21:44:04 > Start Evaluation (28000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:45:38 > F_8 score (Step: 28000, Using test images): 0.12637643439062515
+[INFO] 2020-09-17 21:45:38 > F_1/8 score (Step: 28000, Using test images): 0.1959623824209212
+[INFO] 2020-09-17 21:45:38 > FID score (Step: 28000, Using test moments): 174.22245008953547
+[INFO] 2020-09-17 21:45:38 > Inception score (Step: 28000, 10000 generated images): 4.642741680145264
+[INFO] 2020-09-17 21:45:38 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 21:45:39 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:45:55 > Step:   28100 Progress: 28.1% Elapsed: 1:41:34 temperature: no ada_p: No Discriminator_loss: 1.46446 Generator_loss: 2.36401 
+[INFO] 2020-09-17 21:46:12 > Step:   28200 Progress: 28.2% Elapsed: 1:41:51 temperature: no ada_p: No Discriminator_loss: 0.205803 Generator_loss: 2.7626 
+[INFO] 2020-09-17 21:46:29 > Step:   28300 Progress: 28.3% Elapsed: 1:42:08 temperature: no ada_p: No Discriminator_loss: 0.225545 Generator_loss: 7.35594 
+[INFO] 2020-09-17 21:46:46 > Step:   28400 Progress: 28.4% Elapsed: 1:42:25 temperature: no ada_p: No Discriminator_loss: 0.237787 Generator_loss: 5.23313 
+[INFO] 2020-09-17 21:47:03 > Step:   28500 Progress: 28.5% Elapsed: 1:42:42 temperature: no ada_p: No Discriminator_loss: 0.207734 Generator_loss: 5.01003 
+[INFO] 2020-09-17 21:47:20 > Step:   28600 Progress: 28.6% Elapsed: 1:42:59 temperature: no ada_p: No Discriminator_loss: 0.146261 Generator_loss: 5.74887 
+[INFO] 2020-09-17 21:47:37 > Step:   28700 Progress: 28.7% Elapsed: 1:43:16 temperature: no ada_p: No Discriminator_loss: 0.225158 Generator_loss: 5.55526 
+[INFO] 2020-09-17 21:47:54 > Step:   28800 Progress: 28.8% Elapsed: 1:43:33 temperature: no ada_p: No Discriminator_loss: 0.422497 Generator_loss: 9.00815 
+[INFO] 2020-09-17 21:48:11 > Step:   28900 Progress: 28.9% Elapsed: 1:43:50 temperature: no ada_p: No Discriminator_loss: 0.166116 Generator_loss: 4.46708 
+[INFO] 2020-09-17 21:48:27 > Step:   29000 Progress: 29.0% Elapsed: 1:44:06 temperature: no ada_p: No Discriminator_loss: 0.406828 Generator_loss: 6.38062 
+[INFO] 2020-09-17 21:48:44 > Step:   29100 Progress: 29.1% Elapsed: 1:44:23 temperature: no ada_p: No Discriminator_loss: 0.13916 Generator_loss: 6.10052 
+[INFO] 2020-09-17 21:49:01 > Step:   29200 Progress: 29.2% Elapsed: 1:44:40 temperature: no ada_p: No Discriminator_loss: 0.310585 Generator_loss: 5.55211 
+[INFO] 2020-09-17 21:49:18 > Step:   29300 Progress: 29.3% Elapsed: 1:44:57 temperature: no ada_p: No Discriminator_loss: 0.0646974 Generator_loss: 6.43911 
+[INFO] 2020-09-17 21:49:35 > Step:   29400 Progress: 29.4% Elapsed: 1:45:14 temperature: no ada_p: No Discriminator_loss: 0.276104 Generator_loss: 4.47332 
+[INFO] 2020-09-17 21:49:52 > Step:   29500 Progress: 29.5% Elapsed: 1:45:31 temperature: no ada_p: No Discriminator_loss: 0.280426 Generator_loss: 7.51442 
+[INFO] 2020-09-17 21:50:09 > Step:   29600 Progress: 29.6% Elapsed: 1:45:48 temperature: no ada_p: No Discriminator_loss: 0.192562 Generator_loss: 3.12726 
+[INFO] 2020-09-17 21:50:26 > Step:   29700 Progress: 29.7% Elapsed: 1:46:05 temperature: no ada_p: No Discriminator_loss: 0.1331 Generator_loss: 7.01891 
+[INFO] 2020-09-17 21:50:43 > Step:   29800 Progress: 29.8% Elapsed: 1:46:21 temperature: no ada_p: No Discriminator_loss: 0.117523 Generator_loss: 4.89572 
+[INFO] 2020-09-17 21:51:00 > Step:   29900 Progress: 29.9% Elapsed: 1:46:39 temperature: no ada_p: No Discriminator_loss: 0.20086 Generator_loss: 14.8851 
+[INFO] 2020-09-17 21:51:17 > Step:   30000 Progress: 30.0% Elapsed: 1:46:56 temperature: no ada_p: No Discriminator_loss: 0.207081 Generator_loss: 15.8664 
+[INFO] 2020-09-17 21:51:17 > Start Evaluation (30000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:52:51 > F_8 score (Step: 30000, Using test images): 0.18345791058338268
+[INFO] 2020-09-17 21:52:51 > F_1/8 score (Step: 30000, Using test images): 0.12600028907196753
+[INFO] 2020-09-17 21:52:51 > FID score (Step: 30000, Using test moments): 175.9455010674007
+[INFO] 2020-09-17 21:52:51 > Inception score (Step: 30000, 10000 generated images): 4.794682025909424
+[INFO] 2020-09-17 21:52:51 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 21:52:52 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 21:53:08 > Step:   30100 Progress: 30.1% Elapsed: 1:48:47 temperature: no ada_p: No Discriminator_loss: 0.17317 Generator_loss: 3.33703 
+[INFO] 2020-09-17 21:53:25 > Step:   30200 Progress: 30.2% Elapsed: 1:49:04 temperature: no ada_p: No Discriminator_loss: 0.377175 Generator_loss: 11.9628 
+[INFO] 2020-09-17 21:53:42 > Step:   30300 Progress: 30.3% Elapsed: 1:49:21 temperature: no ada_p: No Discriminator_loss: 0.129453 Generator_loss: 3.85193 
+[INFO] 2020-09-17 21:53:59 > Step:   30400 Progress: 30.4% Elapsed: 1:49:38 temperature: no ada_p: No Discriminator_loss: 0.181317 Generator_loss: 6.01617 
+[INFO] 2020-09-17 21:54:16 > Step:   30500 Progress: 30.5% Elapsed: 1:49:55 temperature: no ada_p: No Discriminator_loss: 0.340633 Generator_loss: 5.43204 
+[INFO] 2020-09-17 21:54:33 > Step:   30600 Progress: 30.6% Elapsed: 1:50:12 temperature: no ada_p: No Discriminator_loss: 0.208862 Generator_loss: 3.97059 
+[INFO] 2020-09-17 21:54:50 > Step:   30700 Progress: 30.7% Elapsed: 1:50:29 temperature: no ada_p: No Discriminator_loss: 0.704756 Generator_loss: 5.65357 
+[INFO] 2020-09-17 21:55:07 > Step:   30800 Progress: 30.8% Elapsed: 1:50:46 temperature: no ada_p: No Discriminator_loss: 0.271387 Generator_loss: 7.25388 
+[INFO] 2020-09-17 21:55:24 > Step:   30900 Progress: 30.9% Elapsed: 1:51:03 temperature: no ada_p: No Discriminator_loss: 0.598467 Generator_loss: 16.0882 
+[INFO] 2020-09-17 21:55:41 > Step:   31000 Progress: 31.0% Elapsed: 1:51:20 temperature: no ada_p: No Discriminator_loss: 0.422377 Generator_loss: 13.2197 
+[INFO] 2020-09-17 21:55:58 > Step:   31100 Progress: 31.1% Elapsed: 1:51:37 temperature: no ada_p: No Discriminator_loss: 0.0802068 Generator_loss: 6.30813 
+[INFO] 2020-09-17 21:56:14 > Step:   31200 Progress: 31.2% Elapsed: 1:51:53 temperature: no ada_p: No Discriminator_loss: 0.21362 Generator_loss: 5.02277 
+[INFO] 2020-09-17 21:56:31 > Step:   31300 Progress: 31.3% Elapsed: 1:52:10 temperature: no ada_p: No Discriminator_loss: 0.354963 Generator_loss: 4.72491 
+[INFO] 2020-09-17 21:56:48 > Step:   31400 Progress: 31.4% Elapsed: 1:52:27 temperature: no ada_p: No Discriminator_loss: 0.0939008 Generator_loss: 4.73059 
+[INFO] 2020-09-17 21:57:05 > Step:   31500 Progress: 31.5% Elapsed: 1:52:44 temperature: no ada_p: No Discriminator_loss: 0.220386 Generator_loss: 4.91875 
+[INFO] 2020-09-17 21:57:22 > Step:   31600 Progress: 31.6% Elapsed: 1:53:01 temperature: no ada_p: No Discriminator_loss: 0.152176 Generator_loss: 8.0382 
+[INFO] 2020-09-17 21:57:39 > Step:   31700 Progress: 31.7% Elapsed: 1:53:18 temperature: no ada_p: No Discriminator_loss: 0.157458 Generator_loss: 15.3075 
+[INFO] 2020-09-17 21:57:56 > Step:   31800 Progress: 31.8% Elapsed: 1:53:35 temperature: no ada_p: No Discriminator_loss: 0.266789 Generator_loss: 5.43789 
+[INFO] 2020-09-17 21:58:13 > Step:   31900 Progress: 31.9% Elapsed: 1:53:52 temperature: no ada_p: No Discriminator_loss: 0.267035 Generator_loss: 6.29569 
+[INFO] 2020-09-17 21:58:30 > Step:   32000 Progress: 32.0% Elapsed: 1:54:09 temperature: no ada_p: No Discriminator_loss: 0.41616 Generator_loss: 3.53445 
+[INFO] 2020-09-17 21:58:30 > Start Evaluation (32000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:00:06 > F_8 score (Step: 32000, Using test images): 0.22024418292530817
+[INFO] 2020-09-17 22:00:06 > F_1/8 score (Step: 32000, Using test images): 0.2333234766864889
+[INFO] 2020-09-17 22:00:06 > FID score (Step: 32000, Using test moments): 167.2438519203199
+[INFO] 2020-09-17 22:00:06 > Inception score (Step: 32000, 10000 generated images): 4.420116901397705
+[INFO] 2020-09-17 22:00:06 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:00:06 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:00:23 > Step:   32100 Progress: 32.1% Elapsed: 1:56:02 temperature: no ada_p: No Discriminator_loss: 0.166305 Generator_loss: 4.17061 
+[INFO] 2020-09-17 22:00:40 > Step:   32200 Progress: 32.2% Elapsed: 1:56:19 temperature: no ada_p: No Discriminator_loss: 1.06053 Generator_loss: 9.93443 
+[INFO] 2020-09-17 22:00:57 > Step:   32300 Progress: 32.3% Elapsed: 1:56:36 temperature: no ada_p: No Discriminator_loss: 0.293467 Generator_loss: 3.75794 
+[INFO] 2020-09-17 22:01:14 > Step:   32400 Progress: 32.4% Elapsed: 1:56:53 temperature: no ada_p: No Discriminator_loss: 0.149661 Generator_loss: 5.17656 
+[INFO] 2020-09-17 22:01:31 > Step:   32500 Progress: 32.5% Elapsed: 1:57:10 temperature: no ada_p: No Discriminator_loss: 0.169793 Generator_loss: 4.45716 
+[INFO] 2020-09-17 22:01:48 > Step:   32600 Progress: 32.6% Elapsed: 1:57:27 temperature: no ada_p: No Discriminator_loss: 0.501618 Generator_loss: 4.48605 
+[INFO] 2020-09-17 22:02:05 > Step:   32700 Progress: 32.7% Elapsed: 1:57:44 temperature: no ada_p: No Discriminator_loss: 0.109155 Generator_loss: 4.56977 
+[INFO] 2020-09-17 22:02:22 > Step:   32800 Progress: 32.8% Elapsed: 1:58:01 temperature: no ada_p: No Discriminator_loss: 0.214143 Generator_loss: 5.94998 
+[INFO] 2020-09-17 22:02:39 > Step:   32900 Progress: 32.9% Elapsed: 1:58:18 temperature: no ada_p: No Discriminator_loss: 0.244206 Generator_loss: 8.36869 
+[INFO] 2020-09-17 22:02:56 > Step:   33000 Progress: 33.0% Elapsed: 1:58:35 temperature: no ada_p: No Discriminator_loss: 0.160946 Generator_loss: 5.06996 
+[INFO] 2020-09-17 22:03:13 > Step:   33100 Progress: 33.1% Elapsed: 1:58:51 temperature: no ada_p: No Discriminator_loss: 0.226084 Generator_loss: 7.90698 
+[INFO] 2020-09-17 22:03:30 > Step:   33200 Progress: 33.2% Elapsed: 1:59:09 temperature: no ada_p: No Discriminator_loss: 0.136802 Generator_loss: 1.65357 
+[INFO] 2020-09-17 22:03:47 > Step:   33300 Progress: 33.3% Elapsed: 1:59:26 temperature: no ada_p: No Discriminator_loss: 0.287337 Generator_loss: 5.55037 
+[INFO] 2020-09-17 22:04:03 > Step:   33400 Progress: 33.4% Elapsed: 1:59:42 temperature: no ada_p: No Discriminator_loss: 0.106853 Generator_loss: 6.17295 
+[INFO] 2020-09-17 22:04:20 > Step:   33500 Progress: 33.5% Elapsed: 1:59:59 temperature: no ada_p: No Discriminator_loss: 0.414352 Generator_loss: 5.25663 
+[INFO] 2020-09-17 22:04:38 > Step:   33600 Progress: 33.6% Elapsed: 2:00:16 temperature: no ada_p: No Discriminator_loss: 0.322289 Generator_loss: 10.4561 
+[INFO] 2020-09-17 22:04:54 > Step:   33700 Progress: 33.7% Elapsed: 2:00:33 temperature: no ada_p: No Discriminator_loss: 0.126437 Generator_loss: 4.39124 
+[INFO] 2020-09-17 22:05:11 > Step:   33800 Progress: 33.8% Elapsed: 2:00:50 temperature: no ada_p: No Discriminator_loss: 0.0575392 Generator_loss: 3.07983 
+[INFO] 2020-09-17 22:05:28 > Step:   33900 Progress: 33.9% Elapsed: 2:01:07 temperature: no ada_p: No Discriminator_loss: 0.115352 Generator_loss: 3.00559 
+[INFO] 2020-09-17 22:05:45 > Step:   34000 Progress: 34.0% Elapsed: 2:01:24 temperature: no ada_p: No Discriminator_loss: 0.236995 Generator_loss: 8.27391 
+[INFO] 2020-09-17 22:05:45 > Start Evaluation (34000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:07:21 > F_8 score (Step: 34000, Using test images): 0.13891016303253062
+[INFO] 2020-09-17 22:07:21 > F_1/8 score (Step: 34000, Using test images): 0.20307716465667017
+[INFO] 2020-09-17 22:07:21 > FID score (Step: 34000, Using test moments): 178.08251291642767
+[INFO] 2020-09-17 22:07:21 > Inception score (Step: 34000, 10000 generated images): 4.133156776428223
+[INFO] 2020-09-17 22:07:21 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:07:21 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:07:38 > Step:   34100 Progress: 34.1% Elapsed: 2:03:17 temperature: no ada_p: No Discriminator_loss: 0.387926 Generator_loss: 15.1053 
+[INFO] 2020-09-17 22:07:55 > Step:   34200 Progress: 34.2% Elapsed: 2:03:34 temperature: no ada_p: No Discriminator_loss: 0.178344 Generator_loss: 3.99267 
+[INFO] 2020-09-17 22:08:12 > Step:   34300 Progress: 34.3% Elapsed: 2:03:51 temperature: no ada_p: No Discriminator_loss: 0.22612 Generator_loss: 4.67186 
+[INFO] 2020-09-17 22:08:29 > Step:   34400 Progress: 34.4% Elapsed: 2:04:08 temperature: no ada_p: No Discriminator_loss: 0.360513 Generator_loss: 6.57848 
+[INFO] 2020-09-17 22:08:45 > Step:   34500 Progress: 34.5% Elapsed: 2:04:24 temperature: no ada_p: No Discriminator_loss: 0.216892 Generator_loss: 4.71343 
+[INFO] 2020-09-17 22:09:03 > Step:   34600 Progress: 34.6% Elapsed: 2:04:41 temperature: no ada_p: No Discriminator_loss: 0.095342 Generator_loss: 6.09009 
+[INFO] 2020-09-17 22:09:20 > Step:   34700 Progress: 34.7% Elapsed: 2:04:58 temperature: no ada_p: No Discriminator_loss: 0.320179 Generator_loss: 11.0069 
+[INFO] 2020-09-17 22:09:36 > Step:   34800 Progress: 34.8% Elapsed: 2:05:15 temperature: no ada_p: No Discriminator_loss: 0.339107 Generator_loss: 4.3872 
+[INFO] 2020-09-17 22:09:53 > Step:   34900 Progress: 34.9% Elapsed: 2:05:32 temperature: no ada_p: No Discriminator_loss: 0.0748034 Generator_loss: 8.28032 
+[INFO] 2020-09-17 22:10:10 > Step:   35000 Progress: 35.0% Elapsed: 2:05:49 temperature: no ada_p: No Discriminator_loss: 0.124962 Generator_loss: 5.29749 
+[INFO] 2020-09-17 22:10:27 > Step:   35100 Progress: 35.1% Elapsed: 2:06:06 temperature: no ada_p: No Discriminator_loss: 0.186326 Generator_loss: 5.77225 
+[INFO] 2020-09-17 22:10:44 > Step:   35200 Progress: 35.2% Elapsed: 2:06:23 temperature: no ada_p: No Discriminator_loss: 0.179359 Generator_loss: 5.9396 
+[INFO] 2020-09-17 22:11:00 > Step:   35300 Progress: 35.3% Elapsed: 2:06:39 temperature: no ada_p: No Discriminator_loss: 0.344348 Generator_loss: 17.6625 
+[INFO] 2020-09-17 22:11:18 > Step:   35400 Progress: 35.4% Elapsed: 2:06:56 temperature: no ada_p: No Discriminator_loss: 0.254106 Generator_loss: 4.84585 
+[INFO] 2020-09-17 22:11:35 > Step:   35500 Progress: 35.5% Elapsed: 2:07:14 temperature: no ada_p: No Discriminator_loss: 0.19474 Generator_loss: 5.40178 
+[INFO] 2020-09-17 22:11:51 > Step:   35600 Progress: 35.6% Elapsed: 2:07:30 temperature: no ada_p: No Discriminator_loss: 2.80672 Generator_loss: 1.76973 
+[INFO] 2020-09-17 22:12:08 > Step:   35700 Progress: 35.7% Elapsed: 2:07:47 temperature: no ada_p: No Discriminator_loss: 0.0972093 Generator_loss: 6.80669 
+[INFO] 2020-09-17 22:12:25 > Step:   35800 Progress: 35.8% Elapsed: 2:08:04 temperature: no ada_p: No Discriminator_loss: 0.167369 Generator_loss: 7.64574 
+[INFO] 2020-09-17 22:12:42 > Step:   35900 Progress: 35.9% Elapsed: 2:08:21 temperature: no ada_p: No Discriminator_loss: 0.246994 Generator_loss: 4.28763 
+[INFO] 2020-09-17 22:12:59 > Step:   36000 Progress: 36.0% Elapsed: 2:08:38 temperature: no ada_p: No Discriminator_loss: 0.284371 Generator_loss: 4.39572 
+[INFO] 2020-09-17 22:12:59 > Start Evaluation (36000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:14:33 > F_8 score (Step: 36000, Using test images): 0.09355517503071618
+[INFO] 2020-09-17 22:14:33 > F_1/8 score (Step: 36000, Using test images): 0.19758064921482532
+[INFO] 2020-09-17 22:14:33 > FID score (Step: 36000, Using test moments): 177.51577740005035
+[INFO] 2020-09-17 22:14:33 > Inception score (Step: 36000, 10000 generated images): 5.5915327072143555
+[INFO] 2020-09-17 22:14:33 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:14:33 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:14:50 > Step:   36100 Progress: 36.1% Elapsed: 2:10:29 temperature: no ada_p: No Discriminator_loss: 0.251147 Generator_loss: 4.84416 
+[INFO] 2020-09-17 22:15:07 > Step:   36200 Progress: 36.2% Elapsed: 2:10:46 temperature: no ada_p: No Discriminator_loss: 0.204306 Generator_loss: 15.291 
+[INFO] 2020-09-17 22:15:24 > Step:   36300 Progress: 36.3% Elapsed: 2:11:03 temperature: no ada_p: No Discriminator_loss: 0.0841152 Generator_loss: 6.24561 
+[INFO] 2020-09-17 22:15:41 > Step:   36400 Progress: 36.4% Elapsed: 2:11:20 temperature: no ada_p: No Discriminator_loss: 0.0959464 Generator_loss: 4.19668 
+[INFO] 2020-09-17 22:15:58 > Step:   36500 Progress: 36.5% Elapsed: 2:11:37 temperature: no ada_p: No Discriminator_loss: 0.135473 Generator_loss: 5.60839 
+[INFO] 2020-09-17 22:16:15 > Step:   36600 Progress: 36.6% Elapsed: 2:11:54 temperature: no ada_p: No Discriminator_loss: 0.248157 Generator_loss: 3.40944 
+[INFO] 2020-09-17 22:16:32 > Step:   36700 Progress: 36.7% Elapsed: 2:12:10 temperature: no ada_p: No Discriminator_loss: 0.343939 Generator_loss: 2.06921 
+[INFO] 2020-09-17 22:16:49 > Step:   36800 Progress: 36.8% Elapsed: 2:12:28 temperature: no ada_p: No Discriminator_loss: 0.52468 Generator_loss: 7.37612 
+[INFO] 2020-09-17 22:17:06 > Step:   36900 Progress: 36.9% Elapsed: 2:12:45 temperature: no ada_p: No Discriminator_loss: 0.0756135 Generator_loss: 5.27892 
+[INFO] 2020-09-17 22:17:22 > Step:   37000 Progress: 37.0% Elapsed: 2:13:01 temperature: no ada_p: No Discriminator_loss: 0.867838 Generator_loss: 5.1881 
+[INFO] 2020-09-17 22:17:39 > Step:   37100 Progress: 37.1% Elapsed: 2:13:18 temperature: no ada_p: No Discriminator_loss: 0.182507 Generator_loss: 5.09344 
+[INFO] 2020-09-17 22:17:56 > Step:   37200 Progress: 37.2% Elapsed: 2:13:35 temperature: no ada_p: No Discriminator_loss: 0.434043 Generator_loss: 6.02341 
+[INFO] 2020-09-17 22:18:13 > Step:   37300 Progress: 37.3% Elapsed: 2:13:52 temperature: no ada_p: No Discriminator_loss: 0.230571 Generator_loss: 3.72096 
+[INFO] 2020-09-17 22:18:30 > Step:   37400 Progress: 37.4% Elapsed: 2:14:09 temperature: no ada_p: No Discriminator_loss: 0.188009 Generator_loss: 4.70928 
+[INFO] 2020-09-17 22:18:47 > Step:   37500 Progress: 37.5% Elapsed: 2:14:26 temperature: no ada_p: No Discriminator_loss: 0.275788 Generator_loss: 4.57522 
+[INFO] 2020-09-17 22:19:04 > Step:   37600 Progress: 37.6% Elapsed: 2:14:43 temperature: no ada_p: No Discriminator_loss: 0.101718 Generator_loss: 8.2333 
+[INFO] 2020-09-17 22:19:21 > Step:   37700 Progress: 37.7% Elapsed: 2:15:00 temperature: no ada_p: No Discriminator_loss: 0.181995 Generator_loss: 2.40752 
+[INFO] 2020-09-17 22:19:37 > Step:   37800 Progress: 37.8% Elapsed: 2:15:16 temperature: no ada_p: No Discriminator_loss: 0.253123 Generator_loss: 11.2541 
+[INFO] 2020-09-17 22:19:54 > Step:   37900 Progress: 37.9% Elapsed: 2:15:33 temperature: no ada_p: No Discriminator_loss: 0.141102 Generator_loss: 4.06669 
+[INFO] 2020-09-17 22:20:11 > Step:   38000 Progress: 38.0% Elapsed: 2:15:50 temperature: no ada_p: No Discriminator_loss: 0.767794 Generator_loss: 4.64106 
+[INFO] 2020-09-17 22:20:11 > Start Evaluation (38000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:21:46 > F_8 score (Step: 38000, Using test images): 0.2851010947911094
+[INFO] 2020-09-17 22:21:46 > F_1/8 score (Step: 38000, Using test images): 0.24484200246766344
+[INFO] 2020-09-17 22:21:46 > FID score (Step: 38000, Using test moments): 175.80316595316015
+[INFO] 2020-09-17 22:21:46 > Inception score (Step: 38000, 10000 generated images): 4.912533760070801
+[INFO] 2020-09-17 22:21:46 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:21:46 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:22:02 > Step:   38100 Progress: 38.1% Elapsed: 2:17:41 temperature: no ada_p: No Discriminator_loss: 0.137184 Generator_loss: 10.4333 
+[INFO] 2020-09-17 22:22:19 > Step:   38200 Progress: 38.2% Elapsed: 2:17:58 temperature: no ada_p: No Discriminator_loss: 0.362244 Generator_loss: 6.95009 
+[INFO] 2020-09-17 22:22:36 > Step:   38300 Progress: 38.3% Elapsed: 2:18:15 temperature: no ada_p: No Discriminator_loss: 0.189592 Generator_loss: 7.92867 
+[INFO] 2020-09-17 22:22:53 > Step:   38400 Progress: 38.4% Elapsed: 2:18:32 temperature: no ada_p: No Discriminator_loss: 0.186146 Generator_loss: 6.94778 
+[INFO] 2020-09-17 22:23:10 > Step:   38500 Progress: 38.5% Elapsed: 2:18:49 temperature: no ada_p: No Discriminator_loss: 0.10466 Generator_loss: 5.5503 
+[INFO] 2020-09-17 22:23:27 > Step:   38600 Progress: 38.6% Elapsed: 2:19:06 temperature: no ada_p: No Discriminator_loss: 0.180782 Generator_loss: 6.10238 
+[INFO] 2020-09-17 22:23:44 > Step:   38700 Progress: 38.7% Elapsed: 2:19:22 temperature: no ada_p: No Discriminator_loss: 0.816034 Generator_loss: 5.20529 
+[INFO] 2020-09-17 22:24:01 > Step:   38800 Progress: 38.8% Elapsed: 2:19:39 temperature: no ada_p: No Discriminator_loss: 0.948656 Generator_loss: 5.3608 
+[INFO] 2020-09-17 22:24:18 > Step:   38900 Progress: 38.9% Elapsed: 2:19:57 temperature: no ada_p: No Discriminator_loss: 0.191281 Generator_loss: 8.0658 
+[INFO] 2020-09-17 22:24:34 > Step:   39000 Progress: 39.0% Elapsed: 2:20:13 temperature: no ada_p: No Discriminator_loss: 0.0725163 Generator_loss: 7.15319 
+[INFO] 2020-09-17 22:24:51 > Step:   39100 Progress: 39.1% Elapsed: 2:20:30 temperature: no ada_p: No Discriminator_loss: 0.0596116 Generator_loss: 6.30413 
+[INFO] 2020-09-17 22:25:08 > Step:   39200 Progress: 39.2% Elapsed: 2:20:47 temperature: no ada_p: No Discriminator_loss: 0.153151 Generator_loss: 12.6343 
+[INFO] 2020-09-17 22:25:25 > Step:   39300 Progress: 39.3% Elapsed: 2:21:04 temperature: no ada_p: No Discriminator_loss: 0.222888 Generator_loss: 5.98109 
+[INFO] 2020-09-17 22:25:42 > Step:   39400 Progress: 39.4% Elapsed: 2:21:21 temperature: no ada_p: No Discriminator_loss: 0.123447 Generator_loss: 5.58211 
+[INFO] 2020-09-17 22:25:59 > Step:   39500 Progress: 39.5% Elapsed: 2:21:38 temperature: no ada_p: No Discriminator_loss: 0.17967 Generator_loss: 4.84169 
+[INFO] 2020-09-17 22:26:16 > Step:   39600 Progress: 39.6% Elapsed: 2:21:55 temperature: no ada_p: No Discriminator_loss: 0.200822 Generator_loss: 6.95637 
+[INFO] 2020-09-17 22:26:33 > Step:   39700 Progress: 39.7% Elapsed: 2:22:12 temperature: no ada_p: No Discriminator_loss: 0.233561 Generator_loss: 4.86793 
+[INFO] 2020-09-17 22:26:50 > Step:   39800 Progress: 39.8% Elapsed: 2:22:28 temperature: no ada_p: No Discriminator_loss: 0.320816 Generator_loss: 9.13165 
+[INFO] 2020-09-17 22:27:06 > Step:   39900 Progress: 39.9% Elapsed: 2:22:45 temperature: no ada_p: No Discriminator_loss: 0.294292 Generator_loss: 7.27499 
+[INFO] 2020-09-17 22:27:24 > Step:   40000 Progress: 40.0% Elapsed: 2:23:02 temperature: no ada_p: No Discriminator_loss: 0.230911 Generator_loss: 5.45077 
+[INFO] 2020-09-17 22:27:24 > Start Evaluation (40000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:28:59 > F_8 score (Step: 40000, Using test images): 0.21413052261639895
+[INFO] 2020-09-17 22:28:59 > F_1/8 score (Step: 40000, Using test images): 0.08565577675749696
+[INFO] 2020-09-17 22:28:59 > FID score (Step: 40000, Using test moments): 179.86226413733647
+[INFO] 2020-09-17 22:28:59 > Inception score (Step: 40000, 10000 generated images): 3.726609706878662
+[INFO] 2020-09-17 22:28:59 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:28:59 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:29:15 > Step:   40100 Progress: 40.1% Elapsed: 2:24:54 temperature: no ada_p: No Discriminator_loss: 0.359111 Generator_loss: 11.2364 
+[INFO] 2020-09-17 22:29:32 > Step:   40200 Progress: 40.2% Elapsed: 2:25:11 temperature: no ada_p: No Discriminator_loss: 0.278501 Generator_loss: 8.78526 
+[INFO] 2020-09-17 22:29:49 > Step:   40300 Progress: 40.3% Elapsed: 2:25:28 temperature: no ada_p: No Discriminator_loss: 0.295695 Generator_loss: 5.26303 
+[INFO] 2020-09-17 22:30:06 > Step:   40400 Progress: 40.4% Elapsed: 2:25:45 temperature: no ada_p: No Discriminator_loss: 0.0974971 Generator_loss: 7.18724 
+[INFO] 2020-09-17 22:30:23 > Step:   40500 Progress: 40.5% Elapsed: 2:26:02 temperature: no ada_p: No Discriminator_loss: 0.584794 Generator_loss: 4.65459 
+[INFO] 2020-09-17 22:30:40 > Step:   40600 Progress: 40.6% Elapsed: 2:26:19 temperature: no ada_p: No Discriminator_loss: 0.419068 Generator_loss: 2.2362 
+[INFO] 2020-09-17 22:30:57 > Step:   40700 Progress: 40.7% Elapsed: 2:26:36 temperature: no ada_p: No Discriminator_loss: 0.87157 Generator_loss: 1.87828 
+[INFO] 2020-09-17 22:31:14 > Step:   40800 Progress: 40.8% Elapsed: 2:26:53 temperature: no ada_p: No Discriminator_loss: 0.142189 Generator_loss: 5.16341 
+[INFO] 2020-09-17 22:31:30 > Step:   40900 Progress: 40.9% Elapsed: 2:27:09 temperature: no ada_p: No Discriminator_loss: 0.164613 Generator_loss: 6.08757 
+[INFO] 2020-09-17 22:31:47 > Step:   41000 Progress: 41.0% Elapsed: 2:27:26 temperature: no ada_p: No Discriminator_loss: 0.0611914 Generator_loss: 6.06947 
+[INFO] 2020-09-17 22:32:04 > Step:   41100 Progress: 41.1% Elapsed: 2:27:43 temperature: no ada_p: No Discriminator_loss: 0.170773 Generator_loss: 12.1369 
+[INFO] 2020-09-17 22:32:21 > Step:   41200 Progress: 41.2% Elapsed: 2:28:00 temperature: no ada_p: No Discriminator_loss: 0.121787 Generator_loss: 9.44073 
+[INFO] 2020-09-17 22:32:38 > Step:   41300 Progress: 41.3% Elapsed: 2:28:17 temperature: no ada_p: No Discriminator_loss: 0.546687 Generator_loss: 14.4826 
+[INFO] 2020-09-17 22:32:55 > Step:   41400 Progress: 41.4% Elapsed: 2:28:34 temperature: no ada_p: No Discriminator_loss: 0.201559 Generator_loss: 5.66155 
+[INFO] 2020-09-17 22:33:12 > Step:   41500 Progress: 41.5% Elapsed: 2:28:51 temperature: no ada_p: No Discriminator_loss: 0.0758207 Generator_loss: 5.62189 
+[INFO] 2020-09-17 22:33:29 > Step:   41600 Progress: 41.6% Elapsed: 2:29:08 temperature: no ada_p: No Discriminator_loss: 0.268026 Generator_loss: 1.62511 
+[INFO] 2020-09-17 22:33:46 > Step:   41700 Progress: 41.7% Elapsed: 2:29:25 temperature: no ada_p: No Discriminator_loss: 0.148255 Generator_loss: 9.08348 
+[INFO] 2020-09-17 22:34:03 > Step:   41800 Progress: 41.8% Elapsed: 2:29:42 temperature: no ada_p: No Discriminator_loss: 0.235145 Generator_loss: 4.07328 
+[INFO] 2020-09-17 22:34:20 > Step:   41900 Progress: 41.9% Elapsed: 2:29:59 temperature: no ada_p: No Discriminator_loss: 0.198893 Generator_loss: 3.44414 
+[INFO] 2020-09-17 22:34:37 > Step:   42000 Progress: 42.0% Elapsed: 2:30:16 temperature: no ada_p: No Discriminator_loss: 0.574926 Generator_loss: 7.649 
+[INFO] 2020-09-17 22:34:37 > Start Evaluation (42000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:36:11 > F_8 score (Step: 42000, Using test images): 0.2009560513670143
+[INFO] 2020-09-17 22:36:11 > F_1/8 score (Step: 42000, Using test images): 0.23669024324926635
+[INFO] 2020-09-17 22:36:11 > FID score (Step: 42000, Using test moments): 172.3149634238133
+[INFO] 2020-09-17 22:36:11 > Inception score (Step: 42000, 10000 generated images): 4.785113334655762
+[INFO] 2020-09-17 22:36:11 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:36:11 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:36:28 > Step:   42100 Progress: 42.1% Elapsed: 2:32:07 temperature: no ada_p: No Discriminator_loss: 0.41541 Generator_loss: 12.0195 
+[INFO] 2020-09-17 22:36:45 > Step:   42200 Progress: 42.2% Elapsed: 2:32:24 temperature: no ada_p: No Discriminator_loss: 0.159652 Generator_loss: 4.14032 
+[INFO] 2020-09-17 22:37:02 > Step:   42300 Progress: 42.3% Elapsed: 2:32:41 temperature: no ada_p: No Discriminator_loss: 0.130273 Generator_loss: 9.84076 
+[INFO] 2020-09-17 22:37:19 > Step:   42400 Progress: 42.4% Elapsed: 2:32:58 temperature: no ada_p: No Discriminator_loss: 0.180735 Generator_loss: 4.22401 
+[INFO] 2020-09-17 22:37:36 > Step:   42500 Progress: 42.5% Elapsed: 2:33:15 temperature: no ada_p: No Discriminator_loss: 0.163269 Generator_loss: 6.59057 
+[INFO] 2020-09-17 22:37:53 > Step:   42600 Progress: 42.6% Elapsed: 2:33:32 temperature: no ada_p: No Discriminator_loss: 0.186607 Generator_loss: 8.38678 
+[INFO] 2020-09-17 22:38:10 > Step:   42700 Progress: 42.7% Elapsed: 2:33:49 temperature: no ada_p: No Discriminator_loss: 0.289556 Generator_loss: 0.977327 
+[INFO] 2020-09-17 22:38:27 > Step:   42800 Progress: 42.8% Elapsed: 2:34:06 temperature: no ada_p: No Discriminator_loss: 0.235554 Generator_loss: 3.91131 
+[INFO] 2020-09-17 22:38:44 > Step:   42900 Progress: 42.9% Elapsed: 2:34:22 temperature: no ada_p: No Discriminator_loss: 0.120625 Generator_loss: 6.2395 
+[INFO] 2020-09-17 22:39:00 > Step:   43000 Progress: 43.0% Elapsed: 2:34:39 temperature: no ada_p: No Discriminator_loss: 0.159816 Generator_loss: 6.56007 
+[INFO] 2020-09-17 22:39:17 > Step:   43100 Progress: 43.1% Elapsed: 2:34:56 temperature: no ada_p: No Discriminator_loss: 0.324451 Generator_loss: 5.11487 
+[INFO] 2020-09-17 22:39:34 > Step:   43200 Progress: 43.2% Elapsed: 2:35:13 temperature: no ada_p: No Discriminator_loss: 0.283776 Generator_loss: 4.88816 
+[INFO] 2020-09-17 22:39:51 > Step:   43300 Progress: 43.3% Elapsed: 2:35:30 temperature: no ada_p: No Discriminator_loss: 0.204843 Generator_loss: 8.88881 
+[INFO] 2020-09-17 22:40:08 > Step:   43400 Progress: 43.4% Elapsed: 2:35:47 temperature: no ada_p: No Discriminator_loss: 0.273361 Generator_loss: 4.36037 
+[INFO] 2020-09-17 22:40:25 > Step:   43500 Progress: 43.5% Elapsed: 2:36:04 temperature: no ada_p: No Discriminator_loss: 0.311973 Generator_loss: 4.35101 
+[INFO] 2020-09-17 22:40:42 > Step:   43600 Progress: 43.6% Elapsed: 2:36:21 temperature: no ada_p: No Discriminator_loss: 0.111024 Generator_loss: 4.07392 
+[INFO] 2020-09-17 22:40:59 > Step:   43700 Progress: 43.7% Elapsed: 2:36:38 temperature: no ada_p: No Discriminator_loss: 0.116567 Generator_loss: 6.37886 
+[INFO] 2020-09-17 22:41:16 > Step:   43800 Progress: 43.8% Elapsed: 2:36:55 temperature: no ada_p: No Discriminator_loss: 0.165826 Generator_loss: 6.46927 
+[INFO] 2020-09-17 22:41:33 > Step:   43900 Progress: 43.9% Elapsed: 2:37:12 temperature: no ada_p: No Discriminator_loss: 0.138763 Generator_loss: 5.40803 
+[INFO] 2020-09-17 22:41:50 > Step:   44000 Progress: 44.0% Elapsed: 2:37:29 temperature: no ada_p: No Discriminator_loss: 0.305978 Generator_loss: 3.72749 
+[INFO] 2020-09-17 22:41:50 > Start Evaluation (44000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:43:24 > F_8 score (Step: 44000, Using test images): 0.3586030319571105
+[INFO] 2020-09-17 22:43:24 > F_1/8 score (Step: 44000, Using test images): 0.2179485431968435
+[INFO] 2020-09-17 22:43:24 > FID score (Step: 44000, Using test moments): 169.56446874904793
+[INFO] 2020-09-17 22:43:24 > Inception score (Step: 44000, 10000 generated images): 3.6304574012756348
+[INFO] 2020-09-17 22:43:24 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:43:24 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:43:41 > Step:   44100 Progress: 44.1% Elapsed: 2:39:20 temperature: no ada_p: No Discriminator_loss: 0.274482 Generator_loss: 8.67204 
+[INFO] 2020-09-17 22:43:57 > Step:   44200 Progress: 44.2% Elapsed: 2:39:36 temperature: no ada_p: No Discriminator_loss: 0.331772 Generator_loss: 6.05029 
+[INFO] 2020-09-17 22:44:14 > Step:   44300 Progress: 44.3% Elapsed: 2:39:53 temperature: no ada_p: No Discriminator_loss: 0.211133 Generator_loss: 3.38944 
+[INFO] 2020-09-17 22:44:31 > Step:   44400 Progress: 44.4% Elapsed: 2:40:10 temperature: no ada_p: No Discriminator_loss: 0.150079 Generator_loss: 4.78903 
+[INFO] 2020-09-17 22:44:48 > Step:   44500 Progress: 44.5% Elapsed: 2:40:27 temperature: no ada_p: No Discriminator_loss: 0.118254 Generator_loss: 9.6098 
+[INFO] 2020-09-17 22:45:05 > Step:   44600 Progress: 44.6% Elapsed: 2:40:44 temperature: no ada_p: No Discriminator_loss: 0.0608361 Generator_loss: 4.34123 
+[INFO] 2020-09-17 22:45:22 > Step:   44700 Progress: 44.7% Elapsed: 2:41:01 temperature: no ada_p: No Discriminator_loss: 0.0628613 Generator_loss: 2.99736 
+[INFO] 2020-09-17 22:45:39 > Step:   44800 Progress: 44.8% Elapsed: 2:41:18 temperature: no ada_p: No Discriminator_loss: 0.312715 Generator_loss: 3.73369 
+[INFO] 2020-09-17 22:45:56 > Step:   44900 Progress: 44.9% Elapsed: 2:41:35 temperature: no ada_p: No Discriminator_loss: 0.250763 Generator_loss: 1.62033 
+[INFO] 2020-09-17 22:46:13 > Step:   45000 Progress: 45.0% Elapsed: 2:41:52 temperature: no ada_p: No Discriminator_loss: 0.17381 Generator_loss: 6.68815 
+[INFO] 2020-09-17 22:46:29 > Step:   45100 Progress: 45.1% Elapsed: 2:42:08 temperature: no ada_p: No Discriminator_loss: 0.143972 Generator_loss: 10.1119 
+[INFO] 2020-09-17 22:46:46 > Step:   45200 Progress: 45.2% Elapsed: 2:42:25 temperature: no ada_p: No Discriminator_loss: 0.125123 Generator_loss: 2.9805 
+[INFO] 2020-09-17 22:47:04 > Step:   45300 Progress: 45.3% Elapsed: 2:42:43 temperature: no ada_p: No Discriminator_loss: 0.0446165 Generator_loss: 7.86589 
+[INFO] 2020-09-17 22:47:20 > Step:   45400 Progress: 45.4% Elapsed: 2:42:59 temperature: no ada_p: No Discriminator_loss: 0.101635 Generator_loss: 4.73484 
+[INFO] 2020-09-17 22:47:37 > Step:   45500 Progress: 45.5% Elapsed: 2:43:16 temperature: no ada_p: No Discriminator_loss: 0.214838 Generator_loss: 2.90962 
+[INFO] 2020-09-17 22:47:54 > Step:   45600 Progress: 45.6% Elapsed: 2:43:33 temperature: no ada_p: No Discriminator_loss: 0.139424 Generator_loss: 4.11808 
+[INFO] 2020-09-17 22:48:11 > Step:   45700 Progress: 45.7% Elapsed: 2:43:50 temperature: no ada_p: No Discriminator_loss: 0.128634 Generator_loss: 13.4486 
+[INFO] 2020-09-17 22:48:28 > Step:   45800 Progress: 45.8% Elapsed: 2:44:07 temperature: no ada_p: No Discriminator_loss: 0.0622574 Generator_loss: 4.46332 
+[INFO] 2020-09-17 22:48:45 > Step:   45900 Progress: 45.9% Elapsed: 2:44:24 temperature: no ada_p: No Discriminator_loss: 0.263172 Generator_loss: 5.02064 
+[INFO] 2020-09-17 22:49:02 > Step:   46000 Progress: 46.0% Elapsed: 2:44:41 temperature: no ada_p: No Discriminator_loss: 0.128604 Generator_loss: 5.00006 
+[INFO] 2020-09-17 22:49:02 > Start Evaluation (46000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:50:36 > F_8 score (Step: 46000, Using test images): 0.27749866946140245
+[INFO] 2020-09-17 22:50:36 > F_1/8 score (Step: 46000, Using test images): 0.29109925680287413
+[INFO] 2020-09-17 22:50:37 > FID score (Step: 46000, Using test moments): 180.71042404420706
+[INFO] 2020-09-17 22:50:37 > Inception score (Step: 46000, 10000 generated images): 4.164405345916748
+[INFO] 2020-09-17 22:50:37 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:50:37 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:50:54 > Step:   46100 Progress: 46.1% Elapsed: 2:46:32 temperature: no ada_p: No Discriminator_loss: 0.127327 Generator_loss: 5.98045 
+[INFO] 2020-09-17 22:51:10 > Step:   46200 Progress: 46.2% Elapsed: 2:46:49 temperature: no ada_p: No Discriminator_loss: 0.0824126 Generator_loss: 3.71117 
+[INFO] 2020-09-17 22:51:27 > Step:   46300 Progress: 46.3% Elapsed: 2:47:06 temperature: no ada_p: No Discriminator_loss: 0.204607 Generator_loss: 3.84176 
+[INFO] 2020-09-17 22:51:44 > Step:   46400 Progress: 46.4% Elapsed: 2:47:23 temperature: no ada_p: No Discriminator_loss: 0.106551 Generator_loss: 5.72745 
+[INFO] 2020-09-17 22:52:01 > Step:   46500 Progress: 46.5% Elapsed: 2:47:40 temperature: no ada_p: No Discriminator_loss: 1.13233 Generator_loss: 10.2393 
+[INFO] 2020-09-17 22:52:18 > Step:   46600 Progress: 46.6% Elapsed: 2:47:57 temperature: no ada_p: No Discriminator_loss: 0.184556 Generator_loss: 6.05332 
+[INFO] 2020-09-17 22:52:35 > Step:   46700 Progress: 46.7% Elapsed: 2:48:14 temperature: no ada_p: No Discriminator_loss: 0.256969 Generator_loss: 5.21564 
+[INFO] 2020-09-17 22:52:52 > Step:   46800 Progress: 46.8% Elapsed: 2:48:31 temperature: no ada_p: No Discriminator_loss: 0.0975735 Generator_loss: 8.55009 
+[INFO] 2020-09-17 22:53:09 > Step:   46900 Progress: 46.9% Elapsed: 2:48:48 temperature: no ada_p: No Discriminator_loss: 0.0829805 Generator_loss: 1.49976 
+[INFO] 2020-09-17 22:53:25 > Step:   47000 Progress: 47.0% Elapsed: 2:49:04 temperature: no ada_p: No Discriminator_loss: 0.134601 Generator_loss: 4.42741 
+[INFO] 2020-09-17 22:53:42 > Step:   47100 Progress: 47.1% Elapsed: 2:49:21 temperature: no ada_p: No Discriminator_loss: 0.149266 Generator_loss: 4.88424 
+[INFO] 2020-09-17 22:53:59 > Step:   47200 Progress: 47.2% Elapsed: 2:49:38 temperature: no ada_p: No Discriminator_loss: 0.19302 Generator_loss: 4.34523 
+[INFO] 2020-09-17 22:54:16 > Step:   47300 Progress: 47.3% Elapsed: 2:49:55 temperature: no ada_p: No Discriminator_loss: 0.381996 Generator_loss: 4.28237 
+[INFO] 2020-09-17 22:54:33 > Step:   47400 Progress: 47.4% Elapsed: 2:50:12 temperature: no ada_p: No Discriminator_loss: 0.853779 Generator_loss: 11.8285 
+[INFO] 2020-09-17 22:54:50 > Step:   47500 Progress: 47.5% Elapsed: 2:50:29 temperature: no ada_p: No Discriminator_loss: 0.0932513 Generator_loss: 3.43391 
+[INFO] 2020-09-17 22:55:07 > Step:   47600 Progress: 47.6% Elapsed: 2:50:46 temperature: no ada_p: No Discriminator_loss: 1.03517 Generator_loss: 9.48952 
+[INFO] 2020-09-17 22:55:24 > Step:   47700 Progress: 47.7% Elapsed: 2:51:03 temperature: no ada_p: No Discriminator_loss: 0.401606 Generator_loss: 6.56194 
+[INFO] 2020-09-17 22:55:41 > Step:   47800 Progress: 47.8% Elapsed: 2:51:20 temperature: no ada_p: No Discriminator_loss: 0.196665 Generator_loss: 12.5882 
+[INFO] 2020-09-17 22:55:58 > Step:   47900 Progress: 47.9% Elapsed: 2:51:36 temperature: no ada_p: No Discriminator_loss: 0.15255 Generator_loss: 3.8541 
+[INFO] 2020-09-17 22:56:15 > Step:   48000 Progress: 48.0% Elapsed: 2:51:53 temperature: no ada_p: No Discriminator_loss: 0.133564 Generator_loss: 4.16332 
+[INFO] 2020-09-17 22:56:15 > Start Evaluation (48000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:57:49 > F_8 score (Step: 48000, Using test images): 0.15469090053054763
+[INFO] 2020-09-17 22:57:49 > F_1/8 score (Step: 48000, Using test images): 0.21669449165820184
+[INFO] 2020-09-17 22:57:49 > FID score (Step: 48000, Using test moments): 175.80450153135848
+[INFO] 2020-09-17 22:57:49 > Inception score (Step: 48000, 10000 generated images): 3.830730438232422
+[INFO] 2020-09-17 22:57:49 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 22:57:49 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 22:58:06 > Step:   48100 Progress: 48.1% Elapsed: 2:53:45 temperature: no ada_p: No Discriminator_loss: 0.115363 Generator_loss: 6.48522 
+[INFO] 2020-09-17 22:58:23 > Step:   48200 Progress: 48.2% Elapsed: 2:54:02 temperature: no ada_p: No Discriminator_loss: 0.120153 Generator_loss: 6.02363 
+[INFO] 2020-09-17 22:58:40 > Step:   48300 Progress: 48.3% Elapsed: 2:54:19 temperature: no ada_p: No Discriminator_loss: 0.369506 Generator_loss: 9.57129 
+[INFO] 2020-09-17 22:58:57 > Step:   48400 Progress: 48.4% Elapsed: 2:54:36 temperature: no ada_p: No Discriminator_loss: 0.130598 Generator_loss: 5.02203 
+[INFO] 2020-09-17 22:59:14 > Step:   48500 Progress: 48.5% Elapsed: 2:54:53 temperature: no ada_p: No Discriminator_loss: 0.224512 Generator_loss: 10.2792 
+[INFO] 2020-09-17 22:59:31 > Step:   48600 Progress: 48.6% Elapsed: 2:55:10 temperature: no ada_p: No Discriminator_loss: 0.120512 Generator_loss: 4.20315 
+[INFO] 2020-09-17 22:59:48 > Step:   48700 Progress: 48.7% Elapsed: 2:55:26 temperature: no ada_p: No Discriminator_loss: 0.131167 Generator_loss: 9.88143 
+[INFO] 2020-09-17 23:00:05 > Step:   48800 Progress: 48.8% Elapsed: 2:55:44 temperature: no ada_p: No Discriminator_loss: 0.175251 Generator_loss: 6.07632 
+[INFO] 2020-09-17 23:00:22 > Step:   48900 Progress: 48.9% Elapsed: 2:56:01 temperature: no ada_p: No Discriminator_loss: 0.203725 Generator_loss: 6.85054 
+[INFO] 2020-09-17 23:00:38 > Step:   49000 Progress: 49.0% Elapsed: 2:56:17 temperature: no ada_p: No Discriminator_loss: 0.297282 Generator_loss: 5.98978 
+[INFO] 2020-09-17 23:00:55 > Step:   49100 Progress: 49.1% Elapsed: 2:56:34 temperature: no ada_p: No Discriminator_loss: 0.322372 Generator_loss: 3.83894 
+[INFO] 2020-09-17 23:01:12 > Step:   49200 Progress: 49.2% Elapsed: 2:56:51 temperature: no ada_p: No Discriminator_loss: 0.156144 Generator_loss: 6.55942 
+[INFO] 2020-09-17 23:01:29 > Step:   49300 Progress: 49.3% Elapsed: 2:57:08 temperature: no ada_p: No Discriminator_loss: 0.166807 Generator_loss: 8.55853 
+[INFO] 2020-09-17 23:01:46 > Step:   49400 Progress: 49.4% Elapsed: 2:57:25 temperature: no ada_p: No Discriminator_loss: 0.377107 Generator_loss: 7.45337 
+[INFO] 2020-09-17 23:02:03 > Step:   49500 Progress: 49.5% Elapsed: 2:57:42 temperature: no ada_p: No Discriminator_loss: 0.0393732 Generator_loss: 2.99412 
+[INFO] 2020-09-17 23:02:20 > Step:   49600 Progress: 49.6% Elapsed: 2:57:59 temperature: no ada_p: No Discriminator_loss: 0.152931 Generator_loss: 3.88364 
+[INFO] 2020-09-17 23:02:37 > Step:   49700 Progress: 49.7% Elapsed: 2:58:16 temperature: no ada_p: No Discriminator_loss: 1.38838 Generator_loss: 7.51942 
+[INFO] 2020-09-17 23:02:54 > Step:   49800 Progress: 49.8% Elapsed: 2:58:33 temperature: no ada_p: No Discriminator_loss: 0.167437 Generator_loss: 7.6102 
+[INFO] 2020-09-17 23:03:11 > Step:   49900 Progress: 49.9% Elapsed: 2:58:50 temperature: no ada_p: No Discriminator_loss: 0.148081 Generator_loss: 7.33556 
+[INFO] 2020-09-17 23:03:28 > Step:   50000 Progress: 50.0% Elapsed: 2:59:07 temperature: no ada_p: No Discriminator_loss: 0.0481683 Generator_loss: 3.63013 
+[INFO] 2020-09-17 23:03:28 > Start Evaluation (50000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:05:02 > F_8 score (Step: 50000, Using test images): 0.2719534145461988
+[INFO] 2020-09-17 23:05:02 > F_1/8 score (Step: 50000, Using test images): 0.20419679032841437
+[INFO] 2020-09-17 23:05:02 > FID score (Step: 50000, Using test moments): 178.16777413427872
+[INFO] 2020-09-17 23:05:02 > Inception score (Step: 50000, 10000 generated images): 3.5909056663513184
+[INFO] 2020-09-17 23:05:02 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 23:05:02 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:05:18 > Step:   50100 Progress: 50.1% Elapsed: 3:00:57 temperature: no ada_p: No Discriminator_loss: 0.148422 Generator_loss: 12.0058 
+[INFO] 2020-09-17 23:05:35 > Step:   50200 Progress: 50.2% Elapsed: 3:01:14 temperature: no ada_p: No Discriminator_loss: 0.0913743 Generator_loss: 5.77274 
+[INFO] 2020-09-17 23:05:52 > Step:   50300 Progress: 50.3% Elapsed: 3:01:31 temperature: no ada_p: No Discriminator_loss: 0.195129 Generator_loss: 4.43868 
+[INFO] 2020-09-17 23:06:09 > Step:   50400 Progress: 50.4% Elapsed: 3:01:48 temperature: no ada_p: No Discriminator_loss: 0.155273 Generator_loss: 3.85929 
+[INFO] 2020-09-17 23:06:26 > Step:   50500 Progress: 50.5% Elapsed: 3:02:05 temperature: no ada_p: No Discriminator_loss: 0.575914 Generator_loss: 4.1348 
+[INFO] 2020-09-17 23:06:43 > Step:   50600 Progress: 50.6% Elapsed: 3:02:22 temperature: no ada_p: No Discriminator_loss: 0.155721 Generator_loss: 2.38204 
+[INFO] 2020-09-17 23:07:00 > Step:   50700 Progress: 50.7% Elapsed: 3:02:39 temperature: no ada_p: No Discriminator_loss: 0.0453644 Generator_loss: 5.08615 
+[INFO] 2020-09-17 23:07:17 > Step:   50800 Progress: 50.8% Elapsed: 3:02:56 temperature: no ada_p: No Discriminator_loss: 0.115915 Generator_loss: 3.48352 
+[INFO] 2020-09-17 23:07:33 > Step:   50900 Progress: 50.9% Elapsed: 3:03:12 temperature: no ada_p: No Discriminator_loss: 0.111674 Generator_loss: 3.47986 
+[INFO] 2020-09-17 23:07:50 > Step:   51000 Progress: 51.0% Elapsed: 3:03:29 temperature: no ada_p: No Discriminator_loss: 0.105086 Generator_loss: 9.71675 
+[INFO] 2020-09-17 23:08:07 > Step:   51100 Progress: 51.1% Elapsed: 3:03:46 temperature: no ada_p: No Discriminator_loss: 0.188785 Generator_loss: 1.36315 
+[INFO] 2020-09-17 23:08:24 > Step:   51200 Progress: 51.2% Elapsed: 3:04:03 temperature: no ada_p: No Discriminator_loss: 0.0948106 Generator_loss: 10.7495 
+[INFO] 2020-09-17 23:08:41 > Step:   51300 Progress: 51.3% Elapsed: 3:04:20 temperature: no ada_p: No Discriminator_loss: 0.104227 Generator_loss: 4.86524 
+[INFO] 2020-09-17 23:08:58 > Step:   51400 Progress: 51.4% Elapsed: 3:04:37 temperature: no ada_p: No Discriminator_loss: 0.215318 Generator_loss: 3.83161 
+[INFO] 2020-09-17 23:09:15 > Step:   51500 Progress: 51.5% Elapsed: 3:04:54 temperature: no ada_p: No Discriminator_loss: 0.284267 Generator_loss: 10.5287 
+[INFO] 2020-09-17 23:09:32 > Step:   51600 Progress: 51.6% Elapsed: 3:05:11 temperature: no ada_p: No Discriminator_loss: 0.131099 Generator_loss: 3.32524 
+[INFO] 2020-09-17 23:09:49 > Step:   51700 Progress: 51.7% Elapsed: 3:05:28 temperature: no ada_p: No Discriminator_loss: 0.14726 Generator_loss: 6.91174 
+[INFO] 2020-09-17 23:10:06 > Step:   51800 Progress: 51.8% Elapsed: 3:05:45 temperature: no ada_p: No Discriminator_loss: 0.0746005 Generator_loss: 8.59738 
+[INFO] 2020-09-17 23:10:23 > Step:   51900 Progress: 51.9% Elapsed: 3:06:02 temperature: no ada_p: No Discriminator_loss: 0.217321 Generator_loss: 5.80733 
+[INFO] 2020-09-17 23:10:40 > Step:   52000 Progress: 52.0% Elapsed: 3:06:18 temperature: no ada_p: No Discriminator_loss: 0.0277851 Generator_loss: 3.16736 
+[INFO] 2020-09-17 23:10:40 > Start Evaluation (52000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:12:14 > F_8 score (Step: 52000, Using test images): 0.34703888002592215
+[INFO] 2020-09-17 23:12:14 > F_1/8 score (Step: 52000, Using test images): 0.2586271773054721
+[INFO] 2020-09-17 23:12:14 > FID score (Step: 52000, Using test moments): 166.59486711529786
+[INFO] 2020-09-17 23:12:14 > Inception score (Step: 52000, 10000 generated images): 4.453958988189697
+[INFO] 2020-09-17 23:12:14 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 23:12:14 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:12:31 > Step:   52100 Progress: 52.1% Elapsed: 3:08:10 temperature: no ada_p: No Discriminator_loss: 0.0809948 Generator_loss: 8.93958 
+[INFO] 2020-09-17 23:12:48 > Step:   52200 Progress: 52.2% Elapsed: 3:08:27 temperature: no ada_p: No Discriminator_loss: 0.0760615 Generator_loss: 7.29969 
+[INFO] 2020-09-17 23:13:05 > Step:   52300 Progress: 52.3% Elapsed: 3:08:44 temperature: no ada_p: No Discriminator_loss: 0.236306 Generator_loss: 5.26906 
+[INFO] 2020-09-17 23:13:22 > Step:   52400 Progress: 52.4% Elapsed: 3:09:01 temperature: no ada_p: No Discriminator_loss: 0.0931509 Generator_loss: 7.09368 
+[INFO] 2020-09-17 23:13:39 > Step:   52500 Progress: 52.5% Elapsed: 3:09:18 temperature: no ada_p: No Discriminator_loss: 0.259992 Generator_loss: 17.5387 
+[INFO] 2020-09-17 23:13:56 > Step:   52600 Progress: 52.6% Elapsed: 3:09:35 temperature: no ada_p: No Discriminator_loss: 0.582459 Generator_loss: 7.77812 
+[INFO] 2020-09-17 23:14:13 > Step:   52700 Progress: 52.7% Elapsed: 3:09:52 temperature: no ada_p: No Discriminator_loss: 0.130339 Generator_loss: 5.1358 
+[INFO] 2020-09-17 23:14:30 > Step:   52800 Progress: 52.8% Elapsed: 3:10:09 temperature: no ada_p: No Discriminator_loss: 0.213507 Generator_loss: 8.02085 
+[INFO] 2020-09-17 23:14:46 > Step:   52900 Progress: 52.9% Elapsed: 3:10:25 temperature: no ada_p: No Discriminator_loss: 0.0777029 Generator_loss: 5.7639 
+[INFO] 2020-09-17 23:15:04 > Step:   53000 Progress: 53.0% Elapsed: 3:10:42 temperature: no ada_p: No Discriminator_loss: 0.0711759 Generator_loss: 4.99512 
+[INFO] 2020-09-17 23:15:20 > Step:   53100 Progress: 53.1% Elapsed: 3:10:59 temperature: no ada_p: No Discriminator_loss: 0.648155 Generator_loss: 12.6779 
+[INFO] 2020-09-17 23:15:37 > Step:   53200 Progress: 53.2% Elapsed: 3:11:16 temperature: no ada_p: No Discriminator_loss: 0.0768378 Generator_loss: 12.3697 
+[INFO] 2020-09-17 23:15:55 > Step:   53300 Progress: 53.3% Elapsed: 3:11:33 temperature: no ada_p: No Discriminator_loss: 0.119999 Generator_loss: 7.20265 
+[INFO] 2020-09-17 23:16:11 > Step:   53400 Progress: 53.4% Elapsed: 3:11:50 temperature: no ada_p: No Discriminator_loss: 0.222933 Generator_loss: 7.34457 
+[INFO] 2020-09-17 23:16:28 > Step:   53500 Progress: 53.5% Elapsed: 3:12:07 temperature: no ada_p: No Discriminator_loss: 0.259928 Generator_loss: 4.5256 
+[INFO] 2020-09-17 23:16:45 > Step:   53600 Progress: 53.6% Elapsed: 3:12:24 temperature: no ada_p: No Discriminator_loss: 0.273274 Generator_loss: 9.70045 
+[INFO] 2020-09-17 23:17:02 > Step:   53700 Progress: 53.7% Elapsed: 3:12:41 temperature: no ada_p: No Discriminator_loss: 0.0315802 Generator_loss: 11.4672 
+[INFO] 2020-09-17 23:17:19 > Step:   53800 Progress: 53.8% Elapsed: 3:12:58 temperature: no ada_p: No Discriminator_loss: 0.190183 Generator_loss: 2.84075 
+[INFO] 2020-09-17 23:17:36 > Step:   53900 Progress: 53.9% Elapsed: 3:13:15 temperature: no ada_p: No Discriminator_loss: 0.257865 Generator_loss: 5.66386 
+[INFO] 2020-09-17 23:17:53 > Step:   54000 Progress: 54.0% Elapsed: 3:13:32 temperature: no ada_p: No Discriminator_loss: 0.142046 Generator_loss: 5.3384 
+[INFO] 2020-09-17 23:17:53 > Start Evaluation (54000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:19:27 > F_8 score (Step: 54000, Using test images): 0.2681645133021257
+[INFO] 2020-09-17 23:19:27 > F_1/8 score (Step: 54000, Using test images): 0.26766212621353724
+[INFO] 2020-09-17 23:19:27 > FID score (Step: 54000, Using test moments): 160.16452805631113
+[INFO] 2020-09-17 23:19:27 > Inception score (Step: 54000, 10000 generated images): 4.164076328277588
+[INFO] 2020-09-17 23:19:27 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 23:19:28 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:19:45 > Step:   54100 Progress: 54.1% Elapsed: 3:15:24 temperature: no ada_p: No Discriminator_loss: 0.334485 Generator_loss: 14.36 
+[INFO] 2020-09-17 23:20:01 > Step:   54200 Progress: 54.2% Elapsed: 3:15:40 temperature: no ada_p: No Discriminator_loss: 0.145664 Generator_loss: 3.95744 
+[INFO] 2020-09-17 23:20:18 > Step:   54300 Progress: 54.3% Elapsed: 3:15:57 temperature: no ada_p: No Discriminator_loss: 0.100876 Generator_loss: 6.42381 
+[INFO] 2020-09-17 23:20:35 > Step:   54400 Progress: 54.4% Elapsed: 3:16:14 temperature: no ada_p: No Discriminator_loss: 0.122588 Generator_loss: 5.5944 
+[INFO] 2020-09-17 23:20:52 > Step:   54500 Progress: 54.5% Elapsed: 3:16:31 temperature: no ada_p: No Discriminator_loss: 0.0340438 Generator_loss: 6.99508 
+[INFO] 2020-09-17 23:21:09 > Step:   54600 Progress: 54.6% Elapsed: 3:16:48 temperature: no ada_p: No Discriminator_loss: 0.132408 Generator_loss: 3.55185 
+[INFO] 2020-09-17 23:21:26 > Step:   54700 Progress: 54.7% Elapsed: 3:17:05 temperature: no ada_p: No Discriminator_loss: 0.317634 Generator_loss: 2.7873 
+[INFO] 2020-09-17 23:21:43 > Step:   54800 Progress: 54.8% Elapsed: 3:17:22 temperature: no ada_p: No Discriminator_loss: 0.0961076 Generator_loss: 4.42038 
+[INFO] 2020-09-17 23:22:00 > Step:   54900 Progress: 54.9% Elapsed: 3:17:39 temperature: no ada_p: No Discriminator_loss: 0.172585 Generator_loss: 7.28895 
+[INFO] 2020-09-17 23:22:17 > Step:   55000 Progress: 55.0% Elapsed: 3:17:56 temperature: no ada_p: No Discriminator_loss: 0.157729 Generator_loss: 3.47221 
+[INFO] 2020-09-17 23:22:34 > Step:   55100 Progress: 55.1% Elapsed: 3:18:12 temperature: no ada_p: No Discriminator_loss: 0.207395 Generator_loss: 4.78452 
+[INFO] 2020-09-17 23:22:51 > Step:   55200 Progress: 55.2% Elapsed: 3:18:30 temperature: no ada_p: No Discriminator_loss: 0.175268 Generator_loss: 15.0974 
+[INFO] 2020-09-17 23:23:08 > Step:   55300 Progress: 55.3% Elapsed: 3:18:47 temperature: no ada_p: No Discriminator_loss: 0.157017 Generator_loss: 10.046 
+[INFO] 2020-09-17 23:23:24 > Step:   55400 Progress: 55.4% Elapsed: 3:19:03 temperature: no ada_p: No Discriminator_loss: 0.0582658 Generator_loss: 4.97462 
+[INFO] 2020-09-17 23:23:41 > Step:   55500 Progress: 55.5% Elapsed: 3:19:20 temperature: no ada_p: No Discriminator_loss: 0.326347 Generator_loss: 13.183 
+[INFO] 2020-09-17 23:23:58 > Step:   55600 Progress: 55.6% Elapsed: 3:19:37 temperature: no ada_p: No Discriminator_loss: 0.201085 Generator_loss: 7.46271 
+[INFO] 2020-09-17 23:24:15 > Step:   55700 Progress: 55.7% Elapsed: 3:19:54 temperature: no ada_p: No Discriminator_loss: 0.129007 Generator_loss: 4.7534 
+[INFO] 2020-09-17 23:24:32 > Step:   55800 Progress: 55.8% Elapsed: 3:20:11 temperature: no ada_p: No Discriminator_loss: 0.136759 Generator_loss: 5.16228 
+[INFO] 2020-09-17 23:24:49 > Step:   55900 Progress: 55.9% Elapsed: 3:20:27 temperature: no ada_p: No Discriminator_loss: 0.201531 Generator_loss: 2.8773 
+[INFO] 2020-09-17 23:25:06 > Step:   56000 Progress: 56.0% Elapsed: 3:20:45 temperature: no ada_p: No Discriminator_loss: 0.170298 Generator_loss: 3.80854 
+[INFO] 2020-09-17 23:25:06 > Start Evaluation (56000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:26:40 > F_8 score (Step: 56000, Using test images): 0.2557069977363082
+[INFO] 2020-09-17 23:26:40 > F_1/8 score (Step: 56000, Using test images): 0.21301682194807423
+[INFO] 2020-09-17 23:26:40 > FID score (Step: 56000, Using test moments): 181.9434472269773
+[INFO] 2020-09-17 23:26:40 > Inception score (Step: 56000, 10000 generated images): 4.438255786895752
+[INFO] 2020-09-17 23:26:40 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 23:26:40 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:26:57 > Step:   56100 Progress: 56.1% Elapsed: 3:22:36 temperature: no ada_p: No Discriminator_loss: 0.203913 Generator_loss: 5.5776 
+[INFO] 2020-09-17 23:27:14 > Step:   56200 Progress: 56.2% Elapsed: 3:22:53 temperature: no ada_p: No Discriminator_loss: 0.0723747 Generator_loss: 8.34731 
+[INFO] 2020-09-17 23:27:31 > Step:   56300 Progress: 56.3% Elapsed: 3:23:10 temperature: no ada_p: No Discriminator_loss: 0.140857 Generator_loss: 5.43822 
+[INFO] 2020-09-17 23:27:48 > Step:   56400 Progress: 56.4% Elapsed: 3:23:27 temperature: no ada_p: No Discriminator_loss: 0.348907 Generator_loss: 4.44376 
+[INFO] 2020-09-17 23:28:04 > Step:   56500 Progress: 56.5% Elapsed: 3:23:43 temperature: no ada_p: No Discriminator_loss: 0.0794839 Generator_loss: 2.72923 
+[INFO] 2020-09-17 23:28:21 > Step:   56600 Progress: 56.6% Elapsed: 3:24:00 temperature: no ada_p: No Discriminator_loss: 0.076284 Generator_loss: 4.64471 
+[INFO] 2020-09-17 23:28:38 > Step:   56700 Progress: 56.7% Elapsed: 3:24:17 temperature: no ada_p: No Discriminator_loss: 0.057012 Generator_loss: 7.00295 
+[INFO] 2020-09-17 23:28:55 > Step:   56800 Progress: 56.8% Elapsed: 3:24:34 temperature: no ada_p: No Discriminator_loss: 0.0894451 Generator_loss: 7.53854 
+[INFO] 2020-09-17 23:29:12 > Step:   56900 Progress: 56.9% Elapsed: 3:24:51 temperature: no ada_p: No Discriminator_loss: 0.148268 Generator_loss: 2.86786 
+[INFO] 2020-09-17 23:29:29 > Step:   57000 Progress: 57.0% Elapsed: 3:25:08 temperature: no ada_p: No Discriminator_loss: 0.145062 Generator_loss: 4.7941 
+[INFO] 2020-09-17 23:29:46 > Step:   57100 Progress: 57.1% Elapsed: 3:25:25 temperature: no ada_p: No Discriminator_loss: 0.332884 Generator_loss: 7.79422 
+[INFO] 2020-09-17 23:30:03 > Step:   57200 Progress: 57.2% Elapsed: 3:25:42 temperature: no ada_p: No Discriminator_loss: 0.0916251 Generator_loss: 7.41834 
+[INFO] 2020-09-17 23:30:19 > Step:   57300 Progress: 57.3% Elapsed: 3:25:58 temperature: no ada_p: No Discriminator_loss: 0.642362 Generator_loss: 5.48423 
+[INFO] 2020-09-17 23:30:37 > Step:   57400 Progress: 57.4% Elapsed: 3:26:15 temperature: no ada_p: No Discriminator_loss: 0.0594565 Generator_loss: 5.22534 
+[INFO] 2020-09-17 23:30:54 > Step:   57500 Progress: 57.5% Elapsed: 3:26:33 temperature: no ada_p: No Discriminator_loss: 0.0509884 Generator_loss: 3.71412 
+[INFO] 2020-09-17 23:31:10 > Step:   57600 Progress: 57.6% Elapsed: 3:26:49 temperature: no ada_p: No Discriminator_loss: 0.113716 Generator_loss: 3.49244 
+[INFO] 2020-09-17 23:31:27 > Step:   57700 Progress: 57.7% Elapsed: 3:27:06 temperature: no ada_p: No Discriminator_loss: 0.185294 Generator_loss: 3.57416 
+[INFO] 2020-09-17 23:31:44 > Step:   57800 Progress: 57.8% Elapsed: 3:27:23 temperature: no ada_p: No Discriminator_loss: 0.190537 Generator_loss: 4.20829 
+[INFO] 2020-09-17 23:32:01 > Step:   57900 Progress: 57.9% Elapsed: 3:27:40 temperature: no ada_p: No Discriminator_loss: 0.0879575 Generator_loss: 12.2879 
+[INFO] 2020-09-17 23:32:18 > Step:   58000 Progress: 58.0% Elapsed: 3:27:57 temperature: no ada_p: No Discriminator_loss: 0.500989 Generator_loss: 13.2416 
+[INFO] 2020-09-17 23:32:18 > Start Evaluation (58000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:33:53 > F_8 score (Step: 58000, Using test images): 0.19686927037126437
+[INFO] 2020-09-17 23:33:53 > F_1/8 score (Step: 58000, Using test images): 0.22707272331729725
+[INFO] 2020-09-17 23:33:53 > FID score (Step: 58000, Using test moments): 185.55327800714377
+[INFO] 2020-09-17 23:33:53 > Inception score (Step: 58000, 10000 generated images): 4.1205549240112305
+[INFO] 2020-09-17 23:33:53 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 23:33:53 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:34:09 > Step:   58100 Progress: 58.1% Elapsed: 3:29:48 temperature: no ada_p: No Discriminator_loss: 0.132624 Generator_loss: 4.8957 
+[INFO] 2020-09-17 23:34:26 > Step:   58200 Progress: 58.2% Elapsed: 3:30:05 temperature: no ada_p: No Discriminator_loss: 0.196645 Generator_loss: 5.03636 
+[INFO] 2020-09-17 23:34:43 > Step:   58300 Progress: 58.3% Elapsed: 3:30:22 temperature: no ada_p: No Discriminator_loss: 0.283246 Generator_loss: 6.71171 
+[INFO] 2020-09-17 23:35:00 > Step:   58400 Progress: 58.4% Elapsed: 3:30:39 temperature: no ada_p: No Discriminator_loss: 0.228027 Generator_loss: 4.62281 
+[INFO] 2020-09-17 23:35:17 > Step:   58500 Progress: 58.5% Elapsed: 3:30:56 temperature: no ada_p: No Discriminator_loss: 0.0928615 Generator_loss: 11.6868 
+[INFO] 2020-09-17 23:35:34 > Step:   58600 Progress: 58.6% Elapsed: 3:31:13 temperature: no ada_p: No Discriminator_loss: 0.0897162 Generator_loss: 3.25678 
+[INFO] 2020-09-17 23:35:51 > Step:   58700 Progress: 58.7% Elapsed: 3:31:30 temperature: no ada_p: No Discriminator_loss: 0.0909554 Generator_loss: 8.13773 
+[INFO] 2020-09-17 23:36:08 > Step:   58800 Progress: 58.8% Elapsed: 3:31:47 temperature: no ada_p: No Discriminator_loss: 0.0739043 Generator_loss: 2.95841 
+[INFO] 2020-09-17 23:36:25 > Step:   58900 Progress: 58.9% Elapsed: 3:32:04 temperature: no ada_p: No Discriminator_loss: 0.083879 Generator_loss: 7.21533 
+[INFO] 2020-09-17 23:36:41 > Step:   59000 Progress: 59.0% Elapsed: 3:32:20 temperature: no ada_p: No Discriminator_loss: 0.132942 Generator_loss: 6.56283 
+[INFO] 2020-09-17 23:36:58 > Step:   59100 Progress: 59.1% Elapsed: 3:32:37 temperature: no ada_p: No Discriminator_loss: 0.157499 Generator_loss: 11.9841 
+[INFO] 2020-09-17 23:37:15 > Step:   59200 Progress: 59.2% Elapsed: 3:32:54 temperature: no ada_p: No Discriminator_loss: 0.147404 Generator_loss: 12.3435 
+[INFO] 2020-09-17 23:37:32 > Step:   59300 Progress: 59.3% Elapsed: 3:33:11 temperature: no ada_p: No Discriminator_loss: 0.0530261 Generator_loss: 7.65585 
+[INFO] 2020-09-17 23:37:49 > Step:   59400 Progress: 59.4% Elapsed: 3:33:28 temperature: no ada_p: No Discriminator_loss: 0.298699 Generator_loss: 9.63143 
+[INFO] 2020-09-17 23:38:06 > Step:   59500 Progress: 59.5% Elapsed: 3:33:45 temperature: no ada_p: No Discriminator_loss: 0.181547 Generator_loss: 3.44346 
+[INFO] 2020-09-17 23:38:23 > Step:   59600 Progress: 59.6% Elapsed: 3:34:02 temperature: no ada_p: No Discriminator_loss: 0.11897 Generator_loss: 5.34424 
+[INFO] 2020-09-17 23:38:40 > Step:   59700 Progress: 59.7% Elapsed: 3:34:19 temperature: no ada_p: No Discriminator_loss: 0.199612 Generator_loss: 4.28637 
+[INFO] 2020-09-17 23:38:56 > Step:   59800 Progress: 59.8% Elapsed: 3:34:35 temperature: no ada_p: No Discriminator_loss: 0.106025 Generator_loss: 6.63022 
+[INFO] 2020-09-17 23:39:13 > Step:   59900 Progress: 59.9% Elapsed: 3:34:52 temperature: no ada_p: No Discriminator_loss: 0.0766535 Generator_loss: 5.7943 
+[INFO] 2020-09-17 23:39:31 > Step:   60000 Progress: 60.0% Elapsed: 3:35:10 temperature: no ada_p: No Discriminator_loss: 0.115843 Generator_loss: 7.28647 
+[INFO] 2020-09-17 23:39:31 > Start Evaluation (60000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:41:06 > F_8 score (Step: 60000, Using test images): 0.19734927245617714
+[INFO] 2020-09-17 23:41:06 > F_1/8 score (Step: 60000, Using test images): 0.29593865583972834
+[INFO] 2020-09-17 23:41:06 > FID score (Step: 60000, Using test moments): 178.73079419931878
+[INFO] 2020-09-17 23:41:06 > Inception score (Step: 60000, 10000 generated images): 4.965110778808594
+[INFO] 2020-09-17 23:41:06 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 23:41:06 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:41:22 > Step:   60100 Progress: 60.1% Elapsed: 3:37:01 temperature: no ada_p: No Discriminator_loss: 0.0741017 Generator_loss: 4.36074 
+[INFO] 2020-09-17 23:41:39 > Step:   60200 Progress: 60.2% Elapsed: 3:37:18 temperature: no ada_p: No Discriminator_loss: 0.0646193 Generator_loss: 7.00843 
+[INFO] 2020-09-17 23:41:56 > Step:   60300 Progress: 60.3% Elapsed: 3:37:35 temperature: no ada_p: No Discriminator_loss: 0.053377 Generator_loss: 4.32494 
+[INFO] 2020-09-17 23:42:13 > Step:   60400 Progress: 60.4% Elapsed: 3:37:52 temperature: no ada_p: No Discriminator_loss: 0.0638054 Generator_loss: 4.1088 
+[INFO] 2020-09-17 23:42:30 > Step:   60500 Progress: 60.5% Elapsed: 3:38:09 temperature: no ada_p: No Discriminator_loss: 0.235795 Generator_loss: 6.1103 
+[INFO] 2020-09-17 23:42:47 > Step:   60600 Progress: 60.6% Elapsed: 3:38:26 temperature: no ada_p: No Discriminator_loss: 0.150533 Generator_loss: 9.9675 
+[INFO] 2020-09-17 23:43:04 > Step:   60700 Progress: 60.7% Elapsed: 3:38:43 temperature: no ada_p: No Discriminator_loss: 0.0615098 Generator_loss: 8.52438 
+[INFO] 2020-09-17 23:43:21 > Step:   60800 Progress: 60.8% Elapsed: 3:39:00 temperature: no ada_p: No Discriminator_loss: 0.0744803 Generator_loss: 10.6184 
+[INFO] 2020-09-17 23:43:38 > Step:   60900 Progress: 60.9% Elapsed: 3:39:17 temperature: no ada_p: No Discriminator_loss: 0.147823 Generator_loss: 2.50924 
+[INFO] 2020-09-17 23:43:55 > Step:   61000 Progress: 61.0% Elapsed: 3:39:34 temperature: no ada_p: No Discriminator_loss: 0.346294 Generator_loss: 8.42516 
+[INFO] 2020-09-17 23:44:12 > Step:   61100 Progress: 61.1% Elapsed: 3:39:51 temperature: no ada_p: No Discriminator_loss: 0.135884 Generator_loss: 4.54099 
+[INFO] 2020-09-17 23:44:28 > Step:   61200 Progress: 61.2% Elapsed: 3:40:07 temperature: no ada_p: No Discriminator_loss: 0.176517 Generator_loss: 11.5201 
+[INFO] 2020-09-17 23:44:45 > Step:   61300 Progress: 61.3% Elapsed: 3:40:24 temperature: no ada_p: No Discriminator_loss: 0.18548 Generator_loss: 6.60373 
+[INFO] 2020-09-17 23:45:02 > Step:   61400 Progress: 61.4% Elapsed: 3:40:41 temperature: no ada_p: No Discriminator_loss: 0.0818423 Generator_loss: 4.22665 
+[INFO] 2020-09-17 23:45:19 > Step:   61500 Progress: 61.5% Elapsed: 3:40:58 temperature: no ada_p: No Discriminator_loss: 0.185284 Generator_loss: 9.48005 
+[INFO] 2020-09-17 23:45:36 > Step:   61600 Progress: 61.6% Elapsed: 3:41:15 temperature: no ada_p: No Discriminator_loss: 0.0639467 Generator_loss: 4.4079 
+[INFO] 2020-09-17 23:45:53 > Step:   61700 Progress: 61.7% Elapsed: 3:41:32 temperature: no ada_p: No Discriminator_loss: 0.154146 Generator_loss: 3.04115 
+[INFO] 2020-09-17 23:46:10 > Step:   61800 Progress: 61.8% Elapsed: 3:41:49 temperature: no ada_p: No Discriminator_loss: 0.113514 Generator_loss: 5.16088 
+[INFO] 2020-09-17 23:46:27 > Step:   61900 Progress: 61.9% Elapsed: 3:42:06 temperature: no ada_p: No Discriminator_loss: 0.21918 Generator_loss: 6.4894 
+[INFO] 2020-09-17 23:46:44 > Step:   62000 Progress: 62.0% Elapsed: 3:42:22 temperature: no ada_p: No Discriminator_loss: 0.176009 Generator_loss: 2.90263 
+[INFO] 2020-09-17 23:46:44 > Start Evaluation (62000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:48:18 > F_8 score (Step: 62000, Using test images): 0.31737061951964624
+[INFO] 2020-09-17 23:48:18 > F_1/8 score (Step: 62000, Using test images): 0.29229500778196915
+[INFO] 2020-09-17 23:48:18 > FID score (Step: 62000, Using test moments): 160.83043023419782
+[INFO] 2020-09-17 23:48:18 > Inception score (Step: 62000, 10000 generated images): 4.645373344421387
+[INFO] 2020-09-17 23:48:18 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 23:48:18 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:48:35 > Step:   62100 Progress: 62.1% Elapsed: 3:44:14 temperature: no ada_p: No Discriminator_loss: 0.184375 Generator_loss: 6.04185 
+[INFO] 2020-09-17 23:48:52 > Step:   62200 Progress: 62.2% Elapsed: 3:44:31 temperature: no ada_p: No Discriminator_loss: 0.218083 Generator_loss: 5.18902 
+[INFO] 2020-09-17 23:49:09 > Step:   62300 Progress: 62.3% Elapsed: 3:44:48 temperature: no ada_p: No Discriminator_loss: 0.199933 Generator_loss: 10.7649 
+[INFO] 2020-09-17 23:49:26 > Step:   62400 Progress: 62.4% Elapsed: 3:45:05 temperature: no ada_p: No Discriminator_loss: 0.187657 Generator_loss: 10.5476 
+[INFO] 2020-09-17 23:49:43 > Step:   62500 Progress: 62.5% Elapsed: 3:45:22 temperature: no ada_p: No Discriminator_loss: 0.169401 Generator_loss: 6.73483 
+[INFO] 2020-09-17 23:49:59 > Step:   62600 Progress: 62.6% Elapsed: 3:45:38 temperature: no ada_p: No Discriminator_loss: 0.197135 Generator_loss: 5.02473 
+[INFO] 2020-09-17 23:50:16 > Step:   62700 Progress: 62.7% Elapsed: 3:45:55 temperature: no ada_p: No Discriminator_loss: 0.286653 Generator_loss: 4.9164 
+[INFO] 2020-09-17 23:50:34 > Step:   62800 Progress: 62.8% Elapsed: 3:46:12 temperature: no ada_p: No Discriminator_loss: 0.0290296 Generator_loss: 5.05382 
+[INFO] 2020-09-17 23:50:50 > Step:   62900 Progress: 62.9% Elapsed: 3:46:29 temperature: no ada_p: No Discriminator_loss: 0.195354 Generator_loss: 4.0863 
+[INFO] 2020-09-17 23:51:07 > Step:   63000 Progress: 63.0% Elapsed: 3:46:46 temperature: no ada_p: No Discriminator_loss: 0.163362 Generator_loss: 6.73991 
+[INFO] 2020-09-17 23:51:24 > Step:   63100 Progress: 63.1% Elapsed: 3:47:03 temperature: no ada_p: No Discriminator_loss: 0.0496301 Generator_loss: 3.65392 
+[INFO] 2020-09-17 23:51:41 > Step:   63200 Progress: 63.2% Elapsed: 3:47:20 temperature: no ada_p: No Discriminator_loss: 0.0565641 Generator_loss: 4.22147 
+[INFO] 2020-09-17 23:51:58 > Step:   63300 Progress: 63.3% Elapsed: 3:47:37 temperature: no ada_p: No Discriminator_loss: 0.12046 Generator_loss: 10.2173 
+[INFO] 2020-09-17 23:52:15 > Step:   63400 Progress: 63.4% Elapsed: 3:47:53 temperature: no ada_p: No Discriminator_loss: 0.198288 Generator_loss: 12.0686 
+[INFO] 2020-09-17 23:52:32 > Step:   63500 Progress: 63.5% Elapsed: 3:48:10 temperature: no ada_p: No Discriminator_loss: 0.0644593 Generator_loss: 4.84278 
+[INFO] 2020-09-17 23:52:49 > Step:   63600 Progress: 63.6% Elapsed: 3:48:28 temperature: no ada_p: No Discriminator_loss: 0.0740388 Generator_loss: 5.58435 
+[INFO] 2020-09-17 23:53:05 > Step:   63700 Progress: 63.7% Elapsed: 3:48:44 temperature: no ada_p: No Discriminator_loss: 0.230143 Generator_loss: 5.22386 
+[INFO] 2020-09-17 23:53:22 > Step:   63800 Progress: 63.8% Elapsed: 3:49:01 temperature: no ada_p: No Discriminator_loss: 0.175464 Generator_loss: 4.64627 
+[INFO] 2020-09-17 23:53:40 > Step:   63900 Progress: 63.9% Elapsed: 3:49:18 temperature: no ada_p: No Discriminator_loss: 0.0704184 Generator_loss: 3.51868 
+[INFO] 2020-09-17 23:53:56 > Step:   64000 Progress: 64.0% Elapsed: 3:49:35 temperature: no ada_p: No Discriminator_loss: 0.0484459 Generator_loss: 8.2811 
+[INFO] 2020-09-17 23:53:56 > Start Evaluation (64000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:55:31 > F_8 score (Step: 64000, Using test images): 0.2772614578731765
+[INFO] 2020-09-17 23:55:31 > F_1/8 score (Step: 64000, Using test images): 0.1806180327719455
+[INFO] 2020-09-17 23:55:31 > FID score (Step: 64000, Using test moments): 180.31914934588104
+[INFO] 2020-09-17 23:55:31 > Inception score (Step: 64000, 10000 generated images): 5.68641996383667
+[INFO] 2020-09-17 23:55:31 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-17 23:55:31 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-17 23:55:48 > Step:   64100 Progress: 64.1% Elapsed: 3:51:27 temperature: no ada_p: No Discriminator_loss: 0.136664 Generator_loss: 5.08108 
+[INFO] 2020-09-17 23:56:05 > Step:   64200 Progress: 64.2% Elapsed: 3:51:44 temperature: no ada_p: No Discriminator_loss: 0.192525 Generator_loss: 5.01804 
+[INFO] 2020-09-17 23:56:21 > Step:   64300 Progress: 64.3% Elapsed: 3:52:00 temperature: no ada_p: No Discriminator_loss: 0.0563679 Generator_loss: 5.62339 
+[INFO] 2020-09-17 23:56:38 > Step:   64400 Progress: 64.4% Elapsed: 3:52:17 temperature: no ada_p: No Discriminator_loss: 0.170664 Generator_loss: 4.09922 
+[INFO] 2020-09-17 23:56:55 > Step:   64500 Progress: 64.5% Elapsed: 3:52:34 temperature: no ada_p: No Discriminator_loss: 0.025171 Generator_loss: 5.59844 
+[INFO] 2020-09-17 23:57:12 > Step:   64600 Progress: 64.6% Elapsed: 3:52:51 temperature: no ada_p: No Discriminator_loss: 0.10485 Generator_loss: 4.03652 
+[INFO] 2020-09-17 23:57:29 > Step:   64700 Progress: 64.7% Elapsed: 3:53:08 temperature: no ada_p: No Discriminator_loss: 0.101937 Generator_loss: 7.17248 
+[INFO] 2020-09-17 23:57:46 > Step:   64800 Progress: 64.8% Elapsed: 3:53:25 temperature: no ada_p: No Discriminator_loss: 0.828186 Generator_loss: 19.0529 
+[INFO] 2020-09-17 23:58:03 > Step:   64900 Progress: 64.9% Elapsed: 3:53:42 temperature: no ada_p: No Discriminator_loss: 0.126402 Generator_loss: 3.15973 
+[INFO] 2020-09-17 23:58:20 > Step:   65000 Progress: 65.0% Elapsed: 3:53:59 temperature: no ada_p: No Discriminator_loss: 0.155677 Generator_loss: 4.49289 
+[INFO] 2020-09-17 23:58:37 > Step:   65100 Progress: 65.1% Elapsed: 3:54:16 temperature: no ada_p: No Discriminator_loss: 0.20142 Generator_loss: 5.25147 
+[INFO] 2020-09-17 23:58:54 > Step:   65200 Progress: 65.2% Elapsed: 3:54:33 temperature: no ada_p: No Discriminator_loss: 0.195972 Generator_loss: 5.48536 
+[INFO] 2020-09-17 23:59:11 > Step:   65300 Progress: 65.3% Elapsed: 3:54:50 temperature: no ada_p: No Discriminator_loss: 0.0607424 Generator_loss: 5.71236 
+[INFO] 2020-09-17 23:59:27 > Step:   65400 Progress: 65.4% Elapsed: 3:55:06 temperature: no ada_p: No Discriminator_loss: 0.069983 Generator_loss: 8.87114 
+[INFO] 2020-09-17 23:59:44 > Step:   65500 Progress: 65.5% Elapsed: 3:55:23 temperature: no ada_p: No Discriminator_loss: 0.0509078 Generator_loss: 5.56423 
+[INFO] 2020-09-18 00:00:01 > Step:   65600 Progress: 65.6% Elapsed: 3:55:40 temperature: no ada_p: No Discriminator_loss: 0.296553 Generator_loss: 6.58579 
+[INFO] 2020-09-18 00:00:18 > Step:   65700 Progress: 65.7% Elapsed: 3:55:57 temperature: no ada_p: No Discriminator_loss: 0.105415 Generator_loss: 3.73067 
+[INFO] 2020-09-18 00:00:35 > Step:   65800 Progress: 65.8% Elapsed: 3:56:14 temperature: no ada_p: No Discriminator_loss: 0.0284424 Generator_loss: 5.69962 
+[INFO] 2020-09-18 00:00:52 > Step:   65900 Progress: 65.9% Elapsed: 3:56:31 temperature: no ada_p: No Discriminator_loss: 0.130131 Generator_loss: 4.04612 
+[INFO] 2020-09-18 00:01:09 > Step:   66000 Progress: 66.0% Elapsed: 3:56:48 temperature: no ada_p: No Discriminator_loss: 0.140889 Generator_loss: 3.21941 
+[INFO] 2020-09-18 00:01:09 > Start Evaluation (66000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:02:44 > F_8 score (Step: 66000, Using test images): 0.20429559665972302
+[INFO] 2020-09-18 00:02:45 > F_1/8 score (Step: 66000, Using test images): 0.2208196778032384
+[INFO] 2020-09-18 00:02:45 > FID score (Step: 66000, Using test moments): 180.27657666904693
+[INFO] 2020-09-18 00:02:45 > Inception score (Step: 66000, 10000 generated images): 4.813711166381836
+[INFO] 2020-09-18 00:02:45 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 00:02:45 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:03:02 > Step:   66100 Progress: 66.1% Elapsed: 3:58:41 temperature: no ada_p: No Discriminator_loss: 0.0634314 Generator_loss: 4.623 
+[INFO] 2020-09-18 00:03:18 > Step:   66200 Progress: 66.2% Elapsed: 3:58:57 temperature: no ada_p: No Discriminator_loss: 0.119053 Generator_loss: 10.5373 
+[INFO] 2020-09-18 00:03:35 > Step:   66300 Progress: 66.3% Elapsed: 3:59:14 temperature: no ada_p: No Discriminator_loss: 0.0956633 Generator_loss: 7.27271 
+[INFO] 2020-09-18 00:03:52 > Step:   66400 Progress: 66.4% Elapsed: 3:59:31 temperature: no ada_p: No Discriminator_loss: 0.061874 Generator_loss: 13.2488 
+[INFO] 2020-09-18 00:04:09 > Step:   66500 Progress: 66.5% Elapsed: 3:59:48 temperature: no ada_p: No Discriminator_loss: 0.0541863 Generator_loss: 8.38404 
+[INFO] 2020-09-18 00:04:26 > Step:   66600 Progress: 66.6% Elapsed: 4:00:05 temperature: no ada_p: No Discriminator_loss: 0.096286 Generator_loss: 4.62844 
+[INFO] 2020-09-18 00:04:43 > Step:   66700 Progress: 66.7% Elapsed: 4:00:22 temperature: no ada_p: No Discriminator_loss: 0.415811 Generator_loss: 1.91722 
+[INFO] 2020-09-18 00:05:00 > Step:   66800 Progress: 66.8% Elapsed: 4:00:39 temperature: no ada_p: No Discriminator_loss: 0.126216 Generator_loss: 4.31884 
+[INFO] 2020-09-18 00:05:17 > Step:   66900 Progress: 66.9% Elapsed: 4:00:56 temperature: no ada_p: No Discriminator_loss: 0.0444541 Generator_loss: 5.12519 
+[INFO] 2020-09-18 00:05:34 > Step:   67000 Progress: 67.0% Elapsed: 4:01:13 temperature: no ada_p: No Discriminator_loss: 0.0910508 Generator_loss: 8.80728 
+[INFO] 2020-09-18 00:05:51 > Step:   67100 Progress: 67.1% Elapsed: 4:01:30 temperature: no ada_p: No Discriminator_loss: 0.204027 Generator_loss: 5.50181 
+[INFO] 2020-09-18 00:06:08 > Step:   67200 Progress: 67.2% Elapsed: 4:01:47 temperature: no ada_p: No Discriminator_loss: 0.107355 Generator_loss: 5.58305 
+[INFO] 2020-09-18 00:06:24 > Step:   67300 Progress: 67.3% Elapsed: 4:02:03 temperature: no ada_p: No Discriminator_loss: 0.176796 Generator_loss: 4.49299 
+[INFO] 2020-09-18 00:06:41 > Step:   67400 Progress: 67.4% Elapsed: 4:02:20 temperature: no ada_p: No Discriminator_loss: 0.128894 Generator_loss: 5.26051 
+[INFO] 2020-09-18 00:06:58 > Step:   67500 Progress: 67.5% Elapsed: 4:02:37 temperature: no ada_p: No Discriminator_loss: 0.808597 Generator_loss: 4.04664 
+[INFO] 2020-09-18 00:07:15 > Step:   67600 Progress: 67.6% Elapsed: 4:02:54 temperature: no ada_p: No Discriminator_loss: 0.167238 Generator_loss: 9.96376 
+[INFO] 2020-09-18 00:07:32 > Step:   67700 Progress: 67.7% Elapsed: 4:03:11 temperature: no ada_p: No Discriminator_loss: 0.28842 Generator_loss: 8.54517 
+[INFO] 2020-09-18 00:07:49 > Step:   67800 Progress: 67.8% Elapsed: 4:03:28 temperature: no ada_p: No Discriminator_loss: 0.208152 Generator_loss: 4.83748 
+[INFO] 2020-09-18 00:08:06 > Step:   67900 Progress: 67.9% Elapsed: 4:03:45 temperature: no ada_p: No Discriminator_loss: 0.0597229 Generator_loss: 4.23083 
+[INFO] 2020-09-18 00:08:23 > Step:   68000 Progress: 68.0% Elapsed: 4:04:02 temperature: no ada_p: No Discriminator_loss: 0.0787812 Generator_loss: 4.32874 
+[INFO] 2020-09-18 00:08:23 > Start Evaluation (68000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:09:58 > F_8 score (Step: 68000, Using test images): 0.29003569514115307
+[INFO] 2020-09-18 00:09:58 > F_1/8 score (Step: 68000, Using test images): 0.22913955808031428
+[INFO] 2020-09-18 00:09:58 > FID score (Step: 68000, Using test moments): 176.89087867373735
+[INFO] 2020-09-18 00:09:58 > Inception score (Step: 68000, 10000 generated images): 4.330748558044434
+[INFO] 2020-09-18 00:09:58 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 00:09:58 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:10:15 > Step:   68100 Progress: 68.1% Elapsed: 4:05:54 temperature: no ada_p: No Discriminator_loss: 0.175837 Generator_loss: 3.21323 
+[INFO] 2020-09-18 00:10:32 > Step:   68200 Progress: 68.2% Elapsed: 4:06:11 temperature: no ada_p: No Discriminator_loss: 0.174504 Generator_loss: 9.35598 
+[INFO] 2020-09-18 00:10:49 > Step:   68300 Progress: 68.3% Elapsed: 4:06:28 temperature: no ada_p: No Discriminator_loss: 0.0482794 Generator_loss: 3.94011 
+[INFO] 2020-09-18 00:11:05 > Step:   68400 Progress: 68.4% Elapsed: 4:06:44 temperature: no ada_p: No Discriminator_loss: 0.829545 Generator_loss: 13.8511 
+[INFO] 2020-09-18 00:11:23 > Step:   68500 Progress: 68.5% Elapsed: 4:07:01 temperature: no ada_p: No Discriminator_loss: 0.166406 Generator_loss: 4.2887 
+[INFO] 2020-09-18 00:11:40 > Step:   68600 Progress: 68.6% Elapsed: 4:07:18 temperature: no ada_p: No Discriminator_loss: 0.0581713 Generator_loss: 1.19136 
+[INFO] 2020-09-18 00:11:56 > Step:   68700 Progress: 68.7% Elapsed: 4:07:35 temperature: no ada_p: No Discriminator_loss: 2.81313 Generator_loss: 5.69536 
+[INFO] 2020-09-18 00:12:13 > Step:   68800 Progress: 68.8% Elapsed: 4:07:52 temperature: no ada_p: No Discriminator_loss: 0.104055 Generator_loss: 4.56576 
+[INFO] 2020-09-18 00:12:30 > Step:   68900 Progress: 68.9% Elapsed: 4:08:09 temperature: no ada_p: No Discriminator_loss: 0.172168 Generator_loss: 4.76724 
+[INFO] 2020-09-18 00:12:47 > Step:   69000 Progress: 69.0% Elapsed: 4:08:26 temperature: no ada_p: No Discriminator_loss: 0.367513 Generator_loss: 4.62262 
+[INFO] 2020-09-18 00:13:04 > Step:   69100 Progress: 69.1% Elapsed: 4:08:43 temperature: no ada_p: No Discriminator_loss: 0.0662506 Generator_loss: 5.70746 
+[INFO] 2020-09-18 00:13:21 > Step:   69200 Progress: 69.2% Elapsed: 4:09:00 temperature: no ada_p: No Discriminator_loss: 0.115984 Generator_loss: 2.4898 
+[INFO] 2020-09-18 00:13:38 > Step:   69300 Progress: 69.3% Elapsed: 4:09:17 temperature: no ada_p: No Discriminator_loss: 0.195741 Generator_loss: 13.8145 
+[INFO] 2020-09-18 00:13:55 > Step:   69400 Progress: 69.4% Elapsed: 4:09:34 temperature: no ada_p: No Discriminator_loss: 0.10988 Generator_loss: 13.8447 
+[INFO] 2020-09-18 00:14:12 > Step:   69500 Progress: 69.5% Elapsed: 4:09:50 temperature: no ada_p: No Discriminator_loss: 0.180021 Generator_loss: 11.2952 
+[INFO] 2020-09-18 00:14:29 > Step:   69600 Progress: 69.6% Elapsed: 4:10:08 temperature: no ada_p: No Discriminator_loss: 0.109948 Generator_loss: 6.76894 
+[INFO] 2020-09-18 00:14:46 > Step:   69700 Progress: 69.7% Elapsed: 4:10:25 temperature: no ada_p: No Discriminator_loss: 0.0533622 Generator_loss: 3.64321 
+[INFO] 2020-09-18 00:15:02 > Step:   69800 Progress: 69.8% Elapsed: 4:10:41 temperature: no ada_p: No Discriminator_loss: 0.0333607 Generator_loss: 4.90357 
+[INFO] 2020-09-18 00:15:19 > Step:   69900 Progress: 69.9% Elapsed: 4:10:58 temperature: no ada_p: No Discriminator_loss: 0.111654 Generator_loss: 2.47814 
+[INFO] 2020-09-18 00:15:36 > Step:   70000 Progress: 70.0% Elapsed: 4:11:15 temperature: no ada_p: No Discriminator_loss: 0.174894 Generator_loss: 6.71369 
+[INFO] 2020-09-18 00:15:36 > Start Evaluation (70000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:17:13 > F_8 score (Step: 70000, Using test images): 0.1863827855509478
+[INFO] 2020-09-18 00:17:13 > F_1/8 score (Step: 70000, Using test images): 0.22753912413072067
+[INFO] 2020-09-18 00:17:13 > FID score (Step: 70000, Using test moments): 175.7678366252864
+[INFO] 2020-09-18 00:17:13 > Inception score (Step: 70000, 10000 generated images): 4.206413269042969
+[INFO] 2020-09-18 00:17:13 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 00:17:13 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:17:29 > Step:   70100 Progress: 70.1% Elapsed: 4:13:08 temperature: no ada_p: No Discriminator_loss: 0.104393 Generator_loss: 3.59405 
+[INFO] 2020-09-18 00:17:46 > Step:   70200 Progress: 70.2% Elapsed: 4:13:25 temperature: no ada_p: No Discriminator_loss: 0.145723 Generator_loss: 7.49464 
+[INFO] 2020-09-18 00:18:03 > Step:   70300 Progress: 70.3% Elapsed: 4:13:42 temperature: no ada_p: No Discriminator_loss: 0.173553 Generator_loss: 3.79212 
+[INFO] 2020-09-18 00:18:20 > Step:   70400 Progress: 70.4% Elapsed: 4:13:59 temperature: no ada_p: No Discriminator_loss: 0.0897541 Generator_loss: 4.87569 
+[INFO] 2020-09-18 00:18:37 > Step:   70500 Progress: 70.5% Elapsed: 4:14:16 temperature: no ada_p: No Discriminator_loss: 0.0754445 Generator_loss: 11.2111 
+[INFO] 2020-09-18 00:18:53 > Step:   70600 Progress: 70.6% Elapsed: 4:14:32 temperature: no ada_p: No Discriminator_loss: 0.126755 Generator_loss: 3.54694 
+[INFO] 2020-09-18 00:19:11 > Step:   70700 Progress: 70.7% Elapsed: 4:14:50 temperature: no ada_p: No Discriminator_loss: 0.0358467 Generator_loss: 11.0428 
+[INFO] 2020-09-18 00:19:28 > Step:   70800 Progress: 70.8% Elapsed: 4:15:07 temperature: no ada_p: No Discriminator_loss: 0.205878 Generator_loss: 4.19987 
+[INFO] 2020-09-18 00:19:44 > Step:   70900 Progress: 70.9% Elapsed: 4:15:23 temperature: no ada_p: No Discriminator_loss: 0.016993 Generator_loss: 4.93417 
+[INFO] 2020-09-18 00:20:01 > Step:   71000 Progress: 71.0% Elapsed: 4:15:40 temperature: no ada_p: No Discriminator_loss: 0.117303 Generator_loss: 6.02851 
+[INFO] 2020-09-18 00:20:18 > Step:   71100 Progress: 71.1% Elapsed: 4:15:57 temperature: no ada_p: No Discriminator_loss: 0.102644 Generator_loss: 6.59407 
+[INFO] 2020-09-18 00:20:35 > Step:   71200 Progress: 71.2% Elapsed: 4:16:14 temperature: no ada_p: No Discriminator_loss: 0.0864196 Generator_loss: 6.38112 
+[INFO] 2020-09-18 00:20:52 > Step:   71300 Progress: 71.3% Elapsed: 4:16:31 temperature: no ada_p: No Discriminator_loss: 0.0994453 Generator_loss: 4.72124 
+[INFO] 2020-09-18 00:21:09 > Step:   71400 Progress: 71.4% Elapsed: 4:16:48 temperature: no ada_p: No Discriminator_loss: 0.269822 Generator_loss: 4.33367 
+[INFO] 2020-09-18 00:21:26 > Step:   71500 Progress: 71.5% Elapsed: 4:17:05 temperature: no ada_p: No Discriminator_loss: 0.0692532 Generator_loss: 9.15034 
+[INFO] 2020-09-18 00:21:43 > Step:   71600 Progress: 71.6% Elapsed: 4:17:22 temperature: no ada_p: No Discriminator_loss: 0.157895 Generator_loss: 3.89801 
+[INFO] 2020-09-18 00:22:00 > Step:   71700 Progress: 71.7% Elapsed: 4:17:39 temperature: no ada_p: No Discriminator_loss: 0.118428 Generator_loss: 3.22696 
+[INFO] 2020-09-18 00:22:17 > Step:   71800 Progress: 71.8% Elapsed: 4:17:56 temperature: no ada_p: No Discriminator_loss: 0.0886876 Generator_loss: 9.11537 
+[INFO] 2020-09-18 00:22:34 > Step:   71900 Progress: 71.9% Elapsed: 4:18:13 temperature: no ada_p: No Discriminator_loss: 0.12318 Generator_loss: 5.98324 
+[INFO] 2020-09-18 00:22:50 > Step:   72000 Progress: 72.0% Elapsed: 4:18:29 temperature: no ada_p: No Discriminator_loss: 0.244039 Generator_loss: 5.86404 
+[INFO] 2020-09-18 00:22:50 > Start Evaluation (72000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:24:25 > F_8 score (Step: 72000, Using test images): 0.2604275224516323
+[INFO] 2020-09-18 00:24:25 > F_1/8 score (Step: 72000, Using test images): 0.1839923199598654
+[INFO] 2020-09-18 00:24:25 > FID score (Step: 72000, Using test moments): 191.73846971295958
+[INFO] 2020-09-18 00:24:25 > Inception score (Step: 72000, 10000 generated images): 4.525892734527588
+[INFO] 2020-09-18 00:24:25 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 00:24:25 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:24:42 > Step:   72100 Progress: 72.1% Elapsed: 4:20:21 temperature: no ada_p: No Discriminator_loss: 0.200105 Generator_loss: 2.76571 
+[INFO] 2020-09-18 00:24:59 > Step:   72200 Progress: 72.2% Elapsed: 4:20:38 temperature: no ada_p: No Discriminator_loss: 0.0265591 Generator_loss: 7.48773 
+[INFO] 2020-09-18 00:25:16 > Step:   72300 Progress: 72.3% Elapsed: 4:20:55 temperature: no ada_p: No Discriminator_loss: 0.0262975 Generator_loss: 7.28383 
+[INFO] 2020-09-18 00:25:33 > Step:   72400 Progress: 72.4% Elapsed: 4:21:12 temperature: no ada_p: No Discriminator_loss: 0.0689159 Generator_loss: 2.5346 
+[INFO] 2020-09-18 00:25:50 > Step:   72500 Progress: 72.5% Elapsed: 4:21:29 temperature: no ada_p: No Discriminator_loss: 0.247864 Generator_loss: 7.89769 
+[INFO] 2020-09-18 00:26:07 > Step:   72600 Progress: 72.6% Elapsed: 4:21:46 temperature: no ada_p: No Discriminator_loss: 0.249782 Generator_loss: 5.78246 
+[INFO] 2020-09-18 00:26:24 > Step:   72700 Progress: 72.7% Elapsed: 4:22:03 temperature: no ada_p: No Discriminator_loss: 0.030433 Generator_loss: 3.28982 
+[INFO] 2020-09-18 00:26:41 > Step:   72800 Progress: 72.8% Elapsed: 4:22:20 temperature: no ada_p: No Discriminator_loss: 0.111052 Generator_loss: 2.55089 
+[INFO] 2020-09-18 00:26:58 > Step:   72900 Progress: 72.9% Elapsed: 4:22:36 temperature: no ada_p: No Discriminator_loss: 0.219891 Generator_loss: 5.705 
+[INFO] 2020-09-18 00:27:15 > Step:   73000 Progress: 73.0% Elapsed: 4:22:54 temperature: no ada_p: No Discriminator_loss: 0.0661759 Generator_loss: 4.65242 
+[INFO] 2020-09-18 00:27:31 > Step:   73100 Progress: 73.1% Elapsed: 4:23:10 temperature: no ada_p: No Discriminator_loss: 0.167729 Generator_loss: 6.51807 
+[INFO] 2020-09-18 00:27:48 > Step:   73200 Progress: 73.2% Elapsed: 4:23:27 temperature: no ada_p: No Discriminator_loss: 0.115419 Generator_loss: 3.41415 
+[INFO] 2020-09-18 00:28:05 > Step:   73300 Progress: 73.3% Elapsed: 4:23:44 temperature: no ada_p: No Discriminator_loss: 0.0782839 Generator_loss: 5.49021 
+[INFO] 2020-09-18 00:28:22 > Step:   73400 Progress: 73.4% Elapsed: 4:24:01 temperature: no ada_p: No Discriminator_loss: 0.285091 Generator_loss: 6.88399 
+[INFO] 2020-09-18 00:28:39 > Step:   73500 Progress: 73.5% Elapsed: 4:24:18 temperature: no ada_p: No Discriminator_loss: 0.0804734 Generator_loss: 5.02813 
+[INFO] 2020-09-18 00:28:56 > Step:   73600 Progress: 73.6% Elapsed: 4:24:35 temperature: no ada_p: No Discriminator_loss: 0.127204 Generator_loss: 9.56279 
+[INFO] 2020-09-18 00:29:13 > Step:   73700 Progress: 73.7% Elapsed: 4:24:52 temperature: no ada_p: No Discriminator_loss: 0.163718 Generator_loss: 5.47213 
+[INFO] 2020-09-18 00:29:30 > Step:   73800 Progress: 73.8% Elapsed: 4:25:09 temperature: no ada_p: No Discriminator_loss: 0.878575 Generator_loss: 4.96068 
+[INFO] 2020-09-18 00:29:47 > Step:   73900 Progress: 73.9% Elapsed: 4:25:26 temperature: no ada_p: No Discriminator_loss: 0.455098 Generator_loss: 2.0163 
+[INFO] 2020-09-18 00:30:04 > Step:   74000 Progress: 74.0% Elapsed: 4:25:43 temperature: no ada_p: No Discriminator_loss: 0.0696478 Generator_loss: 3.47908 
+[INFO] 2020-09-18 00:30:04 > Start Evaluation (74000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:31:40 > F_8 score (Step: 74000, Using test images): 0.13993286935246602
+[INFO] 2020-09-18 00:31:40 > F_1/8 score (Step: 74000, Using test images): 0.17832487765084973
+[INFO] 2020-09-18 00:31:40 > FID score (Step: 74000, Using test moments): 178.956739946479
+[INFO] 2020-09-18 00:31:40 > Inception score (Step: 74000, 10000 generated images): 4.79351282119751
+[INFO] 2020-09-18 00:31:40 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 00:31:41 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:31:57 > Step:   74100 Progress: 74.1% Elapsed: 4:27:36 temperature: no ada_p: No Discriminator_loss: 0.0788356 Generator_loss: 4.94389 
+[INFO] 2020-09-18 00:32:15 > Step:   74200 Progress: 74.2% Elapsed: 4:27:53 temperature: no ada_p: No Discriminator_loss: 0.0873075 Generator_loss: 4.27051 
+[INFO] 2020-09-18 00:32:31 > Step:   74300 Progress: 74.3% Elapsed: 4:28:10 temperature: no ada_p: No Discriminator_loss: 0.147741 Generator_loss: 4.97778 
+[INFO] 2020-09-18 00:32:48 > Step:   74400 Progress: 74.4% Elapsed: 4:28:27 temperature: no ada_p: No Discriminator_loss: 0.0823162 Generator_loss: 5.20835 
+[INFO] 2020-09-18 00:33:05 > Step:   74500 Progress: 74.5% Elapsed: 4:28:44 temperature: no ada_p: No Discriminator_loss: 0.145211 Generator_loss: 7.00379 
+[INFO] 2020-09-18 00:33:22 > Step:   74600 Progress: 74.6% Elapsed: 4:29:01 temperature: no ada_p: No Discriminator_loss: 0.120841 Generator_loss: 5.69398 
+[INFO] 2020-09-18 00:33:39 > Step:   74700 Progress: 74.7% Elapsed: 4:29:18 temperature: no ada_p: No Discriminator_loss: 0.110123 Generator_loss: 1.19429 
+[INFO] 2020-09-18 00:33:56 > Step:   74800 Progress: 74.8% Elapsed: 4:29:35 temperature: no ada_p: No Discriminator_loss: 0.182599 Generator_loss: 6.75824 
+[INFO] 2020-09-18 00:34:13 > Step:   74900 Progress: 74.9% Elapsed: 4:29:52 temperature: no ada_p: No Discriminator_loss: 0.100923 Generator_loss: 4.4856 
+[INFO] 2020-09-18 00:34:30 > Step:   75000 Progress: 75.0% Elapsed: 4:30:09 temperature: no ada_p: No Discriminator_loss: 0.327054 Generator_loss: 10.8154 
+[INFO] 2020-09-18 00:34:47 > Step:   75100 Progress: 75.1% Elapsed: 4:30:26 temperature: no ada_p: No Discriminator_loss: 0.146835 Generator_loss: 4.68706 
+[INFO] 2020-09-18 00:35:04 > Step:   75200 Progress: 75.2% Elapsed: 4:30:43 temperature: no ada_p: No Discriminator_loss: 0.111952 Generator_loss: 3.87645 
+[INFO] 2020-09-18 00:35:21 > Step:   75300 Progress: 75.3% Elapsed: 4:31:00 temperature: no ada_p: No Discriminator_loss: 0.188699 Generator_loss: 7.60011 
+[INFO] 2020-09-18 00:35:37 > Step:   75400 Progress: 75.4% Elapsed: 4:31:16 temperature: no ada_p: No Discriminator_loss: 0.156543 Generator_loss: 2.5299 
+[INFO] 2020-09-18 00:35:54 > Step:   75500 Progress: 75.5% Elapsed: 4:31:33 temperature: no ada_p: No Discriminator_loss: 0.147815 Generator_loss: 4.50875 
+[INFO] 2020-09-18 00:36:11 > Step:   75600 Progress: 75.6% Elapsed: 4:31:50 temperature: no ada_p: No Discriminator_loss: 0.0369031 Generator_loss: 12.2621 
+[INFO] 2020-09-18 00:36:28 > Step:   75700 Progress: 75.7% Elapsed: 4:32:07 temperature: no ada_p: No Discriminator_loss: 0.116246 Generator_loss: 7.87112 
+[INFO] 2020-09-18 00:36:45 > Step:   75800 Progress: 75.8% Elapsed: 4:32:24 temperature: no ada_p: No Discriminator_loss: 0.772368 Generator_loss: 3.38363 
+[INFO] 2020-09-18 00:37:02 > Step:   75900 Progress: 75.9% Elapsed: 4:32:41 temperature: no ada_p: No Discriminator_loss: 0.20478 Generator_loss: 3.79645 
+[INFO] 2020-09-18 00:37:19 > Step:   76000 Progress: 76.0% Elapsed: 4:32:58 temperature: no ada_p: No Discriminator_loss: 0.954686 Generator_loss: 6.43854 
+[INFO] 2020-09-18 00:37:19 > Start Evaluation (76000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:38:53 > F_8 score (Step: 76000, Using test images): 0.25831941561480487
+[INFO] 2020-09-18 00:38:53 > F_1/8 score (Step: 76000, Using test images): 0.21537643374509088
+[INFO] 2020-09-18 00:38:53 > FID score (Step: 76000, Using test moments): 186.18294625028946
+[INFO] 2020-09-18 00:38:53 > Inception score (Step: 76000, 10000 generated images): 4.293277740478516
+[INFO] 2020-09-18 00:38:53 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 00:38:53 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:39:10 > Step:   76100 Progress: 76.1% Elapsed: 4:34:49 temperature: no ada_p: No Discriminator_loss: 0.0815099 Generator_loss: 6.71383 
+[INFO] 2020-09-18 00:39:27 > Step:   76200 Progress: 76.2% Elapsed: 4:35:06 temperature: no ada_p: No Discriminator_loss: 0.162747 Generator_loss: 4.43382 
+[INFO] 2020-09-18 00:39:44 > Step:   76300 Progress: 76.3% Elapsed: 4:35:23 temperature: no ada_p: No Discriminator_loss: 0.151254 Generator_loss: 3.10196 
+[INFO] 2020-09-18 00:40:01 > Step:   76400 Progress: 76.4% Elapsed: 4:35:40 temperature: no ada_p: No Discriminator_loss: 0.198943 Generator_loss: 7.35929 
+[INFO] 2020-09-18 00:40:18 > Step:   76500 Progress: 76.5% Elapsed: 4:35:57 temperature: no ada_p: No Discriminator_loss: 0.0794074 Generator_loss: 2.66452 
+[INFO] 2020-09-18 00:40:35 > Step:   76600 Progress: 76.6% Elapsed: 4:36:14 temperature: no ada_p: No Discriminator_loss: 0.0805199 Generator_loss: 6.76215 
+[INFO] 2020-09-18 00:40:52 > Step:   76700 Progress: 76.7% Elapsed: 4:36:31 temperature: no ada_p: No Discriminator_loss: 0.363434 Generator_loss: 7.29647 
+[INFO] 2020-09-18 00:41:09 > Step:   76800 Progress: 76.8% Elapsed: 4:36:48 temperature: no ada_p: No Discriminator_loss: 0.150384 Generator_loss: 3.55173 
+[INFO] 2020-09-18 00:41:26 > Step:   76900 Progress: 76.9% Elapsed: 4:37:05 temperature: no ada_p: No Discriminator_loss: 0.0808242 Generator_loss: 3.95376 
+[INFO] 2020-09-18 00:41:43 > Step:   77000 Progress: 77.0% Elapsed: 4:37:21 temperature: no ada_p: No Discriminator_loss: 0.0853654 Generator_loss: 3.38357 
+[INFO] 2020-09-18 00:42:00 > Step:   77100 Progress: 77.1% Elapsed: 4:37:39 temperature: no ada_p: No Discriminator_loss: 0.185436 Generator_loss: 3.64392 
+[INFO] 2020-09-18 00:42:17 > Step:   77200 Progress: 77.2% Elapsed: 4:37:56 temperature: no ada_p: No Discriminator_loss: 0.207937 Generator_loss: 3.87595 
+[INFO] 2020-09-18 00:42:33 > Step:   77300 Progress: 77.3% Elapsed: 4:38:12 temperature: no ada_p: No Discriminator_loss: 3.99009 Generator_loss: 7.83182 
+[INFO] 2020-09-18 00:42:50 > Step:   77400 Progress: 77.4% Elapsed: 4:38:29 temperature: no ada_p: No Discriminator_loss: 0.212061 Generator_loss: 7.66934 
+[INFO] 2020-09-18 00:43:08 > Step:   77500 Progress: 77.5% Elapsed: 4:38:46 temperature: no ada_p: No Discriminator_loss: 0.131842 Generator_loss: 5.34303 
+[INFO] 2020-09-18 00:43:24 > Step:   77600 Progress: 77.6% Elapsed: 4:39:03 temperature: no ada_p: No Discriminator_loss: 0.268544 Generator_loss: 13.1509 
+[INFO] 2020-09-18 00:43:41 > Step:   77700 Progress: 77.7% Elapsed: 4:39:20 temperature: no ada_p: No Discriminator_loss: 0.179081 Generator_loss: 6.70519 
+[INFO] 2020-09-18 00:43:58 > Step:   77800 Progress: 77.8% Elapsed: 4:39:37 temperature: no ada_p: No Discriminator_loss: 0.138209 Generator_loss: 11.4224 
+[INFO] 2020-09-18 00:44:15 > Step:   77900 Progress: 77.9% Elapsed: 4:39:54 temperature: no ada_p: No Discriminator_loss: 0.15577 Generator_loss: 6.48351 
+[INFO] 2020-09-18 00:44:32 > Step:   78000 Progress: 78.0% Elapsed: 4:40:11 temperature: no ada_p: No Discriminator_loss: 0.382702 Generator_loss: 6.39573 
+[INFO] 2020-09-18 00:44:32 > Start Evaluation (78000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:46:07 > F_8 score (Step: 78000, Using test images): 0.21509051419294986
+[INFO] 2020-09-18 00:46:07 > F_1/8 score (Step: 78000, Using test images): 0.220456027935531
+[INFO] 2020-09-18 00:46:07 > FID score (Step: 78000, Using test moments): 187.1564456768874
+[INFO] 2020-09-18 00:46:07 > Inception score (Step: 78000, 10000 generated images): 4.312960624694824
+[INFO] 2020-09-18 00:46:07 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 00:46:07 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:46:24 > Step:   78100 Progress: 78.1% Elapsed: 4:42:03 temperature: no ada_p: No Discriminator_loss: 0.105604 Generator_loss: 2.87095 
+[INFO] 2020-09-18 00:46:41 > Step:   78200 Progress: 78.2% Elapsed: 4:42:20 temperature: no ada_p: No Discriminator_loss: 0.125284 Generator_loss: 4.24775 
+[INFO] 2020-09-18 00:46:58 > Step:   78300 Progress: 78.3% Elapsed: 4:42:37 temperature: no ada_p: No Discriminator_loss: 0.098217 Generator_loss: 5.15513 
+[INFO] 2020-09-18 00:47:15 > Step:   78400 Progress: 78.4% Elapsed: 4:42:54 temperature: no ada_p: No Discriminator_loss: 0.142597 Generator_loss: 5.26819 
+[INFO] 2020-09-18 00:47:32 > Step:   78500 Progress: 78.5% Elapsed: 4:43:11 temperature: no ada_p: No Discriminator_loss: 0.184071 Generator_loss: 4.87804 
+[INFO] 2020-09-18 00:47:49 > Step:   78600 Progress: 78.6% Elapsed: 4:43:28 temperature: no ada_p: No Discriminator_loss: 0.0129881 Generator_loss: 4.85447 
+[INFO] 2020-09-18 00:48:05 > Step:   78700 Progress: 78.7% Elapsed: 4:43:44 temperature: no ada_p: No Discriminator_loss: 0.100354 Generator_loss: 5.37405 
+[INFO] 2020-09-18 00:48:22 > Step:   78800 Progress: 78.8% Elapsed: 4:44:01 temperature: no ada_p: No Discriminator_loss: 0.202859 Generator_loss: 5.71904 
+[INFO] 2020-09-18 00:48:39 > Step:   78900 Progress: 78.9% Elapsed: 4:44:18 temperature: no ada_p: No Discriminator_loss: 0.100319 Generator_loss: 5.06655 
+[INFO] 2020-09-18 00:48:56 > Step:   79000 Progress: 79.0% Elapsed: 4:44:35 temperature: no ada_p: No Discriminator_loss: 0.0868854 Generator_loss: 4.82119 
+[INFO] 2020-09-18 00:49:13 > Step:   79100 Progress: 79.1% Elapsed: 4:44:52 temperature: no ada_p: No Discriminator_loss: 0.0369349 Generator_loss: 6.33564 
+[INFO] 2020-09-18 00:49:30 > Step:   79200 Progress: 79.2% Elapsed: 4:45:09 temperature: no ada_p: No Discriminator_loss: 0.430736 Generator_loss: 10.4145 
+[INFO] 2020-09-18 00:49:47 > Step:   79300 Progress: 79.3% Elapsed: 4:45:26 temperature: no ada_p: No Discriminator_loss: 0.135162 Generator_loss: 3.46385 
+[INFO] 2020-09-18 00:50:04 > Step:   79400 Progress: 79.4% Elapsed: 4:45:43 temperature: no ada_p: No Discriminator_loss: 0.236957 Generator_loss: 1.83717 
+[INFO] 2020-09-18 00:50:21 > Step:   79500 Progress: 79.5% Elapsed: 4:46:00 temperature: no ada_p: No Discriminator_loss: 0.318565 Generator_loss: 3.76251 
+[INFO] 2020-09-18 00:50:38 > Step:   79600 Progress: 79.6% Elapsed: 4:46:17 temperature: no ada_p: No Discriminator_loss: 0.152168 Generator_loss: 6.4267 
+[INFO] 2020-09-18 00:50:55 > Step:   79700 Progress: 79.7% Elapsed: 4:46:34 temperature: no ada_p: No Discriminator_loss: 0.0570906 Generator_loss: 5.9543 
+[INFO] 2020-09-18 00:51:11 > Step:   79800 Progress: 79.8% Elapsed: 4:46:50 temperature: no ada_p: No Discriminator_loss: 0.139113 Generator_loss: 3.01575 
+[INFO] 2020-09-18 00:51:28 > Step:   79900 Progress: 79.9% Elapsed: 4:47:07 temperature: no ada_p: No Discriminator_loss: 0.10946 Generator_loss: 12.6172 
+[INFO] 2020-09-18 00:51:45 > Step:   80000 Progress: 80.0% Elapsed: 4:47:24 temperature: no ada_p: No Discriminator_loss: 0.188509 Generator_loss: 5.50459 
+[INFO] 2020-09-18 00:51:45 > Start Evaluation (80000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:53:22 > F_8 score (Step: 80000, Using test images): 0.24391451707091735
+[INFO] 2020-09-18 00:53:22 > F_1/8 score (Step: 80000, Using test images): 0.19575467014633682
+[INFO] 2020-09-18 00:53:22 > FID score (Step: 80000, Using test moments): 186.15162820392356
+[INFO] 2020-09-18 00:53:22 > Inception score (Step: 80000, 10000 generated images): 3.8876116275787354
+[INFO] 2020-09-18 00:53:22 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 00:53:22 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 00:53:39 > Step:   80100 Progress: 80.1% Elapsed: 4:49:18 temperature: no ada_p: No Discriminator_loss: 0.145322 Generator_loss: 5.37894 
+[INFO] 2020-09-18 00:53:56 > Step:   80200 Progress: 80.2% Elapsed: 4:49:35 temperature: no ada_p: No Discriminator_loss: 0.0729613 Generator_loss: 3.87008 
+[INFO] 2020-09-18 00:54:13 > Step:   80300 Progress: 80.3% Elapsed: 4:49:52 temperature: no ada_p: No Discriminator_loss: 0.0938341 Generator_loss: 7.97969 
+[INFO] 2020-09-18 00:54:30 > Step:   80400 Progress: 80.4% Elapsed: 4:50:09 temperature: no ada_p: No Discriminator_loss: 0.146385 Generator_loss: 5.43586 
+[INFO] 2020-09-18 00:54:47 > Step:   80500 Progress: 80.5% Elapsed: 4:50:26 temperature: no ada_p: No Discriminator_loss: 0.130965 Generator_loss: 9.9072 
+[INFO] 2020-09-18 00:55:04 > Step:   80600 Progress: 80.6% Elapsed: 4:50:43 temperature: no ada_p: No Discriminator_loss: 0.0202829 Generator_loss: 5.60218 
+[INFO] 2020-09-18 00:55:20 > Step:   80700 Progress: 80.7% Elapsed: 4:50:59 temperature: no ada_p: No Discriminator_loss: 0.163681 Generator_loss: 4.55679 
+[INFO] 2020-09-18 00:55:37 > Step:   80800 Progress: 80.8% Elapsed: 4:51:16 temperature: no ada_p: No Discriminator_loss: 0.0157312 Generator_loss: 4.33966 
+[INFO] 2020-09-18 00:55:54 > Step:   80900 Progress: 80.9% Elapsed: 4:51:33 temperature: no ada_p: No Discriminator_loss: 0.576764 Generator_loss: 5.47106 
+[INFO] 2020-09-18 00:56:11 > Step:   81000 Progress: 81.0% Elapsed: 4:51:50 temperature: no ada_p: No Discriminator_loss: 0.0447444 Generator_loss: 9.45025 
+[INFO] 2020-09-18 00:56:28 > Step:   81100 Progress: 81.1% Elapsed: 4:52:07 temperature: no ada_p: No Discriminator_loss: 0.164399 Generator_loss: 9.74054 
+[INFO] 2020-09-18 00:56:45 > Step:   81200 Progress: 81.2% Elapsed: 4:52:24 temperature: no ada_p: No Discriminator_loss: 0.325034 Generator_loss: 5.19765 
+[INFO] 2020-09-18 00:57:02 > Step:   81300 Progress: 81.3% Elapsed: 4:52:41 temperature: no ada_p: No Discriminator_loss: 0.0366502 Generator_loss: 9.01486 
+[INFO] 2020-09-18 00:57:19 > Step:   81400 Progress: 81.4% Elapsed: 4:52:58 temperature: no ada_p: No Discriminator_loss: 0.189918 Generator_loss: 3.64197 
+[INFO] 2020-09-18 00:57:36 > Step:   81500 Progress: 81.5% Elapsed: 4:53:15 temperature: no ada_p: No Discriminator_loss: 0.144376 Generator_loss: 5.45979 
+[INFO] 2020-09-18 00:57:53 > Step:   81600 Progress: 81.6% Elapsed: 4:53:32 temperature: no ada_p: No Discriminator_loss: 0.0935049 Generator_loss: 5.2213 
+[INFO] 2020-09-18 00:58:10 > Step:   81700 Progress: 81.7% Elapsed: 4:53:49 temperature: no ada_p: No Discriminator_loss: 0.0547621 Generator_loss: 3.40338 
+[INFO] 2020-09-18 00:58:27 > Step:   81800 Progress: 81.8% Elapsed: 4:54:05 temperature: no ada_p: No Discriminator_loss: 0.184576 Generator_loss: 5.3878 
+[INFO] 2020-09-18 00:58:44 > Step:   81900 Progress: 81.9% Elapsed: 4:54:23 temperature: no ada_p: No Discriminator_loss: 0.191189 Generator_loss: 6.81744 
+[INFO] 2020-09-18 00:59:00 > Step:   82000 Progress: 82.0% Elapsed: 4:54:39 temperature: no ada_p: No Discriminator_loss: 0.173129 Generator_loss: 7.33959 
+[INFO] 2020-09-18 00:59:00 > Start Evaluation (82000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:00:34 > F_8 score (Step: 82000, Using test images): 0.24500535672854643
+[INFO] 2020-09-18 01:00:34 > F_1/8 score (Step: 82000, Using test images): 0.13773784159370964
+[INFO] 2020-09-18 01:00:34 > FID score (Step: 82000, Using test moments): 196.48952271477228
+[INFO] 2020-09-18 01:00:34 > Inception score (Step: 82000, 10000 generated images): 4.9307637214660645
+[INFO] 2020-09-18 01:00:34 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:00:35 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:00:51 > Step:   82100 Progress: 82.1% Elapsed: 4:56:30 temperature: no ada_p: No Discriminator_loss: 1.13324 Generator_loss: 7.96645 
+[INFO] 2020-09-18 01:01:09 > Step:   82200 Progress: 82.2% Elapsed: 4:56:47 temperature: no ada_p: No Discriminator_loss: 0.239352 Generator_loss: 9.01201 
+[INFO] 2020-09-18 01:01:25 > Step:   82300 Progress: 82.3% Elapsed: 4:57:04 temperature: no ada_p: No Discriminator_loss: 0.0867629 Generator_loss: 5.46128 
+[INFO] 2020-09-18 01:01:42 > Step:   82400 Progress: 82.4% Elapsed: 4:57:21 temperature: no ada_p: No Discriminator_loss: 0.0540078 Generator_loss: 11.8228 
+[INFO] 2020-09-18 01:01:59 > Step:   82500 Progress: 82.5% Elapsed: 4:57:38 temperature: no ada_p: No Discriminator_loss: 0.22543 Generator_loss: 3.43216 
+[INFO] 2020-09-18 01:02:16 > Step:   82600 Progress: 82.6% Elapsed: 4:57:55 temperature: no ada_p: No Discriminator_loss: 0.276554 Generator_loss: 7.12856 
+[INFO] 2020-09-18 01:02:33 > Step:   82700 Progress: 82.7% Elapsed: 4:58:12 temperature: no ada_p: No Discriminator_loss: 0.190374 Generator_loss: 6.2286 
+[INFO] 2020-09-18 01:02:50 > Step:   82800 Progress: 82.8% Elapsed: 4:58:29 temperature: no ada_p: No Discriminator_loss: 0.239859 Generator_loss: 11.1731 
+[INFO] 2020-09-18 01:03:06 > Step:   82900 Progress: 82.9% Elapsed: 4:58:45 temperature: no ada_p: No Discriminator_loss: 0.265094 Generator_loss: 4.00572 
+[INFO] 2020-09-18 01:03:24 > Step:   83000 Progress: 83.0% Elapsed: 4:59:02 temperature: no ada_p: No Discriminator_loss: 0.132198 Generator_loss: 8.57221 
+[INFO] 2020-09-18 01:03:41 > Step:   83100 Progress: 83.1% Elapsed: 4:59:20 temperature: no ada_p: No Discriminator_loss: 0.120291 Generator_loss: 5.92931 
+[INFO] 2020-09-18 01:03:57 > Step:   83200 Progress: 83.2% Elapsed: 4:59:36 temperature: no ada_p: No Discriminator_loss: 0.180548 Generator_loss: 7.12501 
+[INFO] 2020-09-18 01:04:14 > Step:   83300 Progress: 83.3% Elapsed: 4:59:53 temperature: no ada_p: No Discriminator_loss: 0.665999 Generator_loss: 4.59458 
+[INFO] 2020-09-18 01:04:31 > Step:   83400 Progress: 83.4% Elapsed: 5:00:10 temperature: no ada_p: No Discriminator_loss: 0.469092 Generator_loss: 3.78726 
+[INFO] 2020-09-18 01:04:48 > Step:   83500 Progress: 83.5% Elapsed: 5:00:27 temperature: no ada_p: No Discriminator_loss: 0.136655 Generator_loss: 4.07984 
+[INFO] 2020-09-18 01:05:05 > Step:   83600 Progress: 83.6% Elapsed: 5:00:44 temperature: no ada_p: No Discriminator_loss: 0.0821682 Generator_loss: 5.73496 
+[INFO] 2020-09-18 01:05:22 > Step:   83700 Progress: 83.7% Elapsed: 5:01:01 temperature: no ada_p: No Discriminator_loss: 0.137354 Generator_loss: 4.7879 
+[INFO] 2020-09-18 01:05:39 > Step:   83800 Progress: 83.8% Elapsed: 5:01:18 temperature: no ada_p: No Discriminator_loss: 0.413864 Generator_loss: 4.49229 
+[INFO] 2020-09-18 01:05:56 > Step:   83900 Progress: 83.9% Elapsed: 5:01:35 temperature: no ada_p: No Discriminator_loss: 0.0570658 Generator_loss: 6.5861 
+[INFO] 2020-09-18 01:06:13 > Step:   84000 Progress: 84.0% Elapsed: 5:01:52 temperature: no ada_p: No Discriminator_loss: 0.244873 Generator_loss: 6.78281 
+[INFO] 2020-09-18 01:06:13 > Start Evaluation (84000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:07:47 > F_8 score (Step: 84000, Using test images): 0.31029826375525793
+[INFO] 2020-09-18 01:07:47 > F_1/8 score (Step: 84000, Using test images): 0.3014024417449158
+[INFO] 2020-09-18 01:07:47 > FID score (Step: 84000, Using test moments): 171.73156596955812
+[INFO] 2020-09-18 01:07:47 > Inception score (Step: 84000, 10000 generated images): 4.6426005363464355
+[INFO] 2020-09-18 01:07:47 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:07:47 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:08:04 > Step:   84100 Progress: 84.1% Elapsed: 5:03:43 temperature: no ada_p: No Discriminator_loss: 0.0285733 Generator_loss: 6.5377 
+[INFO] 2020-09-18 01:08:21 > Step:   84200 Progress: 84.2% Elapsed: 5:04:00 temperature: no ada_p: No Discriminator_loss: 0.0665998 Generator_loss: 4.39335 
+[INFO] 2020-09-18 01:08:38 > Step:   84300 Progress: 84.3% Elapsed: 5:04:17 temperature: no ada_p: No Discriminator_loss: 0.093727 Generator_loss: 6.49324 
+[INFO] 2020-09-18 01:08:55 > Step:   84400 Progress: 84.4% Elapsed: 5:04:34 temperature: no ada_p: No Discriminator_loss: 0.232079 Generator_loss: 4.72887 
+[INFO] 2020-09-18 01:09:12 > Step:   84500 Progress: 84.5% Elapsed: 5:04:51 temperature: no ada_p: No Discriminator_loss: 0.230544 Generator_loss: 3.25248 
+[INFO] 2020-09-18 01:09:29 > Step:   84600 Progress: 84.6% Elapsed: 5:05:08 temperature: no ada_p: No Discriminator_loss: 0.0418648 Generator_loss: 5.59807 
+[INFO] 2020-09-18 01:09:46 > Step:   84700 Progress: 84.7% Elapsed: 5:05:25 temperature: no ada_p: No Discriminator_loss: 0.0472102 Generator_loss: 7.16176 
+[INFO] 2020-09-18 01:10:02 > Step:   84800 Progress: 84.8% Elapsed: 5:05:41 temperature: no ada_p: No Discriminator_loss: 0.118907 Generator_loss: 6.93165 
+[INFO] 2020-09-18 01:10:19 > Step:   84900 Progress: 84.9% Elapsed: 5:05:58 temperature: no ada_p: No Discriminator_loss: 0.0278704 Generator_loss: 5.23611 
+[INFO] 2020-09-18 01:10:36 > Step:   85000 Progress: 85.0% Elapsed: 5:06:15 temperature: no ada_p: No Discriminator_loss: 0.525923 Generator_loss: 7.58621 
+[INFO] 2020-09-18 01:10:53 > Step:   85100 Progress: 85.1% Elapsed: 5:06:32 temperature: no ada_p: No Discriminator_loss: 0.171562 Generator_loss: 4.66111 
+[INFO] 2020-09-18 01:11:10 > Step:   85200 Progress: 85.2% Elapsed: 5:06:49 temperature: no ada_p: No Discriminator_loss: 0.0387211 Generator_loss: 2.67557 
+[INFO] 2020-09-18 01:11:27 > Step:   85300 Progress: 85.3% Elapsed: 5:07:06 temperature: no ada_p: No Discriminator_loss: 0.190832 Generator_loss: 5.93745 
+[INFO] 2020-09-18 01:11:44 > Step:   85400 Progress: 85.4% Elapsed: 5:07:23 temperature: no ada_p: No Discriminator_loss: 0.0625531 Generator_loss: 8.63409 
+[INFO] 2020-09-18 01:12:01 > Step:   85500 Progress: 85.5% Elapsed: 5:07:40 temperature: no ada_p: No Discriminator_loss: 0.218792 Generator_loss: 3.44059 
+[INFO] 2020-09-18 01:12:18 > Step:   85600 Progress: 85.6% Elapsed: 5:07:57 temperature: no ada_p: No Discriminator_loss: 0.134315 Generator_loss: 2.33612 
+[INFO] 2020-09-18 01:12:35 > Step:   85700 Progress: 85.7% Elapsed: 5:08:14 temperature: no ada_p: No Discriminator_loss: 0.130792 Generator_loss: 3.11154 
+[INFO] 2020-09-18 01:12:52 > Step:   85800 Progress: 85.8% Elapsed: 5:08:31 temperature: no ada_p: No Discriminator_loss: 0.398777 Generator_loss: 4.33483 
+[INFO] 2020-09-18 01:13:09 > Step:   85900 Progress: 85.9% Elapsed: 5:08:47 temperature: no ada_p: No Discriminator_loss: 0.106943 Generator_loss: 3.98611 
+[INFO] 2020-09-18 01:13:26 > Step:   86000 Progress: 86.0% Elapsed: 5:09:04 temperature: no ada_p: No Discriminator_loss: 0.0591003 Generator_loss: 3.23744 
+[INFO] 2020-09-18 01:13:26 > Start Evaluation (86000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:15:00 > F_8 score (Step: 86000, Using test images): 0.3459920799702702
+[INFO] 2020-09-18 01:15:00 > F_1/8 score (Step: 86000, Using test images): 0.37363058908729113
+[INFO] 2020-09-18 01:15:00 > FID score (Step: 86000, Using test moments): 150.92698283971802
+[INFO] 2020-09-18 01:15:00 > Inception score (Step: 86000, 10000 generated images): 4.240286827087402
+[INFO] 2020-09-18 01:15:00 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:15:00 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:15:17 > Step:   86100 Progress: 86.1% Elapsed: 5:10:56 temperature: no ada_p: No Discriminator_loss: 0.508936 Generator_loss: 3.46015 
+[INFO] 2020-09-18 01:15:33 > Step:   86200 Progress: 86.2% Elapsed: 5:11:12 temperature: no ada_p: No Discriminator_loss: 0.0787668 Generator_loss: 4.46227 
+[INFO] 2020-09-18 01:15:50 > Step:   86300 Progress: 86.3% Elapsed: 5:11:29 temperature: no ada_p: No Discriminator_loss: 0.224423 Generator_loss: 12.6184 
+[INFO] 2020-09-18 01:16:07 > Step:   86400 Progress: 86.4% Elapsed: 5:11:46 temperature: no ada_p: No Discriminator_loss: 0.111562 Generator_loss: 9.25412 
+[INFO] 2020-09-18 01:16:24 > Step:   86500 Progress: 86.5% Elapsed: 5:12:03 temperature: no ada_p: No Discriminator_loss: 0.192913 Generator_loss: 6.18009 
+[INFO] 2020-09-18 01:16:41 > Step:   86600 Progress: 86.6% Elapsed: 5:12:20 temperature: no ada_p: No Discriminator_loss: 0.40798 Generator_loss: 2.70561 
+[INFO] 2020-09-18 01:16:58 > Step:   86700 Progress: 86.7% Elapsed: 5:12:37 temperature: no ada_p: No Discriminator_loss: 0.221459 Generator_loss: 6.45602 
+[INFO] 2020-09-18 01:17:15 > Step:   86800 Progress: 86.8% Elapsed: 5:12:54 temperature: no ada_p: No Discriminator_loss: 0.204294 Generator_loss: 6.22431 
+[INFO] 2020-09-18 01:17:32 > Step:   86900 Progress: 86.9% Elapsed: 5:13:11 temperature: no ada_p: No Discriminator_loss: 0.121976 Generator_loss: 3.28411 
+[INFO] 2020-09-18 01:17:49 > Step:   87000 Progress: 87.0% Elapsed: 5:13:28 temperature: no ada_p: No Discriminator_loss: 0.0766468 Generator_loss: 14.6358 
+[INFO] 2020-09-18 01:18:06 > Step:   87100 Progress: 87.1% Elapsed: 5:13:45 temperature: no ada_p: No Discriminator_loss: 0.320594 Generator_loss: 3.19012 
+[INFO] 2020-09-18 01:18:23 > Step:   87200 Progress: 87.2% Elapsed: 5:14:02 temperature: no ada_p: No Discriminator_loss: 0.0749764 Generator_loss: 4.78805 
+[INFO] 2020-09-18 01:18:40 > Step:   87300 Progress: 87.3% Elapsed: 5:14:19 temperature: no ada_p: No Discriminator_loss: 0.1466 Generator_loss: 4.69684 
+[INFO] 2020-09-18 01:18:57 > Step:   87400 Progress: 87.4% Elapsed: 5:14:36 temperature: no ada_p: No Discriminator_loss: 0.215407 Generator_loss: 9.13301 
+[INFO] 2020-09-18 01:19:14 > Step:   87500 Progress: 87.5% Elapsed: 5:14:53 temperature: no ada_p: No Discriminator_loss: 0.166876 Generator_loss: 4.42877 
+[INFO] 2020-09-18 01:19:30 > Step:   87600 Progress: 87.6% Elapsed: 5:15:09 temperature: no ada_p: No Discriminator_loss: 0.0544233 Generator_loss: 3.80448 
+[INFO] 2020-09-18 01:19:47 > Step:   87700 Progress: 87.7% Elapsed: 5:15:26 temperature: no ada_p: No Discriminator_loss: 0.160099 Generator_loss: 6.67629 
+[INFO] 2020-09-18 01:20:04 > Step:   87800 Progress: 87.8% Elapsed: 5:15:43 temperature: no ada_p: No Discriminator_loss: 0.0991031 Generator_loss: 4.68111 
+[INFO] 2020-09-18 01:20:21 > Step:   87900 Progress: 87.9% Elapsed: 5:16:00 temperature: no ada_p: No Discriminator_loss: 0.0713377 Generator_loss: 4.01702 
+[INFO] 2020-09-18 01:20:38 > Step:   88000 Progress: 88.0% Elapsed: 5:16:17 temperature: no ada_p: No Discriminator_loss: 0.0760347 Generator_loss: 6.67866 
+[INFO] 2020-09-18 01:20:38 > Start Evaluation (88000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:22:12 > F_8 score (Step: 88000, Using test images): 0.4141908164990935
+[INFO] 2020-09-18 01:22:12 > F_1/8 score (Step: 88000, Using test images): 0.3202980547418064
+[INFO] 2020-09-18 01:22:12 > FID score (Step: 88000, Using test moments): 154.4058815308028
+[INFO] 2020-09-18 01:22:12 > Inception score (Step: 88000, 10000 generated images): 4.7562360763549805
+[INFO] 2020-09-18 01:22:12 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:22:12 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:22:29 > Step:   88100 Progress: 88.1% Elapsed: 5:18:08 temperature: no ada_p: No Discriminator_loss: 0.226467 Generator_loss: 4.29328 
+[INFO] 2020-09-18 01:22:45 > Step:   88200 Progress: 88.2% Elapsed: 5:18:24 temperature: no ada_p: No Discriminator_loss: 0.204018 Generator_loss: 4.09708 
+[INFO] 2020-09-18 01:23:02 > Step:   88300 Progress: 88.3% Elapsed: 5:18:41 temperature: no ada_p: No Discriminator_loss: 0.0382142 Generator_loss: 4.47142 
+[INFO] 2020-09-18 01:23:19 > Step:   88400 Progress: 88.4% Elapsed: 5:18:58 temperature: no ada_p: No Discriminator_loss: 0.0265422 Generator_loss: 3.41113 
+[INFO] 2020-09-18 01:23:36 > Step:   88500 Progress: 88.5% Elapsed: 5:19:15 temperature: no ada_p: No Discriminator_loss: 0.308338 Generator_loss: 6.04325 
+[INFO] 2020-09-18 01:23:53 > Step:   88600 Progress: 88.6% Elapsed: 5:19:32 temperature: no ada_p: No Discriminator_loss: 0.0779998 Generator_loss: 5.44671 
+[INFO] 2020-09-18 01:24:10 > Step:   88700 Progress: 88.7% Elapsed: 5:19:49 temperature: no ada_p: No Discriminator_loss: 0.0768132 Generator_loss: 6.28595 
+[INFO] 2020-09-18 01:24:27 > Step:   88800 Progress: 88.8% Elapsed: 5:20:06 temperature: no ada_p: No Discriminator_loss: 0.170321 Generator_loss: 7.51027 
+[INFO] 2020-09-18 01:24:44 > Step:   88900 Progress: 88.9% Elapsed: 5:20:23 temperature: no ada_p: No Discriminator_loss: 0.145982 Generator_loss: 7.48826 
+[INFO] 2020-09-18 01:25:00 > Step:   89000 Progress: 89.0% Elapsed: 5:20:39 temperature: no ada_p: No Discriminator_loss: 0.178508 Generator_loss: 6.49518 
+[INFO] 2020-09-18 01:25:17 > Step:   89100 Progress: 89.1% Elapsed: 5:20:56 temperature: no ada_p: No Discriminator_loss: 0.082808 Generator_loss: 8.03203 
+[INFO] 2020-09-18 01:25:35 > Step:   89200 Progress: 89.2% Elapsed: 5:21:14 temperature: no ada_p: No Discriminator_loss: 0.132606 Generator_loss: 9.68118 
+[INFO] 2020-09-18 01:25:51 > Step:   89300 Progress: 89.3% Elapsed: 5:21:30 temperature: no ada_p: No Discriminator_loss: 0.156618 Generator_loss: 6.72422 
+[INFO] 2020-09-18 01:26:08 > Step:   89400 Progress: 89.4% Elapsed: 5:21:47 temperature: no ada_p: No Discriminator_loss: 0.260489 Generator_loss: 3.51483 
+[INFO] 2020-09-18 01:26:25 > Step:   89500 Progress: 89.5% Elapsed: 5:22:04 temperature: no ada_p: No Discriminator_loss: 0.161975 Generator_loss: 9.77772 
+[INFO] 2020-09-18 01:26:42 > Step:   89600 Progress: 89.6% Elapsed: 5:22:21 temperature: no ada_p: No Discriminator_loss: 0.285537 Generator_loss: 10.0868 
+[INFO] 2020-09-18 01:26:59 > Step:   89700 Progress: 89.7% Elapsed: 5:22:38 temperature: no ada_p: No Discriminator_loss: 0.316031 Generator_loss: 6.31114 
+[INFO] 2020-09-18 01:27:16 > Step:   89800 Progress: 89.8% Elapsed: 5:22:55 temperature: no ada_p: No Discriminator_loss: 0.0355149 Generator_loss: 11.5601 
+[INFO] 2020-09-18 01:27:33 > Step:   89900 Progress: 89.9% Elapsed: 5:23:12 temperature: no ada_p: No Discriminator_loss: 0.322104 Generator_loss: 2.87202 
+[INFO] 2020-09-18 01:27:50 > Step:   90000 Progress: 90.0% Elapsed: 5:23:29 temperature: no ada_p: No Discriminator_loss: 0.0903996 Generator_loss: 3.58773 
+[INFO] 2020-09-18 01:27:50 > Start Evaluation (90000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:29:24 > F_8 score (Step: 90000, Using test images): 0.2947735145882606
+[INFO] 2020-09-18 01:29:24 > F_1/8 score (Step: 90000, Using test images): 0.2800054477740697
+[INFO] 2020-09-18 01:29:24 > FID score (Step: 90000, Using test moments): 160.31089605430236
+[INFO] 2020-09-18 01:29:24 > Inception score (Step: 90000, 10000 generated images): 4.349726676940918
+[INFO] 2020-09-18 01:29:24 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:29:25 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:29:41 > Step:   90100 Progress: 90.1% Elapsed: 5:25:20 temperature: no ada_p: No Discriminator_loss: 0.0617137 Generator_loss: 5.20447 
+[INFO] 2020-09-18 01:29:58 > Step:   90200 Progress: 90.2% Elapsed: 5:25:37 temperature: no ada_p: No Discriminator_loss: 0.357417 Generator_loss: 7.54712 
+[INFO] 2020-09-18 01:30:15 > Step:   90300 Progress: 90.3% Elapsed: 5:25:54 temperature: no ada_p: No Discriminator_loss: 0.0454812 Generator_loss: 3.86157 
+[INFO] 2020-09-18 01:30:32 > Step:   90400 Progress: 90.4% Elapsed: 5:26:11 temperature: no ada_p: No Discriminator_loss: 0.104445 Generator_loss: 3.91939 
+[INFO] 2020-09-18 01:30:49 > Step:   90500 Progress: 90.5% Elapsed: 5:26:28 temperature: no ada_p: No Discriminator_loss: 0.235177 Generator_loss: 5.67172 
+[INFO] 2020-09-18 01:31:06 > Step:   90600 Progress: 90.6% Elapsed: 5:26:45 temperature: no ada_p: No Discriminator_loss: 0.0549937 Generator_loss: 2.52056 
+[INFO] 2020-09-18 01:31:23 > Step:   90700 Progress: 90.7% Elapsed: 5:27:02 temperature: no ada_p: No Discriminator_loss: 1.21903 Generator_loss: 5.10983 
+[INFO] 2020-09-18 01:31:40 > Step:   90800 Progress: 90.8% Elapsed: 5:27:19 temperature: no ada_p: No Discriminator_loss: 0.0899533 Generator_loss: 4.1626 
+[INFO] 2020-09-18 01:31:56 > Step:   90900 Progress: 90.9% Elapsed: 5:27:35 temperature: no ada_p: No Discriminator_loss: 0.185377 Generator_loss: 4.41252 
+[INFO] 2020-09-18 01:32:13 > Step:   91000 Progress: 91.0% Elapsed: 5:27:52 temperature: no ada_p: No Discriminator_loss: 0.044018 Generator_loss: 4.08573 
+[INFO] 2020-09-18 01:32:31 > Step:   91100 Progress: 91.1% Elapsed: 5:28:09 temperature: no ada_p: No Discriminator_loss: 0.169982 Generator_loss: 3.92356 
+[INFO] 2020-09-18 01:32:47 > Step:   91200 Progress: 91.2% Elapsed: 5:28:26 temperature: no ada_p: No Discriminator_loss: 0.0773114 Generator_loss: 4.53728 
+[INFO] 2020-09-18 01:33:04 > Step:   91300 Progress: 91.3% Elapsed: 5:28:43 temperature: no ada_p: No Discriminator_loss: 0.137929 Generator_loss: 2.96288 
+[INFO] 2020-09-18 01:33:21 > Step:   91400 Progress: 91.4% Elapsed: 5:29:00 temperature: no ada_p: No Discriminator_loss: 0.286781 Generator_loss: 14.8646 
+[INFO] 2020-09-18 01:33:38 > Step:   91500 Progress: 91.5% Elapsed: 5:29:17 temperature: no ada_p: No Discriminator_loss: 0.122207 Generator_loss: 3.91594 
+[INFO] 2020-09-18 01:33:55 > Step:   91600 Progress: 91.6% Elapsed: 5:29:34 temperature: no ada_p: No Discriminator_loss: 0.132188 Generator_loss: 9.43409 
+[INFO] 2020-09-18 01:34:12 > Step:   91700 Progress: 91.7% Elapsed: 5:29:51 temperature: no ada_p: No Discriminator_loss: 0.177318 Generator_loss: 5.58438 
+[INFO] 2020-09-18 01:34:29 > Step:   91800 Progress: 91.8% Elapsed: 5:30:08 temperature: no ada_p: No Discriminator_loss: 0.0831401 Generator_loss: 4.26938 
+[INFO] 2020-09-18 01:34:46 > Step:   91900 Progress: 91.9% Elapsed: 5:30:25 temperature: no ada_p: No Discriminator_loss: 0.159772 Generator_loss: 4.92684 
+[INFO] 2020-09-18 01:35:02 > Step:   92000 Progress: 92.0% Elapsed: 5:30:41 temperature: no ada_p: No Discriminator_loss: 0.0561226 Generator_loss: 10.9391 
+[INFO] 2020-09-18 01:35:02 > Start Evaluation (92000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:36:37 > F_8 score (Step: 92000, Using test images): 0.39165507711237885
+[INFO] 2020-09-18 01:36:37 > F_1/8 score (Step: 92000, Using test images): 0.2976262224836732
+[INFO] 2020-09-18 01:36:37 > FID score (Step: 92000, Using test moments): 169.55682137087996
+[INFO] 2020-09-18 01:36:37 > Inception score (Step: 92000, 10000 generated images): 5.091668605804443
+[INFO] 2020-09-18 01:36:37 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:36:37 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:36:54 > Step:   92100 Progress: 92.1% Elapsed: 5:32:33 temperature: no ada_p: No Discriminator_loss: 0.0721783 Generator_loss: 5.25993 
+[INFO] 2020-09-18 01:37:11 > Step:   92200 Progress: 92.2% Elapsed: 5:32:50 temperature: no ada_p: No Discriminator_loss: 0.431095 Generator_loss: 10.1999 
+[INFO] 2020-09-18 01:37:28 > Step:   92300 Progress: 92.3% Elapsed: 5:33:07 temperature: no ada_p: No Discriminator_loss: 0.0792495 Generator_loss: 4.513 
+[INFO] 2020-09-18 01:37:45 > Step:   92400 Progress: 92.4% Elapsed: 5:33:24 temperature: no ada_p: No Discriminator_loss: 0.227406 Generator_loss: 9.25605 
+[INFO] 2020-09-18 01:38:02 > Step:   92500 Progress: 92.5% Elapsed: 5:33:41 temperature: no ada_p: No Discriminator_loss: 0.0226379 Generator_loss: 7.61372 
+[INFO] 2020-09-18 01:38:19 > Step:   92600 Progress: 92.6% Elapsed: 5:33:58 temperature: no ada_p: No Discriminator_loss: 0.140929 Generator_loss: 3.07472 
+[INFO] 2020-09-18 01:38:36 > Step:   92700 Progress: 92.7% Elapsed: 5:34:15 temperature: no ada_p: No Discriminator_loss: 0.198985 Generator_loss: 3.41975 
+[INFO] 2020-09-18 01:38:53 > Step:   92800 Progress: 92.8% Elapsed: 5:34:32 temperature: no ada_p: No Discriminator_loss: 0.054822 Generator_loss: 2.3358 
+[INFO] 2020-09-18 01:39:09 > Step:   92900 Progress: 92.9% Elapsed: 5:34:48 temperature: no ada_p: No Discriminator_loss: 0.0715841 Generator_loss: 4.87289 
+[INFO] 2020-09-18 01:39:26 > Step:   93000 Progress: 93.0% Elapsed: 5:35:05 temperature: no ada_p: No Discriminator_loss: 0.0111275 Generator_loss: 5.72222 
+[INFO] 2020-09-18 01:39:43 > Step:   93100 Progress: 93.1% Elapsed: 5:35:22 temperature: no ada_p: No Discriminator_loss: 0.0690957 Generator_loss: 4.10214 
+[INFO] 2020-09-18 01:40:00 > Step:   93200 Progress: 93.2% Elapsed: 5:35:39 temperature: no ada_p: No Discriminator_loss: 0.310627 Generator_loss: 8.23563 
+[INFO] 2020-09-18 01:40:17 > Step:   93300 Progress: 93.3% Elapsed: 5:35:56 temperature: no ada_p: No Discriminator_loss: 0.187852 Generator_loss: 6.33499 
+[INFO] 2020-09-18 01:40:34 > Step:   93400 Progress: 93.4% Elapsed: 5:36:13 temperature: no ada_p: No Discriminator_loss: 0.0654981 Generator_loss: 2.88539 
+[INFO] 2020-09-18 01:40:51 > Step:   93500 Progress: 93.5% Elapsed: 5:36:30 temperature: no ada_p: No Discriminator_loss: 0.0210654 Generator_loss: 6.33879 
+[INFO] 2020-09-18 01:41:08 > Step:   93600 Progress: 93.6% Elapsed: 5:36:47 temperature: no ada_p: No Discriminator_loss: 0.0958219 Generator_loss: 3.36848 
+[INFO] 2020-09-18 01:41:25 > Step:   93700 Progress: 93.7% Elapsed: 5:37:04 temperature: no ada_p: No Discriminator_loss: 0.125853 Generator_loss: 6.41065 
+[INFO] 2020-09-18 01:41:42 > Step:   93800 Progress: 93.8% Elapsed: 5:37:21 temperature: no ada_p: No Discriminator_loss: 0.0631095 Generator_loss: 4.33638 
+[INFO] 2020-09-18 01:41:59 > Step:   93900 Progress: 93.9% Elapsed: 5:37:38 temperature: no ada_p: No Discriminator_loss: 0.0738277 Generator_loss: 12.9711 
+[INFO] 2020-09-18 01:42:16 > Step:   94000 Progress: 94.0% Elapsed: 5:37:55 temperature: no ada_p: No Discriminator_loss: 0.180815 Generator_loss: 14.7048 
+[INFO] 2020-09-18 01:42:16 > Start Evaluation (94000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:43:50 > F_8 score (Step: 94000, Using test images): 0.4042262255862273
+[INFO] 2020-09-18 01:43:50 > F_1/8 score (Step: 94000, Using test images): 0.26773924346051103
+[INFO] 2020-09-18 01:43:50 > FID score (Step: 94000, Using test moments): 161.05493318252525
+[INFO] 2020-09-18 01:43:50 > Inception score (Step: 94000, 10000 generated images): 4.472825050354004
+[INFO] 2020-09-18 01:43:50 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:43:50 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:44:07 > Step:   94100 Progress: 94.1% Elapsed: 5:39:46 temperature: no ada_p: No Discriminator_loss: 0.0801678 Generator_loss: 3.42381 
+[INFO] 2020-09-18 01:44:24 > Step:   94200 Progress: 94.2% Elapsed: 5:40:03 temperature: no ada_p: No Discriminator_loss: 0.167672 Generator_loss: 2.01007 
+[INFO] 2020-09-18 01:44:41 > Step:   94300 Progress: 94.3% Elapsed: 5:40:20 temperature: no ada_p: No Discriminator_loss: 0.22042 Generator_loss: 8.95146 
+[INFO] 2020-09-18 01:44:58 > Step:   94400 Progress: 94.4% Elapsed: 5:40:37 temperature: no ada_p: No Discriminator_loss: 0.275121 Generator_loss: 5.55493 
+[INFO] 2020-09-18 01:45:15 > Step:   94500 Progress: 94.5% Elapsed: 5:40:54 temperature: no ada_p: No Discriminator_loss: 0.0877831 Generator_loss: 7.08714 
+[INFO] 2020-09-18 01:45:32 > Step:   94600 Progress: 94.6% Elapsed: 5:41:11 temperature: no ada_p: No Discriminator_loss: 0.142351 Generator_loss: 6.10532 
+[INFO] 2020-09-18 01:45:49 > Step:   94700 Progress: 94.7% Elapsed: 5:41:28 temperature: no ada_p: No Discriminator_loss: 0.0551207 Generator_loss: 5.36562 
+[INFO] 2020-09-18 01:46:05 > Step:   94800 Progress: 94.8% Elapsed: 5:41:44 temperature: no ada_p: No Discriminator_loss: 0.408034 Generator_loss: 19.7832 
+[INFO] 2020-09-18 01:46:23 > Step:   94900 Progress: 94.9% Elapsed: 5:42:02 temperature: no ada_p: No Discriminator_loss: 0.0740134 Generator_loss: 9.30335 
+[INFO] 2020-09-18 01:46:40 > Step:   95000 Progress: 95.0% Elapsed: 5:42:19 temperature: no ada_p: No Discriminator_loss: 0.0844306 Generator_loss: 4.6106 
+[INFO] 2020-09-18 01:46:56 > Step:   95100 Progress: 95.1% Elapsed: 5:42:35 temperature: no ada_p: No Discriminator_loss: 0.153927 Generator_loss: 8.17292 
+[INFO] 2020-09-18 01:47:14 > Step:   95200 Progress: 95.2% Elapsed: 5:42:52 temperature: no ada_p: No Discriminator_loss: 0.167144 Generator_loss: 3.75656 
+[INFO] 2020-09-18 01:47:30 > Step:   95300 Progress: 95.3% Elapsed: 5:43:09 temperature: no ada_p: No Discriminator_loss: 0.0131012 Generator_loss: 5.50552 
+[INFO] 2020-09-18 01:47:47 > Step:   95400 Progress: 95.4% Elapsed: 5:43:26 temperature: no ada_p: No Discriminator_loss: 0.179884 Generator_loss: 5.36916 
+[INFO] 2020-09-18 01:48:04 > Step:   95500 Progress: 95.5% Elapsed: 5:43:43 temperature: no ada_p: No Discriminator_loss: 0.0917542 Generator_loss: 11.1821 
+[INFO] 2020-09-18 01:48:21 > Step:   95600 Progress: 95.6% Elapsed: 5:44:00 temperature: no ada_p: No Discriminator_loss: 0.0715151 Generator_loss: 5.43575 
+[INFO] 2020-09-18 01:48:38 > Step:   95700 Progress: 95.7% Elapsed: 5:44:17 temperature: no ada_p: No Discriminator_loss: 0.0794541 Generator_loss: 5.99468 
+[INFO] 2020-09-18 01:48:55 > Step:   95800 Progress: 95.8% Elapsed: 5:44:34 temperature: no ada_p: No Discriminator_loss: 0.143095 Generator_loss: 8.0828 
+[INFO] 2020-09-18 01:49:12 > Step:   95900 Progress: 95.9% Elapsed: 5:44:50 temperature: no ada_p: No Discriminator_loss: 0.118818 Generator_loss: 3.26247 
+[INFO] 2020-09-18 01:49:29 > Step:   96000 Progress: 96.0% Elapsed: 5:45:08 temperature: no ada_p: No Discriminator_loss: 0.0884476 Generator_loss: 4.16949 
+[INFO] 2020-09-18 01:49:29 > Start Evaluation (96000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:51:04 > F_8 score (Step: 96000, Using test images): 0.16165165380262927
+[INFO] 2020-09-18 01:51:04 > F_1/8 score (Step: 96000, Using test images): 0.19545755576387996
+[INFO] 2020-09-18 01:51:04 > FID score (Step: 96000, Using test moments): 187.37725129666097
+[INFO] 2020-09-18 01:51:04 > Inception score (Step: 96000, 10000 generated images): 4.04903507232666
+[INFO] 2020-09-18 01:51:04 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:51:04 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:51:21 > Step:   96100 Progress: 96.1% Elapsed: 5:47:00 temperature: no ada_p: No Discriminator_loss: 0.250135 Generator_loss: 13.815 
+[INFO] 2020-09-18 01:51:38 > Step:   96200 Progress: 96.2% Elapsed: 5:47:17 temperature: no ada_p: No Discriminator_loss: 0.149745 Generator_loss: 5.82267 
+[INFO] 2020-09-18 01:51:55 > Step:   96300 Progress: 96.3% Elapsed: 5:47:34 temperature: no ada_p: No Discriminator_loss: 0.36169 Generator_loss: 7.82985 
+[INFO] 2020-09-18 01:52:12 > Step:   96400 Progress: 96.4% Elapsed: 5:47:51 temperature: no ada_p: No Discriminator_loss: 0.130619 Generator_loss: 3.22837 
+[INFO] 2020-09-18 01:52:28 > Step:   96500 Progress: 96.5% Elapsed: 5:48:07 temperature: no ada_p: No Discriminator_loss: 0.0404342 Generator_loss: 8.66483 
+[INFO] 2020-09-18 01:52:45 > Step:   96600 Progress: 96.6% Elapsed: 5:48:24 temperature: no ada_p: No Discriminator_loss: 0.0790031 Generator_loss: 4.30015 
+[INFO] 2020-09-18 01:53:03 > Step:   96700 Progress: 96.7% Elapsed: 5:48:42 temperature: no ada_p: No Discriminator_loss: 0.0575453 Generator_loss: 4.76937 
+[INFO] 2020-09-18 01:53:19 > Step:   96800 Progress: 96.8% Elapsed: 5:48:58 temperature: no ada_p: No Discriminator_loss: 0.0759068 Generator_loss: 6.99298 
+[INFO] 2020-09-18 01:53:36 > Step:   96900 Progress: 96.9% Elapsed: 5:49:15 temperature: no ada_p: No Discriminator_loss: 0.0669539 Generator_loss: 6.8135 
+[INFO] 2020-09-18 01:53:53 > Step:   97000 Progress: 97.0% Elapsed: 5:49:32 temperature: no ada_p: No Discriminator_loss: 0.282809 Generator_loss: 8.04184 
+[INFO] 2020-09-18 01:54:10 > Step:   97100 Progress: 97.1% Elapsed: 5:49:49 temperature: no ada_p: No Discriminator_loss: 0.285804 Generator_loss: 7.49303 
+[INFO] 2020-09-18 01:54:27 > Step:   97200 Progress: 97.2% Elapsed: 5:50:06 temperature: no ada_p: No Discriminator_loss: 0.0218233 Generator_loss: 8.39259 
+[INFO] 2020-09-18 01:54:44 > Step:   97300 Progress: 97.3% Elapsed: 5:50:23 temperature: no ada_p: No Discriminator_loss: 0.0899938 Generator_loss: 22.57 
+[INFO] 2020-09-18 01:55:01 > Step:   97400 Progress: 97.4% Elapsed: 5:50:40 temperature: no ada_p: No Discriminator_loss: 0.128574 Generator_loss: 6.85779 
+[INFO] 2020-09-18 01:55:18 > Step:   97500 Progress: 97.5% Elapsed: 5:50:57 temperature: no ada_p: No Discriminator_loss: 0.0603756 Generator_loss: 11.7289 
+[INFO] 2020-09-18 01:55:34 > Step:   97600 Progress: 97.6% Elapsed: 5:51:13 temperature: no ada_p: No Discriminator_loss: 0.147244 Generator_loss: 7.85631 
+[INFO] 2020-09-18 01:55:51 > Step:   97700 Progress: 97.7% Elapsed: 5:51:30 temperature: no ada_p: No Discriminator_loss: 0.0970102 Generator_loss: 11.3587 
+[INFO] 2020-09-18 01:56:08 > Step:   97800 Progress: 97.8% Elapsed: 5:51:47 temperature: no ada_p: No Discriminator_loss: 0.0271691 Generator_loss: 3.56119 
+[INFO] 2020-09-18 01:56:25 > Step:   97900 Progress: 97.9% Elapsed: 5:52:04 temperature: no ada_p: No Discriminator_loss: 0.0836897 Generator_loss: 11.0865 
+[INFO] 2020-09-18 01:56:42 > Step:   98000 Progress: 98.0% Elapsed: 5:52:21 temperature: no ada_p: No Discriminator_loss: 0.055456 Generator_loss: 3.73007 
+[INFO] 2020-09-18 01:56:42 > Start Evaluation (98000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:58:16 > F_8 score (Step: 98000, Using test images): 0.17437932854724497
+[INFO] 2020-09-18 01:58:16 > F_1/8 score (Step: 98000, Using test images): 0.1756774553394032
+[INFO] 2020-09-18 01:58:16 > FID score (Step: 98000, Using test moments): 196.48416389940496
+[INFO] 2020-09-18 01:58:16 > Inception score (Step: 98000, 10000 generated images): 4.1177239418029785
+[INFO] 2020-09-18 01:58:16 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 01:58:16 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 01:58:33 > Step:   98100 Progress: 98.1% Elapsed: 5:54:12 temperature: no ada_p: No Discriminator_loss: 0.150739 Generator_loss: 6.70225 
+[INFO] 2020-09-18 01:58:50 > Step:   98200 Progress: 98.2% Elapsed: 5:54:29 temperature: no ada_p: No Discriminator_loss: 0.242485 Generator_loss: 5.35137 
+[INFO] 2020-09-18 01:59:07 > Step:   98300 Progress: 98.3% Elapsed: 5:54:46 temperature: no ada_p: No Discriminator_loss: 0.0428204 Generator_loss: 9.40941 
+[INFO] 2020-09-18 01:59:24 > Step:   98400 Progress: 98.4% Elapsed: 5:55:03 temperature: no ada_p: No Discriminator_loss: 0.077539 Generator_loss: 5.13456 
+[INFO] 2020-09-18 01:59:41 > Step:   98500 Progress: 98.5% Elapsed: 5:55:20 temperature: no ada_p: No Discriminator_loss: 0.0660256 Generator_loss: 2.58135 
+[INFO] 2020-09-18 01:59:58 > Step:   98600 Progress: 98.6% Elapsed: 5:55:37 temperature: no ada_p: No Discriminator_loss: 0.0621169 Generator_loss: 4.46276 
+[INFO] 2020-09-18 02:00:15 > Step:   98700 Progress: 98.7% Elapsed: 5:55:54 temperature: no ada_p: No Discriminator_loss: 0.0801469 Generator_loss: 8.26468 
+[INFO] 2020-09-18 02:00:32 > Step:   98800 Progress: 98.8% Elapsed: 5:56:11 temperature: no ada_p: No Discriminator_loss: 0.128305 Generator_loss: 13.8604 
+[INFO] 2020-09-18 02:00:49 > Step:   98900 Progress: 98.9% Elapsed: 5:56:28 temperature: no ada_p: No Discriminator_loss: 0.0582035 Generator_loss: 4.27702 
+[INFO] 2020-09-18 02:01:05 > Step:   99000 Progress: 99.0% Elapsed: 5:56:44 temperature: no ada_p: No Discriminator_loss: 0.0465921 Generator_loss: 4.71726 
+[INFO] 2020-09-18 02:01:22 > Step:   99100 Progress: 99.1% Elapsed: 5:57:01 temperature: no ada_p: No Discriminator_loss: 0.188369 Generator_loss: 6.42065 
+[INFO] 2020-09-18 02:01:39 > Step:   99200 Progress: 99.2% Elapsed: 5:57:18 temperature: no ada_p: No Discriminator_loss: 0.123512 Generator_loss: 2.24588 
+[INFO] 2020-09-18 02:01:56 > Step:   99300 Progress: 99.3% Elapsed: 5:57:35 temperature: no ada_p: No Discriminator_loss: 0.255822 Generator_loss: 8.93137 
+[INFO] 2020-09-18 02:02:13 > Step:   99400 Progress: 99.4% Elapsed: 5:57:52 temperature: no ada_p: No Discriminator_loss: 0.517331 Generator_loss: 8.26456 
+[INFO] 2020-09-18 02:02:30 > Step:   99500 Progress: 99.5% Elapsed: 5:58:09 temperature: no ada_p: No Discriminator_loss: 0.174784 Generator_loss: 3.78602 
+[INFO] 2020-09-18 02:02:47 > Step:   99600 Progress: 99.6% Elapsed: 5:58:26 temperature: no ada_p: No Discriminator_loss: 0.0837379 Generator_loss: 5.19683 
+[INFO] 2020-09-18 02:03:04 > Step:   99700 Progress: 99.7% Elapsed: 5:58:43 temperature: no ada_p: No Discriminator_loss: 0.0542684 Generator_loss: 4.61974 
+[INFO] 2020-09-18 02:03:21 > Step:   99800 Progress: 99.8% Elapsed: 5:59:00 temperature: no ada_p: No Discriminator_loss: 0.138039 Generator_loss: 2.16447 
+[INFO] 2020-09-18 02:03:38 > Step:   99900 Progress: 99.9% Elapsed: 5:59:17 temperature: no ada_p: No Discriminator_loss: 0.135367 Generator_loss: 8.90181 
+[INFO] 2020-09-18 02:03:55 > Step:  100000 Progress: 100.0% Elapsed: 5:59:34 temperature: no ada_p: No Discriminator_loss: 0.640339 Generator_loss: 2.68799 
+[INFO] 2020-09-18 02:03:55 > Start Evaluation (100000 Step): ACGAN-train-2020_09_17_20_04_13
+[INFO] 2020-09-18 02:05:29 > F_8 score (Step: 100000, Using test images): 0.326644711004752
+[INFO] 2020-09-18 02:05:29 > F_1/8 score (Step: 100000, Using test images): 0.21817158842138962
+[INFO] 2020-09-18 02:05:29 > FID score (Step: 100000, Using test moments): 201.2162761279036
+[INFO] 2020-09-18 02:05:29 > Inception score (Step: 100000, 10000 generated images): 4.637148857116699
+[INFO] 2020-09-18 02:05:29 > Best FID score (Step: 14000, Using test moments): 45.57096656996828
+[INFO] 2020-09-18 02:05:29 > Saved model to checkpoints/ACGAN-train-2020_09_17_20_04_13

@@ -69,7 +69,7 @@ class Generator(nn.Module):
         self.z_dim = z_dim
         self.num_classes = num_classes
         self.mixed_precision = mixed_precision
-        conditional_bn = True if conditional_strategy in ["ACGAN", "projGAN", "ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"] else False
+        conditional_bn = True if conditional_strategy in ["ACGAN", "ProjGAN", "ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"] else False
 
         if g_spectral_norm:
             self.linear0 = snlinear(in_features=self.z_dim, out_features=self.in_dims[0]*4*4)
@@ -205,7 +205,7 @@ class Discriminator(nn.Module):
                 if self.nonlinear_embed:
                     self.linear3 = snlinear(in_features=hypersphere_dim, out_features=hypersphere_dim)
                 self.embedding = sn_embedding(num_classes, hypersphere_dim)
-            elif self.conditional_strategy == 'projGAN':
+            elif self.conditional_strategy == 'ProjGAN':
                 self.embedding = sn_embedding(num_classes, 512)
             elif self.conditional_strategy == 'ACGAN':
                 self.linear4 = snlinear(in_features=512, out_features=num_classes)
@@ -218,7 +218,7 @@ class Discriminator(nn.Module):
                 if self.nonlinear_embed:
                     self.linear3 = linear(in_features=hypersphere_dim, out_features=hypersphere_dim)
                 self.embedding = embedding(num_classes, hypersphere_dim)
-            elif self.conditional_strategy == 'projGAN':
+            elif self.conditional_strategy == 'ProjGAN':
                 self.embedding = embedding(num_classes, 512)
             elif self.conditional_strategy == 'ACGAN':
                 self.linear4 = linear(in_features=512, out_features=num_classes)
@@ -257,7 +257,7 @@ class Discriminator(nn.Module):
                     cls_embed = F.normalize(cls_embed, dim=1)
                 return cls_proxy, cls_embed, authen_output
 
-            elif self.conditional_strategy == 'projGAN':
+            elif self.conditional_strategy == 'ProjGAN':
                 authen_output = torch.squeeze(self.linear1(h))
                 proj = torch.sum(torch.mul(self.embedding(label), h), 1)
                 return authen_output + proj
