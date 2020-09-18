@@ -212,56 +212,56 @@ We don't apply Synchronized Batch Normalization to all experiments.
 ### CIFAR10
 | Name | Res. | Batch size | IS | FID | F_1/8 | F_8 | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | 64 | 6.697 | 50.281 | 0.851 | 0.788 | [DC-cfg](./src/configs/CIFAR10/DCGAN.json) | [DC-log](./logs/DCGAN-train-2020_09_15_13_23_51.log) | - |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | 64 |  5.537 | 67.229 | 0.790 |  0.702 | [LS-cfg](./src/configs/CIFAR10/LSGAN.json) |  - | - |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | 64 |  6.175 | 43.008 | 0.907 | 0.835 |  [G-cfg](./src/configs/CIFAR10/GGAN.json) |  - | - |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 32 | 64 | 2.525 | 160.856 | 0.181 | 0.170 | [W-cfg](./src/configs/CIFAR10/WGAN-WC.json) |  - | - |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | 64 |  7.281 | 25.883 | 0.959 | 0.927 | [GP-cfg](./src/configs/CIFAR10/WGAN-GP.json) |  - | - |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | 64 |  6.452 | 41.633 | 0.925 | 0.861 |  [DRA-cfg](./src/configs/CIFAR10/WGAN-DRA.json) |  - | - |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 32 | 64 | 6.696 | 46.081 | 0.886 | 0.820 | [AC-cfg](./src/configs/CIFAR10/ACGAN.json) |  - | - |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 32 | 64 |  7.398 | 34.037 | 0.945 | 0.871 | [Prj-cfg](./src/configs/CIFAR10/ProjGAN.json) |  - | - |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 32 | 64 |  - | - |- | - | [SN-cfg](./src/configs/CIFAR10/SNGAN.json) |  - | - |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 32 | 64 |  - | - |- | - | [SA-cfg](./src/configs/CIFAR10/SAGAN.json) |  - | - |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 32 | 64 |  - | - |- | - | [Big-cfg](./src/configs/CIFAR10/BigGAN.json) |  - | - |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 32 | 64 | 9.216 | 11.784 | 0.987 | 0.987 | [BigD-cfg](./src/configs/CIFAR10/BigGAN-Deep.json) |  - | - |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 32 | 64 |  9.911 | 7.199 | 0.994 | 0.994 | [CR-cfg](./src/configs/CIFAR10/CRGAN.json) |  - | - |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 32 | 64 |  - | - |- | - | [ICR-cfg](./src/configs/CIFAR10/ICRGAN.json) |  - | - |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | 64 |  - | - |- | - | [LO-cfg](./src/configs/CIFAR10/LOGAN.json) |  - | - |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 32 | 64 |  - |- | - | - | [Dif-cfg](./src/configs/CIFAR10/DiffAugGAN.json) |  - | - |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 32 | 64 |  - | - |- | - | [ADA-cfg](./src/configs/CIFAR10/ADAGAN.json) |  - | - |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 32 | 64 |  - |- | - | - | [Ctr-cfg](./src/configs/CIFAR10/ContraGAN.json) | - | - |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | 64 | 6.697 | 50.281 | 0.851 | 0.788 | [Config](./src/configs/CIFAR10/DCGAN.json) | [Log](./logs/DCGAN-train-2020_09_15_13_23_51.log) | - |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | 64 |  5.537 | 67.229 | 0.790 |  0.702 | [Config](./src/configs/CIFAR10/LSGAN.json) | [Log](./logs/LSGAN-train-2020_09_15_23_40_37.log) | - |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 32 | 64 |  6.175 | 43.008 | 0.907 | 0.835 |  [Config](./src/configs/CIFAR10/GGAN.json) | [Log](./logs/GGAN-train-2020_09_15_23_11_09.log) | - |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 32 | 64 | 2.525 | 160.856 | 0.181 | 0.170 | [Config](./src/configs/CIFAR10/WGAN-WC.json) | [Log](./logs/WGAN-WC-train-2020_09_17_11_03_23.log) | - |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 32 | 64 |  7.281 | 25.883 | 0.959 | 0.927 | [Config](./src/configs/CIFAR10/WGAN-GP.json) | [Log](./logs/WGAN-GP-train-2020_09_16_14_17_00.log) | - |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 32 | 64 |  6.452 | 41.633 | 0.925 | 0.861 |  [Config](./src/configs/CIFAR10/WGAN-DRA.json) | [Log](./logs/WGAN-DRA-train-2020_09_16_05_18_22.log) | - |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 32 | 64 | 6.696 | 46.081 | 0.886 | 0.820 | [Config](./src/configs/CIFAR10/ACGAN.json) | [Log](./logs/ACGAN-train-2020_09_17_20_04_13.log) | - |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 32 | 64 |  7.398 | 34.037 | 0.945 | 0.871 | [Config](./src/configs/CIFAR10/ProjGAN.json) | [Log](./logs/ProjGAN-train-2020_09_17_20_05_34.log) | - |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 32 | 64 |  - | - |- | - | [Config](./src/configs/CIFAR10/SNGAN.json) | - | - |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 32 | 64 |  - | - |- | - | [Config](./src/configs/CIFAR10/SAGAN.json) |  - | - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 32 | 64 |  - | - |- | - | [Config](./src/configs/CIFAR10/BigGAN.json) |  - | - |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 32 | 64 | 9.216 | 11.784 | 0.987 | 0.987 | [Config](./src/configs/CIFAR10/BigGAN-Deep.json) | [Log](./logs/BigGAN-Deep-train-2020_09_17_13_44_46.log) | - |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 32 | 64 |  9.911 | 7.199 | 0.994 | 0.994 | [Config](./src/configs/CIFAR10/CRGAN.json) | [Log](./logs/CRGAN-train-2020_09_17_13_45_19.log) | - |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 32 | 64 |  - | - |- | - | [Config](./src/configs/CIFAR10/ICRGAN.json) |  - | - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | 64 |  - | - |- | - | [Config](./src/configs/CIFAR10/LOGAN.json) |  - | - |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 32 | 64 |  - |- | - | - | [Config](./src/configs/CIFAR10/DiffAugGAN.json) |  - | - |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 32 | 64 |  - | - |- | - | [Config](./src/configs/CIFAR10/ADAGAN.json) |  - | - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 32 | 64 |  - |- | - | - | [Config](./src/configs/CIFAR10/ContraGAN.json) | - | - |
 
 ### Tiny ImageNet
 | Name | Res. | Batch size |IS | FID | F_1/8 | F_8 | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 256 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/DCGAN.json) |  - |  - |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | 256 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/LSGAN.json) |  - |  - |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | 256 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/GGAN.json) |  - |  - |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 64 | 256 | - |  - | - | - | [Link](./src/configs/TINY_ILSVRC2012/WGAN-WC.json) |  - |  - |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 64 | 256 | - | - | - | - |  [Link](./src/configs/TINY_ILSVRC2012/WGAN-GP.json) |  - |  - |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 64 | 256 | - | - | - | - |  [Link](./src/configs/TINY_ILSVRC2012/WGAN-DRA.json) |  - |  - |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 64 | 256 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/ACGAN.json) |  - |  - |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 64 | 256 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/ProjGAN.json) |  - |  - |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 64 | 256 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/SNGAN.json) |  - |  - |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 64 | 256 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/SAGAN.json) |  - |  - |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 64 | 1024 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/BigGAN.json) |  - |  - |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 64 | 1024 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/BigGAN-Deep.json) |  - |  - |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/CRGAN.json) |  - |  - |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/ICRGAN.json) |  - |  - |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | 1024 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/LOGAN.json) |  - |  - |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/DiffAugGAN.json) |  - |  - |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/ADAGAN.json) |  - |  - |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | 1024 | - | - | - | - | [Link](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | - |  - |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) |  - |  - |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/LSGAN.json) |  - |  - |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/GGAN.json) |  - |  - |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 64 | 256 | - |  - | - | - | [Config](./src/configs/TINY_ILSVRC2012/WGAN-WC.json) |  - |  - |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 64 | 256 | - | - | - | - |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-GP.json) |  - |  - |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 64 | 256 | - | - | - | - |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-DRA.json) |  - |  - |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ACGAN.json) |  - |  - |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ProjGAN.json) |  - |  - |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/SNGAN.json) |  - |  - |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/SAGAN.json) |  - |  - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/BigGAN.json) |  - |  - |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/BigGAN-Deep.json) |  - |  - |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/CRGAN.json) |  - |  - |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN.json) |  - |  - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/LOGAN.json) |  - |  - |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN.json) |  - |  - |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN.json) |  - |  - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | - |  - |
 
 ### ImageNet
 | Name | Res. | Batch size |IS | FID | F_1/8 | F_8 | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | 256 | - | - | - | - | [Link](./src/configs/ILSVRC2012/SNGAN.json) |  - | - |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | 256 | - | - | - | - | [Link](./src/configs/ILSVRC2012/SAGAN.json) |  - | - |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 256 | - | - | - | - | [Link](./src/configs/ILSVRC2012/BigGAN256.json) |  - | - |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 256 | - | - | - | - | [Link](./src/configs/ILSVRC2012/ContraGAN256.json) | - | - |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 2048 | - | - | - | - | [Link](./src/configs/ILSVRC2012/BigGAN2048.json) |  - | - |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 2048 | - | - | - | - | [Link](./src/configs/ILSVRC2012/ContraGAN2048.json) | - | - |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/SNGAN.json) |  - | - |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/SAGAN.json) |  - | - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/BigGAN256.json) |  - | - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN256.json) | - | - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 2048 | - | - | - | - | [Config](./src/configs/ILSVRC2012/BigGAN2048.json) |  - | - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 2048 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN2048.json) | - | - |
 
 ## References
 
