@@ -89,8 +89,8 @@
         "diff_aug": false,
   
         "ada": true,
-        "ada_target": 0.1,
-        "ada_length": 500000,
+        "ada_target": 0.2,
+        "ada_length": 1000000,
   
         "prior": "gaussian",
         "truncated_factor": 1,
