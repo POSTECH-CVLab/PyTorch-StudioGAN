@@ -52,9 +52,9 @@
   
         "contrastive_lambda": 1.0,
         "margin": 0.0, 
-        "tempering_type": "discrete",
-        "tempering_step": 1,
-        "start_temperature": 2.0,
+        "tempering_type": "constant",
+        "tempering_step": "N/A",
+        "start_temperature": 1.0,
         "end_temperature": 1.0,
   
         "weight_clipping_for_dis": false,
