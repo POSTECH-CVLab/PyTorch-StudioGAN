@@ -116,20 +116,22 @@ class Conditional_Contrastive_loss(torch.nn.Module):
 
     def forward(self, inst_embed, proxy, negative_mask, labels, temperature, margin):
         similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
-        instance_zone = torch.exp((self.remove_diag(similarity_matrix) - margin)/temperature)
+        instance_zone = self.remove_diag(similarity_matrix)
+
+        mask_4_remove_negatives = negative_mask[labels]
+        mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
+        mask_4_remove_positives = 1 - mask_4_remove_negatives
 
         inst2proxy_positive = torch.exp((self.cosine_similarity(inst_embed, proxy) - margin)/temperature)
+        inst2inst_negatives = torch.exp((instance_zone*mask_4_remove_positives + margin)/temperature)
         if self.pos_collected_numerator:
-            mask_4_remove_negatives = negative_mask[labels]
-            mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
-
-            inst2inst_positives = instance_zone*mask_4_remove_negatives
-
-            numerator = (inst2inst_positives.sum(dim=1)+inst2proxy_positive)
+            inst2inst_positives = torch.exp((instance_zone*mask_4_remove_negatives - margin)/temperature)
+            numerator = inst2inst_positives.sum(dim=1) + inst2proxy_positive
+            denomerator = inst2inst_negatives.sum(dim=1)
         else:
             numerator = inst2proxy_positive
+            denomerator = inst2inst_negatives.sum(dim=1)
 
-        denomerator = torch.cat([torch.unsqueeze(inst2proxy_positive, dim=1), instance_zone], dim=1).sum(dim=1)
         criterion = -torch.log(numerator/denomerator).mean()
         return criterion
 
