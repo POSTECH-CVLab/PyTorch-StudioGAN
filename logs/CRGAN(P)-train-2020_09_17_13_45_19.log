@@ -1,5 +1,5 @@
-[INFO] 2020-09-17 13:45:19 > Run name : CRGAN-train-2020_09_17_13_45_19
-[INFO] 2020-09-17 13:45:19 > {'config_path': './configs/CIFAR10/CRGAN.json', 'checkpoint_folder': None, 'load_current': False, 'log_output_path': None, 'seed': 82624, 'num_workers': 8, 'synchronized_bn': False, 'mixed_precision': False, 'disable_debugging_API': True, 'reduce_train_dataset': 1.0, 'standing_statistics': False, 'standing_step': -1, 'freeze_layers': -1, 'load_all_data_in_memory': True, 'train': True, 'eval': True, 'save_images': False, 'image_visualization': False, 'k_nearest_neighbor': False, 'interpolation': False, 'frequency_analysis': False, 'nrow': 10, 'ncol': 8, 'print_every': 100, 'save_every': 2000, 'eval_type': 'test'}
+[INFO] 2020-09-17 13:45:19 > Run name : CRGAN(P)-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 13:45:19 > {'config_path': './configs/CIFAR10/CRGAN(P).json', 'checkpoint_folder': None, 'load_current': False, 'log_output_path': None, 'seed': 82624, 'num_workers': 8, 'synchronized_bn': False, 'mixed_precision': False, 'disable_debugging_API': True, 'reduce_train_dataset': 1.0, 'standing_statistics': False, 'standing_step': -1, 'freeze_layers': -1, 'load_all_data_in_memory': True, 'train': True, 'eval': True, 'save_images': False, 'image_visualization': False, 'k_nearest_neighbor': False, 'interpolation': False, 'frequency_analysis': False, 'nrow': 10, 'ncol': 8, 'print_every': 100, 'save_every': 2000, 'eval_type': 'test'}
 [INFO] 2020-09-17 13:45:19 > {'model': {'architecture': 'big_resnet', 'conditional_strategy': 'ProjGAN', 'pos_collected_numerator': False, 'hypersphere_dim': 'N/A', 'nonlinear_embed': False, 'normalize_embed': False, 'g_spectral_norm': True, 'd_spectral_norm': True, 'activation_fn': 'ReLU', 'attention': True, 'attention_after_nth_gen_block': 2, 'attention_after_nth_dis_block': 1, 'z_dim': 80, 'shared_dim': 128, 'g_conv_dim': 96, 'd_conv_dim': 96, 'G_depth': 'N/A', 'D_depth': 'N/A'}, 'optimization': {'optimizer': 'Adam', 'batch_size': 64, 'accumulation_steps': 1, 'd_lr': 0.0002, 'g_lr': 0.0002, 'momentum': 'N/A', 'nesterov': 'N/A', 'alpha': 'N/A', 'beta1': 0.5, 'beta2': 0.999, 'g_steps_per_iter': 1, 'd_steps_per_iter': 5, 'total_step': 100000}, 'loss_function': {'adv_loss': 'hinge', 'contrastive_lambda': 'N/A', 'margin': 'N/A', 'tempering_type': 'N/A', 'tempering_step': 'N/A', 'start_temperature': 'N/A', 'end_temperature': 'N/A', 'weight_clipping_for_dis': False, 'weight_clipping_bound': 'N/A', 'gradient_penalty_for_dis': False, 'gradient_penalty_lambda': 'N/A', 'deep_regret_analysis_for_dis': False, 'regret_penalty_lambda': 'N/A', 'cr': True, 'cr_lambda': 10.0, 'bcr': False, 'real_lambda': 'N/A', 'fake_lambda': 'N/A', 'zcr': False, 'gen_lambda': 'N/A', 'dis_lambda': 'N/A', 'sigma_noise': 'N/A'}, 'initialization': {'g_init': 'ortho', 'd_init': 'ortho'}, 'training_and_sampling_setting': {'random_flip_preprocessing': True, 'diff_aug': False, 'ada': False, 'ada_target': 'N/A', 'ada_length': 'N/A', 'prior': 'gaussian', 'truncated_factor': 1, 'latent_op': False, 'latent_op_rate': 'N/A', 'latent_op_step': 'N/A', 'latent_op_step4eval': 'N/A', 'latent_op_alpha': 'N/A', 'latent_op_beta': 'N/A', 'latent_norm_reg_weight': 'N/A', 'ema': True, 'ema_decay': 0.9999, 'ema_start': 1000}}
 [INFO] 2020-09-17 13:45:19 > Loading train datasets...
 [INFO] 2020-09-17 13:45:20 > Train dataset size : 50000
@@ -155,13 +155,13 @@
 [INFO] 2020-09-17 14:06:54 > Step:    1800 Progress: 1.8% Elapsed: 0:21:26 temperature: no ada_p: No Discriminator_loss: 1.21624 Generator_loss: 0.73411 
 [INFO] 2020-09-17 14:08:06 > Step:    1900 Progress: 1.9% Elapsed: 0:22:38 temperature: no ada_p: No Discriminator_loss: 1.335 Generator_loss: 0.496634 
 [INFO] 2020-09-17 14:09:16 > Step:    2000 Progress: 2.0% Elapsed: 0:23:48 temperature: no ada_p: No Discriminator_loss: 1.0228 Generator_loss: -0.0861995 
-[INFO] 2020-09-17 14:09:17 > Start Evaluation (2000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 14:09:17 > Start Evaluation (2000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 14:11:27 > F_8 score (Step: 2000, Using test images): 0.762323881492869
 [INFO] 2020-09-17 14:11:27 > F_1/8 score (Step: 2000, Using test images): 0.8304185521201607
 [INFO] 2020-09-17 14:11:27 > FID score (Step: 2000, Using test moments): 48.950837705962385
 [INFO] 2020-09-17 14:11:27 > Inception score (Step: 2000, 10000 generated images): 5.755905628204346
 [INFO] 2020-09-17 14:11:27 > Best FID score (Step: 2000, Using test moments): 48.950837705962385
-[INFO] 2020-09-17 14:11:31 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 14:11:31 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 14:12:43 > Step:    2100 Progress: 2.1% Elapsed: 0:27:15 temperature: no ada_p: No Discriminator_loss: 1.46617 Generator_loss: -0.12857 
 [INFO] 2020-09-17 14:13:56 > Step:    2200 Progress: 2.2% Elapsed: 0:28:27 temperature: no ada_p: No Discriminator_loss: 1.79142 Generator_loss: -0.873914 
 [INFO] 2020-09-17 14:15:07 > Step:    2300 Progress: 2.3% Elapsed: 0:29:39 temperature: no ada_p: No Discriminator_loss: 1.37181 Generator_loss: 0.411975 
@@ -182,13 +182,13 @@
 [INFO] 2020-09-17 14:32:47 > Step:    3800 Progress: 3.8% Elapsed: 0:47:18 temperature: no ada_p: No Discriminator_loss: 1.51161 Generator_loss: 0.920341 
 [INFO] 2020-09-17 14:33:58 > Step:    3900 Progress: 3.9% Elapsed: 0:48:29 temperature: no ada_p: No Discriminator_loss: 1.42756 Generator_loss: 0.450566 
 [INFO] 2020-09-17 14:35:08 > Step:    4000 Progress: 4.0% Elapsed: 0:49:39 temperature: no ada_p: No Discriminator_loss: 1.37897 Generator_loss: 0.382127 
-[INFO] 2020-09-17 14:35:08 > Start Evaluation (4000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 14:35:08 > Start Evaluation (4000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 14:37:16 > F_8 score (Step: 4000, Using test images): 0.822391353696006
 [INFO] 2020-09-17 14:37:16 > F_1/8 score (Step: 4000, Using test images): 0.8619454318372609
 [INFO] 2020-09-17 14:37:16 > FID score (Step: 4000, Using test moments): 42.99908279355424
 [INFO] 2020-09-17 14:37:16 > Inception score (Step: 4000, 10000 generated images): 6.4300856590271
 [INFO] 2020-09-17 14:37:16 > Best FID score (Step: 4000, Using test moments): 42.99908279355424
-[INFO] 2020-09-17 14:37:21 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 14:37:21 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 14:38:32 > Step:    4100 Progress: 4.1% Elapsed: 0:53:03 temperature: no ada_p: No Discriminator_loss: 1.49609 Generator_loss: -0.171044 
 [INFO] 2020-09-17 14:39:46 > Step:    4200 Progress: 4.2% Elapsed: 0:54:17 temperature: no ada_p: No Discriminator_loss: 1.46963 Generator_loss: 0.245917 
 [INFO] 2020-09-17 14:40:58 > Step:    4300 Progress: 4.3% Elapsed: 0:55:29 temperature: no ada_p: No Discriminator_loss: 1.16645 Generator_loss: 1.04734 
@@ -209,13 +209,13 @@
 [INFO] 2020-09-17 14:58:51 > Step:    5800 Progress: 5.8% Elapsed: 1:13:23 temperature: no ada_p: No Discriminator_loss: 1.58715 Generator_loss: 0.288474 
 [INFO] 2020-09-17 15:00:02 > Step:    5900 Progress: 5.9% Elapsed: 1:14:33 temperature: no ada_p: No Discriminator_loss: 1.51285 Generator_loss: 0.342709 
 [INFO] 2020-09-17 15:01:13 > Step:    6000 Progress: 6.0% Elapsed: 1:15:45 temperature: no ada_p: No Discriminator_loss: 1.44148 Generator_loss: 0.324087 
-[INFO] 2020-09-17 15:01:13 > Start Evaluation (6000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 15:01:13 > Start Evaluation (6000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 15:03:21 > F_8 score (Step: 6000, Using test images): 0.8811303942469686
 [INFO] 2020-09-17 15:03:21 > F_1/8 score (Step: 6000, Using test images): 0.8925318527672632
 [INFO] 2020-09-17 15:03:21 > FID score (Step: 6000, Using test moments): 36.88126260394381
 [INFO] 2020-09-17 15:03:21 > Inception score (Step: 6000, 10000 generated images): 7.292013168334961
 [INFO] 2020-09-17 15:03:21 > Best FID score (Step: 6000, Using test moments): 36.88126260394381
-[INFO] 2020-09-17 15:03:25 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 15:03:25 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 15:04:37 > Step:    6100 Progress: 6.1% Elapsed: 1:19:08 temperature: no ada_p: No Discriminator_loss: 1.46251 Generator_loss: 0.532196 
 [INFO] 2020-09-17 15:05:48 > Step:    6200 Progress: 6.2% Elapsed: 1:20:20 temperature: no ada_p: No Discriminator_loss: 1.43478 Generator_loss: 0.394846 
 [INFO] 2020-09-17 15:07:01 > Step:    6300 Progress: 6.3% Elapsed: 1:21:32 temperature: no ada_p: No Discriminator_loss: 1.43881 Generator_loss: 0.433678 
@@ -236,13 +236,13 @@
 [INFO] 2020-09-17 15:24:40 > Step:    7800 Progress: 7.8% Elapsed: 1:39:12 temperature: no ada_p: No Discriminator_loss: 1.56447 Generator_loss: 0.246823 
 [INFO] 2020-09-17 15:25:53 > Step:    7900 Progress: 7.9% Elapsed: 1:40:25 temperature: no ada_p: No Discriminator_loss: 1.01106 Generator_loss: 0.398594 
 [INFO] 2020-09-17 15:27:05 > Step:    8000 Progress: 8.0% Elapsed: 1:41:37 temperature: no ada_p: No Discriminator_loss: 1.51164 Generator_loss: 0.394484 
-[INFO] 2020-09-17 15:27:05 > Start Evaluation (8000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 15:27:05 > Start Evaluation (8000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 15:29:11 > F_8 score (Step: 8000, Using test images): 0.9302097376705082
 [INFO] 2020-09-17 15:29:11 > F_1/8 score (Step: 8000, Using test images): 0.9235500128293945
 [INFO] 2020-09-17 15:29:11 > FID score (Step: 8000, Using test moments): 30.976333460531805
 [INFO] 2020-09-17 15:29:11 > Inception score (Step: 8000, 10000 generated images): 7.850636005401611
 [INFO] 2020-09-17 15:29:11 > Best FID score (Step: 8000, Using test moments): 30.976333460531805
-[INFO] 2020-09-17 15:29:16 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 15:29:16 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 15:30:27 > Step:    8100 Progress: 8.1% Elapsed: 1:44:58 temperature: no ada_p: No Discriminator_loss: 1.31468 Generator_loss: 0.238022 
 [INFO] 2020-09-17 15:31:39 > Step:    8200 Progress: 8.2% Elapsed: 1:46:10 temperature: no ada_p: No Discriminator_loss: 1.37115 Generator_loss: 0.486803 
 [INFO] 2020-09-17 15:32:51 > Step:    8300 Progress: 8.3% Elapsed: 1:47:22 temperature: no ada_p: No Discriminator_loss: 1.48014 Generator_loss: -0.148676 
@@ -263,13 +263,13 @@
 [INFO] 2020-09-17 15:50:46 > Step:    9800 Progress: 9.8% Elapsed: 2:05:17 temperature: no ada_p: No Discriminator_loss: 1.58602 Generator_loss: 0.305053 
 [INFO] 2020-09-17 15:51:57 > Step:    9900 Progress: 9.9% Elapsed: 2:06:29 temperature: no ada_p: No Discriminator_loss: 1.51135 Generator_loss: 0.537518 
 [INFO] 2020-09-17 15:53:09 > Step:   10000 Progress: 10.0% Elapsed: 2:07:41 temperature: no ada_p: No Discriminator_loss: 1.40003 Generator_loss: -0.0452105 
-[INFO] 2020-09-17 15:53:10 > Start Evaluation (10000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 15:53:10 > Start Evaluation (10000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 15:55:14 > F_8 score (Step: 10000, Using test images): 0.953206605059026
 [INFO] 2020-09-17 15:55:14 > F_1/8 score (Step: 10000, Using test images): 0.9617813224883822
 [INFO] 2020-09-17 15:55:14 > FID score (Step: 10000, Using test moments): 25.20224644436678
 [INFO] 2020-09-17 15:55:14 > Inception score (Step: 10000, 10000 generated images): 8.11361312866211
 [INFO] 2020-09-17 15:55:14 > Best FID score (Step: 10000, Using test moments): 25.20224644436678
-[INFO] 2020-09-17 15:55:18 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 15:55:18 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 15:56:24 > Step:   10100 Progress: 10.1% Elapsed: 2:10:55 temperature: no ada_p: No Discriminator_loss: 1.72809 Generator_loss: 0.442514 
 [INFO] 2020-09-17 15:57:33 > Step:   10200 Progress: 10.2% Elapsed: 2:12:04 temperature: no ada_p: No Discriminator_loss: 1.45682 Generator_loss: 0.582861 
 [INFO] 2020-09-17 15:58:44 > Step:   10300 Progress: 10.3% Elapsed: 2:13:15 temperature: no ada_p: No Discriminator_loss: 1.50013 Generator_loss: 0.361497 
@@ -290,13 +290,13 @@
 [INFO] 2020-09-17 16:16:34 > Step:   11800 Progress: 11.8% Elapsed: 2:31:05 temperature: no ada_p: No Discriminator_loss: 1.38466 Generator_loss: 0.280824 
 [INFO] 2020-09-17 16:17:46 > Step:   11900 Progress: 11.9% Elapsed: 2:32:18 temperature: no ada_p: No Discriminator_loss: 1.66081 Generator_loss: -0.0283898 
 [INFO] 2020-09-17 16:18:57 > Step:   12000 Progress: 12.0% Elapsed: 2:33:28 temperature: no ada_p: No Discriminator_loss: 1.46679 Generator_loss: 0.116619 
-[INFO] 2020-09-17 16:18:57 > Start Evaluation (12000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 16:18:57 > Start Evaluation (12000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 16:21:06 > F_8 score (Step: 12000, Using test images): 0.9714659500995292
 [INFO] 2020-09-17 16:21:06 > F_1/8 score (Step: 12000, Using test images): 0.9682580601449128
 [INFO] 2020-09-17 16:21:06 > FID score (Step: 12000, Using test moments): 21.383455202156767
 [INFO] 2020-09-17 16:21:06 > Inception score (Step: 12000, 10000 generated images): 8.554533004760742
 [INFO] 2020-09-17 16:21:06 > Best FID score (Step: 12000, Using test moments): 21.383455202156767
-[INFO] 2020-09-17 16:21:10 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 16:21:10 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 16:22:22 > Step:   12100 Progress: 12.1% Elapsed: 2:36:54 temperature: no ada_p: No Discriminator_loss: 1.6296 Generator_loss: -0.0358893 
 [INFO] 2020-09-17 16:23:34 > Step:   12200 Progress: 12.2% Elapsed: 2:38:06 temperature: no ada_p: No Discriminator_loss: 1.5333 Generator_loss: 0.297195 
 [INFO] 2020-09-17 16:24:45 > Step:   12300 Progress: 12.3% Elapsed: 2:39:17 temperature: no ada_p: No Discriminator_loss: 1.23847 Generator_loss: 0.929223 
@@ -317,13 +317,13 @@
 [INFO] 2020-09-17 16:42:22 > Step:   13800 Progress: 13.8% Elapsed: 2:56:53 temperature: no ada_p: No Discriminator_loss: 1.45383 Generator_loss: 0.591075 
 [INFO] 2020-09-17 16:43:32 > Step:   13900 Progress: 13.9% Elapsed: 2:58:04 temperature: no ada_p: No Discriminator_loss: 1.57044 Generator_loss: 0.382011 
 [INFO] 2020-09-17 16:44:44 > Step:   14000 Progress: 14.0% Elapsed: 2:59:15 temperature: no ada_p: No Discriminator_loss: 1.37548 Generator_loss: 0.22015 
-[INFO] 2020-09-17 16:44:44 > Start Evaluation (14000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 16:44:44 > Start Evaluation (14000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 16:46:53 > F_8 score (Step: 14000, Using test images): 0.9719727686758123
 [INFO] 2020-09-17 16:46:53 > F_1/8 score (Step: 14000, Using test images): 0.973703306586777
 [INFO] 2020-09-17 16:46:53 > FID score (Step: 14000, Using test moments): 18.270319629596997
 [INFO] 2020-09-17 16:46:53 > Inception score (Step: 14000, 10000 generated images): 9.116070747375488
 [INFO] 2020-09-17 16:46:53 > Best FID score (Step: 14000, Using test moments): 18.270319629596997
-[INFO] 2020-09-17 16:46:58 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 16:46:58 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 16:48:09 > Step:   14100 Progress: 14.1% Elapsed: 3:02:40 temperature: no ada_p: No Discriminator_loss: 1.47663 Generator_loss: 0.10831 
 [INFO] 2020-09-17 16:49:22 > Step:   14200 Progress: 14.2% Elapsed: 3:03:53 temperature: no ada_p: No Discriminator_loss: 1.49906 Generator_loss: 0.755516 
 [INFO] 2020-09-17 16:50:34 > Step:   14300 Progress: 14.3% Elapsed: 3:05:06 temperature: no ada_p: No Discriminator_loss: 1.52532 Generator_loss: 0.637635 
@@ -344,13 +344,13 @@
 [INFO] 2020-09-17 17:08:28 > Step:   15800 Progress: 15.8% Elapsed: 3:23:00 temperature: no ada_p: No Discriminator_loss: 1.40754 Generator_loss: 0.6524 
 [INFO] 2020-09-17 17:09:40 > Step:   15900 Progress: 15.9% Elapsed: 3:24:11 temperature: no ada_p: No Discriminator_loss: 1.59477 Generator_loss: 0.213258 
 [INFO] 2020-09-17 17:10:51 > Step:   16000 Progress: 16.0% Elapsed: 3:25:22 temperature: no ada_p: No Discriminator_loss: 1.42846 Generator_loss: 0.985399 
-[INFO] 2020-09-17 17:10:51 > Start Evaluation (16000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 17:10:51 > Start Evaluation (16000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 17:12:59 > F_8 score (Step: 16000, Using test images): 0.9723123864371661
 [INFO] 2020-09-17 17:12:59 > F_1/8 score (Step: 16000, Using test images): 0.977569254330248
 [INFO] 2020-09-17 17:12:59 > FID score (Step: 16000, Using test moments): 16.30460060352044
 [INFO] 2020-09-17 17:12:59 > Inception score (Step: 16000, 10000 generated images): 9.09822940826416
 [INFO] 2020-09-17 17:12:59 > Best FID score (Step: 16000, Using test moments): 16.30460060352044
-[INFO] 2020-09-17 17:13:03 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 17:13:03 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 17:14:15 > Step:   16100 Progress: 16.1% Elapsed: 3:28:46 temperature: no ada_p: No Discriminator_loss: 1.43369 Generator_loss: 0.682718 
 [INFO] 2020-09-17 17:15:26 > Step:   16200 Progress: 16.2% Elapsed: 3:29:58 temperature: no ada_p: No Discriminator_loss: 1.64122 Generator_loss: 0.00278701 
 [INFO] 2020-09-17 17:16:39 > Step:   16300 Progress: 16.3% Elapsed: 3:31:10 temperature: no ada_p: No Discriminator_loss: 1.23837 Generator_loss: 0.671432 
@@ -371,13 +371,13 @@
 [INFO] 2020-09-17 17:34:15 > Step:   17800 Progress: 17.8% Elapsed: 3:48:46 temperature: no ada_p: No Discriminator_loss: 1.41694 Generator_loss: 0.192602 
 [INFO] 2020-09-17 17:35:27 > Step:   17900 Progress: 17.9% Elapsed: 3:49:58 temperature: no ada_p: No Discriminator_loss: 1.53323 Generator_loss: 0.11663 
 [INFO] 2020-09-17 17:36:39 > Step:   18000 Progress: 18.0% Elapsed: 3:51:11 temperature: no ada_p: No Discriminator_loss: 1.51032 Generator_loss: 0.406228 
-[INFO] 2020-09-17 17:36:39 > Start Evaluation (18000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 17:36:39 > Start Evaluation (18000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 17:38:46 > F_8 score (Step: 18000, Using test images): 0.9828324373276783
 [INFO] 2020-09-17 17:38:46 > F_1/8 score (Step: 18000, Using test images): 0.9832266004799383
 [INFO] 2020-09-17 17:38:46 > FID score (Step: 18000, Using test moments): 14.730609140715046
 [INFO] 2020-09-17 17:38:46 > Inception score (Step: 18000, 10000 generated images): 9.292972564697266
 [INFO] 2020-09-17 17:38:46 > Best FID score (Step: 18000, Using test moments): 14.730609140715046
-[INFO] 2020-09-17 17:38:50 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 17:38:50 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 17:40:02 > Step:   18100 Progress: 18.1% Elapsed: 3:54:33 temperature: no ada_p: No Discriminator_loss: 1.56471 Generator_loss: -0.140308 
 [INFO] 2020-09-17 17:41:13 > Step:   18200 Progress: 18.2% Elapsed: 3:55:45 temperature: no ada_p: No Discriminator_loss: 1.51719 Generator_loss: 0.441235 
 [INFO] 2020-09-17 17:42:27 > Step:   18300 Progress: 18.3% Elapsed: 3:56:58 temperature: no ada_p: No Discriminator_loss: 1.42846 Generator_loss: 0.328766 
@@ -398,13 +398,13 @@
 [INFO] 2020-09-17 18:00:20 > Step:   19800 Progress: 19.8% Elapsed: 4:14:51 temperature: no ada_p: No Discriminator_loss: 1.44179 Generator_loss: 0.324667 
 [INFO] 2020-09-17 18:01:32 > Step:   19900 Progress: 19.9% Elapsed: 4:16:03 temperature: no ada_p: No Discriminator_loss: 1.47155 Generator_loss: 0.244157 
 [INFO] 2020-09-17 18:02:44 > Step:   20000 Progress: 20.0% Elapsed: 4:17:15 temperature: no ada_p: No Discriminator_loss: 1.36035 Generator_loss: 0.710778 
-[INFO] 2020-09-17 18:02:44 > Start Evaluation (20000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 18:02:44 > Start Evaluation (20000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 18:04:50 > F_8 score (Step: 20000, Using test images): 0.9805624007997074
 [INFO] 2020-09-17 18:04:50 > F_1/8 score (Step: 20000, Using test images): 0.98795380748223
 [INFO] 2020-09-17 18:04:50 > FID score (Step: 20000, Using test moments): 13.615528558200253
 [INFO] 2020-09-17 18:04:50 > Inception score (Step: 20000, 10000 generated images): 9.483187675476074
 [INFO] 2020-09-17 18:04:50 > Best FID score (Step: 20000, Using test moments): 13.615528558200253
-[INFO] 2020-09-17 18:04:55 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 18:04:55 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 18:06:00 > Step:   20100 Progress: 20.1% Elapsed: 4:20:31 temperature: no ada_p: No Discriminator_loss: 1.38001 Generator_loss: 0.672184 
 [INFO] 2020-09-17 18:07:07 > Step:   20200 Progress: 20.2% Elapsed: 4:21:39 temperature: no ada_p: No Discriminator_loss: 1.5193 Generator_loss: -0.0214325 
 [INFO] 2020-09-17 18:08:18 > Step:   20300 Progress: 20.3% Elapsed: 4:22:50 temperature: no ada_p: No Discriminator_loss: 1.5294 Generator_loss: 0.385001 
@@ -425,13 +425,13 @@
 [INFO] 2020-09-17 18:26:13 > Step:   21800 Progress: 21.8% Elapsed: 4:40:44 temperature: no ada_p: No Discriminator_loss: 1.42263 Generator_loss: 0.607929 
 [INFO] 2020-09-17 18:27:24 > Step:   21900 Progress: 21.9% Elapsed: 4:41:55 temperature: no ada_p: No Discriminator_loss: 1.50114 Generator_loss: 0.422861 
 [INFO] 2020-09-17 18:28:36 > Step:   22000 Progress: 22.0% Elapsed: 4:43:07 temperature: no ada_p: No Discriminator_loss: 1.36176 Generator_loss: 0.400043 
-[INFO] 2020-09-17 18:28:36 > Start Evaluation (22000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 18:28:36 > Start Evaluation (22000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 18:30:44 > F_8 score (Step: 22000, Using test images): 0.9876919783666942
 [INFO] 2020-09-17 18:30:44 > F_1/8 score (Step: 22000, Using test images): 0.9869671855897147
 [INFO] 2020-09-17 18:30:44 > FID score (Step: 22000, Using test moments): 12.545340739742755
 [INFO] 2020-09-17 18:30:44 > Inception score (Step: 22000, 10000 generated images): 9.671494483947754
 [INFO] 2020-09-17 18:30:44 > Best FID score (Step: 22000, Using test moments): 12.545340739742755
-[INFO] 2020-09-17 18:30:49 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 18:30:49 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 18:32:00 > Step:   22100 Progress: 22.1% Elapsed: 4:46:31 temperature: no ada_p: No Discriminator_loss: 1.44965 Generator_loss: 0.725002 
 [INFO] 2020-09-17 18:33:11 > Step:   22200 Progress: 22.2% Elapsed: 4:47:42 temperature: no ada_p: No Discriminator_loss: 1.48032 Generator_loss: 0.372966 
 [INFO] 2020-09-17 18:34:23 > Step:   22300 Progress: 22.3% Elapsed: 4:48:54 temperature: no ada_p: No Discriminator_loss: 1.4604 Generator_loss: -0.00980133 
@@ -452,13 +452,13 @@
 [INFO] 2020-09-17 18:51:57 > Step:   23800 Progress: 23.8% Elapsed: 5:06:28 temperature: no ada_p: No Discriminator_loss: 1.6251 Generator_loss: 0.409635 
 [INFO] 2020-09-17 18:53:09 > Step:   23900 Progress: 23.9% Elapsed: 5:07:41 temperature: no ada_p: No Discriminator_loss: 1.50925 Generator_loss: 0.412859 
 [INFO] 2020-09-17 18:54:20 > Step:   24000 Progress: 24.0% Elapsed: 5:08:51 temperature: no ada_p: No Discriminator_loss: 1.77991 Generator_loss: -0.272414 
-[INFO] 2020-09-17 18:54:20 > Start Evaluation (24000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 18:54:20 > Start Evaluation (24000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 18:56:26 > F_8 score (Step: 24000, Using test images): 0.9835231246346003
 [INFO] 2020-09-17 18:56:26 > F_1/8 score (Step: 24000, Using test images): 0.9887395017278283
 [INFO] 2020-09-17 18:56:26 > FID score (Step: 24000, Using test moments): 12.04021173719434
 [INFO] 2020-09-17 18:56:26 > Inception score (Step: 24000, 10000 generated images): 9.691828727722168
 [INFO] 2020-09-17 18:56:26 > Best FID score (Step: 24000, Using test moments): 12.04021173719434
-[INFO] 2020-09-17 18:56:30 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 18:56:30 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 18:57:40 > Step:   24100 Progress: 24.1% Elapsed: 5:12:12 temperature: no ada_p: No Discriminator_loss: 1.53605 Generator_loss: 0.698012 
 [INFO] 2020-09-17 18:58:51 > Step:   24200 Progress: 24.2% Elapsed: 5:13:23 temperature: no ada_p: No Discriminator_loss: 1.50344 Generator_loss: 0.185513 
 [INFO] 2020-09-17 19:00:03 > Step:   24300 Progress: 24.3% Elapsed: 5:14:35 temperature: no ada_p: No Discriminator_loss: 1.43287 Generator_loss: 0.617455 
@@ -479,13 +479,13 @@
 [INFO] 2020-09-17 19:17:53 > Step:   25800 Progress: 25.8% Elapsed: 5:32:25 temperature: no ada_p: No Discriminator_loss: 1.47169 Generator_loss: 0.806823 
 [INFO] 2020-09-17 19:19:05 > Step:   25900 Progress: 25.9% Elapsed: 5:33:36 temperature: no ada_p: No Discriminator_loss: 1.46567 Generator_loss: -0.00701344 
 [INFO] 2020-09-17 19:20:17 > Step:   26000 Progress: 26.0% Elapsed: 5:34:49 temperature: no ada_p: No Discriminator_loss: 1.44615 Generator_loss: 0.431472 
-[INFO] 2020-09-17 19:20:18 > Start Evaluation (26000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 19:20:18 > Start Evaluation (26000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 19:22:23 > F_8 score (Step: 26000, Using test images): 0.9877654040434384
 [INFO] 2020-09-17 19:22:23 > F_1/8 score (Step: 26000, Using test images): 0.9865133970892649
 [INFO] 2020-09-17 19:22:23 > FID score (Step: 26000, Using test moments): 11.24459441416468
 [INFO] 2020-09-17 19:22:23 > Inception score (Step: 26000, 10000 generated images): 9.795747756958008
 [INFO] 2020-09-17 19:22:23 > Best FID score (Step: 26000, Using test moments): 11.24459441416468
-[INFO] 2020-09-17 19:22:28 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 19:22:28 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 19:23:39 > Step:   26100 Progress: 26.1% Elapsed: 5:38:11 temperature: no ada_p: No Discriminator_loss: 1.51311 Generator_loss: 0.447269 
 [INFO] 2020-09-17 19:24:51 > Step:   26200 Progress: 26.2% Elapsed: 5:39:22 temperature: no ada_p: No Discriminator_loss: 1.32114 Generator_loss: 0.562245 
 [INFO] 2020-09-17 19:26:04 > Step:   26300 Progress: 26.3% Elapsed: 5:40:35 temperature: no ada_p: No Discriminator_loss: 1.5678 Generator_loss: 0.225526 
@@ -506,13 +506,13 @@
 [INFO] 2020-09-17 19:43:47 > Step:   27800 Progress: 27.8% Elapsed: 5:58:18 temperature: no ada_p: No Discriminator_loss: 1.44438 Generator_loss: 0.457491 
 [INFO] 2020-09-17 19:44:58 > Step:   27900 Progress: 27.9% Elapsed: 5:59:30 temperature: no ada_p: No Discriminator_loss: 1.47915 Generator_loss: 0.0302519 
 [INFO] 2020-09-17 19:46:09 > Step:   28000 Progress: 28.0% Elapsed: 6:00:40 temperature: no ada_p: No Discriminator_loss: 1.63561 Generator_loss: -0.266357 
-[INFO] 2020-09-17 19:46:09 > Start Evaluation (28000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 19:46:09 > Start Evaluation (28000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 19:48:14 > F_8 score (Step: 28000, Using test images): 0.9881000338077446
 [INFO] 2020-09-17 19:48:14 > F_1/8 score (Step: 28000, Using test images): 0.9907842580615875
 [INFO] 2020-09-17 19:48:14 > FID score (Step: 28000, Using test moments): 10.924352543739872
 [INFO] 2020-09-17 19:48:14 > Inception score (Step: 28000, 10000 generated images): 9.912946701049805
 [INFO] 2020-09-17 19:48:14 > Best FID score (Step: 28000, Using test moments): 10.924352543739872
-[INFO] 2020-09-17 19:48:18 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 19:48:18 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 19:49:29 > Step:   28100 Progress: 28.1% Elapsed: 6:04:00 temperature: no ada_p: No Discriminator_loss: 1.55498 Generator_loss: 0.374852 
 [INFO] 2020-09-17 19:50:40 > Step:   28200 Progress: 28.2% Elapsed: 6:05:12 temperature: no ada_p: No Discriminator_loss: 1.42609 Generator_loss: 0.36274 
 [INFO] 2020-09-17 19:51:53 > Step:   28300 Progress: 28.3% Elapsed: 6:06:24 temperature: no ada_p: No Discriminator_loss: 1.38022 Generator_loss: -0.107414 
@@ -533,13 +533,13 @@
 [INFO] 2020-09-17 20:09:44 > Step:   29800 Progress: 29.8% Elapsed: 6:24:15 temperature: no ada_p: No Discriminator_loss: 1.32332 Generator_loss: 0.12374 
 [INFO] 2020-09-17 20:10:56 > Step:   29900 Progress: 29.9% Elapsed: 6:25:28 temperature: no ada_p: No Discriminator_loss: 1.39245 Generator_loss: 0.385552 
 [INFO] 2020-09-17 20:12:08 > Step:   30000 Progress: 30.0% Elapsed: 6:26:40 temperature: no ada_p: No Discriminator_loss: 1.31034 Generator_loss: 0.395099 
-[INFO] 2020-09-17 20:12:08 > Start Evaluation (30000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 20:12:08 > Start Evaluation (30000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 20:14:16 > F_8 score (Step: 30000, Using test images): 0.991724896796515
 [INFO] 2020-09-17 20:14:16 > F_1/8 score (Step: 30000, Using test images): 0.9911806710324881
 [INFO] 2020-09-17 20:14:16 > FID score (Step: 30000, Using test moments): 10.342873773304632
 [INFO] 2020-09-17 20:14:16 > Inception score (Step: 30000, 10000 generated images): 9.886075019836426
 [INFO] 2020-09-17 20:14:16 > Best FID score (Step: 30000, Using test moments): 10.342873773304632
-[INFO] 2020-09-17 20:14:20 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 20:14:20 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 20:15:26 > Step:   30100 Progress: 30.1% Elapsed: 6:29:57 temperature: no ada_p: No Discriminator_loss: 1.45853 Generator_loss: 0.924298 
 [INFO] 2020-09-17 20:16:33 > Step:   30200 Progress: 30.2% Elapsed: 6:31:04 temperature: no ada_p: No Discriminator_loss: 1.43787 Generator_loss: 0.571813 
 [INFO] 2020-09-17 20:17:44 > Step:   30300 Progress: 30.3% Elapsed: 6:32:16 temperature: no ada_p: No Discriminator_loss: 1.62544 Generator_loss: 0.136283 
@@ -560,13 +560,13 @@
 [INFO] 2020-09-17 20:35:32 > Step:   31800 Progress: 31.8% Elapsed: 6:50:03 temperature: no ada_p: No Discriminator_loss: 1.5346 Generator_loss: 0.453811 
 [INFO] 2020-09-17 20:36:43 > Step:   31900 Progress: 31.9% Elapsed: 6:51:14 temperature: no ada_p: No Discriminator_loss: 1.34133 Generator_loss: 0.814606 
 [INFO] 2020-09-17 20:37:54 > Step:   32000 Progress: 32.0% Elapsed: 6:52:25 temperature: no ada_p: No Discriminator_loss: 1.4687 Generator_loss: 0.598543 
-[INFO] 2020-09-17 20:37:54 > Start Evaluation (32000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 20:37:54 > Start Evaluation (32000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 20:40:01 > F_8 score (Step: 32000, Using test images): 0.9878938562711758
 [INFO] 2020-09-17 20:40:01 > F_1/8 score (Step: 32000, Using test images): 0.9908994198492724
 [INFO] 2020-09-17 20:40:01 > FID score (Step: 32000, Using test moments): 9.969444643855525
 [INFO] 2020-09-17 20:40:01 > Inception score (Step: 32000, 10000 generated images): 9.843255996704102
 [INFO] 2020-09-17 20:40:01 > Best FID score (Step: 32000, Using test moments): 9.969444643855525
-[INFO] 2020-09-17 20:40:05 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 20:40:05 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 20:41:17 > Step:   32100 Progress: 32.1% Elapsed: 6:55:48 temperature: no ada_p: No Discriminator_loss: 1.52717 Generator_loss: 0.21 
 [INFO] 2020-09-17 20:42:28 > Step:   32200 Progress: 32.2% Elapsed: 6:56:59 temperature: no ada_p: No Discriminator_loss: 1.60385 Generator_loss: 0.194627 
 [INFO] 2020-09-17 20:43:40 > Step:   32300 Progress: 32.3% Elapsed: 6:58:12 temperature: no ada_p: No Discriminator_loss: 1.43801 Generator_loss: 0.450594 
@@ -587,13 +587,13 @@
 [INFO] 2020-09-17 21:01:18 > Step:   33800 Progress: 33.8% Elapsed: 7:15:49 temperature: no ada_p: No Discriminator_loss: 1.30915 Generator_loss: 0.380352 
 [INFO] 2020-09-17 21:02:29 > Step:   33900 Progress: 33.9% Elapsed: 7:17:00 temperature: no ada_p: No Discriminator_loss: 1.31921 Generator_loss: 0.43699 
 [INFO] 2020-09-17 21:03:38 > Step:   34000 Progress: 34.0% Elapsed: 7:18:10 temperature: no ada_p: No Discriminator_loss: 1.63023 Generator_loss: 0.339778 
-[INFO] 2020-09-17 21:03:38 > Start Evaluation (34000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 21:03:38 > Start Evaluation (34000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 21:05:45 > F_8 score (Step: 34000, Using test images): 0.98812979969941
 [INFO] 2020-09-17 21:05:45 > F_1/8 score (Step: 34000, Using test images): 0.9928430054452366
 [INFO] 2020-09-17 21:05:46 > FID score (Step: 34000, Using test moments): 9.642883017255997
 [INFO] 2020-09-17 21:05:46 > Inception score (Step: 34000, 10000 generated images): 9.847532272338867
 [INFO] 2020-09-17 21:05:46 > Best FID score (Step: 34000, Using test moments): 9.642883017255997
-[INFO] 2020-09-17 21:05:50 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 21:05:50 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 21:07:01 > Step:   34100 Progress: 34.1% Elapsed: 7:21:32 temperature: no ada_p: No Discriminator_loss: 1.38893 Generator_loss: 0.466025 
 [INFO] 2020-09-17 21:08:12 > Step:   34200 Progress: 34.2% Elapsed: 7:22:44 temperature: no ada_p: No Discriminator_loss: 1.58032 Generator_loss: 0.116526 
 [INFO] 2020-09-17 21:09:24 > Step:   34300 Progress: 34.3% Elapsed: 7:23:55 temperature: no ada_p: No Discriminator_loss: 1.55053 Generator_loss: 0.192857 
@@ -614,13 +614,13 @@
 [INFO] 2020-09-17 21:27:15 > Step:   35800 Progress: 35.8% Elapsed: 7:41:47 temperature: no ada_p: No Discriminator_loss: 1.568 Generator_loss: 0.0406777 
 [INFO] 2020-09-17 21:28:29 > Step:   35900 Progress: 35.9% Elapsed: 7:43:00 temperature: no ada_p: No Discriminator_loss: 1.51127 Generator_loss: -0.224826 
 [INFO] 2020-09-17 21:29:41 > Step:   36000 Progress: 36.0% Elapsed: 7:44:12 temperature: no ada_p: No Discriminator_loss: 1.20625 Generator_loss: 0.791969 
-[INFO] 2020-09-17 21:29:41 > Start Evaluation (36000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 21:29:41 > Start Evaluation (36000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 21:31:47 > F_8 score (Step: 36000, Using test images): 0.9895068332212069
 [INFO] 2020-09-17 21:31:47 > F_1/8 score (Step: 36000, Using test images): 0.9923232906486369
 [INFO] 2020-09-17 21:31:47 > FID score (Step: 36000, Using test moments): 9.45905550614981
 [INFO] 2020-09-17 21:31:47 > Inception score (Step: 36000, 10000 generated images): 9.819770812988281
 [INFO] 2020-09-17 21:31:47 > Best FID score (Step: 36000, Using test moments): 9.45905550614981
-[INFO] 2020-09-17 21:31:52 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 21:31:52 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 21:33:04 > Step:   36100 Progress: 36.1% Elapsed: 7:47:35 temperature: no ada_p: No Discriminator_loss: 1.43037 Generator_loss: 0.229852 
 [INFO] 2020-09-17 21:34:16 > Step:   36200 Progress: 36.2% Elapsed: 7:48:47 temperature: no ada_p: No Discriminator_loss: 1.4825 Generator_loss: 0.150664 
 [INFO] 2020-09-17 21:35:28 > Step:   36300 Progress: 36.3% Elapsed: 7:49:59 temperature: no ada_p: No Discriminator_loss: 1.37501 Generator_loss: 0.368979 
@@ -641,13 +641,13 @@
 [INFO] 2020-09-17 21:53:05 > Step:   37800 Progress: 37.8% Elapsed: 8:07:36 temperature: no ada_p: No Discriminator_loss: 1.37483 Generator_loss: 0.331244 
 [INFO] 2020-09-17 21:54:15 > Step:   37900 Progress: 37.9% Elapsed: 8:08:47 temperature: no ada_p: No Discriminator_loss: 1.52936 Generator_loss: 0.663028 
 [INFO] 2020-09-17 21:55:27 > Step:   38000 Progress: 38.0% Elapsed: 8:09:58 temperature: no ada_p: No Discriminator_loss: 1.55045 Generator_loss: 0.244155 
-[INFO] 2020-09-17 21:55:27 > Start Evaluation (38000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 21:55:27 > Start Evaluation (38000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 21:57:35 > F_8 score (Step: 38000, Using test images): 0.990783379482263
 [INFO] 2020-09-17 21:57:35 > F_1/8 score (Step: 38000, Using test images): 0.990287429564419
 [INFO] 2020-09-17 21:57:35 > FID score (Step: 38000, Using test moments): 9.092822388520858
 [INFO] 2020-09-17 21:57:35 > Inception score (Step: 38000, 10000 generated images): 9.874114990234375
 [INFO] 2020-09-17 21:57:35 > Best FID score (Step: 38000, Using test moments): 9.092822388520858
-[INFO] 2020-09-17 21:57:40 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 21:57:40 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 21:58:51 > Step:   38100 Progress: 38.1% Elapsed: 8:13:23 temperature: no ada_p: No Discriminator_loss: 1.34173 Generator_loss: 0.237296 
 [INFO] 2020-09-17 22:00:03 > Step:   38200 Progress: 38.2% Elapsed: 8:14:34 temperature: no ada_p: No Discriminator_loss: 1.45021 Generator_loss: 0.338929 
 [INFO] 2020-09-17 22:01:14 > Step:   38300 Progress: 38.3% Elapsed: 8:15:45 temperature: no ada_p: No Discriminator_loss: 1.61942 Generator_loss: -0.00671762 
@@ -668,13 +668,13 @@
 [INFO] 2020-09-17 22:19:04 > Step:   39800 Progress: 39.8% Elapsed: 8:33:35 temperature: no ada_p: No Discriminator_loss: 1.41451 Generator_loss: 0.695654 
 [INFO] 2020-09-17 22:20:16 > Step:   39900 Progress: 39.9% Elapsed: 8:34:48 temperature: no ada_p: No Discriminator_loss: 1.62976 Generator_loss: 0.489558 
 [INFO] 2020-09-17 22:21:28 > Step:   40000 Progress: 40.0% Elapsed: 8:35:59 temperature: no ada_p: No Discriminator_loss: 1.46957 Generator_loss: 0.237105 
-[INFO] 2020-09-17 22:21:28 > Start Evaluation (40000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 22:21:28 > Start Evaluation (40000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 22:23:34 > F_8 score (Step: 40000, Using test images): 0.9910225769327523
 [INFO] 2020-09-17 22:23:34 > F_1/8 score (Step: 40000, Using test images): 0.9932352487209597
 [INFO] 2020-09-17 22:23:34 > FID score (Step: 40000, Using test moments): 8.905411968977603
 [INFO] 2020-09-17 22:23:34 > Inception score (Step: 40000, 10000 generated images): 9.865089416503906
 [INFO] 2020-09-17 22:23:34 > Best FID score (Step: 40000, Using test moments): 8.905411968977603
-[INFO] 2020-09-17 22:23:39 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 22:23:39 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 22:24:48 > Step:   40100 Progress: 40.1% Elapsed: 8:39:19 temperature: no ada_p: No Discriminator_loss: 1.48349 Generator_loss: 0.334714 
 [INFO] 2020-09-17 22:25:54 > Step:   40200 Progress: 40.2% Elapsed: 8:40:25 temperature: no ada_p: No Discriminator_loss: 1.42689 Generator_loss: 0.482974 
 [INFO] 2020-09-17 22:27:01 > Step:   40300 Progress: 40.3% Elapsed: 8:41:33 temperature: no ada_p: No Discriminator_loss: 1.4181 Generator_loss: 0.512863 
@@ -695,13 +695,13 @@
 [INFO] 2020-09-17 22:44:49 > Step:   41800 Progress: 41.8% Elapsed: 8:59:20 temperature: no ada_p: No Discriminator_loss: 1.54888 Generator_loss: 0.253808 
 [INFO] 2020-09-17 22:46:00 > Step:   41900 Progress: 41.9% Elapsed: 9:00:32 temperature: no ada_p: No Discriminator_loss: 1.50958 Generator_loss: 0.178417 
 [INFO] 2020-09-17 22:47:12 > Step:   42000 Progress: 42.0% Elapsed: 9:01:43 temperature: no ada_p: No Discriminator_loss: 1.59698 Generator_loss: 0.352435 
-[INFO] 2020-09-17 22:47:12 > Start Evaluation (42000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 22:47:12 > Start Evaluation (42000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 22:49:17 > F_8 score (Step: 42000, Using test images): 0.9914342061239271
 [INFO] 2020-09-17 22:49:17 > F_1/8 score (Step: 42000, Using test images): 0.9930822267320901
 [INFO] 2020-09-17 22:49:17 > FID score (Step: 42000, Using test moments): 8.851831923347106
 [INFO] 2020-09-17 22:49:17 > Inception score (Step: 42000, 10000 generated images): 9.926934242248535
 [INFO] 2020-09-17 22:49:17 > Best FID score (Step: 42000, Using test moments): 8.851831923347106
-[INFO] 2020-09-17 22:49:21 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 22:49:21 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 22:50:34 > Step:   42100 Progress: 42.1% Elapsed: 9:05:05 temperature: no ada_p: No Discriminator_loss: 1.45808 Generator_loss: 0.813351 
 [INFO] 2020-09-17 22:51:45 > Step:   42200 Progress: 42.2% Elapsed: 9:06:16 temperature: no ada_p: No Discriminator_loss: 1.55383 Generator_loss: 0.303638 
 [INFO] 2020-09-17 22:52:56 > Step:   42300 Progress: 42.3% Elapsed: 9:07:27 temperature: no ada_p: No Discriminator_loss: 1.59551 Generator_loss: 0.0346072 
@@ -722,13 +722,13 @@
 [INFO] 2020-09-17 23:10:34 > Step:   43800 Progress: 43.8% Elapsed: 9:25:05 temperature: no ada_p: No Discriminator_loss: 1.48073 Generator_loss: 0.241368 
 [INFO] 2020-09-17 23:11:45 > Step:   43900 Progress: 43.9% Elapsed: 9:26:16 temperature: no ada_p: No Discriminator_loss: 1.44559 Generator_loss: 0.419841 
 [INFO] 2020-09-17 23:12:56 > Step:   44000 Progress: 44.0% Elapsed: 9:27:28 temperature: no ada_p: No Discriminator_loss: 1.43099 Generator_loss: 0.3225 
-[INFO] 2020-09-17 23:12:56 > Start Evaluation (44000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 23:12:56 > Start Evaluation (44000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 23:15:03 > F_8 score (Step: 44000, Using test images): 0.9927945201847931
 [INFO] 2020-09-17 23:15:03 > F_1/8 score (Step: 44000, Using test images): 0.99292028924163
 [INFO] 2020-09-17 23:15:03 > FID score (Step: 44000, Using test moments): 8.737860253064468
 [INFO] 2020-09-17 23:15:03 > Inception score (Step: 44000, 10000 generated images): 9.92638874053955
 [INFO] 2020-09-17 23:15:03 > Best FID score (Step: 44000, Using test moments): 8.737860253064468
-[INFO] 2020-09-17 23:15:08 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 23:15:08 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 23:16:19 > Step:   44100 Progress: 44.1% Elapsed: 9:30:51 temperature: no ada_p: No Discriminator_loss: 1.50549 Generator_loss: 0.0540866 
 [INFO] 2020-09-17 23:17:32 > Step:   44200 Progress: 44.2% Elapsed: 9:32:03 temperature: no ada_p: No Discriminator_loss: 1.62506 Generator_loss: 0.0500068 
 [INFO] 2020-09-17 23:18:44 > Step:   44300 Progress: 44.3% Elapsed: 9:33:16 temperature: no ada_p: No Discriminator_loss: 1.48575 Generator_loss: 0.417087 
@@ -749,13 +749,13 @@
 [INFO] 2020-09-17 23:36:40 > Step:   45800 Progress: 45.8% Elapsed: 9:51:12 temperature: no ada_p: No Discriminator_loss: 1.71601 Generator_loss: -0.0830691 
 [INFO] 2020-09-17 23:37:51 > Step:   45900 Progress: 45.9% Elapsed: 9:52:23 temperature: no ada_p: No Discriminator_loss: 1.49193 Generator_loss: 0.234977 
 [INFO] 2020-09-17 23:39:02 > Step:   46000 Progress: 46.0% Elapsed: 9:53:34 temperature: no ada_p: No Discriminator_loss: 1.42102 Generator_loss: 0.0699989 
-[INFO] 2020-09-17 23:39:02 > Start Evaluation (46000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 23:39:02 > Start Evaluation (46000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 23:41:08 > F_8 score (Step: 46000, Using test images): 0.9926521338680769
 [INFO] 2020-09-17 23:41:08 > F_1/8 score (Step: 46000, Using test images): 0.9934125319897072
 [INFO] 2020-09-17 23:41:08 > FID score (Step: 46000, Using test moments): 8.608184956855041
 [INFO] 2020-09-17 23:41:08 > Inception score (Step: 46000, 10000 generated images): 9.865883827209473
 [INFO] 2020-09-17 23:41:08 > Best FID score (Step: 46000, Using test moments): 8.608184956855041
-[INFO] 2020-09-17 23:41:12 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-17 23:41:12 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-17 23:42:23 > Step:   46100 Progress: 46.1% Elapsed: 9:56:55 temperature: no ada_p: No Discriminator_loss: 1.64773 Generator_loss: -0.0723397 
 [INFO] 2020-09-17 23:43:36 > Step:   46200 Progress: 46.2% Elapsed: 9:58:07 temperature: no ada_p: No Discriminator_loss: 1.44429 Generator_loss: 0.741297 
 [INFO] 2020-09-17 23:44:47 > Step:   46300 Progress: 46.3% Elapsed: 9:59:19 temperature: no ada_p: No Discriminator_loss: 1.51209 Generator_loss: 0.107287 
@@ -776,13 +776,13 @@
 [INFO] 2020-09-18 00:02:20 > Step:   47800 Progress: 47.8% Elapsed: 10:16:52 temperature: no ada_p: No Discriminator_loss: 1.53719 Generator_loss: 0.591169 
 [INFO] 2020-09-18 00:03:31 > Step:   47900 Progress: 47.9% Elapsed: 10:18:03 temperature: no ada_p: No Discriminator_loss: 1.67543 Generator_loss: 0.338456 
 [INFO] 2020-09-18 00:04:43 > Step:   48000 Progress: 48.0% Elapsed: 10:19:15 temperature: no ada_p: No Discriminator_loss: 1.51697 Generator_loss: 0.489339 
-[INFO] 2020-09-18 00:04:43 > Start Evaluation (48000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 00:04:43 > Start Evaluation (48000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 00:06:50 > F_8 score (Step: 48000, Using test images): 0.9913962692882977
 [INFO] 2020-09-18 00:06:50 > F_1/8 score (Step: 48000, Using test images): 0.9940202720890731
 [INFO] 2020-09-18 00:06:50 > FID score (Step: 48000, Using test moments): 8.46469583883811
 [INFO] 2020-09-18 00:06:50 > Inception score (Step: 48000, 10000 generated images): 10.095162391662598
 [INFO] 2020-09-18 00:06:50 > Best FID score (Step: 48000, Using test moments): 8.46469583883811
-[INFO] 2020-09-18 00:06:54 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 00:06:54 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 00:08:07 > Step:   48100 Progress: 48.1% Elapsed: 10:22:38 temperature: no ada_p: No Discriminator_loss: 1.5907 Generator_loss: 0.0245308 
 [INFO] 2020-09-18 00:09:19 > Step:   48200 Progress: 48.2% Elapsed: 10:23:50 temperature: no ada_p: No Discriminator_loss: 1.52198 Generator_loss: -0.0402185 
 [INFO] 2020-09-18 00:10:31 > Step:   48300 Progress: 48.3% Elapsed: 10:25:02 temperature: no ada_p: No Discriminator_loss: 1.48191 Generator_loss: 0.352932 
@@ -803,13 +803,13 @@
 [INFO] 2020-09-18 00:28:21 > Step:   49800 Progress: 49.8% Elapsed: 10:42:52 temperature: no ada_p: No Discriminator_loss: 1.47033 Generator_loss: 0.349658 
 [INFO] 2020-09-18 00:29:33 > Step:   49900 Progress: 49.9% Elapsed: 10:44:04 temperature: no ada_p: No Discriminator_loss: 1.39775 Generator_loss: 0.615132 
 [INFO] 2020-09-18 00:30:45 > Step:   50000 Progress: 50.0% Elapsed: 10:45:16 temperature: no ada_p: No Discriminator_loss: 1.49204 Generator_loss: 0.718057 
-[INFO] 2020-09-18 00:30:45 > Start Evaluation (50000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 00:30:45 > Start Evaluation (50000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 00:32:52 > F_8 score (Step: 50000, Using test images): 0.9936797374290628
 [INFO] 2020-09-18 00:32:52 > F_1/8 score (Step: 50000, Using test images): 0.99406461219856
 [INFO] 2020-09-18 00:32:52 > FID score (Step: 50000, Using test moments): 8.194216214025687
 [INFO] 2020-09-18 00:32:52 > Inception score (Step: 50000, 10000 generated images): 10.00407886505127
 [INFO] 2020-09-18 00:32:52 > Best FID score (Step: 50000, Using test moments): 8.194216214025687
-[INFO] 2020-09-18 00:32:57 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 00:32:57 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 00:34:08 > Step:   50100 Progress: 50.1% Elapsed: 10:48:40 temperature: no ada_p: No Discriminator_loss: 1.44204 Generator_loss: 0.086389 
 [INFO] 2020-09-18 00:35:17 > Step:   50200 Progress: 50.2% Elapsed: 10:49:48 temperature: no ada_p: No Discriminator_loss: 1.35408 Generator_loss: 0.29575 
 [INFO] 2020-09-18 00:36:23 > Step:   50300 Progress: 50.3% Elapsed: 10:50:55 temperature: no ada_p: No Discriminator_loss: 1.37061 Generator_loss: 0.275625 
@@ -830,13 +830,13 @@
 [INFO] 2020-09-18 00:54:16 > Step:   51800 Progress: 51.8% Elapsed: 11:08:48 temperature: no ada_p: No Discriminator_loss: 1.4997 Generator_loss: 0.233929 
 [INFO] 2020-09-18 00:55:28 > Step:   51900 Progress: 51.9% Elapsed: 11:10:00 temperature: no ada_p: No Discriminator_loss: 1.46831 Generator_loss: 0.360502 
 [INFO] 2020-09-18 00:56:39 > Step:   52000 Progress: 52.0% Elapsed: 11:11:11 temperature: no ada_p: No Discriminator_loss: 1.6167 Generator_loss: -0.179054 
-[INFO] 2020-09-18 00:56:39 > Start Evaluation (52000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 00:56:39 > Start Evaluation (52000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 00:58:47 > F_8 score (Step: 52000, Using test images): 0.9910171223293361
 [INFO] 2020-09-18 00:58:47 > F_1/8 score (Step: 52000, Using test images): 0.9954497898328042
 [INFO] 2020-09-18 00:58:47 > FID score (Step: 52000, Using test moments): 8.239159230196833
 [INFO] 2020-09-18 00:58:47 > Inception score (Step: 52000, 10000 generated images): 10.0671968460083
 [INFO] 2020-09-18 00:58:47 > Best FID score (Step: 50000, Using test moments): 8.194216214025687
-[INFO] 2020-09-18 00:58:49 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 00:58:49 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 01:00:01 > Step:   52100 Progress: 52.1% Elapsed: 11:14:32 temperature: no ada_p: No Discriminator_loss: 1.50668 Generator_loss: 0.307032 
 [INFO] 2020-09-18 01:01:13 > Step:   52200 Progress: 52.2% Elapsed: 11:15:44 temperature: no ada_p: No Discriminator_loss: 1.40822 Generator_loss: 0.120904 
 [INFO] 2020-09-18 01:02:24 > Step:   52300 Progress: 52.3% Elapsed: 11:16:56 temperature: no ada_p: No Discriminator_loss: 1.51342 Generator_loss: 0.491414 
@@ -857,13 +857,13 @@
 [INFO] 2020-09-18 01:20:01 > Step:   53800 Progress: 53.8% Elapsed: 11:34:33 temperature: no ada_p: No Discriminator_loss: 1.40067 Generator_loss: 0.291692 
 [INFO] 2020-09-18 01:21:12 > Step:   53900 Progress: 53.9% Elapsed: 11:35:43 temperature: no ada_p: No Discriminator_loss: 1.31399 Generator_loss: 0.539527 
 [INFO] 2020-09-18 01:22:22 > Step:   54000 Progress: 54.0% Elapsed: 11:36:53 temperature: no ada_p: No Discriminator_loss: 1.32496 Generator_loss: 0.404159 
-[INFO] 2020-09-18 01:22:22 > Start Evaluation (54000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 01:22:22 > Start Evaluation (54000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 01:24:29 > F_8 score (Step: 54000, Using test images): 0.9929117805883526
 [INFO] 2020-09-18 01:24:29 > F_1/8 score (Step: 54000, Using test images): 0.9944433139646757
 [INFO] 2020-09-18 01:24:29 > FID score (Step: 54000, Using test moments): 8.014942892621036
 [INFO] 2020-09-18 01:24:29 > Inception score (Step: 54000, 10000 generated images): 10.087419509887695
 [INFO] 2020-09-18 01:24:29 > Best FID score (Step: 54000, Using test moments): 8.014942892621036
-[INFO] 2020-09-18 01:24:33 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 01:24:33 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 01:25:45 > Step:   54100 Progress: 54.1% Elapsed: 11:40:16 temperature: no ada_p: No Discriminator_loss: 1.67783 Generator_loss: 0.387194 
 [INFO] 2020-09-18 01:26:57 > Step:   54200 Progress: 54.2% Elapsed: 11:41:28 temperature: no ada_p: No Discriminator_loss: 1.59435 Generator_loss: 0.636856 
 [INFO] 2020-09-18 01:28:10 > Step:   54300 Progress: 54.3% Elapsed: 11:42:41 temperature: no ada_p: No Discriminator_loss: 1.42376 Generator_loss: 0.266887 
@@ -884,13 +884,13 @@
 [INFO] 2020-09-18 01:46:02 > Step:   55800 Progress: 55.8% Elapsed: 12:00:33 temperature: no ada_p: No Discriminator_loss: 1.41246 Generator_loss: 0.333371 
 [INFO] 2020-09-18 01:47:12 > Step:   55900 Progress: 55.9% Elapsed: 12:01:43 temperature: no ada_p: No Discriminator_loss: 1.57656 Generator_loss: 0.251488 
 [INFO] 2020-09-18 01:48:24 > Step:   56000 Progress: 56.0% Elapsed: 12:02:55 temperature: no ada_p: No Discriminator_loss: 1.36484 Generator_loss: 0.285934 
-[INFO] 2020-09-18 01:48:24 > Start Evaluation (56000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 01:48:24 > Start Evaluation (56000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 01:50:31 > F_8 score (Step: 56000, Using test images): 0.9931429006423054
 [INFO] 2020-09-18 01:50:31 > F_1/8 score (Step: 56000, Using test images): 0.9932075484936623
 [INFO] 2020-09-18 01:50:31 > FID score (Step: 56000, Using test moments): 8.048982184846068
 [INFO] 2020-09-18 01:50:31 > Inception score (Step: 56000, 10000 generated images): 10.170463562011719
 [INFO] 2020-09-18 01:50:31 > Best FID score (Step: 54000, Using test moments): 8.014942892621036
-[INFO] 2020-09-18 01:50:33 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 01:50:33 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 01:51:44 > Step:   56100 Progress: 56.1% Elapsed: 12:06:16 temperature: no ada_p: No Discriminator_loss: 1.60314 Generator_loss: 0.142559 
 [INFO] 2020-09-18 01:52:57 > Step:   56200 Progress: 56.2% Elapsed: 12:07:28 temperature: no ada_p: No Discriminator_loss: 1.592 Generator_loss: 0.184827 
 [INFO] 2020-09-18 01:54:08 > Step:   56300 Progress: 56.3% Elapsed: 12:08:40 temperature: no ada_p: No Discriminator_loss: 1.54881 Generator_loss: 0.230968 
@@ -911,13 +911,13 @@
 [INFO] 2020-09-18 02:11:45 > Step:   57800 Progress: 57.8% Elapsed: 12:26:17 temperature: no ada_p: No Discriminator_loss: 1.41545 Generator_loss: 0.419806 
 [INFO] 2020-09-18 02:12:57 > Step:   57900 Progress: 57.9% Elapsed: 12:27:28 temperature: no ada_p: No Discriminator_loss: 1.41973 Generator_loss: 0.282453 
 [INFO] 2020-09-18 02:14:09 > Step:   58000 Progress: 58.0% Elapsed: 12:28:40 temperature: no ada_p: No Discriminator_loss: 1.54049 Generator_loss: 0.322333 
-[INFO] 2020-09-18 02:14:09 > Start Evaluation (58000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 02:14:09 > Start Evaluation (58000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 02:16:15 > F_8 score (Step: 58000, Using test images): 0.9927606246037821
 [INFO] 2020-09-18 02:16:15 > F_1/8 score (Step: 58000, Using test images): 0.9944260830307351
 [INFO] 2020-09-18 02:16:15 > FID score (Step: 58000, Using test moments): 7.934167902357046
 [INFO] 2020-09-18 02:16:15 > Inception score (Step: 58000, 10000 generated images): 10.125251770019531
 [INFO] 2020-09-18 02:16:15 > Best FID score (Step: 58000, Using test moments): 7.934167902357046
-[INFO] 2020-09-18 02:16:20 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 02:16:20 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 02:17:30 > Step:   58100 Progress: 58.1% Elapsed: 12:32:02 temperature: no ada_p: No Discriminator_loss: 1.56033 Generator_loss: 0.240338 
 [INFO] 2020-09-18 02:18:41 > Step:   58200 Progress: 58.2% Elapsed: 12:33:12 temperature: no ada_p: No Discriminator_loss: 1.39701 Generator_loss: 0.297584 
 [INFO] 2020-09-18 02:19:53 > Step:   58300 Progress: 58.3% Elapsed: 12:34:25 temperature: no ada_p: No Discriminator_loss: 1.5877 Generator_loss: 0.264824 
@@ -938,13 +938,13 @@
 [INFO] 2020-09-18 02:37:49 > Step:   59800 Progress: 59.8% Elapsed: 12:52:20 temperature: no ada_p: No Discriminator_loss: 1.63849 Generator_loss: -0.254181 
 [INFO] 2020-09-18 02:39:01 > Step:   59900 Progress: 59.9% Elapsed: 12:53:32 temperature: no ada_p: No Discriminator_loss: 1.40164 Generator_loss: 0.231019 
 [INFO] 2020-09-18 02:40:12 > Step:   60000 Progress: 60.0% Elapsed: 12:54:43 temperature: no ada_p: No Discriminator_loss: 1.29507 Generator_loss: 0.0801723 
-[INFO] 2020-09-18 02:40:12 > Start Evaluation (60000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 02:40:12 > Start Evaluation (60000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 02:42:18 > F_8 score (Step: 60000, Using test images): 0.9942866296373783
 [INFO] 2020-09-18 02:42:18 > F_1/8 score (Step: 60000, Using test images): 0.9948770813373916
 [INFO] 2020-09-18 02:42:18 > FID score (Step: 60000, Using test moments): 7.8597864021404575
 [INFO] 2020-09-18 02:42:18 > Inception score (Step: 60000, 10000 generated images): 10.133395195007324
 [INFO] 2020-09-18 02:42:18 > Best FID score (Step: 60000, Using test moments): 7.8597864021404575
-[INFO] 2020-09-18 02:42:22 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 02:42:22 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 02:43:34 > Step:   60100 Progress: 60.1% Elapsed: 12:58:05 temperature: no ada_p: No Discriminator_loss: 1.49418 Generator_loss: 0.597962 
 [INFO] 2020-09-18 02:44:45 > Step:   60200 Progress: 60.2% Elapsed: 12:59:16 temperature: no ada_p: No Discriminator_loss: 1.50787 Generator_loss: 0.607163 
 [INFO] 2020-09-18 02:45:51 > Step:   60300 Progress: 60.3% Elapsed: 13:00:22 temperature: no ada_p: No Discriminator_loss: 1.57161 Generator_loss: 0.368282 
@@ -965,13 +965,13 @@
 [INFO] 2020-09-18 03:03:38 > Step:   61800 Progress: 61.8% Elapsed: 13:18:09 temperature: no ada_p: No Discriminator_loss: 1.35976 Generator_loss: 0.279209 
 [INFO] 2020-09-18 03:04:49 > Step:   61900 Progress: 61.9% Elapsed: 13:19:20 temperature: no ada_p: No Discriminator_loss: 1.57963 Generator_loss: 0.147546 
 [INFO] 2020-09-18 03:06:00 > Step:   62000 Progress: 62.0% Elapsed: 13:20:31 temperature: no ada_p: No Discriminator_loss: 1.52735 Generator_loss: -0.333128 
-[INFO] 2020-09-18 03:06:00 > Start Evaluation (62000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 03:06:00 > Start Evaluation (62000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 03:08:07 > F_8 score (Step: 62000, Using test images): 0.9929305820621174
 [INFO] 2020-09-18 03:08:07 > F_1/8 score (Step: 62000, Using test images): 0.9949099625882352
 [INFO] 2020-09-18 03:08:07 > FID score (Step: 62000, Using test moments): 7.679344680322174
 [INFO] 2020-09-18 03:08:07 > Inception score (Step: 62000, 10000 generated images): 9.980340003967285
 [INFO] 2020-09-18 03:08:07 > Best FID score (Step: 62000, Using test moments): 7.679344680322174
-[INFO] 2020-09-18 03:08:11 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 03:08:11 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 03:09:22 > Step:   62100 Progress: 62.1% Elapsed: 13:23:53 temperature: no ada_p: No Discriminator_loss: 1.43108 Generator_loss: 0.737808 
 [INFO] 2020-09-18 03:10:35 > Step:   62200 Progress: 62.2% Elapsed: 13:25:06 temperature: no ada_p: No Discriminator_loss: 1.5067 Generator_loss: 0.632635 
 [INFO] 2020-09-18 03:11:46 > Step:   62300 Progress: 62.3% Elapsed: 13:26:17 temperature: no ada_p: No Discriminator_loss: 1.46017 Generator_loss: 0.644315 
@@ -992,13 +992,13 @@
 [INFO] 2020-09-18 03:29:27 > Step:   63800 Progress: 63.8% Elapsed: 13:43:58 temperature: no ada_p: No Discriminator_loss: 1.50449 Generator_loss: 0.672307 
 [INFO] 2020-09-18 03:30:34 > Step:   63900 Progress: 63.9% Elapsed: 13:45:05 temperature: no ada_p: No Discriminator_loss: 1.3859 Generator_loss: 0.253506 
 [INFO] 2020-09-18 03:31:45 > Step:   64000 Progress: 64.0% Elapsed: 13:46:16 temperature: no ada_p: No Discriminator_loss: 1.50147 Generator_loss: 0.5709 
-[INFO] 2020-09-18 03:31:45 > Start Evaluation (64000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 03:31:45 > Start Evaluation (64000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 03:33:52 > F_8 score (Step: 64000, Using test images): 0.9934123158536212
 [INFO] 2020-09-18 03:33:52 > F_1/8 score (Step: 64000, Using test images): 0.9948474060866624
 [INFO] 2020-09-18 03:33:52 > FID score (Step: 64000, Using test moments): 7.619330465438452
 [INFO] 2020-09-18 03:33:52 > Inception score (Step: 64000, 10000 generated images): 10.023351669311523
 [INFO] 2020-09-18 03:33:52 > Best FID score (Step: 64000, Using test moments): 7.619330465438452
-[INFO] 2020-09-18 03:33:57 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 03:33:57 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 03:35:08 > Step:   64100 Progress: 64.1% Elapsed: 13:49:39 temperature: no ada_p: No Discriminator_loss: 1.36149 Generator_loss: 0.304429 
 [INFO] 2020-09-18 03:36:19 > Step:   64200 Progress: 64.2% Elapsed: 13:50:50 temperature: no ada_p: No Discriminator_loss: 1.50205 Generator_loss: 0.0503486 
 [INFO] 2020-09-18 03:37:30 > Step:   64300 Progress: 64.3% Elapsed: 13:52:01 temperature: no ada_p: No Discriminator_loss: 1.55397 Generator_loss: -0.054925 
@@ -1019,13 +1019,13 @@
 [INFO] 2020-09-18 03:55:21 > Step:   65800 Progress: 65.8% Elapsed: 14:09:53 temperature: no ada_p: No Discriminator_loss: 1.52468 Generator_loss: 0.151915 
 [INFO] 2020-09-18 03:56:32 > Step:   65900 Progress: 65.9% Elapsed: 14:11:03 temperature: no ada_p: No Discriminator_loss: 1.27774 Generator_loss: 0.509083 
 [INFO] 2020-09-18 03:57:43 > Step:   66000 Progress: 66.0% Elapsed: 14:12:15 temperature: no ada_p: No Discriminator_loss: 1.2893 Generator_loss: 0.669122 
-[INFO] 2020-09-18 03:57:43 > Start Evaluation (66000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 03:57:43 > Start Evaluation (66000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 03:59:51 > F_8 score (Step: 66000, Using test images): 0.9928179881629454
 [INFO] 2020-09-18 03:59:51 > F_1/8 score (Step: 66000, Using test images): 0.9945669228884761
 [INFO] 2020-09-18 03:59:51 > FID score (Step: 66000, Using test moments): 7.756492090460426
 [INFO] 2020-09-18 03:59:51 > Inception score (Step: 66000, 10000 generated images): 10.067391395568848
 [INFO] 2020-09-18 03:59:51 > Best FID score (Step: 64000, Using test moments): 7.619330465438452
-[INFO] 2020-09-18 03:59:54 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 03:59:54 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 04:01:06 > Step:   66100 Progress: 66.1% Elapsed: 14:15:37 temperature: no ada_p: No Discriminator_loss: 1.48553 Generator_loss: 0.437232 
 [INFO] 2020-09-18 04:02:17 > Step:   66200 Progress: 66.2% Elapsed: 14:16:48 temperature: no ada_p: No Discriminator_loss: 1.65582 Generator_loss: 0.241173 
 [INFO] 2020-09-18 04:03:28 > Step:   66300 Progress: 66.3% Elapsed: 14:17:59 temperature: no ada_p: No Discriminator_loss: 1.41148 Generator_loss: 0.721023 
@@ -1046,13 +1046,13 @@
 [INFO] 2020-09-18 04:20:59 > Step:   67800 Progress: 67.8% Elapsed: 14:35:31 temperature: no ada_p: No Discriminator_loss: 1.42016 Generator_loss: 0.489638 
 [INFO] 2020-09-18 04:22:11 > Step:   67900 Progress: 67.9% Elapsed: 14:36:42 temperature: no ada_p: No Discriminator_loss: 1.50003 Generator_loss: 0.113306 
 [INFO] 2020-09-18 04:23:21 > Step:   68000 Progress: 68.0% Elapsed: 14:37:53 temperature: no ada_p: No Discriminator_loss: 1.71768 Generator_loss: -0.154773 
-[INFO] 2020-09-18 04:23:21 > Start Evaluation (68000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 04:23:21 > Start Evaluation (68000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 04:25:27 > F_8 score (Step: 68000, Using test images): 0.9929625240160574
 [INFO] 2020-09-18 04:25:27 > F_1/8 score (Step: 68000, Using test images): 0.9952397359786268
 [INFO] 2020-09-18 04:25:27 > FID score (Step: 68000, Using test moments): 7.591563876345106
 [INFO] 2020-09-18 04:25:27 > Inception score (Step: 68000, 10000 generated images): 10.070651054382324
 [INFO] 2020-09-18 04:25:27 > Best FID score (Step: 68000, Using test moments): 7.591563876345106
-[INFO] 2020-09-18 04:25:32 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 04:25:32 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 04:26:42 > Step:   68100 Progress: 68.1% Elapsed: 14:41:13 temperature: no ada_p: No Discriminator_loss: 1.4139 Generator_loss: 0.64334 
 [INFO] 2020-09-18 04:27:54 > Step:   68200 Progress: 68.2% Elapsed: 14:42:25 temperature: no ada_p: No Discriminator_loss: 1.43588 Generator_loss: 0.198935 
 [INFO] 2020-09-18 04:29:06 > Step:   68300 Progress: 68.3% Elapsed: 14:43:37 temperature: no ada_p: No Discriminator_loss: 1.45865 Generator_loss: 0.473591 
@@ -1073,13 +1073,13 @@
 [INFO] 2020-09-18 04:46:57 > Step:   69800 Progress: 69.8% Elapsed: 15:01:28 temperature: no ada_p: No Discriminator_loss: 1.54673 Generator_loss: 0.20246 
 [INFO] 2020-09-18 04:48:08 > Step:   69900 Progress: 69.9% Elapsed: 15:02:39 temperature: no ada_p: No Discriminator_loss: 1.52503 Generator_loss: 0.0714007 
 [INFO] 2020-09-18 04:49:20 > Step:   70000 Progress: 70.0% Elapsed: 15:03:51 temperature: no ada_p: No Discriminator_loss: 1.4918 Generator_loss: 0.277469 
-[INFO] 2020-09-18 04:49:20 > Start Evaluation (70000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 04:49:20 > Start Evaluation (70000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 04:51:28 > F_8 score (Step: 70000, Using test images): 0.9943506728098583
 [INFO] 2020-09-18 04:51:28 > F_1/8 score (Step: 70000, Using test images): 0.995044276398413
 [INFO] 2020-09-18 04:51:28 > FID score (Step: 70000, Using test moments): 7.6027888159860595
 [INFO] 2020-09-18 04:51:28 > Inception score (Step: 70000, 10000 generated images): 10.00072956085205
 [INFO] 2020-09-18 04:51:28 > Best FID score (Step: 68000, Using test moments): 7.591563876345106
-[INFO] 2020-09-18 04:51:30 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 04:51:30 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 04:52:42 > Step:   70100 Progress: 70.1% Elapsed: 15:07:13 temperature: no ada_p: No Discriminator_loss: 1.29884 Generator_loss: 0.44466 
 [INFO] 2020-09-18 04:53:52 > Step:   70200 Progress: 70.2% Elapsed: 15:08:24 temperature: no ada_p: No Discriminator_loss: 1.55883 Generator_loss: 0.448057 
 [INFO] 2020-09-18 04:55:02 > Step:   70300 Progress: 70.3% Elapsed: 15:09:33 temperature: no ada_p: No Discriminator_loss: 1.49938 Generator_loss: 0.120697 
@@ -1100,13 +1100,13 @@
 [INFO] 2020-09-18 05:12:51 > Step:   71800 Progress: 71.8% Elapsed: 15:27:22 temperature: no ada_p: No Discriminator_loss: 1.43417 Generator_loss: 0.190701 
 [INFO] 2020-09-18 05:14:01 > Step:   71900 Progress: 71.9% Elapsed: 15:28:32 temperature: no ada_p: No Discriminator_loss: 1.30665 Generator_loss: 0.804481 
 [INFO] 2020-09-18 05:15:11 > Step:   72000 Progress: 72.0% Elapsed: 15:29:42 temperature: no ada_p: No Discriminator_loss: 1.5295 Generator_loss: 0.221478 
-[INFO] 2020-09-18 05:15:11 > Start Evaluation (72000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 05:15:11 > Start Evaluation (72000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 05:17:19 > F_8 score (Step: 72000, Using test images): 0.9943215190798758
 [INFO] 2020-09-18 05:17:19 > F_1/8 score (Step: 72000, Using test images): 0.9942416656962906
 [INFO] 2020-09-18 05:17:19 > FID score (Step: 72000, Using test moments): 7.549290853197647
 [INFO] 2020-09-18 05:17:19 > Inception score (Step: 72000, 10000 generated images): 9.88429069519043
 [INFO] 2020-09-18 05:17:19 > Best FID score (Step: 72000, Using test moments): 7.549290853197647
-[INFO] 2020-09-18 05:17:24 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 05:17:24 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 05:18:34 > Step:   72100 Progress: 72.1% Elapsed: 15:33:05 temperature: no ada_p: No Discriminator_loss: 1.35244 Generator_loss: 0.759691 
 [INFO] 2020-09-18 05:19:45 > Step:   72200 Progress: 72.2% Elapsed: 15:34:17 temperature: no ada_p: No Discriminator_loss: 1.41975 Generator_loss: 0.193271 
 [INFO] 2020-09-18 05:20:57 > Step:   72300 Progress: 72.3% Elapsed: 15:35:28 temperature: no ada_p: No Discriminator_loss: 1.50565 Generator_loss: 0.61239 
@@ -1127,13 +1127,13 @@
 [INFO] 2020-09-18 05:38:42 > Step:   73800 Progress: 73.8% Elapsed: 15:53:13 temperature: no ada_p: No Discriminator_loss: 1.38493 Generator_loss: 0.405337 
 [INFO] 2020-09-18 05:39:47 > Step:   73900 Progress: 73.9% Elapsed: 15:54:19 temperature: no ada_p: No Discriminator_loss: 1.50364 Generator_loss: 0.605543 
 [INFO] 2020-09-18 05:40:55 > Step:   74000 Progress: 74.0% Elapsed: 15:55:27 temperature: no ada_p: No Discriminator_loss: 1.34258 Generator_loss: 0.395806 
-[INFO] 2020-09-18 05:40:55 > Start Evaluation (74000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 05:40:55 > Start Evaluation (74000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 05:43:05 > F_8 score (Step: 74000, Using test images): 0.9925326189164722
 [INFO] 2020-09-18 05:43:05 > F_1/8 score (Step: 74000, Using test images): 0.9962499756769959
 [INFO] 2020-09-18 05:43:05 > FID score (Step: 74000, Using test moments): 7.542931903539397
 [INFO] 2020-09-18 05:43:05 > Inception score (Step: 74000, 10000 generated images): 10.160260200500488
 [INFO] 2020-09-18 05:43:05 > Best FID score (Step: 74000, Using test moments): 7.542931903539397
-[INFO] 2020-09-18 05:43:10 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 05:43:10 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 05:44:20 > Step:   74100 Progress: 74.1% Elapsed: 15:58:52 temperature: no ada_p: No Discriminator_loss: 1.34866 Generator_loss: 0.459337 
 [INFO] 2020-09-18 05:45:32 > Step:   74200 Progress: 74.2% Elapsed: 16:00:04 temperature: no ada_p: No Discriminator_loss: 1.63412 Generator_loss: 0.489131 
 [INFO] 2020-09-18 05:46:44 > Step:   74300 Progress: 74.3% Elapsed: 16:01:15 temperature: no ada_p: No Discriminator_loss: 1.51818 Generator_loss: 0.110959 
@@ -1154,13 +1154,13 @@
 [INFO] 2020-09-18 06:04:34 > Step:   75800 Progress: 75.8% Elapsed: 16:19:06 temperature: no ada_p: No Discriminator_loss: 1.386 Generator_loss: 0.359224 
 [INFO] 2020-09-18 06:05:46 > Step:   75900 Progress: 75.9% Elapsed: 16:20:17 temperature: no ada_p: No Discriminator_loss: 1.43158 Generator_loss: 0.137711 
 [INFO] 2020-09-18 06:06:58 > Step:   76000 Progress: 76.0% Elapsed: 16:21:29 temperature: no ada_p: No Discriminator_loss: 1.47301 Generator_loss: 0.287496 
-[INFO] 2020-09-18 06:06:58 > Start Evaluation (76000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 06:06:58 > Start Evaluation (76000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 06:09:06 > F_8 score (Step: 76000, Using test images): 0.9942966495706941
 [INFO] 2020-09-18 06:09:06 > F_1/8 score (Step: 76000, Using test images): 0.9955802404165413
 [INFO] 2020-09-18 06:09:06 > FID score (Step: 76000, Using test moments): 7.571675727844706
 [INFO] 2020-09-18 06:09:06 > Inception score (Step: 76000, 10000 generated images): 10.08289909362793
 [INFO] 2020-09-18 06:09:06 > Best FID score (Step: 74000, Using test moments): 7.542931903539397
-[INFO] 2020-09-18 06:09:08 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 06:09:08 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 06:10:20 > Step:   76100 Progress: 76.1% Elapsed: 16:24:51 temperature: no ada_p: No Discriminator_loss: 1.33319 Generator_loss: 0.650236 
 [INFO] 2020-09-18 06:11:31 > Step:   76200 Progress: 76.2% Elapsed: 16:26:02 temperature: no ada_p: No Discriminator_loss: 1.52108 Generator_loss: 0.417666 
 [INFO] 2020-09-18 06:12:43 > Step:   76300 Progress: 76.3% Elapsed: 16:27:15 temperature: no ada_p: No Discriminator_loss: 1.3116 Generator_loss: 0.335307 
@@ -1181,13 +1181,13 @@
 [INFO] 2020-09-18 06:30:22 > Step:   77800 Progress: 77.8% Elapsed: 16:44:54 temperature: no ada_p: No Discriminator_loss: 1.42531 Generator_loss: 0.478583 
 [INFO] 2020-09-18 06:31:33 > Step:   77900 Progress: 77.9% Elapsed: 16:46:05 temperature: no ada_p: No Discriminator_loss: 1.39251 Generator_loss: 0.372172 
 [INFO] 2020-09-18 06:32:45 > Step:   78000 Progress: 78.0% Elapsed: 16:47:17 temperature: no ada_p: No Discriminator_loss: 1.31557 Generator_loss: 0.197914 
-[INFO] 2020-09-18 06:32:45 > Start Evaluation (78000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 06:32:45 > Start Evaluation (78000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 06:34:53 > F_8 score (Step: 78000, Using test images): 0.9941934343978871
 [INFO] 2020-09-18 06:34:53 > F_1/8 score (Step: 78000, Using test images): 0.9944866465230489
 [INFO] 2020-09-18 06:34:53 > FID score (Step: 78000, Using test moments): 7.498060080206471
 [INFO] 2020-09-18 06:34:53 > Inception score (Step: 78000, 10000 generated images): 9.975152015686035
 [INFO] 2020-09-18 06:34:53 > Best FID score (Step: 78000, Using test moments): 7.498060080206471
-[INFO] 2020-09-18 06:34:57 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 06:34:57 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 06:36:09 > Step:   78100 Progress: 78.1% Elapsed: 16:50:41 temperature: no ada_p: No Discriminator_loss: 1.44937 Generator_loss: 0.48639 
 [INFO] 2020-09-18 06:37:23 > Step:   78200 Progress: 78.2% Elapsed: 16:51:54 temperature: no ada_p: No Discriminator_loss: 1.54784 Generator_loss: 0.564545 
 [INFO] 2020-09-18 06:38:34 > Step:   78300 Progress: 78.3% Elapsed: 16:53:05 temperature: no ada_p: No Discriminator_loss: 1.47813 Generator_loss: 0.0891964 
@@ -1208,13 +1208,13 @@
 [INFO] 2020-09-18 06:56:35 > Step:   79800 Progress: 79.8% Elapsed: 17:11:07 temperature: no ada_p: No Discriminator_loss: 1.30745 Generator_loss: 0.517213 
 [INFO] 2020-09-18 06:57:47 > Step:   79900 Progress: 79.9% Elapsed: 17:12:18 temperature: no ada_p: No Discriminator_loss: 1.50322 Generator_loss: 0.474448 
 [INFO] 2020-09-18 06:58:58 > Step:   80000 Progress: 80.0% Elapsed: 17:13:29 temperature: no ada_p: No Discriminator_loss: 1.19166 Generator_loss: 0.43699 
-[INFO] 2020-09-18 06:58:58 > Start Evaluation (80000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 06:58:58 > Start Evaluation (80000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 07:01:06 > F_8 score (Step: 80000, Using test images): 0.9946784853296083
 [INFO] 2020-09-18 07:01:06 > F_1/8 score (Step: 80000, Using test images): 0.9950439574554045
 [INFO] 2020-09-18 07:01:06 > FID score (Step: 80000, Using test moments): 7.407979629413205
 [INFO] 2020-09-18 07:01:06 > Inception score (Step: 80000, 10000 generated images): 10.097188949584961
 [INFO] 2020-09-18 07:01:06 > Best FID score (Step: 80000, Using test moments): 7.407979629413205
-[INFO] 2020-09-18 07:01:10 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 07:01:10 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 07:02:21 > Step:   80100 Progress: 80.1% Elapsed: 17:16:52 temperature: no ada_p: No Discriminator_loss: 1.35416 Generator_loss: 0.4182 
 [INFO] 2020-09-18 07:03:31 > Step:   80200 Progress: 80.2% Elapsed: 17:18:03 temperature: no ada_p: No Discriminator_loss: 1.40193 Generator_loss: 0.192526 
 [INFO] 2020-09-18 07:04:43 > Step:   80300 Progress: 80.3% Elapsed: 17:19:15 temperature: no ada_p: No Discriminator_loss: 1.48119 Generator_loss: 0.160745 
@@ -1235,13 +1235,13 @@
 [INFO] 2020-09-18 07:22:12 > Step:   81800 Progress: 81.8% Elapsed: 17:36:43 temperature: no ada_p: No Discriminator_loss: 1.24286 Generator_loss: 0.57244 
 [INFO] 2020-09-18 07:23:22 > Step:   81900 Progress: 81.9% Elapsed: 17:37:53 temperature: no ada_p: No Discriminator_loss: 1.34952 Generator_loss: 0.622431 
 [INFO] 2020-09-18 07:24:33 > Step:   82000 Progress: 82.0% Elapsed: 17:39:05 temperature: no ada_p: No Discriminator_loss: 1.37541 Generator_loss: 0.00931114 
-[INFO] 2020-09-18 07:24:33 > Start Evaluation (82000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 07:24:33 > Start Evaluation (82000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 07:26:40 > F_8 score (Step: 82000, Using test images): 0.9936724885606134
 [INFO] 2020-09-18 07:26:40 > F_1/8 score (Step: 82000, Using test images): 0.9954464506697038
 [INFO] 2020-09-18 07:26:40 > FID score (Step: 82000, Using test moments): 7.261407152668141
 [INFO] 2020-09-18 07:26:40 > Inception score (Step: 82000, 10000 generated images): 10.195548057556152
 [INFO] 2020-09-18 07:26:40 > Best FID score (Step: 82000, Using test moments): 7.261407152668141
-[INFO] 2020-09-18 07:26:44 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 07:26:44 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 07:27:56 > Step:   82100 Progress: 82.1% Elapsed: 17:42:27 temperature: no ada_p: No Discriminator_loss: 1.35177 Generator_loss: 0.254931 
 [INFO] 2020-09-18 07:29:09 > Step:   82200 Progress: 82.2% Elapsed: 17:43:40 temperature: no ada_p: No Discriminator_loss: 1.45502 Generator_loss: 0.243251 
 [INFO] 2020-09-18 07:30:20 > Step:   82300 Progress: 82.3% Elapsed: 17:44:52 temperature: no ada_p: No Discriminator_loss: 1.39614 Generator_loss: 0.295862 
@@ -1262,13 +1262,13 @@
 [INFO] 2020-09-18 07:48:07 > Step:   83800 Progress: 83.8% Elapsed: 18:02:38 temperature: no ada_p: No Discriminator_loss: 1.46655 Generator_loss: 0.632006 
 [INFO] 2020-09-18 07:49:12 > Step:   83900 Progress: 83.9% Elapsed: 18:03:43 temperature: no ada_p: No Discriminator_loss: 1.35741 Generator_loss: 0.558101 
 [INFO] 2020-09-18 07:50:17 > Step:   84000 Progress: 84.0% Elapsed: 18:04:49 temperature: no ada_p: No Discriminator_loss: 1.58773 Generator_loss: 0.393867 
-[INFO] 2020-09-18 07:50:17 > Start Evaluation (84000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 07:50:17 > Start Evaluation (84000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 07:52:27 > F_8 score (Step: 84000, Using test images): 0.9941921405630415
 [INFO] 2020-09-18 07:52:27 > F_1/8 score (Step: 84000, Using test images): 0.9955633975983457
 [INFO] 2020-09-18 07:52:27 > FID score (Step: 84000, Using test moments): 7.275610626300534
 [INFO] 2020-09-18 07:52:27 > Inception score (Step: 84000, 10000 generated images): 10.229850769042969
 [INFO] 2020-09-18 07:52:27 > Best FID score (Step: 82000, Using test moments): 7.261407152668141
-[INFO] 2020-09-18 07:52:29 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 07:52:29 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 07:53:40 > Step:   84100 Progress: 84.1% Elapsed: 18:08:12 temperature: no ada_p: No Discriminator_loss: 1.44822 Generator_loss: -0.086148 
 [INFO] 2020-09-18 07:54:53 > Step:   84200 Progress: 84.2% Elapsed: 18:09:24 temperature: no ada_p: No Discriminator_loss: 1.4191 Generator_loss: 0.283654 
 [INFO] 2020-09-18 07:56:04 > Step:   84300 Progress: 84.3% Elapsed: 18:10:36 temperature: no ada_p: No Discriminator_loss: 1.40502 Generator_loss: 0.271037 
@@ -1289,13 +1289,13 @@
 [INFO] 2020-09-18 08:13:44 > Step:   85800 Progress: 85.8% Elapsed: 18:28:16 temperature: no ada_p: No Discriminator_loss: 1.37595 Generator_loss: 0.240748 
 [INFO] 2020-09-18 08:14:55 > Step:   85900 Progress: 85.9% Elapsed: 18:29:26 temperature: no ada_p: No Discriminator_loss: 1.42675 Generator_loss: 0.691168 
 [INFO] 2020-09-18 08:16:04 > Step:   86000 Progress: 86.0% Elapsed: 18:30:35 temperature: no ada_p: No Discriminator_loss: 1.3659 Generator_loss: 0.105025 
-[INFO] 2020-09-18 08:16:04 > Start Evaluation (86000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 08:16:04 > Start Evaluation (86000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 08:18:13 > F_8 score (Step: 86000, Using test images): 0.9953681954993625
 [INFO] 2020-09-18 08:18:13 > F_1/8 score (Step: 86000, Using test images): 0.9951249913027751
 [INFO] 2020-09-18 08:18:13 > FID score (Step: 86000, Using test moments): 7.350042321717979
 [INFO] 2020-09-18 08:18:13 > Inception score (Step: 86000, 10000 generated images): 10.002832412719727
 [INFO] 2020-09-18 08:18:13 > Best FID score (Step: 82000, Using test moments): 7.261407152668141
-[INFO] 2020-09-18 08:18:15 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 08:18:15 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 08:19:26 > Step:   86100 Progress: 86.1% Elapsed: 18:33:57 temperature: no ada_p: No Discriminator_loss: 1.30174 Generator_loss: 0.239506 
 [INFO] 2020-09-18 08:20:37 > Step:   86200 Progress: 86.2% Elapsed: 18:35:09 temperature: no ada_p: No Discriminator_loss: 1.51292 Generator_loss: 0.246603 
 [INFO] 2020-09-18 08:21:48 > Step:   86300 Progress: 86.3% Elapsed: 18:36:19 temperature: no ada_p: No Discriminator_loss: 1.33863 Generator_loss: 0.338696 
@@ -1316,13 +1316,13 @@
 [INFO] 2020-09-18 08:39:21 > Step:   87800 Progress: 87.8% Elapsed: 18:53:52 temperature: no ada_p: No Discriminator_loss: 1.37382 Generator_loss: 0.539626 
 [INFO] 2020-09-18 08:40:32 > Step:   87900 Progress: 87.9% Elapsed: 18:55:03 temperature: no ada_p: No Discriminator_loss: 1.33562 Generator_loss: 0.0696006 
 [INFO] 2020-09-18 08:41:42 > Step:   88000 Progress: 88.0% Elapsed: 18:56:14 temperature: no ada_p: No Discriminator_loss: 1.54845 Generator_loss: 0.268252 
-[INFO] 2020-09-18 08:41:43 > Start Evaluation (88000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 08:41:43 > Start Evaluation (88000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 08:43:51 > F_8 score (Step: 88000, Using test images): 0.9925628027249871
 [INFO] 2020-09-18 08:43:51 > F_1/8 score (Step: 88000, Using test images): 0.9952160221409091
 [INFO] 2020-09-18 08:43:51 > FID score (Step: 88000, Using test moments): 7.2522665016671795
 [INFO] 2020-09-18 08:43:51 > Inception score (Step: 88000, 10000 generated images): 10.075565338134766
 [INFO] 2020-09-18 08:43:51 > Best FID score (Step: 88000, Using test moments): 7.2522665016671795
-[INFO] 2020-09-18 08:43:55 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 08:43:55 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 08:45:07 > Step:   88100 Progress: 88.1% Elapsed: 18:59:38 temperature: no ada_p: No Discriminator_loss: 1.44423 Generator_loss: 0.181663 
 [INFO] 2020-09-18 08:46:18 > Step:   88200 Progress: 88.2% Elapsed: 19:00:49 temperature: no ada_p: No Discriminator_loss: 1.49045 Generator_loss: 0.200689 
 [INFO] 2020-09-18 08:47:29 > Step:   88300 Progress: 88.3% Elapsed: 19:02:00 temperature: no ada_p: No Discriminator_loss: 1.37105 Generator_loss: 0.542704 
@@ -1343,13 +1343,13 @@
 [INFO] 2020-09-18 09:05:13 > Step:   89800 Progress: 89.8% Elapsed: 19:19:44 temperature: no ada_p: No Discriminator_loss: 1.68237 Generator_loss: 0.0139739 
 [INFO] 2020-09-18 09:06:23 > Step:   89900 Progress: 89.9% Elapsed: 19:20:54 temperature: no ada_p: No Discriminator_loss: 1.44095 Generator_loss: 0.461048 
 [INFO] 2020-09-18 09:07:34 > Step:   90000 Progress: 90.0% Elapsed: 19:22:06 temperature: no ada_p: No Discriminator_loss: 1.25326 Generator_loss: 0.589312 
-[INFO] 2020-09-18 09:07:34 > Start Evaluation (90000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 09:07:34 > Start Evaluation (90000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 09:09:41 > F_8 score (Step: 90000, Using test images): 0.9946147862504704
 [INFO] 2020-09-18 09:09:41 > F_1/8 score (Step: 90000, Using test images): 0.9959973240502603
 [INFO] 2020-09-18 09:09:41 > FID score (Step: 90000, Using test moments): 7.17933747938082
 [INFO] 2020-09-18 09:09:41 > Inception score (Step: 90000, 10000 generated images): 10.15943431854248
 [INFO] 2020-09-18 09:09:41 > Best FID score (Step: 90000, Using test moments): 7.17933747938082
-[INFO] 2020-09-18 09:09:46 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 09:09:46 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 09:10:56 > Step:   90100 Progress: 90.1% Elapsed: 19:25:27 temperature: no ada_p: No Discriminator_loss: 1.42058 Generator_loss: 0.336012 
 [INFO] 2020-09-18 09:12:07 > Step:   90200 Progress: 90.2% Elapsed: 19:26:38 temperature: no ada_p: No Discriminator_loss: 1.37674 Generator_loss: 0.307991 
 [INFO] 2020-09-18 09:13:17 > Step:   90300 Progress: 90.3% Elapsed: 19:27:48 temperature: no ada_p: No Discriminator_loss: 1.25821 Generator_loss: 0.599722 
@@ -1370,13 +1370,13 @@
 [INFO] 2020-09-18 09:30:48 > Step:   91800 Progress: 91.8% Elapsed: 19:45:20 temperature: no ada_p: No Discriminator_loss: 1.24398 Generator_loss: 0.561139 
 [INFO] 2020-09-18 09:31:59 > Step:   91900 Progress: 91.9% Elapsed: 19:46:30 temperature: no ada_p: No Discriminator_loss: 1.39451 Generator_loss: 0.433693 
 [INFO] 2020-09-18 09:33:09 > Step:   92000 Progress: 92.0% Elapsed: 19:47:41 temperature: no ada_p: No Discriminator_loss: 1.43361 Generator_loss: 0.0980178 
-[INFO] 2020-09-18 09:33:10 > Start Evaluation (92000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 09:33:10 > Start Evaluation (92000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 09:35:15 > F_8 score (Step: 92000, Using test images): 0.9946085845996149
 [INFO] 2020-09-18 09:35:15 > F_1/8 score (Step: 92000, Using test images): 0.9956147422256357
 [INFO] 2020-09-18 09:35:15 > FID score (Step: 92000, Using test moments): 7.220042367206247
 [INFO] 2020-09-18 09:35:15 > Inception score (Step: 92000, 10000 generated images): 10.143861770629883
 [INFO] 2020-09-18 09:35:15 > Best FID score (Step: 90000, Using test moments): 7.17933747938082
-[INFO] 2020-09-18 09:35:18 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 09:35:18 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 09:36:28 > Step:   92100 Progress: 92.1% Elapsed: 19:51:00 temperature: no ada_p: No Discriminator_loss: 1.59908 Generator_loss: 0.174528 
 [INFO] 2020-09-18 09:37:39 > Step:   92200 Progress: 92.2% Elapsed: 19:52:11 temperature: no ada_p: No Discriminator_loss: 1.48743 Generator_loss: -0.108242 
 [INFO] 2020-09-18 09:38:50 > Step:   92300 Progress: 92.3% Elapsed: 19:53:22 temperature: no ada_p: No Discriminator_loss: 1.58532 Generator_loss: 0.232836 
@@ -1397,13 +1397,13 @@
 [INFO] 2020-09-18 09:56:33 > Step:   93800 Progress: 93.8% Elapsed: 20:11:05 temperature: no ada_p: No Discriminator_loss: 1.44068 Generator_loss: 0.516091 
 [INFO] 2020-09-18 09:57:41 > Step:   93900 Progress: 93.9% Elapsed: 20:12:12 temperature: no ada_p: No Discriminator_loss: 1.39095 Generator_loss: 0.491509 
 [INFO] 2020-09-18 09:58:46 > Step:   94000 Progress: 94.0% Elapsed: 20:13:18 temperature: no ada_p: No Discriminator_loss: 1.21457 Generator_loss: 0.410381 
-[INFO] 2020-09-18 09:58:46 > Start Evaluation (94000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 09:58:46 > Start Evaluation (94000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 10:00:50 > F_8 score (Step: 94000, Using test images): 0.9934155086911013
 [INFO] 2020-09-18 10:00:50 > F_1/8 score (Step: 94000, Using test images): 0.9955342387326801
 [INFO] 2020-09-18 10:00:50 > FID score (Step: 94000, Using test moments): 7.204538573749687
 [INFO] 2020-09-18 10:00:51 > Inception score (Step: 94000, 10000 generated images): 10.152566909790039
 [INFO] 2020-09-18 10:00:51 > Best FID score (Step: 90000, Using test moments): 7.17933747938082
-[INFO] 2020-09-18 10:00:53 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 10:00:53 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 10:02:03 > Step:   94100 Progress: 94.1% Elapsed: 20:16:34 temperature: no ada_p: No Discriminator_loss: 1.35403 Generator_loss: 0.604545 
 [INFO] 2020-09-18 10:03:15 > Step:   94200 Progress: 94.2% Elapsed: 20:17:46 temperature: no ada_p: No Discriminator_loss: 1.4433 Generator_loss: 0.239901 
 [INFO] 2020-09-18 10:04:25 > Step:   94300 Progress: 94.3% Elapsed: 20:18:56 temperature: no ada_p: No Discriminator_loss: 1.3566 Generator_loss: 0.52962 
@@ -1424,13 +1424,13 @@
 [INFO] 2020-09-18 10:22:03 > Step:   95800 Progress: 95.8% Elapsed: 20:36:34 temperature: no ada_p: No Discriminator_loss: 1.28586 Generator_loss: 0.367313 
 [INFO] 2020-09-18 10:23:13 > Step:   95900 Progress: 95.9% Elapsed: 20:37:44 temperature: no ada_p: No Discriminator_loss: 1.26172 Generator_loss: 0.774045 
 [INFO] 2020-09-18 10:24:24 > Step:   96000 Progress: 96.0% Elapsed: 20:38:56 temperature: no ada_p: No Discriminator_loss: 1.39489 Generator_loss: 0.145876 
-[INFO] 2020-09-18 10:24:24 > Start Evaluation (96000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 10:24:24 > Start Evaluation (96000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 10:26:29 > F_8 score (Step: 96000, Using test images): 0.9928564740802134
 [INFO] 2020-09-18 10:26:29 > F_1/8 score (Step: 96000, Using test images): 0.9950995851453864
 [INFO] 2020-09-18 10:26:29 > FID score (Step: 96000, Using test moments): 7.244781384356656
 [INFO] 2020-09-18 10:26:29 > Inception score (Step: 96000, 10000 generated images): 10.32772445678711
 [INFO] 2020-09-18 10:26:29 > Best FID score (Step: 90000, Using test moments): 7.17933747938082
-[INFO] 2020-09-18 10:26:31 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 10:26:31 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 10:27:41 > Step:   96100 Progress: 96.1% Elapsed: 20:42:12 temperature: no ada_p: No Discriminator_loss: 1.51649 Generator_loss: 0.153258 
 [INFO] 2020-09-18 10:28:52 > Step:   96200 Progress: 96.2% Elapsed: 20:43:24 temperature: no ada_p: No Discriminator_loss: 1.55874 Generator_loss: 0.32992 
 [INFO] 2020-09-18 10:30:03 > Step:   96300 Progress: 96.3% Elapsed: 20:44:35 temperature: no ada_p: No Discriminator_loss: 1.45042 Generator_loss: -0.0864794 
@@ -1451,13 +1451,13 @@
 [INFO] 2020-09-18 10:47:37 > Step:   97800 Progress: 97.8% Elapsed: 21:02:08 temperature: no ada_p: No Discriminator_loss: 1.4121 Generator_loss: 0.482182 
 [INFO] 2020-09-18 10:48:47 > Step:   97900 Progress: 97.9% Elapsed: 21:03:18 temperature: no ada_p: No Discriminator_loss: 1.42572 Generator_loss: 0.285755 
 [INFO] 2020-09-18 10:49:58 > Step:   98000 Progress: 98.0% Elapsed: 21:04:29 temperature: no ada_p: No Discriminator_loss: 1.36279 Generator_loss: 0.588016 
-[INFO] 2020-09-18 10:49:58 > Start Evaluation (98000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 10:49:58 > Start Evaluation (98000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 10:52:03 > F_8 score (Step: 98000, Using test images): 0.9928762973882579
 [INFO] 2020-09-18 10:52:03 > F_1/8 score (Step: 98000, Using test images): 0.9941373792075728
 [INFO] 2020-09-18 10:52:03 > FID score (Step: 98000, Using test moments): 7.178004842891482
 [INFO] 2020-09-18 10:52:03 > Inception score (Step: 98000, 10000 generated images): 10.38004207611084
 [INFO] 2020-09-18 10:52:03 > Best FID score (Step: 98000, Using test moments): 7.178004842891482
-[INFO] 2020-09-18 10:52:07 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 10:52:07 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 10:53:18 > Step:   98100 Progress: 98.1% Elapsed: 21:07:49 temperature: no ada_p: No Discriminator_loss: 1.54391 Generator_loss: -0.0662376 
 [INFO] 2020-09-18 10:54:29 > Step:   98200 Progress: 98.2% Elapsed: 21:09:00 temperature: no ada_p: No Discriminator_loss: 1.33279 Generator_loss: 0.294881 
 [INFO] 2020-09-18 10:55:40 > Step:   98300 Progress: 98.3% Elapsed: 21:10:12 temperature: no ada_p: No Discriminator_loss: 1.48585 Generator_loss: 0.120988 
@@ -1478,10 +1478,10 @@
 [INFO] 2020-09-18 11:13:29 > Step:   99800 Progress: 99.8% Elapsed: 21:28:01 temperature: no ada_p: No Discriminator_loss: 1.27108 Generator_loss: 0.480593 
 [INFO] 2020-09-18 11:14:40 > Step:   99900 Progress: 99.9% Elapsed: 21:29:11 temperature: no ada_p: No Discriminator_loss: 1.4871 Generator_loss: 0.403048 
 [INFO] 2020-09-18 11:15:50 > Step:  100000 Progress: 100.0% Elapsed: 21:30:22 temperature: no ada_p: No Discriminator_loss: 1.25573 Generator_loss: 0.478593 
-[INFO] 2020-09-18 11:15:51 > Start Evaluation (100000 Step): CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 11:15:51 > Start Evaluation (100000 Step): CRGAN(P)-train-2020_09_17_13_45_19
 [INFO] 2020-09-18 11:17:59 > F_8 score (Step: 100000, Using test images): 0.9934740081974348
 [INFO] 2020-09-18 11:17:59 > F_1/8 score (Step: 100000, Using test images): 0.9949324462454864
 [INFO] 2020-09-18 11:17:59 > FID score (Step: 100000, Using test moments): 7.320139613442848
 [INFO] 2020-09-18 11:17:59 > Inception score (Step: 100000, 10000 generated images): 10.176301956176758
 [INFO] 2020-09-18 11:17:59 > Best FID score (Step: 98000, Using test moments): 7.178004842891482
-[INFO] 2020-09-18 11:18:01 > Saved model to checkpoints/CRGAN-train-2020_09_17_13_45_19
+[INFO] 2020-09-18 11:18:01 > Saved model to checkpoints/CRGAN(P)-train-2020_09_17_13_45_19
