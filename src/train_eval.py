@@ -680,6 +680,11 @@ class Train_Eval(object):
                 zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                 None, self.default_device, sampler=sampler)
 
+            if self.latent_op:
+                zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                        self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
+                                        False, self.default_device)
+
             generated_images = generator(zs, fake_labels, evaluation=True)
 
             plot_img_canvas((generated_images.detach().cpu()+1)/2, "./figures/{run_name}/generated_canvas.png".\
@@ -795,6 +800,11 @@ class Train_Eval(object):
                 else:
                     zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                      None, self.default_device)
+
+                if self.latent_op:
+                    zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                         self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
+                                         False, self.default_device)
 
                 real_images, real_labels = next(train_iter)
                 fake_images = generator(zs, fake_labels, evaluation=True).detach().cpu().numpy()
