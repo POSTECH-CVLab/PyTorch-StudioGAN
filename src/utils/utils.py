@@ -291,7 +291,7 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
 
     x = []
     y = []
-    with torch.no_grad():
+    with torch.no_grad() if latent_op is False else dummy_context_mgr() as mpc:
         for i in tqdm(range(0, n_batches), disable=False):
             start = i*batch_size
             end = start + batch_size
@@ -336,7 +336,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
     for f in range(num_classes):
         os.makedirs(join(directory, str(f)))
 
-    with torch.no_grad():
+    with torch.no_grad() if latent_op is False else dummy_context_mgr() as mpc:
         for i in tqdm(range(0, n_batches), disable=False):
             start = i*batch_size
             end = start + batch_size
