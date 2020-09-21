@@ -6,17 +6,12 @@
 
 
 from utils.model_ops import *
+from utils.utils import *
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-class dummy_context_mgr():
-    def __enter__(self):
-        return None
-    def __exit__(self, exc_type, exc_value, traceback):
-        return False
 
 
 class GenBlock(nn.Module):

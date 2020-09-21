@@ -48,13 +48,6 @@ LOG_FORMAT = (
 )
 
 
-class dummy_context_mgr():
-    def __enter__(self):
-        return None
-    def __exit__(self, exc_type, exc_value, traceback):
-        return False
-
-
 def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
     if conditional_strategy == 'ContraGAN':
         if tempering_type == 'continuous':
