@@ -18,7 +18,7 @@ from metrics.prepare_inception_moments import prepare_inception_moments
 from utils.log import make_run_name, make_logger, make_checkpoint_dir
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
-from utils.utils import *
+from utils.misc import *
 from utils.biggan_utils import ema_
 from sync_batchnorm.batchnorm import convert_model
 from train_eval import Train_Eval

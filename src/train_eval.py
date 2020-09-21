@@ -21,7 +21,7 @@ from metrics.Accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import interp
 from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
-from utils.utils import *
+from utils.misc import *
 from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
 from utils.diff_aug import DiffAugment

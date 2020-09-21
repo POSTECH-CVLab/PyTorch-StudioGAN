@@ -6,7 +6,7 @@
 
 
 from utils.model_ops import *
-from utils.utils import *
+from utils.misc import *
 
 import torch
 import torch.nn as nn
