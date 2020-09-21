@@ -12,7 +12,7 @@
     "train": {
       "model": {
         "architecture": "big_resnet",
-        "conditional_strategy": "projGAN",
+        "conditional_strategy": "ProjGAN",
         "pos_collected_numerator": false,
         "hypersphere_dim": "N/A",
         "nonlinear_embed": false,
@@ -27,8 +27,8 @@
         "shared_dim": 128,
         "g_conv_dim": 96,
         "d_conv_dim": 96,
-        "G_depth": "N/A",
-        "D_depth": "N/A"
+        "G_depth":"N/A",
+        "D_depth":"N/A"
       },  
   
       "optimization": {
@@ -44,7 +44,7 @@
         "beta2": 0.999,
         "g_steps_per_iter": 1,
         "d_steps_per_iter": 5,
-        "total_step": 100000
+        "total_step": 200000
       },
   
       "loss_function": {
@@ -66,8 +66,8 @@
         "deep_regret_analysis_for_dis": false,
         "regret_penalty_lambda": "N/A",
   
-        "cr": true,
-        "cr_lambda": 10.0,
+        "cr": false,
+        "cr_lambda":"N/A",
 
         "bcr": false,
         "real_lambda": "N/A",
@@ -88,9 +88,9 @@
         "random_flip_preprocessing": true,
         "diff_aug": false,
 
-        "ada": false,
-        "ada_target": "N/A",
-        "ada_length": "N/A",
+        "ada": true,
+        "ada_target": 0.2,
+        "ada_length": 1000000,
 
         "prior": "gaussian",
         "truncated_factor": 1,

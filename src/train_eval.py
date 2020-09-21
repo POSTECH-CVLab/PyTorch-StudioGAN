@@ -21,7 +21,7 @@ from metrics.Accuracy import calculate_accuracy
 from utils.ada import augment
 from utils.biggan_utils import interp
 from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
-from utils.utils import *
+from utils.misc import *
 from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
 from utils.diff_aug import DiffAugment
@@ -46,13 +46,6 @@ LOG_FORMAT = (
     "Discriminator_loss: {dis_loss:<.6} "
     "Generator_loss: {gen_loss:<.6} "
 )
-
-
-class dummy_context_mgr():
-    def __enter__(self):
-        return None
-    def __exit__(self, exc_type, exc_value, traceback):
-        return False
 
 
 def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
@@ -276,7 +269,7 @@ class Train_Eval(object):
                         if self.conditional_strategy == "ACGAN":
                             cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
                             cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                        elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                             dis_out_real = self.dis_model(real_images, real_labels)
                             dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
@@ -307,7 +300,7 @@ class Train_Eval(object):
                             if self.conditional_strategy == "ACGAN":
                                 cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                                 cls_consistency_loss = self.l2_loss(cls_out_real, cls_out_real_aug)
-                            elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                                 dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                             elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
                                 _, cls_embed_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
@@ -328,7 +321,7 @@ class Train_Eval(object):
                                 cls_out_fake_aug, dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
                                 cls_bcr_real_loss = self.l2_loss(cls_out_real, cls_out_real_aug)
                                 cls_bcr_fake_loss = self.l2_loss(cls_out_fake, cls_out_fake_aug)
-                            elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                                 dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
                                 dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
                             elif self.conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
@@ -351,7 +344,7 @@ class Train_Eval(object):
                             if self.conditional_strategy == "ACGAN":
                                 cls_out_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
                                 cls_zcr_dis_loss = self.l2_loss(cls_out_fake, cls_out_fake_zaug)
-                            elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                                 dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
                             elif self.conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
                                 cls_proxies_fake_zaug, cls_embed_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
@@ -429,7 +422,7 @@ class Train_Eval(object):
 
                         if self.conditional_strategy == "ACGAN":
                             cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        elif self.conditional_strategy == "projGAN" or self.conditional_strategy == "no":
+                        elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                             dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
                             fake_cls_mask = make_mask(fake_labels, self.num_classes, self.default_device)
@@ -687,6 +680,11 @@ class Train_Eval(object):
                 zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                 None, self.default_device, sampler=sampler)
 
+            if self.latent_op:
+                zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                        self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
+                                        False, self.default_device)
+
             generated_images = generator(zs, fake_labels, evaluation=True)
 
             plot_img_canvas((generated_images.detach().cpu()+1)/2, "./figures/{run_name}/generated_canvas.png".\
@@ -802,6 +800,11 @@ class Train_Eval(object):
                 else:
                     zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                      None, self.default_device)
+
+                if self.latent_op:
+                    zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                         self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
+                                         False, self.default_device)
 
                 real_images, real_labels = next(train_iter)
                 fake_images = generator(zs, fake_labels, evaluation=True).detach().cpu().numpy()

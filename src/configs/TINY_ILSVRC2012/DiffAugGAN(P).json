@@ -44,7 +44,7 @@
         "beta2": 0.999,
         "g_steps_per_iter": 1,
         "d_steps_per_iter": 1,
-        "total_step": 100000
+        "total_step": 200000
       },
   
       "loss_function": {
@@ -86,7 +86,7 @@
   
       "training_and_sampling_setting":{
         "random_flip_preprocessing": true,
-        "diff_aug": false,
+        "diff_aug": true,
 
         "ada": false,
         "ada_target": "N/A",
@@ -95,13 +95,13 @@
         "prior": "gaussian",
         "truncated_factor": 1,
 
-        "latent_op": true,
-        "latent_op_rate": 0.8,
-        "latent_op_step": 2,
-        "latent_op_step4eval": 2,
-        "latent_op_alpha": 0.9,
-        "latent_op_beta": 0.1,
-        "latent_norm_reg_weight": 0.1,
+        "latent_op": false,
+        "latent_op_rate": "N/A",
+        "latent_op_step": "N/A",
+        "latent_op_step4eval": "N/A",
+        "latent_op_alpha": "N/A",
+        "latent_op_beta": "N/A",
+        "latent_norm_reg_weight": "N/A",
   
         "ema": true,
         "ema_decay": 0.9999,

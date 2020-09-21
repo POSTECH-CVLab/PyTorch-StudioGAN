@@ -11,30 +11,30 @@
   
     "train": {
       "model": {
-        "architecture": "resnet",
-        "conditional_strategy": "projGAN",
+        "architecture": "big_resnet",
+        "conditional_strategy": "ProjGAN",
         "pos_collected_numerator": false,
         "hypersphere_dim": "N/A",
         "nonlinear_embed": false,
         "normalize_embed": false,
-        "g_spectral_norm": false,
-        "d_spectral_norm": false,
+        "g_spectral_norm": true,
+        "d_spectral_norm": true,
         "activation_fn": "ReLU",
-        "attention": false,
-        "attention_after_nth_gen_block": "N/A",
-        "attention_after_nth_dis_block": "N/A",
-        "z_dim": 128,
-        "shared_dim": "N/A",
-        "g_conv_dim": 64,
-        "d_conv_dim": 64,
-        "G_depth": "N/A",
-        "D_depth": "N/A"
-      },
+        "attention": true,
+        "attention_after_nth_gen_block": 2,
+        "attention_after_nth_dis_block": 1,
+        "z_dim": 80,
+        "shared_dim": 128,
+        "g_conv_dim": 96,
+        "d_conv_dim": 96,
+        "G_depth":"N/A",
+        "D_depth":"N/A"
+      },  
   
       "optimization": {
         "optimizer": "Adam",
         "batch_size": 64,
-        "accumulation_steps": 1,
+        "accumulation_steps": 1, 
         "d_lr": 0.0002,
         "g_lr": 0.0002,
         "momentum": "N/A",
@@ -62,21 +62,21 @@
   
         "gradient_penalty_for_dis": false,
         "gradient_penalty_lambda": "N/A",
-  
+
         "deep_regret_analysis_for_dis": false,
         "regret_penalty_lambda": "N/A",
   
         "cr": false,
-        "cr_lambda": "N/A",
-  
-        "bcr": false,
-        "real_lambda": "N/A",
-        "fake_lambda": "N/A",
-  
-        "zcr": false,
-        "gen_lambda": "N/A",
-        "dis_lambda": "N/A",
-        "sigma_noise": "N/A"
+        "cr_lambda":"N/A",
+
+        "bcr": true,
+        "real_lambda": 10.0,
+        "fake_lambda": 10.0,
+
+        "zcr": true,
+        "gen_lambda": 0.5,
+        "dis_lambda": 20.0,
+        "sigma_noise": 0.05
       },
   
       "initialization":{
@@ -87,14 +87,14 @@
       "training_and_sampling_setting":{
         "random_flip_preprocessing": true,
         "diff_aug": false,
-  
+
         "ada": false,
         "ada_target": "N/A",
         "ada_length": "N/A",
-  
+
         "prior": "gaussian",
         "truncated_factor": 1,
-  
+
         "latent_op": false,
         "latent_op_rate":"N/A",
         "latent_op_step":"N/A",
@@ -103,10 +103,9 @@
         "latent_op_beta":"N/A",
         "latent_norm_reg_weight":"N/A",
   
-        "ema": false,
-        "ema_decay": "N/A",
-        "ema_start": "N/A"
+        "ema": true,
+        "ema_decay": 0.9999,
+        "ema_start": 1000
       }
     }
   }
-  

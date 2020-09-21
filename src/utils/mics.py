@@ -18,12 +18,20 @@ from tqdm import tqdm
 
 from metrics.FID import generate_images
 from utils.sample import sample_latents
+from utils.losses import latent_optimise
 
 import torch
 import torch.nn.functional as F
 from torch.nn import DataParallel
 from torchvision.utils import save_image
 
+
+
+class dummy_context_mgr():
+    def __enter__(self):
+        return None
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
 
 
 # fix python, numpy, torch seed
@@ -33,6 +41,7 @@ def fix_all_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.cuda.manual_seed(seed)
+
 
 def count_parameters(module):
     return 'Number of parameters: {}'.format(sum([p.data.nelement() for p in module.parameters()]))
@@ -47,6 +56,7 @@ def define_sampler(dataset_name, conditional_strategy):
     else:
         sampler = "default"
     return sampler
+
 
 def check_flag_0(batch_size, n_gpus, standing_statistics, ema, freeze_layers, checkpoint_folder):
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
@@ -291,7 +301,7 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
 
     x = []
     y = []
-    with torch.no_grad():
+    with torch.no_grad() if latent_op is False else dummy_context_mgr() as mpc:
         for i in tqdm(range(0, n_batches), disable=False):
             start = i*batch_size
             end = start + batch_size
@@ -336,7 +346,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
     for f in range(num_classes):
         os.makedirs(join(directory, str(f)))
 
-    with torch.no_grad():
+    with torch.no_grad() if latent_op is False else dummy_context_mgr() as mpc:
         for i in tqdm(range(0, n_batches), disable=False):
             start = i*batch_size
             end = start + batch_size
