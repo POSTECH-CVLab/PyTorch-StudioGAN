@@ -127,12 +127,12 @@ class Conditional_Contrastive_loss(torch.nn.Module):
         if self.pos_collected_numerator:
             inst2inst_positives = torch.exp((instance_zone*mask_4_remove_negatives - margin)/temperature)
             numerator = inst2inst_positives.sum(dim=1) + inst2proxy_positive
-            denomerator = inst2inst_negatives.sum(dim=1)
+            denominator = inst2inst_negatives.sum(dim=1)
         else:
             numerator = inst2proxy_positive
-            denomerator = inst2inst_negatives.sum(dim=1)
+            denominator = inst2inst_negatives.sum(dim=1)
 
-        criterion = -torch.log(numerator/denomerator).mean()
+        criterion = -torch.log(numerator/denominator).mean()
         return criterion
 
 
