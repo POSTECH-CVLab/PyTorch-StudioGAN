@@ -18,6 +18,7 @@ from tqdm import tqdm
 
 from metrics.FID import generate_images
 from utils.sample import sample_latents
+from utils.losses import latent_optimise
 
 import torch
 import torch.nn.functional as F
