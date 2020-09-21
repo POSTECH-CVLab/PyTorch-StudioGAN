@@ -234,7 +234,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/DiffAugGAN(C).json) |  - | - |
 | [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ADAGAN(P).json) |  - | - |
 | [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ADAGAN(C).json) | - | - |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | 64 |  - | 8.465 | 0.993 | 0.990 | [Config](./src/configs/CIFAR10/LOGAN.json) |  - | - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | 64 | 9.576 | 8.465 | 0.993 | 0.990 | [Config](./src/configs/CIFAR10/LOGAN.json) |  - | - |
   
 ※ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
 
