@@ -65,7 +65,7 @@
 - sklearn
 - h5py
 - tqdm
-- torch >= 1.6.0
+- torch >= 1.6.0 (Recommended for mixed precision training and knn analysis)
 - torchvision >= 0.7.0
 - tensorboard
 - 5.4.0 <= gcc <= 7.4.0 (Recommended for proper use of [adaptive discriminator augmentation module](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/tree/master/src/utils/ada_op))
