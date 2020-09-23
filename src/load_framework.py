@@ -69,8 +69,8 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
     logger = make_logger(run_name, None)
     writer = SummaryWriter(log_dir=join('./logs', run_name))
     logger.info('Run name : {run_name}'.format(run_name=run_name))
-    logger.info(cfgs.train_config)
-    logger.info(cfgs.model_config)
+    logger.info(cfgs.train_configs)
+    logger.info(cfgs.model_configs)
 
     logger.info('Loading train datasets...')
     train_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=True, download=True, resize_size=cfgs.img_size,
@@ -149,7 +149,7 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
             Gen_ema.source, Gen_ema.target = Gen, Gen_copy
 
         writer = SummaryWriter(log_dir=join('./logs', run_name))
-        if cfgs.train_config['train']:
+        if cfgs.train_configs['train']:
             assert cfgs.seed == trained_seed, "seed for sampling random numbers should be same!"
         logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
@@ -170,7 +170,7 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
             if cfgs.ema:
                 Gen_copy = convert_model(Gen_copy).to(default_device)
 
-    if cfgs.train_config['eval']:
+    if cfgs.eval:
         inception_model = InceptionV3().to(default_device)
         if n_gpus > 1:
             inception_model = DataParallel(inception_model, output_device=default_device)
@@ -187,6 +187,7 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
 
 
     train_eval = Train_Eval(
+        cfgs=cfgs,
         run_name=run_name,
         best_step=best_step,
         logger=logger,
@@ -214,7 +215,7 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
         best_fid_checkpoint_path=best_fid_checkpoint_path,
     )
 
-    if cfgs.train:
+    if cfgs.train_configs['train']:
         step = train_eval.train(current_step=step, total_step=cfgs.total_step)
 
     if cfgs.eval:

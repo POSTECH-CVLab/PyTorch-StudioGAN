@@ -64,23 +64,19 @@ def set_temperature(conditional_strategy, tempering_type, start_temperature, end
 
 
 class Train_Eval(object):
-    def __init__(self, run_name, best_step, dataset_name, eval_type, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
-                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer,
-                 batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, margin,
-                 tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound,
-                 gradient_penalty_for_dis, gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda, cr, cr_lambda, bcr,
-                 real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior,
-                 truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta,
-                 latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
-                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
+    def __init__(self, cfgs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
+                 Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, G_optimizer, D_optimizer, G_loss,
+                 D_loss, prev_ada_p, default_device, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
 
+        self.cfgs = cfgs
         self.run_name = run_name
         self.best_step = best_step
-        self.dataset_name = dataset_name
-        self.eval_type = eval_type
+        self.seed = cfgs.seed
+        self.dataset_name = cfgs.dataset_name
+        self.eval_type = cfgs.eval_type
         self.logger = logger
         self.writer = writer
+        self.num_workers = cfgs.num_workers
         self.n_gpus = n_gpus
 
         self.gen_model = gen_model
@@ -94,76 +90,74 @@ class Train_Eval(object):
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
-        self.freeze_layers = freeze_layers
+        self.freeze_layers = cfgs.freeze_layers
 
-        self.conditional_strategy = conditional_strategy
-        self.pos_collected_numerator = pos_collected_numerator
-        self.z_dim = z_dim
-        self.num_classes = num_classes
-        self.hypersphere_dim = hypersphere_dim
-        self.d_spectral_norm = d_spectral_norm
-        self.g_spectral_norm = g_spectral_norm
+        self.conditional_strategy = cfgs.conditional_strategy
+        self.pos_collected_numerator = cfgs.pos_collected_numerator
+        self.z_dim = cfgs.z_dim
+        self.num_classes = cfgs.num_classes
+        self.hypersphere_dim = cfgs.hypersphere_dim
+        self.d_spectral_norm = cfgs.d_spectral_norm
+        self.g_spectral_norm = cfgs.g_spectral_norm
 
         self.G_optimizer = G_optimizer
         self.D_optimizer = D_optimizer
-        self.batch_size = batch_size
-        self.g_steps_per_iter = g_steps_per_iter
-        self.d_steps_per_iter = d_steps_per_iter
-        self.accumulation_steps = accumulation_steps
-        self.total_step = total_step
+        self.batch_size = cfgs.batch_size
+        self.g_steps_per_iter = cfgs.g_steps_per_iter
+        self.d_steps_per_iter = cfgs.d_steps_per_iter
+        self.accumulation_steps = cfgs.accumulation_steps
+        self.total_step = cfgs.total_step
 
         self.G_loss = G_loss
         self.D_loss = D_loss
-        self.contrastive_lambda = contrastive_lambda
-        self.margin = margin
-        self.tempering_type = tempering_type
-        self.tempering_step = tempering_step
-        self.start_temperature = start_temperature
-        self.end_temperature = end_temperature
-        self.weight_clipping_for_dis = weight_clipping_for_dis
-        self.weight_clipping_bound = weight_clipping_bound
-        self.gradient_penalty_for_dis = gradient_penalty_for_dis
-        self.gradient_penalty_lambda = gradient_penalty_lambda
-        self.deep_regret_analysis_for_dis = deep_regret_analysis_for_dis
-        self.regret_penalty_lambda = regret_penalty_lambda
-        self.cr = cr
-        self.cr_lambda = cr_lambda
-        self.bcr = bcr
-        self.real_lambda = real_lambda
-        self.fake_lambda = fake_lambda
-        self.zcr = zcr
-        self.gen_lambda = gen_lambda
-        self.dis_lambda = dis_lambda
-        self.sigma_noise = sigma_noise
+        self.contrastive_lambda = cfgs.contrastive_lambda
+        self.margin = cfgs.margin
+        self.tempering_type = cfgs.tempering_type
+        self.tempering_step = cfgs.tempering_step
+        self.start_temperature = cfgs.start_temperature
+        self.end_temperature = cfgs.end_temperature
+        self.weight_clipping_for_dis = cfgs.weight_clipping_for_dis
+        self.weight_clipping_bound = cfgs.weight_clipping_bound
+        self.gradient_penalty_for_dis = cfgs.gradient_penalty_for_dis
+        self.gradient_penalty_lambda = cfgs.gradient_penalty_lambda
+        self.deep_regret_analysis_for_dis = cfgs.deep_regret_analysis_for_dis
+        self.regret_penalty_lambda = cfgs.regret_penalty_lambda
+        self.cr = cfgs.cr
+        self.cr_lambda = cfgs.cr_lambda
+        self.bcr = cfgs.bcr
+        self.real_lambda = cfgs.real_lambda
+        self.fake_lambda = cfgs.fake_lambda
+        self.zcr = cfgs.zcr
+        self.gen_lambda = cfgs.gen_lambda
+        self.dis_lambda = cfgs.dis_lambda
+        self.sigma_noise = cfgs.sigma_noise
 
-        self.diff_aug = diff_aug
-        self.ada = ada
+        self.diff_aug = cfgs.diff_aug
+        self.ada = cfgs.ada
         self.prev_ada_p = prev_ada_p
-        self.ada_target = ada_target
-        self.ada_length = ada_length
-        self.prior = prior
-        self.truncated_factor = truncated_factor
-        self.ema = ema
-        self.latent_op = latent_op
-        self.latent_op_rate = latent_op_rate
-        self.latent_op_step = latent_op_step
-        self.latent_op_step4eval = latent_op_step4eval
-        self.latent_op_alpha = latent_op_alpha
-        self.latent_op_beta = latent_op_beta
-        self.latent_norm_reg_weight = latent_norm_reg_weight
+        self.ada_target = cfgs.ada_target
+        self.ada_length = cfgs.ada_length
+        self.prior = cfgs.prior
+        self.truncated_factor = cfgs.truncated_factor
+        self.ema = cfgs.ema
+        self.latent_op = cfgs.latent_op
+        self.latent_op_rate = cfgs.latent_op_rate
+        self.latent_op_step = cfgs.latent_op_step
+        self.latent_op_step4eval = cfgs.latent_op_step4eval
+        self.latent_op_alpha = cfgs.latent_op_alpha
+        self.latent_op_beta = cfgs.latent_op_beta
+        self.latent_norm_reg_weight = cfgs.latent_norm_reg_weight
 
         self.default_device = default_device
-        self.print_every = print_every
-        self.save_every = save_every
+        self.print_every = cfgs.print_every
+        self.save_every = cfgs.save_every
         self.checkpoint_dir = checkpoint_dir
-        self.evaluate = evaluate
+        self.evaluate = cfgs.eval
         self.mu = mu
         self.sigma = sigma
         self.best_fid = best_fid
         self.best_fid_checkpoint_path = best_fid_checkpoint_path
-        self.mixed_precision = mixed_precision
-        self.train_config = train_config
-        self.model_config = model_config
+        self.mixed_precision = cfgs.mixed_precision
 
         self.start_time = datetime.now()
         self.l2_loss = torch.nn.MSELoss()
@@ -528,10 +522,10 @@ class Train_Eval(object):
             if self.Gen_copy is not None:
                 gen_copy = self.Gen_copy
 
-        g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
+        g_states = {'seed': self.seed, 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': gen.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
 
-        d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
+        d_states = {'seed': self.seed, 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': dis.state_dict(), 'optimizer': self.D_optimizer.state_dict(), 'ada_p': self.ada_aug_p,
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
 
@@ -754,7 +748,7 @@ class Train_Eval(object):
 
                 num_samples, target_sampler = target_class_sampler(self.train_dataset, c)
                 train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, sampler=target_sampler,
-                                                               num_workers=self.train_config['num_workers'], pin_memory=True)
+                                                               num_workers=self.num_workers, pin_memory=True)
                 train_iter = iter(train_dataloader)
                 for batch_idx in range(num_samples//self.batch_size):
                     real_images, real_labels = next(train_iter)
