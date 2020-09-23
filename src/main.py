@@ -10,6 +10,7 @@ import os
 import sys
 from argparse import ArgumentParser
 
+from utils.misc import *
 from utils.make_hdf5 import make_hdf5
 from load_framework import load_frameowrk
 
@@ -66,23 +67,15 @@ def main():
     else:
         raise NotImplementedError
 
-    dataset = model_config['data_processing']['dataset_name']
-    if dataset == 'cifar10':
-        assert args.eval_type in ['train', 'test'], "cifar10 does not contain dataset for validation"
-    elif dataset in ['imagenet', 'tiny_imagenet', 'custom']:
-        assert args.eval_type == 'train' or args.eval_type == 'valid',\
+    cfgs = dict2clsattr(train_config, model_config)
+    if cfgs.dataset_name == 'cifar10':
+        assert cfgs.eval_type in ['train', 'test'], "cifar10 does not contain dataset for validation"
+    elif cfgs.dataset_name in ['imagenet', 'tiny_imagenet', 'custom']:
+        assert cfgs.eval_type == 'train' or cfgs.eval_type == 'valid',\
             "we do not support the evaluation mode using test images in tiny_imagenet/imagenet/custom dataset"
+    hdf5_path_train = make_hdf5(cfgs, mode=True) if cfgs.load_all_data_in_memory else None
 
-    hdf5_path_train = make_hdf5(**model_config['data_processing'], **train_config, mode='train') if args.load_all_data_in_memory else None
-
-    load_frameowrk(**train_config,
-                   **model_config['data_processing'],
-                   **model_config['train']['model'],
-                   **model_config['train']['optimization'],
-                   **model_config['train']['loss_function'],
-                   **model_config['train']['initialization'],
-                   **model_config['train']['training_and_sampling_setting'],
-                   train_config=train_config, model_config=model_config['train'], hdf5_path_train=hdf5_path_train)
+    load_frameowrk(cfgs, hdf5_path_train=hdf5_path_train)
 
 if __name__ == '__main__':
     main()
