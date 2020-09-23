@@ -7,7 +7,7 @@
 
 import numpy as np
 import random
-from numpy import random, linalg
+from numpy import linalg
 from math import sin,cos,sqrt
 
 from utils.losses import latent_optimise
