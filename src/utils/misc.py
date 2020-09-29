@@ -211,17 +211,19 @@ def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, pri
         return gen
     else:
         if standing_statistics:
+            gen.apply(set_deterministic_op_train)
             apply_accumulate_stat(gen, standing_step, prior, batch_size, z_dim, num_classes, device)
         else:
             gen.eval()
-        gen.apply(set_deterministic_op_train)
+            gen.apply(set_deterministic_op_train)
         if gen_copy is not None:
             if standing_statistics:
+                gen_copy.apply(set_deterministic_op_train)
                 apply_accumulate_stat(gen_copy, standing_step, prior, batch_size, z_dim, num_classes, device)
             else:
                 gen_copy.eval()
                 gen_copy.apply(set_bn_train)
-            gen_copy.apply(set_deterministic_op_train)
+                gen_copy.apply(set_deterministic_op_train)
             return gen_copy
         else:
             return gen
