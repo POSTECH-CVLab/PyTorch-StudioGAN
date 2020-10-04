@@ -68,19 +68,18 @@ class LoadDataset(Dataset):
         self.pad = int(resize_size//8)
 
         if self.hdf5_path is not None:
-            self.transforms = [transforms.ToPILImage()]
+            transform_list = [transforms.ToPILImage()]
         else:
             if self.dataset_name in ['cifar10', 'tiny_imagenet']:
-                self.transforms = []
+                transform_list = []
             elif self.dataset_name in ['imagenet', 'custom']:
-                self.transforms = [CenterCropLongEdge(), transforms.Resize(self.resize_size)]
+                transform_list = [CenterCropLongEdge(), transforms.Resize(self.resize_size)]
 
         if random_flip:
-            self.transforms += [transforms.RandomHorizontalFlip()]
+            transform_list += [transforms.RandomHorizontalFlip()]
 
-        self.transforms = transforms.Compose([self.transforms,
-                                              transforms.ToTensor(),
-                                              transforms.Normalize(self.norm_mean, self.norm_std)])
+        transform_list += [transforms.ToTensor(), transforms.Normalize(self.norm_mean, self.norm_std)]
+        self.transforms = transforms.Compose(transform_list)
         self.load_dataset()
 
 
