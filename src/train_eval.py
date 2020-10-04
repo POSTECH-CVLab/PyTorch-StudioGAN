@@ -492,14 +492,6 @@ class Train_Eval(object):
                 if self.ada:
                     self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
 
-                with torch.no_grad():
-                    generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
-                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
-                    generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
-                    self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-                    generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
-                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
-
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
                     is_best = self.evaluation(step_count, False, "N/A")
