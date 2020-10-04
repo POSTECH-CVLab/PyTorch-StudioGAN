@@ -44,7 +44,7 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
                    shared_dim, g_conv_dim, d_conv_dim, G_depth, D_depth, optimizer, batch_size, d_lr, g_lr, momentum, nesterov, alpha,
                    beta1, beta2, total_step, adv_loss, cr, g_init, d_init, random_flip_preprocessing, prior, truncated_factor,
                    ema, ema_decay, ema_start, synchronized_bn, mixed_precision, hdf5_path_train, train_config, model_config, **_):
-    if seed == 82624:
+    if seed == 0:
         cudnn.benchmark = True
         cudnn.deterministic = False
     else:
@@ -180,7 +180,7 @@ def load_frameowrk(seed, disable_debugging_API, num_workers, config_path, checkp
                                               generator=Gen,
                                               eval_mode=eval_type,
                                               inception_model=inception_model,
-                                              splits=10,
+                                              splits=1,
                                               run_name=run_name,
                                               logger=logger,
                                               device=default_device)

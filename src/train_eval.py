@@ -172,9 +172,6 @@ class Train_Eval(object):
 
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
 
-        self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
-                                                                  self.num_classes, None, self.default_device, sampler=sampler)
-
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr, self.zcr)
 
@@ -196,8 +193,10 @@ class Train_Eval(object):
         if self.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
 
-        if self.dataset_name in ["imagenet", "tiny_imagenet"]:
+        if self.dataset_name in ["imagenet"]:
             self.num_eval = {'train':50000, 'valid':50000}
+	elif self.dataset_name == "tiny_imagenet":
+            self.num_eval = {'train':50000, 'valid':10000}
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
         elif self.dataset_name == "custom":
@@ -228,6 +227,7 @@ class Train_Eval(object):
             self.ada_aug_step = self.ada_target/self.ada_length
         else:
             self.ada_aug_p = 'No'
+
         while step_count <= total_step:
             # ================== TRAIN D ================== #
             toggle_grad(self.dis_model, True, freeze_layers=self.freeze_layers)
@@ -443,7 +443,7 @@ class Train_Eval(object):
                         if self.conditional_strategy == "ACGAN":
                             gen_acml_loss += self.ce_loss(cls_out_fake, fake_labels)
                         elif self.conditional_strategy == "ContraGAN":
-                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, 0.0)
+                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, self.margin)
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
                             gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_fake, cls_proxies_fake, fake_labels)
                         elif self.conditional_strategy == "NT_Xent_GAN":

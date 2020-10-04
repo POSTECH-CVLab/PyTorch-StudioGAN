@@ -22,7 +22,7 @@ def main():
     parser.add_argument('-current', '--load_current', action='store_true', help='whether you load the current or best checkpoint')
     parser.add_argument('--log_output_path', type=str, default=None)
 
-    parser.add_argument('--seed', type=int, default=82624, help='seed for generating random numbers')
+    parser.add_argument('--seed', type=int, default=0, help='seed for generating random numbers')
     parser.add_argument('--num_workers', type=int, default=8, help='')
     parser.add_argument('-sync_bn', '--synchronized_bn', action='store_true', help='whether turn on synchronized batchnorm')
     parser.add_argument('-mpc', '--mixed_precision', action='store_true', help='whether turn on mixed precision training')
