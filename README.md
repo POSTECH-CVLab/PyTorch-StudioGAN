@@ -308,9 +308,9 @@ We don't apply Synchronized Batch Normalization to all experiments.
 StudioGAN is established for the following research project. Please cite our work if you use StudioGAN.
 ```bib
 @article{kang2020ContraGAN,
-  title   = {{Contrastive Generative Adversarial Networks}},
+  title   = {{ContraGAN: Contrastive Learning for Conditional Image Generation}},
   author  = {Minguk Kang and Jaesik Park},
-  journal = {arXiv preprint arXiv:2006.12681},
+  journal = {Conference on Neural Information Processing Systems (NeurIPS)},
   year    = {2020}
 }
 ```
