@@ -93,8 +93,13 @@ def define_sampler(dataset_name, conditional_strategy):
     return sampler
 
 
-def check_flag_0(batch_size, n_gpus, standing_statistics, ema, freeze_layers, checkpoint_folder):
+def check_flag_0(batch_size, n_gpus, freeze_layers, checkpoint_folder, architecture, img_size):
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
+
+    if architecture == "dcgan":
+        assert img_size == 32, "Sry,\
+            StudioGAN does not support dcgan models for generation of images larger than 32 resolution."
+
     if freeze_layers > -1:
         assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 

@@ -22,7 +22,7 @@ from utils.ada import augment
 from utils.biggan_utils import interp
 from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
 from utils.misc import *
-from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise
+from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise, set_temperature
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
 from utils.diff_aug import DiffAugment
 from utils.cr_diff_aug import CR_DiffAug
@@ -48,22 +48,7 @@ LOG_FORMAT = (
 )
 
 
-def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
-    if conditional_strategy == 'ContraGAN':
-        if tempering_type == 'continuous':
-            t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
-        elif tempering_type == 'discrete':
-            tempering_interval = total_step//(tempering_step + 1)
-            t = start_temperature + \
-                (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
-        else:
-            t = start_temperature
-    else:
-        t = 'no'
-    return t
-
-
-class Train_Eval(object):
+class make_worker(object):
     def __init__(self, cfgs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
                  Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, G_optimizer, D_optimizer, G_loss,
                  D_loss, prev_ada_p, default_device, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
@@ -174,7 +159,6 @@ class Train_Eval(object):
 
         if self.conditional_strategy == 'ContraGAN':
             self.contrastive_criterion = Conditional_Contrastive_loss(self.default_device, self.batch_size, self.pos_collected_numerator)
-
         elif self.conditional_strategy == 'Proxy_NCA_GAN':
             if isinstance(self.dis_model, DataParallel):
                 self.embedding_layer = self.dis_model.module.embedding
@@ -195,8 +179,7 @@ class Train_Eval(object):
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
         elif self.dataset_name == "custom":
-            num_train_images = len(self.train_dataset.data)
-            num_eval_images = len(self.eval_dataset.data)
+            num_train_images, num_eval_images = len(self.train_dataset.data), len(self.eval_dataset.data)
             self.num_eval = {'train':num_train_images, 'valid':num_eval_images}
         else:
             raise NotImplementedError

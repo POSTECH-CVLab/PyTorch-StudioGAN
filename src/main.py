@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 
 from utils.misc import *
 from utils.make_hdf5 import make_hdf5
-from loader import load_frameowrk
+from loader import prepare_train_eval
 
 
 
@@ -23,7 +23,7 @@ def main():
     parser.add_argument('-current', '--load_current', action='store_true', help='whether you load the current or best checkpoint')
     parser.add_argument('--log_output_path', type=str, default=None)
 
-    parser.add_argument('--seed', type=int, default=82624, help='seed for generating random numbers')
+    parser.add_argument('--seed', type=int, default=-1, help='seed for generating random numbers')
     parser.add_argument('--num_workers', type=int, default=8, help='')
     parser.add_argument('-sync_bn', '--synchronized_bn', action='store_true', help='whether turn on synchronized batchnorm')
     parser.add_argument('-mpc', '--mixed_precision', action='store_true', help='whether turn on mixed precision training')
@@ -70,12 +70,11 @@ def main():
     cfgs = dict2clsattr(train_config, model_config)
     if cfgs.dataset_name == 'cifar10':
         assert cfgs.eval_type in ['train', 'test'], "cifar10 does not contain dataset for validation"
-    elif cfgs.dataset_name in ['imagenet', 'tiny_imagenet']:
-        assert cfgs.eval_type == 'train' or cfgs.eval_type == 'valid',\
-            "we do not support the evaluation mode using test images in tiny_imagenet/imagenet dataset"
+    elif cfgs.dataset_name in ['imagenet', 'tiny_imagenet', 'custom']:
+        assert cfgs.eval_type == 'train' or cfgs.eval_type == 'valid', "not support the evalutation using test dataset"
     hdf5_path_train = make_hdf5(cfgs, mode=True) if cfgs.load_all_data_in_memory else None
 
-    load_frameowrk(cfgs, hdf5_path_train=hdf5_path_train)
+    prepare_train_eval(cfgs, hdf5_path_train=hdf5_path_train)
 
 if __name__ == '__main__':
     main()

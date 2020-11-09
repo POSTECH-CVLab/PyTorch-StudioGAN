@@ -7,7 +7,6 @@
 
 import glob
 import os
-import PIL
 import random
 import warnings
 from os.path import dirname, abspath, exists, join
@@ -19,12 +18,11 @@ from utils.log import make_run_name, make_logger, make_checkpoint_dir
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
 from utils.misc import *
-from utils.biggan_utils import ema_
+from utils.biggan_utils import ema
 from sync_batchnorm.batchnorm import convert_model
-from train_eval import Train_Eval
+from worker import make_worker
 
 import torch
-from torchvision import transforms
 from torch.utils.data import DataLoader
 from torch.backends import cudnn
 from torch.nn import DataParallel
@@ -37,34 +35,23 @@ RUN_NAME_FORMAT = (
     "{phase}-"
     "{timestamp}"
 )
-def load_frameowrk(cfgs, hdf5_path_train, **_):
-    if cfgs.seed == 82624:
-        cudnn.benchmark = True
-        cudnn.deterministic = False
+
+
+def prepare_train_eval(cfgs, hdf5_path_train, **_):
+    if cfgs.seed == -1:
+        cudnn.benchmark, cudnn.deterministic = True, False
     else:
         fix_all_seed(cfgs.seed)
-        cudnn.benchmark = False
-        cudnn.deterministic = True
+        cudnn.benchmark, cudnn.deterministic = False, True
 
-    if cfgs.disable_debugging_API:
-        torch.autograd.set_detect_anomaly(False)
+    n_gpus, default_device = torch.cuda.device_count(), torch.cuda.current_device()
+    if n_gpus ==1: warnings.warn('You have chosen a specific GPU. This will completely disable data parallelism.')
 
-    n_gpus = torch.cuda.device_count()
-    default_device = torch.cuda.current_device()
-
-    check_flag_0(cfgs.batch_size, n_gpus, cfgs.standing_statistics, cfgs.ema, cfgs.freeze_layers, cfgs.checkpoint_folder)
-    assert cfgs.batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
-
-    if n_gpus == 1:
-        warnings.warn('You have chosen a specific GPU. This will completely '
-                      'disable data parallelism.')
-
-    prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
-    standing_step = cfgs.standing_step if cfgs.standing_statistics is True else cfgs.batch_size
-
-    run_name = make_run_name(RUN_NAME_FORMAT,
-                             framework=cfgs.config_path.split('/')[3][:-5],
-                             phase='train')
+    if cfgs.disable_debugging_API: torch.autograd.set_detect_anomaly(False)
+    check_flag_0(cfgs.batch_size, n_gpus, cfgs.freeze_layers, cfgs.checkpoint_folder, cfgs.architecture, cfgs.img_size)
+    run_name = make_run_name(RUN_NAME_FORMAT, framework=cfgs.config_path.split('/')[3][:-5], phase='train')
+    prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
+    standing_step = cfgs.standing_step if cfgs.standing_statistics else cfgs.batch_size
 
     logger = make_logger(run_name, None)
     writer = SummaryWriter(log_dir=join('./logs', run_name))
@@ -72,6 +59,8 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
     logger.info(cfgs.train_configs)
     logger.info(cfgs.model_configs)
 
+
+    ##### load dataset #####
     logger.info('Loading train datasets...')
     train_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=True, download=True, resize_size=cfgs.img_size,
                                 hdf5_path=hdf5_path_train, random_flip=cfgs.random_flip_preprocessing)
@@ -86,9 +75,13 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
                                hdf5_path=None, random_flip=False)
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
+
+    train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=True)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
+
+
+    ##### build model #####
     logger.info('Building model...')
-    if cfgs.architecture == "dcgan":
-        assert cfgs.img_size == 32, "Sry, StudioGAN does not support dcgan models for generation of images larger than 32 resolution."
     module = __import__('models.{architecture}'.format(architecture=cfgs.architecture), fromlist=['something'])
     logger.info('Modules are located on models.{architecture}'.format(architecture=cfgs.architecture))
     Gen = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
@@ -104,7 +97,7 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
         Gen_copy = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
                                     cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
                                     initialize=False, G_depth=cfgs.G_depth, mixed_precision=cfgs.mixed_precision).to(default_device)
-        Gen_ema = ema_(Gen, Gen_copy, cfgs.ema_decay, cfgs.ema_start)
+        Gen_ema = ema(Gen, Gen_copy, cfgs.ema_decay, cfgs.ema_start)
     else:
         Gen_copy, Gen_ema = None, None
 
@@ -114,9 +107,8 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
     logger.info(count_parameters(Dis))
     logger.info(Dis)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=True)
-    eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
 
+    ### define loss functions and optimizers
     G_loss = {'vanilla': loss_dcgan_gen, 'least_square': loss_lsgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
     D_loss = {'vanilla': loss_dcgan_dis, 'least_square': loss_lsgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
 
@@ -132,7 +124,11 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
     else:
         raise NotImplementedError
 
-    if cfgs.checkpoint_folder is not None:
+
+    ##### load checkpoints if needed #####
+    if cfgs.checkpoint_folder is None:
+        checkpoint_dir = make_checkpoint_dir(cfgs.checkpoint_folder, run_name)
+    else:
         when = "current" if cfgs.load_current is True else "best"
         if not exists(abspath(cfgs.checkpoint_folder)):
             raise NotADirectoryError
@@ -155,9 +151,9 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
         logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
         if cfgs.freeze_layers > -1 :
             prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
-    else:
-        checkpoint_dir = make_checkpoint_dir(cfgs.checkpoint_folder, run_name)
 
+
+    ##### wrap models with DP and convert BN to Sync BN #####
     if n_gpus > 1:
         Gen = DataParallel(Gen, output_device=default_device)
         Dis = DataParallel(Dis, output_device=default_device)
@@ -170,10 +166,12 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
             if cfgs.ema:
                 Gen_copy = convert_model(Gen_copy).to(default_device)
 
+
+    ##### load the inception network and prepare first/secend moments for calculating FID #####
     if cfgs.eval:
         inception_model = InceptionV3().to(default_device)
-        if n_gpus > 1:
-            inception_model = DataParallel(inception_model, output_device=default_device)
+        if n_gpus > 1: inception_model = DataParallel(inception_model, output_device=default_device)
+
         mu, sigma = prepare_inception_moments(dataloader=eval_dataloader,
                                               generator=Gen,
                                               eval_mode=cfgs.eval_type,
@@ -182,11 +180,9 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
                                               run_name=run_name,
                                               logger=logger,
                                               device=default_device)
-    else:
-        mu, sigma, inception_model = None, None, None
 
 
-    train_eval = Train_Eval(
+    worker = make_worker(
         cfgs=cfgs,
         run_name=run_name,
         best_step=best_step,
@@ -216,27 +212,27 @@ def load_frameowrk(cfgs, hdf5_path_train, **_):
     )
 
     if cfgs.train_configs['train']:
-        step = train_eval.train(current_step=step, total_step=cfgs.total_step)
+        step = worker.train(current_step=step, total_step=cfgs.total_step)
 
     if cfgs.eval:
-        is_save = train_eval.evaluation(step=step, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+        is_save = worker.evaluation(step=step, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
 
     if cfgs.save_images:
-        train_eval.save_images(is_generate=True, png=True, npz=True, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+        worker.save_images(is_generate=True, png=True, npz=True, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
 
     if cfgs.image_visualization:
-        train_eval.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+        worker.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
 
     if cfgs.k_nearest_neighbor:
-        train_eval.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+        worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
 
     if cfgs.interpolation:
         assert cfgs.architecture in ["big_resnet", "biggan_deep"], "Not supported except for biggan and biggan_deep."
-        train_eval.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False,
+        worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False,
                                             standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
-        train_eval.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True,
+        worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True,
                                             standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
 
     if cfgs.frequency_analysis:
-        train_eval.run_frequency_analysis(num_images=len(train_dataset)//cfgs.num_classes,
+        worker.run_frequency_analysis(num_images=len(train_dataset)//cfgs.num_classes,
                                           standing_statistics=cfgs.standing_statistics, standing_step=standing_step)

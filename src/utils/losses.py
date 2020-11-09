@@ -74,6 +74,21 @@ def latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy,
             return zs
 
 
+def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
+    if conditional_strategy == 'ContraGAN':
+        if tempering_type == 'continuous':
+            t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
+        elif tempering_type == 'discrete':
+            tempering_interval = total_step//(tempering_step + 1)
+            t = start_temperature + \
+                (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
+        else:
+            t = start_temperature
+    else:
+        t = 'no'
+    return t
+
+
 class Cross_Entropy_loss(torch.nn.Module):
     def __init__(self, in_features, out_features, spectral_norm=True):
         super(Cross_Entropy_loss, self).__init__()
