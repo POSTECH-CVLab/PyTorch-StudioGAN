@@ -165,7 +165,6 @@ class make_worker(object):
             else:
                 self.embedding_layer = self.dis_model.embedding
             self.NCA_criterion = Proxy_NCA_loss(self.default_device, self.embedding_layer, self.num_classes, self.batch_size)
-
         elif self.conditional_strategy == 'NT_Xent_GAN':
             self.NT_Xent_criterion = NT_Xent_loss(self.default_device, self.batch_size)
         else:
@@ -174,8 +173,10 @@ class make_worker(object):
         if self.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
 
-        if self.dataset_name in ["imagenet", "tiny_imagenet"]:
+        if self.dataset_name == "imagenet":
             self.num_eval = {'train':50000, 'valid':50000}
+        elif self.dataset_name == "tiny_imagenet":
+            self.num_eval = {'train':50000, 'valid':10000}
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
         elif self.dataset_name == "custom":
@@ -207,8 +208,8 @@ class make_worker(object):
             self.ada_aug_p = 'No'
         while step_count <= total_step:
             # ================== TRAIN D ================== #
-            toggle_grad(self.dis_model, True, freeze_layers=self.freeze_layers)
-            toggle_grad(self.gen_model, False, freeze_layers=-1)
+            toggle_grad(self.dis_model, on=True, freeze_layers=self.freeze_layers)
+            toggle_grad(self.gen_model, on=False, freeze_layers=-1)
             t = set_temperature(self.conditional_strategy, self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
             for step_index in range(self.d_steps_per_iter):
                 self.D_optimizer.zero_grad()
@@ -250,7 +251,6 @@ class make_worker(object):
                             dis_out_real = self.dis_model(real_images, real_labels)
                             dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                            real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
                             cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels)
                             cls_proxies_fake, cls_embed_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
                         else:
@@ -267,6 +267,7 @@ class make_worker(object):
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
                             dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_real, cls_proxies_real, real_labels)
                         elif self.conditional_strategy == "ContraGAN":
+                            real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
                             dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_real, cls_proxies_real,
                                                                                                 real_cls_mask, real_labels, t, self.margin)
                         else:
@@ -471,11 +472,9 @@ class make_worker(object):
 
                 with torch.no_grad():
                     generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
-                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-                    generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
-                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
@@ -496,8 +495,7 @@ class make_worker(object):
             self.Gen_copy.eval()
 
         if isinstance(self.gen_model, DataParallel):
-            gen = self.gen_model.module
-            dis = self.dis_model.module
+            gen, dis = self.gen_model.module, self.dis_model.module
             if self.Gen_copy is not None:
                 gen_copy = self.Gen_copy.module
         else:
@@ -519,19 +517,19 @@ class make_worker(object):
         g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
         d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
 
-        if when == "best":
-            if len(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth".format(when=when)))) >= 1:
-                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth".format(when=when)))[0])
-                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-current-weights-step*.pth".format(when=when)))[0])
+        torch.save(g_states, g_checkpoint_output_path)
+        torch.save(d_states, d_checkpoint_output_path)
 
-            g_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G-current-weights-step={step}.pth".format(when=when, step=str(step)))
-            d_checkpoint_output_path_ = join(self.checkpoint_dir, "model=D-current-weights-step={step}.pth".format(when=when, step=str(step)))
+        if when == "best":
+            if len(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth"))) >= 1:
+                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth"))[0])
+                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-current-weights-step*.pth"))[0])
+
+            g_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G-current-weights-step={step}.pth".format(step=str(step)))
+            d_checkpoint_output_path_ = join(self.checkpoint_dir, "model=D-current-weights-step={step}.pth".format(step=str(step)))
 
             torch.save(g_states, g_checkpoint_output_path_)
             torch.save(d_states, d_checkpoint_output_path_)
-
-        torch.save(g_states, g_checkpoint_output_path)
-        torch.save(d_states, d_checkpoint_output_path)
 
         if self.Gen_copy is not None:
             g_ema_states = {'state_dict': gen_copy.state_dict()}
@@ -540,6 +538,8 @@ class make_worker(object):
 
             g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
 
+            torch.save(g_ema_states, g_ema_checkpoint_output_path)
+
             if when == "best":
                 if len(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))) >= 1:
                     find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))[0])
@@ -547,8 +547,6 @@ class make_worker(object):
                 g_ema_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G_ema-current-weights-step={step}.pth".format(when=when, step=str(step)))
 
                 torch.save(g_ema_states, g_ema_checkpoint_output_path_)
-
-            torch.save(g_ema_states, g_ema_checkpoint_output_path)
 
         if self.logger:
             self.logger.info("Saved model to {}".format(self.checkpoint_dir))

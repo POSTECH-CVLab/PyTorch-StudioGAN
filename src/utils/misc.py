@@ -233,38 +233,28 @@ def calculate_all_sn(model):
 
 
 def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_classes, device):
-    generator.train()
     generator.apply(reset_bn_stat)
     for i in range(acml_step):
         new_batch_size = random.randint(1, batch_size)
         z, fake_labels = sample_latents(prior, new_batch_size, z_dim, 1, num_classes, None, device)
         generated_images = generator(z, fake_labels)
-    generator.eval()
 
 
 def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training):
+    gen_tmp = gen if gen_copy is None else gen_copy
+
     if training:
-        gen.train()
-        if gen_copy is not None:
-            gen_copy.train()
-            return gen_copy
-        return gen
+        gen_tmp.train()
+        return gen_tmp
+
+    gen_tmp.eval()
+    gen_tmp.apply(set_deterministic_op_train)
+
+    if standing_statistics:
+        apply_accumulate_stat(gen_tmp, standing_step, prior, batch_size, z_dim, num_classes, device)
     else:
-        if standing_statistics:
-            apply_accumulate_stat(gen, standing_step, prior, batch_size, z_dim, num_classes, device)
-        else:
-            gen.eval()
-        gen.apply(set_deterministic_op_train)
-        if gen_copy is not None:
-            if standing_statistics:
-                apply_accumulate_stat(gen_copy, standing_step, prior, batch_size, z_dim, num_classes, device)
-            else:
-                gen_copy.eval()
-                gen_copy.apply(set_bn_train)
-            gen_copy.apply(set_deterministic_op_train)
-            return gen_copy
-        else:
-            return gen
+        gen_tmp.apply(set_bn_train)
+    return gen_tmp
 
 
 def plot_img_canvas(images, save_path, logger, nrow):

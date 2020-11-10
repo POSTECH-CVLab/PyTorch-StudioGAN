@@ -176,7 +176,7 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
                                               generator=Gen,
                                               eval_mode=cfgs.eval_type,
                                               inception_model=inception_model,
-                                              splits=10,
+                                              splits=1,
                                               run_name=run_name,
                                               logger=logger,
                                               device=default_device)
