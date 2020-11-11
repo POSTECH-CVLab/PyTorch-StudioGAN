@@ -72,7 +72,7 @@ def main():
         assert cfgs.eval_type in ['train', 'test'], "cifar10 does not contain dataset for validation"
     elif cfgs.dataset_name in ['imagenet', 'tiny_imagenet', 'custom']:
         assert cfgs.eval_type == 'train' or cfgs.eval_type == 'valid', "not support the evalutation using test dataset"
-    hdf5_path_train = make_hdf5(cfgs, mode=True) if cfgs.load_all_data_in_memory else None
+    hdf5_path_train = make_hdf5(cfgs, mode="train") if cfgs.load_all_data_in_memory else None
 
     prepare_train_eval(cfgs, hdf5_path_train=hdf5_path_train)
 

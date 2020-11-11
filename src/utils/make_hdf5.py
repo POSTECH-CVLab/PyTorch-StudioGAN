@@ -44,8 +44,7 @@ def make_hdf5(cfgs, mode):
                          'about to overwrite! Override this error only if you know '
                          'what you''re doing!')
 
-    file_name = '{dataset_name}_{size}_{mode}.hdf5'.format(dataset_name=cfgs.dataset_name, size=cfgs.img_size,
-                                                           mode=mode)
+    file_name = '{dataset_name}_{size}_{mode}.hdf5'.format(dataset_name=cfgs.dataset_name, size=cfgs.img_size, mode=mode)
     file_path = os.path.join(cfgs.data_path, file_name)
     train = True if mode == "train" else False
 
