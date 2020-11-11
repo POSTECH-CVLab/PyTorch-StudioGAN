@@ -51,7 +51,6 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
     check_flag_0(cfgs.batch_size, n_gpus, cfgs.freeze_layers, cfgs.checkpoint_folder, cfgs.architecture, cfgs.img_size)
     run_name = make_run_name(RUN_NAME_FORMAT, framework=cfgs.config_path.split('/')[3][:-5], phase='train')
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
-    standing_step = cfgs.standing_step if cfgs.standing_statistics else cfgs.batch_size
 
     logger = make_logger(run_name, None)
     writer = SummaryWriter(log_dir=join('./logs', run_name))
@@ -215,24 +214,24 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
         step = worker.train(current_step=step, total_step=cfgs.total_step)
 
     if cfgs.eval:
-        is_save = worker.evaluation(step=step, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+        is_save = worker.evaluation(step=step, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
 
     if cfgs.save_images:
-        worker.save_images(is_generate=True, png=True, npz=True, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+        worker.save_images(is_generate=True, png=True, npz=True, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
 
     if cfgs.image_visualization:
-        worker.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+        worker.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
 
     if cfgs.k_nearest_neighbor:
-        worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+        worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
 
     if cfgs.interpolation:
         assert cfgs.architecture in ["big_resnet", "biggan_deep"], "Not supported except for biggan and biggan_deep."
         worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False,
-                                            standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+                                            standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
         worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True,
-                                            standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+                                            standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
 
     if cfgs.frequency_analysis:
         worker.run_frequency_analysis(num_images=len(train_dataset)//cfgs.num_classes,
-                                          standing_statistics=cfgs.standing_statistics, standing_step=standing_step)
+                                          standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
