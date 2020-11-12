@@ -150,10 +150,10 @@ class make_worker(object):
         self.policy = "color,translation,cutout"
 
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
-
+        """
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
                                                                   self.num_classes, None, self.default_device, sampler=sampler)
-
+        """
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr, self.zcr)
 
@@ -257,7 +257,6 @@ class make_worker(object):
                             raise NotImplementedError
 
                         dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
-
                         if self.conditional_strategy == "ACGAN":
                             dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
                         elif self.conditional_strategy == "NT_Xent_GAN":
@@ -469,13 +468,13 @@ class make_worker(object):
                                                    'generator': gen_acml_loss.item()}, step_count)
                 if self.ada:
                     self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
-
+                """
                 with torch.no_grad():
                     generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
                                                       self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-
+                """
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
                     is_best = self.evaluation(step_count, False, "N/A")
