@@ -74,7 +74,6 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
                                hdf5_path=None, random_flip=False)
     logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
-
     train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=True)
     eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
 
