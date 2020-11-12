@@ -241,7 +241,7 @@ def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_cl
         generated_images = generator(z, fake_labels)
     generator.eval()
 
-
+"""
 def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training):
     gen_tmp = gen if gen_copy is None else gen_copy
 
@@ -258,6 +258,33 @@ def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, pri
         gen_tmp.apply(set_bn_train)
         gen_tmp.apply(set_deterministic_op_train)
     return gen_tmp
+"""
+
+
+def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training):
+    if training:
+        gen.train()
+        if gen_copy is not None:
+            gen_copy.train()
+            return gen_copy
+        return gen
+    else:
+        if standing_statistics:
+            apply_accumulate_stat(gen, standing_step, prior, batch_size, z_dim, num_classes, device)
+            gen.apply(set_deterministic_op_train)
+        else:
+            gen.eval()
+        if gen_copy is not None:
+            if standing_statistics:
+                apply_accumulate_stat(gen_copy, standing_step, prior, batch_size, z_dim, num_classes, device)
+                gen_copy.apply(set_deterministic_op_train)
+            else:
+                gen_copy.eval()
+                gen_copy.apply(set_bn_train)
+                gen_copy.apply(set_deterministic_op_train)
+            return gen_copy
+        else:
+            return gen
 
 
 def plot_img_canvas(images, save_path, logger, nrow):
