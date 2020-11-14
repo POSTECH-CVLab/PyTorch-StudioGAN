@@ -67,7 +67,7 @@ class LoadDataset(Dataset):
 
         if self.hdf5_path is None:
             if self.dataset_name in ['cifar10', 'tiny_imagenet']:
-                transform_list = []
+                self.transforms = []
             elif self.dataset_name in ['imagenet', 'custom']:
                 if train:
                     self.transforms = [RandomCropLongEdge(), transforms.Resize(self.resize_size)]
