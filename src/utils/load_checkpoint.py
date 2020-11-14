@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# utils/load_checkpoint.py
+# src/utils/load_checkpoint.py
 
 
 import os
@@ -12,7 +12,6 @@ import torch
 
 
 def load_checkpoint(model, optimizer, filename, metric=False, ema=False):
-    # Note: Input model & optimizer should be pre-defined.  This routine only updates their states.
     start_step = 0
     if ema:
         checkpoint = torch.load(filename)

@@ -33,7 +33,7 @@ import torch
 
 
 
-class ema_(object):
+class ema(object):
   def __init__(self, source, target, decay=0.9999, start_itr=0):
     self.source = source
     self.target = target

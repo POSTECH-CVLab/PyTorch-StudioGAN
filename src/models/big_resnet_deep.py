@@ -87,13 +87,13 @@ class Generator(nn.Module):
                  conditional_strategy, num_classes, initialize, G_depth, mixed_precision):
         super(Generator, self).__init__()
         g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
-                                "64": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*4],
+                                "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
                                 "128": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
                                 "256": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
                                 "512": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim]}
 
         g_out_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
-                                 "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
+                                 "64": [g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "128": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "256": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
                                  "512": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim, g_conv_dim]}
@@ -121,7 +121,7 @@ class Generator(nn.Module):
         self.blocks = []
         for index in range(self.n_blocks):
             self.blocks += [[GenBlock(in_channels=self.in_dims[index],
-                                      out_channels=self.in_dims[index] if g_index ==0 else self.out_dims[index],
+                                      out_channels=self.in_dims[index] if g_index == 0 else self.out_dims[index],
                                       g_spectral_norm=g_spectral_norm,
                                       activation_fn=activation_fn,
                                       conditional_bn=conditional_bn,
@@ -252,22 +252,22 @@ class Discriminator(nn.Module):
                  hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, initialize, D_depth, mixed_precision):
         super(Discriminator, self).__init__()
         d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
-                                "64": [3] +[d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16],
+                                "64": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8],
                                 "128": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16],
                                 "256": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*8, d_conv_dim*16],
                                 "512": [3] +[d_conv_dim, d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*8, d_conv_dim*16]}
 
         d_out_dims_collection = {"32": [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
-                                 "64": [d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16],
+                                 "64": [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16],
                                  "128": [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16],
                                  "256": [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16],
                                  "512": [d_conv_dim, d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16]}
 
-        d_down = {"32": [True, True, False, False],
-                  "64": [True, True, True, True, False],
-                  "128": [True, True, True, True, True, False],
-                  "256": [True, True, True, True, True, True, False],
-                  "512": [True, True, True, True, True, True, True, False]}
+        d_down = {"32": [False, True, True, True, True],
+                  "64": [False, True, True, True, True, True],
+                  "128": [False, True, True, True, True, True],
+                  "256": [False, True, True, True, True, True, True],
+                  "512": [False, True, True, True, True, True, True, True]}
 
         self.nonlinear_embed = nonlinear_embed
         self.normalize_embed = normalize_embed

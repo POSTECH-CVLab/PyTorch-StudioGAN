@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# utils/utils.py
+# src/utils/misc.py
 
 
 import numpy as np
@@ -15,6 +15,8 @@ from os.path import dirname, abspath, exists, join
 from scipy import linalg
 from datetime import datetime
 from tqdm import tqdm
+from itertools import chain
+from collections import defaultdict
 
 from metrics.FID import generate_images
 from utils.sample import sample_latents
@@ -32,6 +34,38 @@ class dummy_context_mgr():
         return None
     def __exit__(self, exc_type, exc_value, traceback):
         return False
+
+
+def flatten_dict(init_dict):
+    res_dict = {}
+    if type(init_dict) is not dict:
+        return res_dict
+
+    for k, v in init_dict.items():
+        if type(v) == dict:
+            res_dict.update(flatten_dict(v))
+        else:
+            res_dict[k] = v
+    return res_dict
+
+
+def setattr_cls_from_kwargs(cls, kwargs):
+    kwargs = flatten_dict(kwargs)
+    for key in kwargs.keys():
+        value = kwargs[key]
+        setattr(cls, key, value)
+
+
+def dict2clsattr(train_configs, model_configs):
+    cfgs = {}
+    for k, v in chain(train_configs.items(), model_configs.items()):
+        cfgs[k] = v
+
+    class cfg_container: pass
+    cfg_container.train_configs = train_configs
+    cfg_container.model_configs = model_configs
+    setattr_cls_from_kwargs(cfg_container, cfgs)
+    return cfg_container
 
 
 # fix python, numpy, torch seed
@@ -58,8 +92,13 @@ def define_sampler(dataset_name, conditional_strategy):
     return sampler
 
 
-def check_flag_0(batch_size, n_gpus, standing_statistics, ema, freeze_layers, checkpoint_folder):
+def check_flag_0(batch_size, n_gpus, freeze_layers, checkpoint_folder, architecture, img_size):
     assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
+
+    if architecture == "dcgan":
+        assert img_size == 32, "Sry,\
+            StudioGAN does not support dcgan models for generation of images larger than 32 resolution."
+
     if freeze_layers > -1:
         assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
 
@@ -203,29 +242,21 @@ def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_cl
 
 
 def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training):
+    gen_tmp = gen if gen_copy is None else gen_copy
+
     if training:
         gen.train()
-        if gen_copy is not None:
-            gen_copy.train()
-            return gen_copy
-        return gen
+        gen_tmp.train()
+        return gen_tmp
+
+    if standing_statistics:
+        apply_accumulate_stat(gen_tmp, standing_step, prior, batch_size, z_dim, num_classes, device)
+        gen_tmp.apply(set_deterministic_op_train)
     else:
-        if standing_statistics:
-            apply_accumulate_stat(gen, standing_step, prior, batch_size, z_dim, num_classes, device)
-            gen.apply(set_deterministic_op_train)
-        else:
-            gen.eval()
-        if gen_copy is not None:
-            if standing_statistics:
-                apply_accumulate_stat(gen_copy, standing_step, prior, batch_size, z_dim, num_classes, device)
-                gen_copy.apply(set_deterministic_op_train)
-            else:
-                gen_copy.eval()
-                gen_copy.apply(set_bn_train)
-                gen_copy.apply(set_deterministic_op_train)
-            return gen_copy
-        else:
-            return gen
+        gen_tmp.eval()
+        gen_tmp.apply(set_bn_train)
+        gen_tmp.apply(set_deterministic_op_train)
+    return gen_tmp
 
 
 def plot_img_canvas(images, save_path, logger, nrow):

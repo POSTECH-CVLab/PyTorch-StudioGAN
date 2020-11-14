@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# data_utils/load_dataset.py
+# src/data_utils/load_dataset.py
 
 
 import os
@@ -61,25 +61,27 @@ class LoadDataset(Dataset):
         self.download = download
         self.resize_size = resize_size
         self.hdf5_path = hdf5_path
-
         self.random_flip = random_flip
         self.norm_mean = [0.5,0.5,0.5]
         self.norm_std = [0.5,0.5,0.5]
-        self.pad = int(resize_size//8)
 
-        if self.hdf5_path is not None:
-            transform_list = [transforms.ToPILImage()]
-        else:
+        if self.hdf5_path is None:
             if self.dataset_name in ['cifar10', 'tiny_imagenet']:
                 transform_list = []
             elif self.dataset_name in ['imagenet', 'custom']:
-                transform_list = [CenterCropLongEdge(), transforms.Resize(self.resize_size)]
+                if train:
+                    self.transforms = [RandomCropLongEdge(), transforms.Resize(self.resize_size)]
+                else:
+                    self.transforms = [CenterCropLongEdge(), transforms.Resize(self.resize_size)]
+        else:
+            self.transforms = [transforms.ToPILImage()]
 
         if random_flip:
-            transform_list += [transforms.RandomHorizontalFlip()]
+            self.transforms += [transforms.RandomHorizontalFlip()]
 
-        transform_list += [transforms.ToTensor(), transforms.Normalize(self.norm_mean, self.norm_std)]
-        self.transforms = transforms.Compose(transform_list)
+        self.transforms += [transforms.ToTensor(), transforms.Normalize(self.norm_mean, self.norm_std)]
+        self.transforms = transforms.Compose(self.transforms)
+
         self.load_dataset()
 
 
@@ -140,11 +142,10 @@ class LoadDataset(Dataset):
 
 
     def __getitem__(self, index):
-        if self.hdf5_path is not None:
-            img, label = np.transpose(self.data[index], (1,2,0)), int(self.labels[index])
-            img = self.transforms(img)
-        else:
+        if self.hdf5_path is None:
             img, label = self.data[index]
             img, label = self.transforms(img), int(label)
-
+        else:
+            img, label = np.transpose(self.data[index], (1,2,0)), int(self.labels[index])
+            img = self.transforms(img)
         return img, label
