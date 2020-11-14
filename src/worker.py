@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# train_eval.py
+# src/worker.py
 
 
 import numpy as np
@@ -150,10 +150,9 @@ class make_worker(object):
         self.policy = "color,translation,cutout"
 
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
-        """
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
                                                                   self.num_classes, None, self.default_device, sampler=sampler)
-        """
+
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr, self.zcr)
 
@@ -206,6 +205,7 @@ class make_worker(object):
             self.ada_aug_step = self.ada_target/self.ada_length
         else:
             self.ada_aug_p = 'No'
+
         while step_count <= total_step:
             # ================== TRAIN D ================== #
             toggle_grad(self.dis_model, on=True, freeze_layers=self.freeze_layers)
@@ -420,7 +420,7 @@ class make_worker(object):
                         if self.conditional_strategy == "ACGAN":
                             gen_acml_loss += self.ce_loss(cls_out_fake, fake_labels)
                         elif self.conditional_strategy == "ContraGAN":
-                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, 0.0)
+                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, self.margin)
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
                             gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_fake, cls_proxies_fake, fake_labels)
                         elif self.conditional_strategy == "NT_Xent_GAN":
@@ -468,13 +468,13 @@ class make_worker(object):
                                                    'generator': gen_acml_loss.item()}, step_count)
                 if self.ada:
                     self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
-                """
+
                 with torch.no_grad():
                     generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
                                                       self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-                """
+
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
                     is_best = self.evaluation(step_count, False, "N/A")

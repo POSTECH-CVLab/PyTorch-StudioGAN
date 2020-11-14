@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# metrics/Accuracy.py
+# src/metrics/Accuracy.py
 
 
 import numpy as np

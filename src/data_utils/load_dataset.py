@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# data_utils/load_dataset.py
+# src/data_utils/load_dataset.py
 
 
 import os
@@ -67,7 +67,7 @@ class LoadDataset(Dataset):
 
         if self.hdf5_path is None:
             if self.dataset_name in ['cifar10', 'tiny_imagenet']:
-                self.transforms = []
+                transform_list = []
             elif self.dataset_name in ['imagenet', 'custom']:
                 if train:
                     self.transforms = [RandomCropLongEdge(), transforms.Resize(self.resize_size)]

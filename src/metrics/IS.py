@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# metrics/IS.py
+# src/metrics/IS.py
 
 import math
 from tqdm import tqdm

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# utils/utils.py
+# src/utils/misc.py
 
 
 import numpy as np
@@ -46,7 +46,6 @@ def flatten_dict(init_dict):
             res_dict.update(flatten_dict(v))
         else:
             res_dict[k] = v
-
     return res_dict
 
 
