@@ -231,7 +231,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**ICRGAN(P)**](https://arxiv.org/abs/2002.04724) | 32 | 64 | 9.781 | 7.550 | 0.994 | 0.992 | [Config](./src/configs/CIFAR10/ICRGAN(P).json) | [Log](./logs/ICRGAN(P)-train-2020_09_17_13_46_09.log) | - |
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ICRGAN(C).json) |  - | - |
 | [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 32 | 64 |  9.649 | 7.369 | 0.995 | 0.994 | [Config](./src/configs/CIFAR10/DiffAugGAN(P).json) | [Log](./logs/DiffAugGAN(P)-train-2020_09_18_14_33_57.log) | - |
-| [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 32 | 64 | 9.896 | 7.285 | 0.995 | 0.988 | [Config](./src/configs/CIFAR10/DiffAugGAN(C).json) |  - | - |
+| [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 32 | 64 | 9.896 | 7.285 | 0.995 | 0.988 | [Config](./src/configs/CIFAR10/DiffAugGAN(C).json) |  [Log] (./logs/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | - |
 | [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ADAGAN(P).json) |  - | - |
 | [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ADAGAN(C).json) | - | - |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | 64 | 9.576 | 8.465 | 0.993 | 0.990 | [Config](./src/configs/CIFAR10/LOGAN.json) |  [Log](./logs/LOGAN-train-2020_09_17_13_46_47.log) | - |
