@@ -30,9 +30,11 @@ from utils.cr_diff_aug import CR_DiffAug
 import torch
 import torch.nn as nn
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 import torch.nn.functional as F
 import torchvision
 from torchvision import transforms
+
 
 
 SAVE_FORMAT = 'step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth'
@@ -159,7 +161,7 @@ class make_worker(object):
         if self.conditional_strategy == 'ContraGAN':
             self.contrastive_criterion = Conditional_Contrastive_loss(self.rank, self.batch_size, self.pos_collected_numerator)
         elif self.conditional_strategy == 'Proxy_NCA_GAN':
-            if isinstance(self.dis_model, DataParallel):
+            if isinstance(self.dis_model, DataParallel) or isinstance(self.dis_model, DistributedDataParallel):
                 self.embedding_layer = self.dis_model.module.embedding
             else:
                 self.embedding_layer = self.dis_model.embedding
@@ -493,7 +495,7 @@ class make_worker(object):
         if self.Gen_copy is not None:
             self.Gen_copy.eval()
 
-        if isinstance(self.gen_model, DataParallel):
+        if isinstance(self.gen_model, DataParallel) or isinstance(self.gen_model, DistributedDataParallel):
             gen, dis = self.gen_model.module, self.dis_model.module
             if self.Gen_copy is not None:
                 gen_copy = self.Gen_copy.module
@@ -675,7 +677,7 @@ class make_worker(object):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
-            shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
+            shared = generator.module.shared if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
             if fix_z:

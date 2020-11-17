@@ -32,6 +32,7 @@ from utils.losses import latent_optimise
 
 import torch
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 
 
 
@@ -42,7 +43,7 @@ class precision_recall(object):
 
 
     def generate_images(self, gen, dis, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size):
-        if isinstance(gen, DataParallel):
+        if isinstance(gen, DataParallel) or isinstance(gen, DistributedDataParallel):
             z_dim = gen.module.z_dim
             num_classes = gen.module.num_classes
             conditional_strategy = dis.module.conditional_strategy

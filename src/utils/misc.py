@@ -28,7 +28,7 @@ import torch.nn.functional as F
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.nn import DataParallel
-from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.nn.parallel import DistributedDataParallel
 from torchvision.utils import save_image
 
 
@@ -161,7 +161,7 @@ def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, 
 
 # Convenience utility to switch off requires_grad
 def toggle_grad(model, on, freeze_layers=-1):
-    if isinstance(model, DataParallel):
+    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
         num_blocks = len(model.module.in_dims)
     else:
         num_blocks = len(model.in_dims)
@@ -241,16 +241,16 @@ def calculate_all_sn(model):
                     block_idx = int(splited_name[int(idx+1)])
                     module_idx = int(splited_name[int(idx+2)])
                     operation_name = splited_name[idx+3]
-                    if isinstance(model, DataParallel):
+                    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
                         operations = model.module.blocks[block_idx][module_idx]
                     else:
                         operations = model.blocks[block_idx][module_idx]
                     operation = getattr(operations, operation_name)
                 else:
                     splited_name = name.split('.')
-                    idx = find_string(splited_name, 'module') if isinstance(model, DataParallel) else -1
+                    idx = find_string(splited_name, 'module') if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel) else -1
                     operation_name = splited_name[idx+1]
-                    if isinstance(model, DataParallel):
+                    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
                         operation = getattr(model.module, operation_name)
                     else:
                         operation = getattr(model, operation_name)
@@ -431,7 +431,7 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
 
 
 def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
-    if isinstance(gen_model, DataParallel):
+    if isinstance(gen_model, DataParallel) or isinstance(gen_model, DistributedDataParallel):
         z_dim = gen_model.module.z_dim
         num_classes = gen_model.module.num_classes
         conditional_strategy = dis_model.module.conditional_strategy

@@ -28,6 +28,7 @@ from utils.losses import latent_optimise
 
 import torch
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 from torchvision.utils import save_image
 
 
@@ -82,7 +83,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 def generate_images(batch_size, gen, dis, truncated_factor, prior, latent_op, latent_op_step,
                     latent_op_alpha, latent_op_beta, device):
-    if isinstance(gen, DataParallel):
+    if isinstance(gen, DataParallel) or isinstance(gen, DistributedDataParallel):
         z_dim = gen.module.z_dim
         num_classes = gen.module.num_classes
         conditional_strategy = dis.module.conditional_strategy
@@ -126,7 +127,7 @@ def get_activations(data_loader, generator, discriminator, inception_model, n_ge
         n_batches = math.ceil(float(total_instance) / float(batch_size))
         data_iter = iter(data_loader)
 
-    num_classes = generator.module.num_classes if isinstance(generator, DataParallel) else generator.num_classes
+    num_classes = generator.module.num_classes if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.num_classes
     pred_arr = np.empty((total_instance, 2048))
 
     for i in tqdm(range(0, n_batches), disable=tqdm_disable):

@@ -15,6 +15,7 @@ from utils.losses import latent_optimise
 
 import torch
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 
 
 
@@ -23,7 +24,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
     data_iter = iter(dataloader)
     batch_size = dataloader.batch_size
 
-    if isinstance(generator, DataParallel):
+    if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel):
         z_dim = generator.module.z_dim
         num_classes = generator.module.num_classes
         conditional_strategy = discriminator.module.conditional_strategy
