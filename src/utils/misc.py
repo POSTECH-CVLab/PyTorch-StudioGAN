@@ -9,6 +9,7 @@ import numpy as np
 import random
 import math
 import os
+import sys
 import shutil
 import matplotlib.pyplot as plt
 from os.path import dirname, abspath, exists, join
@@ -24,7 +25,10 @@ from utils.losses import latent_optimise
 
 import torch
 import torch.nn.functional as F
+import torch.distributed as dist
+import torch.multiprocessing as mp
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torchvision.utils import save_image
 
 
@@ -75,6 +79,33 @@ def fix_all_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.cuda.manual_seed(seed)
+
+
+def setup(rank, world_size):
+    if sys.platform == 'win32':
+        # Distributed package only covers collective communications with Gloo
+        # backend and FileStore on Windows platform. Set init_method parameter
+        # in init_process_group to a local file.
+        # Example init_method="file:///f:/libtmp/some_file"
+        init_method="file:///{your local file path}"
+
+        # initialize the process group
+        dist.init_process_group(
+            "gloo",
+            init_method=init_method,
+            rank=rank,
+            world_size=world_size
+        )
+    else:
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12355'
+
+        # initialize the process group
+        dist.init_process_group("gloo", rank=rank, world_size=world_size)
+
+
+def cleanup():
+    dist.destroy_process_group()
 
 
 def count_parameters(module):

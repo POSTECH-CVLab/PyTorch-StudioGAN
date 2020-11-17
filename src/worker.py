@@ -51,7 +51,7 @@ LOG_FORMAT = (
 class make_worker(object):
     def __init__(self, cfgs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
                  Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, G_optimizer, D_optimizer, G_loss,
-                 D_loss, prev_ada_p, default_device, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
+                 D_loss, prev_ada_p, rank, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
 
         self.cfgs = cfgs
         self.run_name = run_name
@@ -133,7 +133,7 @@ class make_worker(object):
         self.latent_op_beta = cfgs.latent_op_beta
         self.latent_norm_reg_weight = cfgs.latent_norm_reg_weight
 
-        self.default_device = default_device
+        self.rank = rank
         self.print_every = cfgs.print_every
         self.save_every = cfgs.save_every
         self.checkpoint_dir = checkpoint_dir
@@ -151,21 +151,21 @@ class make_worker(object):
 
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
-                                                                  self.num_classes, None, self.default_device, sampler=sampler)
+                                                                  self.num_classes, None, self.rank, sampler=sampler)
 
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr, self.zcr)
 
         if self.conditional_strategy == 'ContraGAN':
-            self.contrastive_criterion = Conditional_Contrastive_loss(self.default_device, self.batch_size, self.pos_collected_numerator)
+            self.contrastive_criterion = Conditional_Contrastive_loss(self.rank, self.batch_size, self.pos_collected_numerator)
         elif self.conditional_strategy == 'Proxy_NCA_GAN':
             if isinstance(self.dis_model, DataParallel):
                 self.embedding_layer = self.dis_model.module.embedding
             else:
                 self.embedding_layer = self.dis_model.embedding
-            self.NCA_criterion = Proxy_NCA_loss(self.default_device, self.embedding_layer, self.num_classes, self.batch_size)
+            self.NCA_criterion = Proxy_NCA_loss(self.rank, self.embedding_layer, self.num_classes, self.batch_size)
         elif self.conditional_strategy == 'NT_Xent_GAN':
-            self.NT_Xent_criterion = NT_Xent_loss(self.default_device, self.batch_size)
+            self.NT_Xent_criterion = NT_Xent_loss(self.rank, self.batch_size)
         else:
             pass
 
@@ -197,7 +197,7 @@ class make_worker(object):
         train_iter = iter(self.train_dataloader)
 
         if self.ada:
-            self.ada_augment = torch.tensor([0.0, 0.0], device = self.default_device)
+            self.ada_augment = torch.tensor([0.0, 0.0], device = self.rank)
             if self.prev_ada_p is not None:
                 self.ada_aug_p = self.prev_ada_p
             else:
@@ -220,7 +220,7 @@ class make_worker(object):
                         train_iter = iter(self.train_dataloader)
                         real_images, real_labels = next(train_iter)
 
-                    real_images, real_labels = real_images.to(self.default_device), real_labels.to(self.default_device)
+                    real_images, real_labels = real_images.to(self.rank), real_labels.to(self.rank)
                     with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
                         if self.diff_aug:
                             real_images = DiffAugment(real_images, policy=self.policy)
@@ -229,14 +229,14 @@ class make_worker(object):
 
                         if self.zcr:
                             zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                                   self.sigma_noise, self.default_device)
+                                                                   self.sigma_noise, self.rank)
                         else:
                             zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                             None, self.default_device)
+                                                             None, self.rank)
                         if self.latent_op:
                             zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
                                                  self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                                 False, self.default_device)
+                                                 False, self.rank)
 
                         fake_images = self.gen_model(zs, fake_labels)
                         if self.diff_aug:
@@ -266,7 +266,7 @@ class make_worker(object):
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
                             dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_real, cls_proxies_real, real_labels)
                         elif self.conditional_strategy == "ContraGAN":
-                            real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
+                            real_cls_mask = make_mask(real_labels, self.num_classes, self.rank)
                             dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_real, cls_proxies_real,
                                                                                                 real_cls_mask, real_labels, t, self.margin)
                         else:
@@ -336,12 +336,12 @@ class make_worker(object):
 
                         if self.gradient_penalty_for_dis:
                             dis_acml_loss += self.gradient_penalty_lambda*calc_derv4gp(self.dis_model, self.conditional_strategy, real_images,
-                                                                                       fake_images, real_labels, self.default_device)
+                                                                                       fake_images, real_labels, self.rank)
                         if self.deep_regret_analysis_for_dis:
                             dis_acml_loss += self.regret_penalty_lambda*calc_derv4dra(self.dis_model, self.conditional_strategy, real_images,
-                                                                                      real_labels, self.default_device)
+                                                                                      real_labels, self.rank)
                         if self.ada:
-                            ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]), device = self.default_device)
+                            ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]), device = self.rank)
                             self.ada_augment += ada_aug_data
                             if self.ada_augment[1] > (self.batch_size*4 - 1):
                                 authen_out_signs, num_outputs = self.ada_augment.tolist()
@@ -382,14 +382,14 @@ class make_worker(object):
                     with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
                         if self.zcr:
                             zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                                   self.sigma_noise, self.default_device)
+                                                                   self.sigma_noise, self.rank)
                         else:
                             zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                             None, self.default_device)
+                                                             None, self.rank)
                         if self.latent_op:
                             zs, transport_cost = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
                                                                  self.latent_op_step, self.latent_op_rate, self.latent_op_alpha,
-                                                                 self.latent_op_beta, True, self.default_device)
+                                                                 self.latent_op_beta, True, self.rank)
 
                         fake_images = self.gen_model(zs, fake_labels)
                         if self.diff_aug:
@@ -402,7 +402,7 @@ class make_worker(object):
                         elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                             dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                            fake_cls_mask = make_mask(fake_labels, self.num_classes, self.default_device)
+                            fake_cls_mask = make_mask(fake_labels, self.num_classes, self.rank)
                             cls_proxies_fake, cls_embed_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
                         else:
                             raise NotImplementedError
@@ -471,7 +471,7 @@ class make_worker(object):
 
                 with torch.no_grad():
                     generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
-                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
+                                                      self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
 
@@ -566,31 +566,31 @@ class make_worker(object):
 
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                              self.latent_op_beta, self.default_device, self.mu, self.sigma, self.run_name)
+                                                              self.latent_op_beta, self.rank, self.mu, self.sigma, self.run_name)
 
             kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                      self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                     self.latent_op_beta, num_split, self.default_device)
+                                                     self.latent_op_beta, num_split, self.rank)
 
             precision, recall, f_beta, f_beta_inv = calculate_f_beta_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                                            num_run4PR, num_cluster4PR, beta4PR, self.truncated_factor, self.prior, self.latent_op,
-                                                                           self.latent_op_step4eval, self.latent_op_alpha, self.latent_op_beta, self.default_device)
+                                                                           self.latent_op_step4eval, self.latent_op_alpha, self.latent_op_beta, self.rank)
             PR_Curve = plot_pr_curve(precision, recall, self.run_name, self.logger)
             if self.D_loss.__name__ != "loss_wgan_dis":
                 real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
-                                                              self.latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=True)
+                                                              self.latent_op_beta, self.rank, cr=self.cr, eval_generated_sample=True)
 
                 if self.eval_type == 'train':
                     acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
                 else:
                     real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
                                                        self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
-                                                       self. latent_op_beta, self.default_device, cr=self.cr, eval_generated_sample=False)
+                                                       self. latent_op_beta, self.rank, cr=self.cr, eval_generated_sample=False)
                     acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
 
                 self.writer.add_scalars('Accuracy', acc_dict, step)
@@ -615,7 +615,7 @@ class make_worker(object):
 
             self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
 
         return is_best
     ################################################################################################################################
@@ -626,16 +626,16 @@ class make_worker(object):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             if png:
                 save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
                                 self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
-                                self.latent_op_alpha, self.latent_op_beta, self.default_device)
+                                self.latent_op_alpha, self.latent_op_beta, self.rank)
             if npz:
                 save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
                                 self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
-                                self.latent_op_alpha, self.latent_op_beta, self.default_device)
+                                self.latent_op_alpha, self.latent_op_beta, self.rank)
     ################################################################################################################################
 
 
@@ -644,20 +644,20 @@ class make_worker(object):
         self.logger.info('Start visualizing images....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             sampler = "default" if self.conditional_strategy == "no" else "class_order_some"
             if self.zcr:
                 zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                     self.sigma_noise, self.default_device, sampler=sampler)
+                                                     self.sigma_noise, self.rank, sampler=sampler)
             else:
                 zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                None, self.default_device, sampler=sampler)
+                                                None, self.rank, sampler=sampler)
 
             if self.latent_op:
                 zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
                                         self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                        False, self.default_device)
+                                        False, self.rank)
 
             generated_images = generator(zs, fake_labels, evaluation=True)
 
@@ -665,7 +665,7 @@ class make_worker(object):
                             format(run_name=self.run_name), self.logger, ncol)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
     ################################################################################################################################
 
 
@@ -674,21 +674,21 @@ class make_worker(object):
         self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
             shared = generator.module.shared if isinstance(generator, DataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
             if fix_z:
-                zs = torch.randn(nrow, 1, self.z_dim, device=self.default_device)
+                zs = torch.randn(nrow, 1, self.z_dim, device=self.rank)
                 zs = zs.repeat(1, ncol, 1).view(-1, self.z_dim)
                 name = "fix_z"
             else:
-                zs = interp(torch.randn(nrow, 1, self.z_dim, device=self.default_device),
-                            torch.randn(nrow, 1, self.z_dim, device=self.default_device),
+                zs = interp(torch.randn(nrow, 1, self.z_dim, device=self.rank),
+                            torch.randn(nrow, 1, self.z_dim, device=self.rank),
                             ncol - 2).view(-1, self.z_dim)
 
             if fix_y:
-                ys = sample_1hot(nrow, self.num_classes, device=self.default_device)
+                ys = sample_1hot(nrow, self.num_classes, device=self.rank)
                 ys = shared(ys).view(nrow, 1, -1)
                 ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
                 name = "fix_y"
@@ -703,7 +703,7 @@ class make_worker(object):
                             format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
     ################################################################################################################################
 
 
@@ -712,17 +712,17 @@ class make_worker(object):
         self.logger.info('Start nearest neighbor analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
-            resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.default_device)
+            resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.rank)
             if self.n_gpus > 1:
-                resnet50_conv = DataParallel(resnet50_conv, output_device=self.default_device)
+                resnet50_conv = DataParallel(resnet50_conv, output_device=self.rank)
             resnet50_conv.eval()
 
             for c in tqdm(range(self.num_classes)):
                 fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
-                                                                   self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.default_device)
+                                                                   self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.rank)
                 fake_image = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
 
@@ -732,7 +732,7 @@ class make_worker(object):
                 train_iter = iter(train_dataloader)
                 for batch_idx in range(num_samples//self.batch_size):
                     real_images, real_labels = next(train_iter)
-                    real_images = real_images.to(self.default_device)
+                    real_images = real_images.to(self.rank)
                     real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
                     if batch_idx == 0:
                         distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
@@ -754,7 +754,7 @@ class make_worker(object):
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
     ################################################################################################################################
 
 
@@ -763,22 +763,22 @@ class make_worker(object):
         self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             train_iter = iter(self.train_dataloader)
             num_batches = num_images//self.batch_size
             for i in range(num_batches):
                 if self.zcr:
                     zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                           self.sigma_noise, self.default_device)
+                                                           self.sigma_noise, self.rank)
                 else:
                     zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                     None, self.default_device)
+                                                     None, self.rank)
 
                 if self.latent_op:
                     zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
                                          self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                         False, self.default_device)
+                                         False, self.rank)
 
                 real_images, real_labels = next(train_iter)
                 fake_images = generator(zs, fake_labels, evaluation=True).detach().cpu().numpy()
@@ -815,5 +815,5 @@ class make_worker(object):
             plot_spectrum_image(real_gray_spectrum, fake_gray_spectrum, self.run_name, self.logger)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
     ################################################################################################################################

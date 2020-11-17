@@ -8,13 +8,12 @@
 import glob
 import os
 import random
-import warnings
 from os.path import dirname, abspath, exists, join
 
 from data_utils.load_dataset import *
 from metrics.inception_network import InceptionV3
 from metrics.prepare_inception_moments import prepare_inception_moments
-from utils.log import make_run_name, make_logger, make_checkpoint_dir
+from utils.log import make_checkpoint_dir
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
 from utils.misc import *
@@ -24,40 +23,21 @@ from worker import make_worker
 
 import torch
 from torch.utils.data import DataLoader
-from torch.backends import cudnn
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 
 
 
-RUN_NAME_FORMAT = (
-    "{framework}-"
-    "{phase}-"
-    "{timestamp}"
-)
-
-
-def prepare_train_eval(cfgs, hdf5_path_train, **_):
-    if cfgs.seed == -1:
-        cudnn.benchmark, cudnn.deterministic = True, False
+def prepare_train_eval(rank, world_size, run_name, logger, train_config, model_config, hdf5_path_train):
+    if train_config['distributed_data_parallel']:
+        cfgs = dict2clsattr(train_config, model_config)
+        setup(rank, world_size)
     else:
-        fix_all_seed(cfgs.seed)
-        cudnn.benchmark, cudnn.deterministic = False, True
+        cfgs = train_config
 
-    n_gpus, default_device = torch.cuda.device_count(), torch.cuda.current_device()
-    if n_gpus ==1: warnings.warn('You have chosen a specific GPU. This will completely disable data parallelism.')
-
-    if cfgs.disable_debugging_API: torch.autograd.set_detect_anomaly(False)
-    check_flag_0(cfgs.batch_size, n_gpus, cfgs.freeze_layers, cfgs.checkpoint_folder, cfgs.architecture, cfgs.img_size)
-    run_name = make_run_name(RUN_NAME_FORMAT, framework=cfgs.config_path.split('/')[3][:-5], phase='train')
+    writer = SummaryWriter(log_dir=join('./logs', run_name)) if rank == 0 else None
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
-
-    logger = make_logger(run_name, None)
-    writer = SummaryWriter(log_dir=join('./logs', run_name))
-    logger.info('Run name : {run_name}'.format(run_name=run_name))
-    logger.info(cfgs.train_configs)
-    logger.info(cfgs.model_configs)
-
 
     ##### load dataset #####
     logger.info('Loading train datasets...')
@@ -79,31 +59,31 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
 
 
     ##### build model #####
-    logger.info('Building model...')
+    if rank == 0: logger.info('Building model...')
     module = __import__('models.{architecture}'.format(architecture=cfgs.architecture), fromlist=['something'])
-    logger.info('Modules are located on models.{architecture}'.format(architecture=cfgs.architecture))
+    if rank == 0: logger.info('Modules are located on models.{architecture}'.format(architecture=cfgs.architecture))
     Gen = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
                            cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
-                           cfgs.g_init, cfgs.G_depth, cfgs.mixed_precision).to(default_device)
+                           cfgs.g_init, cfgs.G_depth, cfgs.mixed_precision).to(rank)
 
     Dis = module.Discriminator(cfgs.img_size, cfgs.d_conv_dim, cfgs.d_spectral_norm, cfgs.attention, cfgs.attention_after_nth_dis_block,
                                cfgs.activation_fn, cfgs.conditional_strategy, cfgs.hypersphere_dim, cfgs.num_classes, cfgs.nonlinear_embed,
-                               cfgs.normalize_embed, cfgs.d_init, cfgs.D_depth, cfgs.mixed_precision).to(default_device)
+                               cfgs.normalize_embed, cfgs.d_init, cfgs.D_depth, cfgs.mixed_precision).to(rank)
 
     if cfgs.ema:
-        print('Preparing EMA for G with decay of {}'.format(cfgs.ema_decay))
+        if rank == 0: logger.info('Preparing EMA for G with decay of {}'.format(cfgs.ema_decay))
         Gen_copy = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
                                     cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
-                                    initialize=False, G_depth=cfgs.G_depth, mixed_precision=cfgs.mixed_precision).to(default_device)
+                                    initialize=False, G_depth=cfgs.G_depth, mixed_precision=cfgs.mixed_precision).to(rank)
         Gen_ema = ema(Gen, Gen_copy, cfgs.ema_decay, cfgs.ema_start)
     else:
         Gen_copy, Gen_ema = None, None
 
-    logger.info(count_parameters(Gen))
-    logger.info(Gen)
+    if rank == 0: logger.info(count_parameters(Gen))
+    if rank == 0: logger.info(Gen)
 
-    logger.info(count_parameters(Dis))
-    logger.info(Dis)
+    if rank == 0: logger.info(count_parameters(Dis))
+    if rank == 0: logger.info(Dis)
 
 
     ### define loss functions and optimizers
@@ -136,7 +116,7 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
         Gen, G_optimizer, trained_seed, run_name, step, prev_ada_p = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
         Dis, D_optimizer, trained_seed, run_name, step, prev_ada_p, best_step, best_fid, best_fid_checkpoint_path =\
             load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
-        logger = make_logger(run_name, None)
+        if rank == 0: logger = make_logger(run_name, None)
         if cfgs.ema:
             g_ema_checkpoint_dir = glob.glob(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
             Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
@@ -145,30 +125,38 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
         writer = SummaryWriter(log_dir=join('./logs', run_name))
         if cfgs.train_configs['train']:
             assert cfgs.seed == trained_seed, "seed for sampling random numbers should be same!"
-        logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
-        logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
+
+        if rank == 0: logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
+        if rank == 0: logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
         if cfgs.freeze_layers > -1 :
             prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
 
 
     ##### wrap models with DP and convert BN to Sync BN #####
-    if n_gpus > 1:
-        Gen = DataParallel(Gen, output_device=default_device)
-        Dis = DataParallel(Dis, output_device=default_device)
-        if cfgs.ema:
-            Gen_copy = DataParallel(Gen_copy, output_device=default_device)
-
-        if cfgs.synchronized_bn:
-            Gen = convert_model(Gen).to(default_device)
-            Dis = convert_model(Dis).to(default_device)
+    if world_size > 1:
+        if cfgs.distributed_data_parallel:
+            Gen = DDP(Gen, device_ids=[rank])
+            Dis = DDP(Dis, device_ids=[rank])
             if cfgs.ema:
-                Gen_copy = convert_model(Gen_copy).to(default_device)
+                Gen_copy = DDP(Gen_copy, device_ids=[rank])
+        else:
+            Gen = DataParallel(Gen, output_device=rank)
+            Dis = DataParallel(Dis, output_device=rank)
+            if cfgs.ema:
+                Gen_copy = DataParallel(Gen_copy, output_device=rank)
+
+            if cfgs.synchronized_bn:
+                Gen = convert_model(Gen).to(rank)
+                Dis = convert_model(Dis).to(rank)
+                if cfgs.ema:
+                    Gen_copy = convert_model(Gen_copy).to(rank)
 
 
     ##### load the inception network and prepare first/secend moments for calculating FID #####
     if cfgs.eval:
-        inception_model = InceptionV3().to(default_device)
-        if n_gpus > 1: inception_model = DataParallel(inception_model, output_device=default_device)
+        inception_model = InceptionV3().to(rank)
+        if world_size > 1:
+            inception_model = DataParallel(inception_model, output_device=rank)
 
         mu, sigma = prepare_inception_moments(dataloader=eval_dataloader,
                                               generator=Gen,
@@ -177,7 +165,7 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
                                               splits=1,
                                               run_name=run_name,
                                               logger=logger,
-                                              device=default_device)
+                                              device=rank)
 
 
     worker = make_worker(
@@ -186,7 +174,7 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
         best_step=best_step,
         logger=logger,
         writer=writer,
-        n_gpus=n_gpus,
+        n_gpus=world_size,
         gen_model=Gen,
         dis_model=Dis,
         inception_model=inception_model,
@@ -201,7 +189,7 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
         G_loss=G_loss[cfgs.adv_loss],
         D_loss=D_loss[cfgs.adv_loss],
         prev_ada_p=prev_ada_p,
-        default_device=default_device,
+        rank=rank,
         checkpoint_dir=checkpoint_dir,
         mu=mu,
         sigma=sigma,
