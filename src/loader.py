@@ -13,7 +13,7 @@ from os.path import dirname, abspath, exists, join
 from data_utils.load_dataset import *
 from metrics.inception_network import InceptionV3
 from metrics.prepare_inception_moments import prepare_inception_moments
-from utils.log import make_checkpoint_dir
+from utils.log import make_checkpoint_dir, make_logger
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
 from utils.misc import *
@@ -29,34 +29,37 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 
-def prepare_train_eval(rank, world_size, run_name, logger, train_config, model_config, hdf5_path_train):
-    if train_config['distributed_data_parallel']:
-        cfgs = dict2clsattr(train_config, model_config)
-        setup(rank, world_size)
-    else:
-        cfgs = train_config
-
-    writer = SummaryWriter(log_dir=join('./logs', run_name)) if rank == 0 else None
+def prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train):
+    cfgs = dict2clsattr(train_config, model_config)
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
 
+    if cfgs.distributed_data_parallel: setup(rank, world_size)
+    writer = SummaryWriter(log_dir=join('./logs', run_name)) if rank == 0 else None
+    if rank == 0:
+        logger = make_logger(run_name, None)
+        logger.info('Run name : {run_name}'.format(run_name=run_name))
+        logger.info(train_config)
+        logger.info(model_config)
+    else:
+        logger = None
+
     ##### load dataset #####
-    logger.info('Loading train datasets...')
+    if rank == 0: logger.info('Loading train datasets...')
     train_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=True, download=True, resize_size=cfgs.img_size,
                                 hdf5_path=hdf5_path_train, random_flip=cfgs.random_flip_preprocessing)
     if cfgs.reduce_train_dataset < 1.0:
         num_train = int(cfgs.reduce_train_dataset*len(train_dataset))
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
-    logger.info('Train dataset size : {dataset_size}'.format(dataset_size=len(train_dataset)))
+    if rank == 0: logger.info('Train dataset size : {dataset_size}'.format(dataset_size=len(train_dataset)))
 
-    logger.info('Loading {mode} datasets...'.format(mode=cfgs.eval_type))
+    if rank == 0: logger.info('Loading {mode} datasets...'.format(mode=cfgs.eval_type))
     eval_mode = True if cfgs.eval_type == 'train' else False
     eval_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=eval_mode, download=True, resize_size=cfgs.img_size,
                                hdf5_path=None, random_flip=False)
-    logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
+    if rank == 0: logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=True)
     eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
-
 
     ##### build model #####
     if rank == 0: logger.info('Building model...')
@@ -151,7 +154,6 @@ def prepare_train_eval(rank, world_size, run_name, logger, train_config, model_c
                 if cfgs.ema:
                     Gen_copy = convert_model(Gen_copy).to(rank)
 
-
     ##### load the inception network and prepare first/secend moments for calculating FID #####
     if cfgs.eval:
         inception_model = InceptionV3().to(rank)
@@ -159,14 +161,13 @@ def prepare_train_eval(rank, world_size, run_name, logger, train_config, model_c
             inception_model = DataParallel(inception_model, output_device=rank)
 
         mu, sigma = prepare_inception_moments(dataloader=eval_dataloader,
-                                              generator=Gen,
-                                              eval_mode=cfgs.eval_type,
-                                              inception_model=inception_model,
-                                              splits=1,
-                                              run_name=run_name,
-                                              logger=logger,
-                                              device=rank)
-
+                                                generator=Gen,
+                                                eval_mode=cfgs.eval_type,
+                                                inception_model=inception_model,
+                                                splits=1,
+                                                run_name=run_name,
+                                                logger=logger,
+                                                device=rank)
 
     worker = make_worker(
         cfgs=cfgs,

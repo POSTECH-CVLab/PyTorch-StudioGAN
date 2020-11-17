@@ -30,6 +30,7 @@ from utils.cr_diff_aug import CR_DiffAug
 import torch
 import torch.nn as nn
 from torch.nn import DataParallel
+import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel
 import torch.nn.functional as F
 import torchvision
@@ -152,8 +153,6 @@ class make_worker(object):
         self.policy = "color,translation,cutout"
 
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
-        self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
-                                                                  self.num_classes, None, self.rank, sampler=sampler)
 
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr, self.zcr)
@@ -194,7 +193,7 @@ class make_worker(object):
         if self.Gen_copy is not None:
             self.Gen_copy.train()
 
-        self.logger.info('Start training....')
+        if self.rank == 0: self.logger.info('Start training....')
         step_count = current_step
         train_iter = iter(self.train_dataloader)
 
@@ -451,7 +450,7 @@ class make_worker(object):
 
                 step_count += 1
 
-            if step_count % self.print_every == 0 and self.logger:
+            if step_count % self.print_every == 0 and self.rank == 0:
                 log_message = LOG_FORMAT.format(step=step_count,
                                                 progress=step_count/total_step,
                                                 elapsed=elapsed_time(self.start_time),
@@ -460,7 +459,7 @@ class make_worker(object):
                                                 dis_loss=dis_acml_loss.item(),
                                                 gen_loss=gen_acml_loss.item(),
                                                 )
-                self.logger.info(log_message)
+                if self.rank == 0: self.logger.info(log_message)
 
                 if self.g_spectral_norm:
                     gen_sigmas = calculate_all_sn(self.gen_model)
@@ -471,18 +470,16 @@ class make_worker(object):
                 if self.ada:
                     self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
 
-                with torch.no_grad():
-                    generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
-                                                      self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
-                    generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
-                    self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-
             if step_count % self.save_every == 0 or step_count == total_step:
-                if self.evaluate:
-                    is_best = self.evaluation(step_count, False, "N/A")
-                    self.save(step_count, is_best)
-                else:
-                    self.save(step_count, False)
+                if self.rank == 0:
+                    if self.evaluate:
+                        is_best = self.evaluation(step_count, False, "N/A")
+                        self.save(step_count, is_best)
+                    else:
+                        self.save(step_count, False)
+
+            if self.cfgs.distributed_data_parallel:
+                dist.barrier()
         return step_count-1
     ################################################################################################################################
 
@@ -550,7 +547,7 @@ class make_worker(object):
                 torch.save(g_ema_states, g_ema_checkpoint_output_path_)
 
         if self.logger:
-            self.logger.info("Saved model to {}".format(self.checkpoint_dir))
+            if self.rank == 0: self.logger.info("Saved model to {}".format(self.checkpoint_dir))
 
         self.dis_model.train()
         self.gen_model.train()
@@ -562,7 +559,7 @@ class make_worker(object):
     ################################################################################################################################
     def evaluation(self, step, standing_statistics, standing_step):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
+            if self.rank == 0: self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
             num_split, num_run4PR, num_cluster4PR, beta4PR = 1, 10, 20, 8
 
@@ -608,12 +605,12 @@ class make_worker(object):
             self.writer.add_scalars('F_beta_inv score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta_inv}, step)
             self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):kl_score}, step)
             self.writer.add_figure('PR_Curve', PR_Curve, global_step=step)
-            self.logger.info('F_{beta} score (Step: {step}, Using {type} images): {F_beta}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta=f_beta))
-            self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
-            self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))
-            self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_type]), IS=kl_score))
+            if self.rank == 0: self.logger.info('F_{beta} score (Step: {step}, Using {type} images): {F_beta}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta=f_beta))
+            if self.rank == 0: self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
+            if self.rank == 0: self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))
+            if self.rank == 0: self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_type]), IS=kl_score))
             if self.train:
-                self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
+                if self.rank == 0: self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
 
             self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
@@ -643,7 +640,7 @@ class make_worker(object):
 
     ################################################################################################################################
     def run_image_visualization(self, nrow, ncol, standing_statistics, standing_step):
-        self.logger.info('Start visualizing images....')
+        if self.rank == 0: self.logger.info('Start visualizing images....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
@@ -673,7 +670,7 @@ class make_worker(object):
 
     ################################################################################################################################
     def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step):
-        self.logger.info('Start linear interpolation analysis....')
+        if self.rank == 0: self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
@@ -711,7 +708,7 @@ class make_worker(object):
 
     ################################################################################################################################
     def run_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_step):
-        self.logger.info('Start nearest neighbor analysis....')
+        if self.rank == 0: self.logger.info('Start nearest neighbor analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
@@ -762,7 +759,7 @@ class make_worker(object):
 
     ################################################################################################################################
     def run_frequency_analysis(self, num_images, standing_statistics, standing_step):
-        self.logger.info('Start linear interpolation analysis....')
+        if self.rank == 0: self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
