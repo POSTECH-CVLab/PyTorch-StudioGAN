@@ -161,24 +161,28 @@ def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, 
 
 # Convenience utility to switch off requires_grad
 def toggle_grad(model, on, freeze_layers=-1):
-    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
-        num_blocks = len(model.module.in_dims)
-    else:
-        num_blocks = len(model.in_dims)
+    try:
+        if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
+            num_blocks = len(model.module.in_dims)
+        else:
+            num_blocks = len(model.in_dims)
 
-    assert freeze_layers < num_blocks,\
-        "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freeze_layers, nb=num_blocks)
+        assert freeze_layers < num_blocks,\
+            "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freeze_layers, nb=num_blocks)
 
-    if freeze_layers == -1:
+        if freeze_layers == -1:
+            for name, param in model.named_parameters():
+                param.requires_grad = on
+        else:
+            for name, param in model.named_parameters():
+                param.requires_grad = on
+                for layer in range(freeze_layers):
+                    block = "blocks.{layer}".format(layer=layer)
+                    if block in name:
+                        param.requires_grad = False
+    except:
         for name, param in model.named_parameters():
             param.requires_grad = on
-    else:
-        for name, param in model.named_parameters():
-            param.requires_grad = on
-            for layer in range(freeze_layers):
-                block = "blocks.{layer}".format(layer=layer)
-                if block in name:
-                    param.requires_grad = False
 
 
 def set_bn_train(m):

@@ -20,9 +20,10 @@ from torch.nn.parallel import DistributedDataParallel
 
 
 def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluate, truncated_factor, prior, latent_op,
-                       latent_op_step, latent_op_alpha, latent_op_beta, device, cr, eval_generated_sample=False):
+                       latent_op_step, latent_op_alpha, latent_op_beta, device, cr, logger, eval_generated_sample=False):
     data_iter = iter(dataloader)
     batch_size = dataloader.batch_size
+    disable_tqdm = device != 0
 
     if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel):
         z_dim = generator.module.z_dim
@@ -42,10 +43,10 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
     elif D_loss.__name__ == "loss_wgan_dis":
         raise NotImplementedError
 
-    print("Calculating Accuracies....")
+    if device == 0: logger.info("Calculating Accuracies....")
 
     if eval_generated_sample:
-        for batch_id in tqdm(range(total_batch)):
+        for batch_id in tqdm(range(total_batch), disable=disable_tqdm):
             zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
             if latent_op:
                 zs = latent_optimise(zs, fake_labels, generator, discriminator, conditional_strategy, latent_op_step,
@@ -90,7 +91,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
 
         return only_real_acc, only_fake_acc
     else:
-        for batch_id in tqdm(range(total_batch)):
+        for batch_id in tqdm(range(total_batch), disable=disable_tqdm):
             real_images, real_labels = next(data_iter)
             real_images, real_labels = real_images.to(device), real_labels.to(device)
 

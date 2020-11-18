@@ -176,18 +176,19 @@ def calculate_activation_statistics(data_loader, generator, discriminator, incep
 
 
 def calculate_fid_score(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                        latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, pre_cal_mean=None, pre_cal_std=None, run_name=None):
+                        latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, logger, pre_cal_mean=None, pre_cal_std=None, run_name=None):
+    disable_tqdm = device != 0
     inception_model.eval()
 
-    print("Calculating FID Score....")
+    if device == 0: logger.info("Calculating FID Score....")
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std
     else:
         m1, s1 = calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor,
-                                                 prior, False, False, 0, latent_op_alpha, latent_op_beta, device, tqdm_disable=False)
+                                                 prior, False, False, 0, latent_op_alpha, latent_op_beta, device, tqdm_disable=disable_tqdm)
 
     m2, s2 = calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                                             True, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable=False, run_name=run_name)
+                                             True, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable=disable_tqdm, run_name=run_name)
 
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 

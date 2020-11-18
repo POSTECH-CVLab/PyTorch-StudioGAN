@@ -167,8 +167,13 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
     ##### load the inception network and prepare first/secend moments for calculating FID #####
     if cfgs.eval:
         inception_model = InceptionV3().to(rank)
-        if world_size > 1:
+        if world_size > 1 and cfgs.distributed_data_parallel:
+            toggle_grad(inception_model, on=True)
+            inception_model = DDP(inception_model, device_ids=[rank])
+        elif world_size > 1 and cfgs.distributed_data_parallel is False:
             inception_model = DataParallel(inception_model, output_device=rank)
+        else:
+            pass
 
         mu, sigma = prepare_inception_moments(dataloader=eval_dataloader,
                                               generator=Gen,
@@ -226,10 +231,10 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
     if cfgs.interpolation:
         assert cfgs.architecture in ["big_resnet", "biggan_deep"], "Not supported except for biggan and biggan_deep."
         worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False,
-                                            standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+                                        standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
         worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True,
-                                            standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+                                        standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
 
     if cfgs.frequency_analysis:
         worker.run_frequency_analysis(num_images=len(train_dataset)//cfgs.num_classes,
-                                          standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+                                      standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)

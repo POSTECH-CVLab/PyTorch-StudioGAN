@@ -23,7 +23,7 @@ def prepare_inception_moments(dataloader, eval_mode, generator, inception_model,
         mu = np.load(save_path)['mu']
         sigma = np.load(save_path)['sigma']
     else:
-        logger.info('Calculate moments of {} dataset'.format(eval_mode))
+        if device == 0: logger.info('Calculate moments of {} dataset'.format(eval_mode))
         mu, sigma = calculate_activation_statistics(data_loader=dataloader,
                                                     generator=generator,
                                                     discriminator=None,
@@ -40,14 +40,14 @@ def prepare_inception_moments(dataloader, eval_mode, generator, inception_model,
                                                     tqdm_disable=False,
                                                     run_name=run_name)
 
-        logger.info('Saving calculated means and covariances to disk...')
+        if device == 0: logger.info('Saving calculated means and covariances to disk...')
         np.savez(save_path, **{'mu': mu, 'sigma': sigma})
 
     if is_file:
         pass
     else:
-        logger.info('calculate inception score of {} dataset'.format(eval_mode))
+        if device == 0: logger.info('calculate inception score of {} dataset'.format(eval_mode))
         evaluator_instance = evaluator(inception_model, device=device)
         is_score, is_std = evaluator_instance.eval_dataset(dataloader, splits=splits)
-        logger.info('Inception score={is_score}-Inception_std={is_std}'.format(is_score=is_score, is_std=is_std))
+        if device == 0: logger.info('Inception score={is_score}-Inception_std={is_std}'.format(is_score=is_score, is_std=is_std))
     return mu, sigma
