@@ -105,11 +105,14 @@ def main():
 
     run_name = make_run_name(RUN_NAME_FORMAT, framework=train_config['config_path'].split('/')[3][:-5], phase='train')
 
-    if train_config['distributed_data_parallel'] and world_size > 1:
-        print("load the model with the distributed data parallel (DDP) flag")
-        mp.spawn(prepare_train_eval, nprocs=world_size, args=(world_size, run_name, train_config, model_config, hdf5_path_train))
-    else:
-        prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train=hdf5_path_train)
+    try:
+        if train_config['distributed_data_parallel'] and world_size > 1:
+            print("load the model with the distributed data parallel (DDP) flag")
+            mp.spawn(prepare_train_eval, nprocs=world_size, args=(world_size, run_name, train_config, model_config, hdf5_path_train))
+        else:
+            prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train=hdf5_path_train)
+    except KeyboardInterrupt:
+        cleanup()
 
 if __name__ == '__main__':
     main()
