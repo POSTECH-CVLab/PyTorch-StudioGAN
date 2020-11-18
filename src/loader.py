@@ -33,7 +33,10 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
     cfgs = dict2clsattr(train_config, model_config)
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
 
-    if cfgs.distributed_data_parallel: setup(rank, world_size)
+    if cfgs.distributed_data_parallel:
+        print("Use GPU: {} for training".format(rank))
+        setup(rank, world_size)
+
     writer = SummaryWriter(log_dir=join('./logs', run_name)) if rank == 0 else None
     if rank == 0:
         logger = make_logger(run_name, None)
@@ -58,8 +61,15 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
                                hdf5_path=None, random_flip=False)
     if rank == 0: logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
-    train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=True)
-    eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=True, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
+    if cfgs.distributed_data_parallel:
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        cfgs.batch_size = cfgs.batch_size//world_size
+    else:
+        train_sampler = None
+
+    train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=(train_sampler is None), pin_memory=True,
+                                  num_workers=cfgs.num_workers, sampler=train_sampler, drop_last=True)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=False, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
 
     ##### build model #####
     if rank == 0: logger.info('Building model...')
@@ -161,13 +171,13 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
             inception_model = DataParallel(inception_model, output_device=rank)
 
         mu, sigma = prepare_inception_moments(dataloader=eval_dataloader,
-                                                generator=Gen,
-                                                eval_mode=cfgs.eval_type,
-                                                inception_model=inception_model,
-                                                splits=1,
-                                                run_name=run_name,
-                                                logger=logger,
-                                                device=rank)
+                                              generator=Gen,
+                                              eval_mode=cfgs.eval_type,
+                                              inception_model=inception_model,
+                                              splits=1,
+                                              run_name=run_name,
+                                              logger=logger,
+                                              device=rank)
 
     worker = make_worker(
         cfgs=cfgs,

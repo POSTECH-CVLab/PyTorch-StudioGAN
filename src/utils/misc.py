@@ -81,7 +81,7 @@ def fix_all_seed(seed):
     torch.cuda.manual_seed(seed)
 
 
-def setup(rank, world_size):
+def setup(rank, world_size, backend="nccl"):
     if sys.platform == 'win32':
         # Distributed package only covers collective communications with Gloo
         # backend and FileStore on Windows platform. Set init_method parameter
@@ -91,7 +91,7 @@ def setup(rank, world_size):
 
         # initialize the process group
         dist.init_process_group(
-            "gloo",
+            backend,
             init_method=init_method,
             rank=rank,
             world_size=world_size
@@ -101,7 +101,7 @@ def setup(rank, world_size):
         os.environ['MASTER_PORT'] = '12355'
 
         # initialize the process group
-        dist.init_process_group("gloo", rank=rank, world_size=world_size)
+        dist.init_process_group(backend, rank=rank, world_size=world_size)
 
 
 def cleanup():
