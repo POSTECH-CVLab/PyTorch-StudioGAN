@@ -87,12 +87,12 @@ docker pull mgkang/studiogan:0.1
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``
 ```
-CUDA_VISIBLE_DEVICES=0 python3 main.py -t -e -c CONFIG_PATH
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)``
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main.py -t -e -c CONFIG_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
 Via Tensorboard, you can monitor generated images and trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
