@@ -97,10 +97,10 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
 
 Via Tensorboard, you can monitor generated images and trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
 ```
-~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
+~ PyTorch-StudioGAN/src/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
 ```
 
-Try ``python3 main.py`` to see available options.
+Try ``python3 src/main.py`` to see available options.
 
 
 ## Dataset
@@ -136,19 +136,19 @@ Try ``python3 main.py`` to see available options.
 
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740)) 
   ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -t -mpc -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -mpc -c CONFIG_PATH
   ```
 * Standing Statistics ([Brock et al.](https://arxiv.org/abs/1809.11096)) 
   ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -e -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
   ```
 * Synchronized BatchNorm
   ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -t -sync_bn -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -sync_bn -c CONFIG_PATH
   ```
 * Load All Data in Main Memory
   ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -t -l -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -l -c CONFIG_PATH
   ```
 
 
@@ -158,22 +158,22 @@ The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linea
 
 * Image Visualization
 ```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 * K-Nearest Neighbor Analysis (we have fixed K=7)
 ```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 * Linear Interpolation (applicable only to conditional Big ResNet models)
 ```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 * Frequency Analysis
 ```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 ##  Metrics
@@ -183,13 +183,13 @@ Inception Score (IS) is a metric to measure how much GAN generates high-fidelity
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
 ```
-CUDA_VISIBLE_DEVICES=0,1,... python3 main.py -s -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -s -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
 After that, execute TensorFlow official IS implementation. Note that we do not split a dataset into ten folds to calculate IS ten times. We use the entire dataset to compute IS only once, which is the evaluation strategy used in the [CompareGAN](https://github.com/google/compare_gan) repository.  
 ```
-CUDA_VISIBLE_DEVICES=0,1,... python3 inception_tf13.py --run_name RUN_NAME --type "fake"
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/inception_tf13.py --run_name RUN_NAME --type "fake"
 ```
 Keep in mind that you need to have TensorFlow 1.3 or earlier version installed!
 
