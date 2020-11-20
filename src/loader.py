@@ -49,7 +49,7 @@ def prepare_train_eval(cfgs, hdf5_path_train, **_):
 
     if cfgs.disable_debugging_API: torch.autograd.set_detect_anomaly(False)
     check_flag_0(cfgs.batch_size, n_gpus, cfgs.freeze_layers, cfgs.checkpoint_folder, cfgs.architecture, cfgs.img_size)
-    run_name = make_run_name(RUN_NAME_FORMAT, framework=cfgs.config_path.split('/')[3][:-5], phase='train')
+    run_name = make_run_name(RUN_NAME_FORMAT, framework=cfgs.config_path.split('/')[-1][:-5], phase='train')
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
 
     logger = make_logger(run_name, None)
