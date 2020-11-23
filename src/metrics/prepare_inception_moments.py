@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# metrics/prepare_inception_moments.py
+# src/metrics/prepare_inception_moments.py
 
 import numpy as np
 import os

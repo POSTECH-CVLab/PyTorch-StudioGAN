@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# train_eval.py
+# src/worker.py
 
 
 import numpy as np
@@ -22,7 +22,7 @@ from utils.ada import augment
 from utils.biggan_utils import interp
 from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
 from utils.misc import *
-from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise
+from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise, set_temperature
 from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
 from utils.diff_aug import DiffAugment
 from utils.cr_diff_aug import CR_DiffAug
@@ -48,39 +48,20 @@ LOG_FORMAT = (
 )
 
 
-def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
-    if conditional_strategy == 'ContraGAN':
-        if tempering_type == 'continuous':
-            t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
-        elif tempering_type == 'discrete':
-            tempering_interval = total_step//(tempering_step + 1)
-            t = start_temperature + \
-                (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
-        else:
-            t = start_temperature
-    else:
-        t = 'no'
-    return t
+class make_worker(object):
+    def __init__(self, cfgs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
+                 Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, G_optimizer, D_optimizer, G_loss,
+                 D_loss, prev_ada_p, default_device, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
 
-
-class Train_Eval(object):
-    def __init__(self, run_name, best_step, dataset_name, eval_type, logger, writer, n_gpus, gen_model, dis_model, inception_model,
-                 Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, freeze_layers, conditional_strategy,
-                 pos_collected_numerator, z_dim, num_classes, hypersphere_dim, d_spectral_norm, g_spectral_norm, G_optimizer, D_optimizer,
-                 batch_size, g_steps_per_iter, d_steps_per_iter, accumulation_steps, total_step, G_loss, D_loss, contrastive_lambda, margin,
-                 tempering_type, tempering_step, start_temperature, end_temperature, weight_clipping_for_dis, weight_clipping_bound,
-                 gradient_penalty_for_dis, gradient_penalty_lambda, deep_regret_analysis_for_dis, regret_penalty_lambda, cr, cr_lambda, bcr,
-                 real_lambda, fake_lambda, zcr, gen_lambda, dis_lambda, sigma_noise, diff_aug, ada, prev_ada_p, ada_target, ada_length, prior,
-                 truncated_factor, ema, latent_op, latent_op_rate, latent_op_step, latent_op_step4eval, latent_op_alpha, latent_op_beta,
-                 latent_norm_reg_weight, default_device, print_every, save_every, checkpoint_dir, evaluate, mu, sigma, best_fid,
-                 best_fid_checkpoint_path, mixed_precision, train_config, model_config,):
-
+        self.cfgs = cfgs
         self.run_name = run_name
         self.best_step = best_step
-        self.dataset_name = dataset_name
-        self.eval_type = eval_type
+        self.seed = cfgs.seed
+        self.dataset_name = cfgs.dataset_name
+        self.eval_type = cfgs.eval_type
         self.logger = logger
         self.writer = writer
+        self.num_workers = cfgs.num_workers
         self.n_gpus = n_gpus
 
         self.gen_model = gen_model
@@ -94,76 +75,74 @@ class Train_Eval(object):
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
 
-        self.freeze_layers = freeze_layers
+        self.freeze_layers = cfgs.freeze_layers
 
-        self.conditional_strategy = conditional_strategy
-        self.pos_collected_numerator = pos_collected_numerator
-        self.z_dim = z_dim
-        self.num_classes = num_classes
-        self.hypersphere_dim = hypersphere_dim
-        self.d_spectral_norm = d_spectral_norm
-        self.g_spectral_norm = g_spectral_norm
+        self.conditional_strategy = cfgs.conditional_strategy
+        self.pos_collected_numerator = cfgs.pos_collected_numerator
+        self.z_dim = cfgs.z_dim
+        self.num_classes = cfgs.num_classes
+        self.hypersphere_dim = cfgs.hypersphere_dim
+        self.d_spectral_norm = cfgs.d_spectral_norm
+        self.g_spectral_norm = cfgs.g_spectral_norm
 
         self.G_optimizer = G_optimizer
         self.D_optimizer = D_optimizer
-        self.batch_size = batch_size
-        self.g_steps_per_iter = g_steps_per_iter
-        self.d_steps_per_iter = d_steps_per_iter
-        self.accumulation_steps = accumulation_steps
-        self.total_step = total_step
+        self.batch_size = cfgs.batch_size
+        self.g_steps_per_iter = cfgs.g_steps_per_iter
+        self.d_steps_per_iter = cfgs.d_steps_per_iter
+        self.accumulation_steps = cfgs.accumulation_steps
+        self.total_step = cfgs.total_step
 
         self.G_loss = G_loss
         self.D_loss = D_loss
-        self.contrastive_lambda = contrastive_lambda
-        self.margin = margin
-        self.tempering_type = tempering_type
-        self.tempering_step = tempering_step
-        self.start_temperature = start_temperature
-        self.end_temperature = end_temperature
-        self.weight_clipping_for_dis = weight_clipping_for_dis
-        self.weight_clipping_bound = weight_clipping_bound
-        self.gradient_penalty_for_dis = gradient_penalty_for_dis
-        self.gradient_penalty_lambda = gradient_penalty_lambda
-        self.deep_regret_analysis_for_dis = deep_regret_analysis_for_dis
-        self.regret_penalty_lambda = regret_penalty_lambda
-        self.cr = cr
-        self.cr_lambda = cr_lambda
-        self.bcr = bcr
-        self.real_lambda = real_lambda
-        self.fake_lambda = fake_lambda
-        self.zcr = zcr
-        self.gen_lambda = gen_lambda
-        self.dis_lambda = dis_lambda
-        self.sigma_noise = sigma_noise
+        self.contrastive_lambda = cfgs.contrastive_lambda
+        self.margin = cfgs.margin
+        self.tempering_type = cfgs.tempering_type
+        self.tempering_step = cfgs.tempering_step
+        self.start_temperature = cfgs.start_temperature
+        self.end_temperature = cfgs.end_temperature
+        self.weight_clipping_for_dis = cfgs.weight_clipping_for_dis
+        self.weight_clipping_bound = cfgs.weight_clipping_bound
+        self.gradient_penalty_for_dis = cfgs.gradient_penalty_for_dis
+        self.gradient_penalty_lambda = cfgs.gradient_penalty_lambda
+        self.deep_regret_analysis_for_dis = cfgs.deep_regret_analysis_for_dis
+        self.regret_penalty_lambda = cfgs.regret_penalty_lambda
+        self.cr = cfgs.cr
+        self.cr_lambda = cfgs.cr_lambda
+        self.bcr = cfgs.bcr
+        self.real_lambda = cfgs.real_lambda
+        self.fake_lambda = cfgs.fake_lambda
+        self.zcr = cfgs.zcr
+        self.gen_lambda = cfgs.gen_lambda
+        self.dis_lambda = cfgs.dis_lambda
+        self.sigma_noise = cfgs.sigma_noise
 
-        self.diff_aug = diff_aug
-        self.ada = ada
+        self.diff_aug = cfgs.diff_aug
+        self.ada = cfgs.ada
         self.prev_ada_p = prev_ada_p
-        self.ada_target = ada_target
-        self.ada_length = ada_length
-        self.prior = prior
-        self.truncated_factor = truncated_factor
-        self.ema = ema
-        self.latent_op = latent_op
-        self.latent_op_rate = latent_op_rate
-        self.latent_op_step = latent_op_step
-        self.latent_op_step4eval = latent_op_step4eval
-        self.latent_op_alpha = latent_op_alpha
-        self.latent_op_beta = latent_op_beta
-        self.latent_norm_reg_weight = latent_norm_reg_weight
+        self.ada_target = cfgs.ada_target
+        self.ada_length = cfgs.ada_length
+        self.prior = cfgs.prior
+        self.truncated_factor = cfgs.truncated_factor
+        self.ema = cfgs.ema
+        self.latent_op = cfgs.latent_op
+        self.latent_op_rate = cfgs.latent_op_rate
+        self.latent_op_step = cfgs.latent_op_step
+        self.latent_op_step4eval = cfgs.latent_op_step4eval
+        self.latent_op_alpha = cfgs.latent_op_alpha
+        self.latent_op_beta = cfgs.latent_op_beta
+        self.latent_norm_reg_weight = cfgs.latent_norm_reg_weight
 
         self.default_device = default_device
-        self.print_every = print_every
-        self.save_every = save_every
+        self.print_every = cfgs.print_every
+        self.save_every = cfgs.save_every
         self.checkpoint_dir = checkpoint_dir
-        self.evaluate = evaluate
+        self.evaluate = cfgs.eval
         self.mu = mu
         self.sigma = sigma
         self.best_fid = best_fid
         self.best_fid_checkpoint_path = best_fid_checkpoint_path
-        self.mixed_precision = mixed_precision
-        self.train_config = train_config
-        self.model_config = model_config
+        self.mixed_precision = cfgs.mixed_precision
 
         self.start_time = datetime.now()
         self.l2_loss = torch.nn.MSELoss()
@@ -171,7 +150,6 @@ class Train_Eval(object):
         self.policy = "color,translation,cutout"
 
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
-
         self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
                                                                   self.num_classes, None, self.default_device, sampler=sampler)
 
@@ -180,14 +158,12 @@ class Train_Eval(object):
 
         if self.conditional_strategy == 'ContraGAN':
             self.contrastive_criterion = Conditional_Contrastive_loss(self.default_device, self.batch_size, self.pos_collected_numerator)
-
         elif self.conditional_strategy == 'Proxy_NCA_GAN':
             if isinstance(self.dis_model, DataParallel):
                 self.embedding_layer = self.dis_model.module.embedding
             else:
                 self.embedding_layer = self.dis_model.embedding
             self.NCA_criterion = Proxy_NCA_loss(self.default_device, self.embedding_layer, self.num_classes, self.batch_size)
-
         elif self.conditional_strategy == 'NT_Xent_GAN':
             self.NT_Xent_criterion = NT_Xent_loss(self.default_device, self.batch_size)
         else:
@@ -196,13 +172,14 @@ class Train_Eval(object):
         if self.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
 
-        if self.dataset_name in ["imagenet", "tiny_imagenet"]:
+        if self.dataset_name == "imagenet":
             self.num_eval = {'train':50000, 'valid':50000}
+        elif self.dataset_name == "tiny_imagenet":
+            self.num_eval = {'train':50000, 'valid':10000}
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
         elif self.dataset_name == "custom":
-            num_train_images = len(self.train_dataset.data)
-            num_eval_images = len(self.eval_dataset.data)
+            num_train_images, num_eval_images = len(self.train_dataset.data), len(self.eval_dataset.data)
             self.num_eval = {'train':num_train_images, 'valid':num_eval_images}
         else:
             raise NotImplementedError
@@ -228,10 +205,11 @@ class Train_Eval(object):
             self.ada_aug_step = self.ada_target/self.ada_length
         else:
             self.ada_aug_p = 'No'
+
         while step_count <= total_step:
             # ================== TRAIN D ================== #
-            toggle_grad(self.dis_model, True, freeze_layers=self.freeze_layers)
-            toggle_grad(self.gen_model, False, freeze_layers=-1)
+            toggle_grad(self.dis_model, on=True, freeze_layers=self.freeze_layers)
+            toggle_grad(self.gen_model, on=False, freeze_layers=-1)
             t = set_temperature(self.conditional_strategy, self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
             for step_index in range(self.d_steps_per_iter):
                 self.D_optimizer.zero_grad()
@@ -273,14 +251,12 @@ class Train_Eval(object):
                             dis_out_real = self.dis_model(real_images, real_labels)
                             dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                            real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
                             cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels)
                             cls_proxies_fake, cls_embed_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
                         else:
                             raise NotImplementedError
 
                         dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
-
                         if self.conditional_strategy == "ACGAN":
                             dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
                         elif self.conditional_strategy == "NT_Xent_GAN":
@@ -290,6 +266,7 @@ class Train_Eval(object):
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
                             dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_real, cls_proxies_real, real_labels)
                         elif self.conditional_strategy == "ContraGAN":
+                            real_cls_mask = make_mask(real_labels, self.num_classes, self.default_device)
                             dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_real, cls_proxies_real,
                                                                                                 real_cls_mask, real_labels, t, self.margin)
                         else:
@@ -443,7 +420,7 @@ class Train_Eval(object):
                         if self.conditional_strategy == "ACGAN":
                             gen_acml_loss += self.ce_loss(cls_out_fake, fake_labels)
                         elif self.conditional_strategy == "ContraGAN":
-                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, 0.0)
+                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, self.margin)
                         elif self.conditional_strategy == "Proxy_NCA_GAN":
                             gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_fake, cls_proxies_fake, fake_labels)
                         elif self.conditional_strategy == "NT_Xent_GAN":
@@ -494,11 +471,9 @@ class Train_Eval(object):
 
                 with torch.no_grad():
                     generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
-                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=False)
+                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
                     generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
                     self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-                    generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior,
-                                                      self.batch_size, self.z_dim, self.num_classes, self.default_device, training=True)
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
@@ -519,8 +494,7 @@ class Train_Eval(object):
             self.Gen_copy.eval()
 
         if isinstance(self.gen_model, DataParallel):
-            gen = self.gen_model.module
-            dis = self.dis_model.module
+            gen, dis = self.gen_model.module, self.dis_model.module
             if self.Gen_copy is not None:
                 gen_copy = self.Gen_copy.module
         else:
@@ -528,10 +502,10 @@ class Train_Eval(object):
             if self.Gen_copy is not None:
                 gen_copy = self.Gen_copy
 
-        g_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
+        g_states = {'seed': self.seed, 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': gen.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
 
-        d_states = {'seed': self.train_config['seed'], 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
+        d_states = {'seed': self.seed, 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
                     'state_dict': dis.state_dict(), 'optimizer': self.D_optimizer.state_dict(), 'ada_p': self.ada_aug_p,
                     'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
 
@@ -542,19 +516,19 @@ class Train_Eval(object):
         g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
         d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
 
-        if when == "best":
-            if len(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth".format(when=when)))) >= 1:
-                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth".format(when=when)))[0])
-                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-current-weights-step*.pth".format(when=when)))[0])
+        torch.save(g_states, g_checkpoint_output_path)
+        torch.save(d_states, d_checkpoint_output_path)
 
-            g_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G-current-weights-step={step}.pth".format(when=when, step=str(step)))
-            d_checkpoint_output_path_ = join(self.checkpoint_dir, "model=D-current-weights-step={step}.pth".format(when=when, step=str(step)))
+        if when == "best":
+            if len(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth"))) >= 1:
+                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth"))[0])
+                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-current-weights-step*.pth"))[0])
+
+            g_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G-current-weights-step={step}.pth".format(step=str(step)))
+            d_checkpoint_output_path_ = join(self.checkpoint_dir, "model=D-current-weights-step={step}.pth".format(step=str(step)))
 
             torch.save(g_states, g_checkpoint_output_path_)
             torch.save(d_states, d_checkpoint_output_path_)
-
-        torch.save(g_states, g_checkpoint_output_path)
-        torch.save(d_states, d_checkpoint_output_path)
 
         if self.Gen_copy is not None:
             g_ema_states = {'state_dict': gen_copy.state_dict()}
@@ -563,6 +537,8 @@ class Train_Eval(object):
 
             g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
 
+            torch.save(g_ema_states, g_ema_checkpoint_output_path)
+
             if when == "best":
                 if len(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))) >= 1:
                     find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))[0])
@@ -570,8 +546,6 @@ class Train_Eval(object):
                 g_ema_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G_ema-current-weights-step={step}.pth".format(when=when, step=str(step)))
 
                 torch.save(g_ema_states, g_ema_checkpoint_output_path_)
-
-            torch.save(g_ema_states, g_ema_checkpoint_output_path)
 
         if self.logger:
             self.logger.info("Saved model to {}".format(self.checkpoint_dir))
@@ -754,7 +728,7 @@ class Train_Eval(object):
 
                 num_samples, target_sampler = target_class_sampler(self.train_dataset, c)
                 train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, sampler=target_sampler,
-                                                               num_workers=self.train_config['num_workers'], pin_memory=True)
+                                                               num_workers=self.num_workers, pin_memory=True)
                 train_iter = iter(train_dataloader)
                 for batch_idx in range(num_samples//self.batch_size):
                     real_images, real_labels = next(train_iter)

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# utils/cr_diff_aug.py
+# src/utils/cr_diff_aug.py
 
 
 import random

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# utils/losses.py
+# src/utils/losses.py
 
 
 import numpy as np
@@ -74,6 +74,21 @@ def latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy,
             return zs
 
 
+def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
+    if conditional_strategy == 'ContraGAN':
+        if tempering_type == 'continuous':
+            t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
+        elif tempering_type == 'discrete':
+            tempering_interval = total_step//(tempering_step + 1)
+            t = start_temperature + \
+                (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
+        else:
+            t = start_temperature
+    else:
+        t = 'no'
+    return t
+
+
 class Cross_Entropy_loss(torch.nn.Module):
     def __init__(self, in_features, out_features, spectral_norm=True):
         super(Cross_Entropy_loss, self).__init__()
@@ -116,23 +131,20 @@ class Conditional_Contrastive_loss(torch.nn.Module):
 
     def forward(self, inst_embed, proxy, negative_mask, labels, temperature, margin):
         similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
-        instance_zone = self.remove_diag(similarity_matrix)
-
-        mask_4_remove_negatives = negative_mask[labels]
-        mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
-        mask_4_remove_positives = 1 - mask_4_remove_negatives
+        instance_zone = torch.exp((self.remove_diag(similarity_matrix) - margin)/temperature)
 
         inst2proxy_positive = torch.exp((self.cosine_similarity(inst_embed, proxy) - margin)/temperature)
-        inst2inst_negatives = torch.exp((instance_zone*mask_4_remove_positives + margin)/temperature)
         if self.pos_collected_numerator:
-            inst2inst_positives = torch.exp((instance_zone*mask_4_remove_negatives - margin)/temperature)
-            numerator = inst2inst_positives.sum(dim=1) + inst2proxy_positive
-            denominator = inst2inst_negatives.sum(dim=1)
+            mask_4_remove_negatives = negative_mask[labels]
+            mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
+            inst2inst_positives = instance_zone*mask_4_remove_negatives
+
+            numerator = inst2proxy_positive + inst2inst_positives.sum(dim=1)
         else:
             numerator = inst2proxy_positive
-            denominator = inst2inst_negatives.sum(dim=1)
 
-        criterion = -torch.log(numerator/denominator).mean()
+        denomerator = torch.cat([torch.unsqueeze(inst2proxy_positive, dim=1), instance_zone], dim=1).sum(dim=1)
+        criterion = -torch.log(temperature*(numerator/denomerator)).mean()
         return criterion
 
 
