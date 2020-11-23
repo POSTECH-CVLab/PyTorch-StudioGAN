@@ -253,7 +253,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/SNGAN.json) |  - |  - |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/SAGAN.json) |  - |  - |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | 64 | 1024 | 11.956 | 29.694 | - | - | [Config](./src/configs/TINY_ILSVRC2012/BigGAN.json) | [Log](./logs/TINY_IMAGENET/proj_biggan_tiny64_hinge_no-train-2020_10_10_21_49_10.log)|  - |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | 1024 | 13.455 | 25.521 | - | - | [Config](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | [Log] (./logs/TINY_IMAGENET/contra_biggan_tiny64_hinge_no-train-2020_10_07_21_40_44.log) |  - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | 1024 | 13.455 | 25.521 | - | - | [Config](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | [Log]  (./logs/TINY_IMAGENET/contra_biggan_tiny64_hinge_no-train-2020_10_07_21_40_44.log) |  - |
 | [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(P).json) |  - |  - |
 | [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(C).json) |  - |  - |
 | [**ICRGAN(P)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(P).json) |  - |  - |
