@@ -747,8 +747,8 @@ class make_worker(object):
                 elif c % nrow == nrow-1:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
-                    plot_img_canvas((torch.from_numpy(canvas)+1)/2, "./figures/{run_name}/Fake_anchor_{ncol}NN_{cls}.png".\
-                                    format(run_name=self.run_name,ncol=ncol, cls=c), self.logger, ncol)
+                    plot_img_canvas((torch.from_numpy(canvas)+1)/2, "./figures/{run_name}/Fake_anchor_{ncol}NN_{cls}_classes.png".\
+                                    format(run_name=self.run_name,ncol=ncol, cls=c+1), self.logger, ncol)
                 else:
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
