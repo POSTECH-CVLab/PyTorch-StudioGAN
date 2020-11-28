@@ -148,10 +148,17 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
     ##### wrap models with DP and convert BN to Sync BN #####
     if world_size > 1:
         if cfgs.distributed_data_parallel:
-            Gen = DDP(Gen, device_ids=[rank])
-            Dis = DDP(Dis, device_ids=[rank])
+            if cfgs.synchronized_bn:
+                process_group = torch.distributed.new_group([w for w in range(world_size)])
+                Gen = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen, process_group)
+                Dis = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Dis, process_group)
+                if cfgs.ema:
+                    Gen_copy = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen_copy, process_group)
+
+            Gen = DDP(Gen, device_ids=[rank], output_device=rank, find_unused_parameters=True)
+            Dis = DDP(Dis, device_ids=[rank], output_device=rank, find_unused_parameters=True)
             if cfgs.ema:
-                Gen_copy = DDP(Gen_copy, device_ids=[rank])
+                Gen_copy = DDP(Gen_copy, device_ids=[rank], output_device=rank, find_unused_parameters=True)
         else:
             Gen = DataParallel(Gen, output_device=rank)
             Dis = DataParallel(Dis, output_device=rank)
@@ -165,12 +172,9 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
                     Gen_copy = convert_model(Gen_copy).to(rank)
 
     ##### load the inception network and prepare first/secend moments for calculating FID #####
-    if cfgs.eval:
+    if rank == 0 and cfgs.eval:
         inception_model = InceptionV3().to(rank)
-        if world_size > 1 and cfgs.distributed_data_parallel:
-            toggle_grad(inception_model, on=True)
-            inception_model = DDP(inception_model, device_ids=[rank])
-        elif world_size > 1 and cfgs.distributed_data_parallel is False:
+        if world_size > 1:
             inception_model = DataParallel(inception_model, output_device=rank)
         else:
             pass

@@ -472,13 +472,14 @@ class make_worker(object):
 
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
-                    is_best = self.evaluation(step_count, False, "N/A")
+                    if self.rank == 0: is_best = self.evaluation(step_count, False, "N/A")
                     if self.rank == 0: self.save(step_count, is_best)
                 else:
                     if self.rank == 0: self.save(step_count, False)
 
             if self.cfgs.distributed_data_parallel:
-                dist.barrier()
+                group = dist.new_group([n for n in range(self.n_gpus)])
+                dist.barrier(group)
 
         return step_count-1
     ################################################################################################################################
