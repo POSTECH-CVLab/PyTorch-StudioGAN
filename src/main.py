@@ -31,7 +31,7 @@ RUN_NAME_FORMAT = (
 
 def main():
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('-c', '--config_path', type=str, default='./configs/CIFAR10/ContraGAN.json')
+    parser.add_argument('-c', '--config_path', type=str, default='./src/configs/CIFAR10/ContraGAN.json')
     parser.add_argument('--checkpoint_folder', type=str, default=None)
     parser.add_argument('-current', '--load_current', action='store_true', help='whether you load the current or best checkpoint')
     parser.add_argument('--log_output_path', type=str, default=None)
@@ -103,7 +103,7 @@ def main():
     check_flag_0(model_config['train']['optimization']['batch_size'], world_size, train_config['freeze_layers'], train_config['checkpoint_folder'],
                  model_config['train']['model']['architecture'], model_config['data_processing']['img_size'])
 
-    run_name = make_run_name(RUN_NAME_FORMAT, framework=train_config['config_path'].split('/')[3][:-5], phase='train')
+    run_name = make_run_name(RUN_NAME_FORMAT, framework=train_config['config_path'].split('/')[-1][:-5], phase='train')
 
     if train_config['distributed_data_parallel'] and world_size > 1:
         print("train the models through the distributed data parallel (DDP) method")
