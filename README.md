@@ -139,7 +139,7 @@ Try ``python3 src/main.py`` to see available options.
 
 ## Supported Training Techniques
 
-* DistributedDataParallel ([PyTorch](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html)) 
+* DistributedDataParallel
   ```
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -DDP -c CONFIG_PATH
   ```
