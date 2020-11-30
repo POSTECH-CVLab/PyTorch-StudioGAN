@@ -163,7 +163,7 @@ def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, 
     if distributed_data_parallel:
         msg = 'Evaluation results of the image generation with DDP are not exact. ' + \
             'Please use a single GPU training mode or DataParallel for exact evluation.'
-        warnings.warn(msg, stacklevel=2)
+        warnings.warn(msg)
 
 
 # Convenience utility to switch off requires_grad
