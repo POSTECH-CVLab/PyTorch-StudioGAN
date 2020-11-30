@@ -305,14 +305,14 @@ def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, pri
     return gen_tmp
 
 
-def plot_img_canvas(images, save_path, logger, nrow):
+def plot_img_canvas(images, save_path, logger, nrow, logging=True):
     directory = dirname(save_path)
 
     if not exists(abspath(directory)):
         os.makedirs(directory)
 
     save_image(images, save_path, padding=0, nrow=nrow)
-    logger.info("Saved image to {}".format(save_path))
+    if logging: logger.info("Saved image to {}".format(save_path))
 
 
 def plot_pr_curve(precision, recall, run_name, logger, log=False):
