@@ -154,7 +154,9 @@ class make_worker(object):
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.policy = "color,translation,cutout"
 
-        self.group = dist.new_group([n for n in range(self.n_gpus)])
+        self.sampler = define_sampler(self.dataset_name, self.conditional_strategy)
+
+        if self.distributed_data_parallel: self.group = dist.new_group([n for n in range(self.n_gpus)])
 
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr,
@@ -653,10 +655,10 @@ class make_worker(object):
             sampler = "default" if self.conditional_strategy == "no" else "class_order_some"
             if self.zcr:
                 zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
-                                                     self.sigma_noise, self.rank, sampler=sampler)
+                                                     self.sigma_noise, self.rank, sampler=self.sampler)
             else:
                 zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None,
-                                                 self.rank, sampler=sampler)
+                                                 self.rank, sampler=self.sampler)
 
             if self.latent_op:
                 zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
