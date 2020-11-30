@@ -11,6 +11,7 @@ import math
 import os
 import sys
 import shutil
+import warnings
 import matplotlib.pyplot as plt
 from os.path import dirname, abspath, exists, join
 from scipy import linalg
@@ -135,7 +136,8 @@ def check_flag_0(batch_size, n_gpus, freeze_layers, checkpoint_folder, architect
 
 
 def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision,
-                 gradient_penalty_for_dis, deep_regret_analysis_for_dis, cr, bcr, zcr):
+                 gradient_penalty_for_dis, deep_regret_analysis_for_dis, cr, bcr, zcr, distributed_data_parallel,
+                 synchronized_bn):
     assert int(diff_aug)*int(ada) == 0, \
         "you can't simultaneously apply differentiable Augmentation (DiffAug) and adaptive augmentation (ADA)"
 
@@ -158,6 +160,8 @@ def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, 
     if pos_collected_numerator:
         assert conditional_strategy == "ContraGAN", "pos_collected_numerator option is not appliable except for ContraGAN."
 
+    if distributed_data_parallel and synchronized_bn:
+        warnings.warn("using both DDP and SyncBN will degrade your tensorboard image generation results")
 
 # Convenience utility to switch off requires_grad
 def toggle_grad(model, on, freeze_layers=-1):

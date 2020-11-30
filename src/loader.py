@@ -63,13 +63,15 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
 
     if cfgs.distributed_data_parallel:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        eval_batch_size = cfgs.batch_size
         cfgs.batch_size = cfgs.batch_size//world_size
     else:
+        eval_batch_size = cfgs.batch_size
         train_sampler = None
 
     train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=(train_sampler is None), pin_memory=True,
                                   num_workers=cfgs.num_workers, sampler=train_sampler, drop_last=True)
-    eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=False, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=eval_batch_size, shuffle=False, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
 
     ##### build model #####
     if rank == 0: logger.info('Building model...')
@@ -204,6 +206,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
         eval_dataset=eval_dataset,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
+        eval_batch_size = eval_batch_size,
         G_optimizer=G_optimizer,
         D_optimizer=D_optimizer,
         G_loss=G_loss[cfgs.adv_loss],
