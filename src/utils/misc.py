@@ -9,7 +9,9 @@ import numpy as np
 import random
 import math
 import os
+import sys
 import shutil
+import warnings
 import matplotlib.pyplot as plt
 from os.path import dirname, abspath, exists, join
 from scipy import linalg
@@ -24,7 +26,10 @@ from utils.losses import latent_optimise
 
 import torch
 import torch.nn.functional as F
+import torch.distributed as dist
+import torch.multiprocessing as mp
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 from torchvision.utils import save_image
 
 
@@ -77,6 +82,33 @@ def fix_all_seed(seed):
     torch.cuda.manual_seed(seed)
 
 
+def setup(rank, world_size, backend="nccl"):
+    if sys.platform == 'win32':
+        # Distributed package only covers collective communications with Gloo
+        # backend and FileStore on Windows platform. Set init_method parameter
+        # in init_process_group to a local file.
+        # Example init_method="file:///f:/libtmp/some_file"
+        init_method="file:///{your local file path}"
+
+        # initialize the process group
+        dist.init_process_group(
+            backend,
+            init_method=init_method,
+            rank=rank,
+            world_size=world_size
+        )
+    else:
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12355'
+
+        # initialize the process group
+        dist.init_process_group(backend, rank=rank, world_size=world_size)
+
+
+def cleanup():
+    dist.destroy_process_group()
+
+
 def count_parameters(module):
     return 'Number of parameters: {}'.format(sum([p.data.nelement() for p in module.parameters()]))
 
@@ -93,61 +125,71 @@ def define_sampler(dataset_name, conditional_strategy):
 
 
 def check_flag_0(batch_size, n_gpus, freeze_layers, checkpoint_folder, architecture, img_size):
-    assert batch_size % n_gpus == 0, "batch_size should be divided by the number of gpus "
+    assert batch_size % n_gpus == 0, "Batch_size should be divided by the number of gpus."
 
     if architecture == "dcgan":
         assert img_size == 32, "Sry,\
             StudioGAN does not support dcgan models for generation of images larger than 32 resolution."
 
     if freeze_layers > -1:
-        assert checkpoint_folder is not None, "freezing discriminator needs a pre-trained model."
+        assert checkpoint_folder is not None, "Freezing discriminator needs a pre-trained model."
 
 
 def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision,
-                 gradient_penalty_for_dis, deep_regret_analysis_for_dis, cr, bcr, zcr):
+                 gradient_penalty_for_dis, deep_regret_analysis_for_dis, cr, bcr, zcr,
+                 distributed_data_parallel, synchronized_bn):
     assert int(diff_aug)*int(ada) == 0, \
-        "you can't simultaneously apply differentiable Augmentation (DiffAug) and adaptive augmentation (ADA)"
+        "You can't simultaneously apply Differentiable Augmentation (DiffAug) and Adaptive Discriminator Augmentation (ADA)."
 
     assert int(mixed_precision)*int(gradient_penalty_for_dis) == 0, \
-        "you can't simultaneously apply mixed precision training (mpc) and gradient penalty for WGAN-GP"
+        "You can't simultaneously apply mixed precision training (mpc) and Gradient Penalty for WGAN-GP."
 
     assert int(mixed_precision)*int(deep_regret_analysis_for_dis) == 0, \
-        "you can't simultaneously apply mixed precision training (mpc) and deep regret analysis for DRAGAN"
+        "You can't simultaneously apply mixed precision training (mpc) and Deep Regret Analysis for DRAGAN."
 
     assert int(cr)*int(bcr) == 0 and int(cr)*int(zcr) == 0, \
-        "you can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)"
+        "You can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)."
 
     assert int(gradient_penalty_for_dis)*int(deep_regret_analysis_for_dis) == 0, \
-        "you can't simultaneously apply gradient penalty (GP) and deep regret analysis (DRA)"
+        "You can't simultaneously apply Gradient Penalty (GP) and Deep Regret Analysis (DRA)."
 
     if conditional_strategy == "ContraGAN":
         assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
-            "tempering_type should be one of constant, continuous, or discrete"
+            "Tempering_type should be one of constant, continuous, or discrete."
 
     if pos_collected_numerator:
-        assert conditional_strategy == "ContraGAN", "pos_collected_numerator option is not appliable except for ContraGAN."
+        assert conditional_strategy == "ContraGAN", "Pos_collected_numerator option is not appliable except for ContraGAN."
+
+    if distributed_data_parallel:
+        msg = 'Evaluation results of the image generation with DDP are not exact. ' + \
+            'Please use a single GPU training mode or DataParallel for exact evluation.'
+        warnings.warn(msg)
 
 
 # Convenience utility to switch off requires_grad
 def toggle_grad(model, on, freeze_layers=-1):
-    if isinstance(model, DataParallel):
-        num_blocks = len(model.module.in_dims)
-    else:
-        num_blocks = len(model.in_dims)
+    try:
+        if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
+            num_blocks = len(model.module.in_dims)
+        else:
+            num_blocks = len(model.in_dims)
 
-    assert freeze_layers < num_blocks,\
-        "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freeze_layers, nb=num_blocks)
+        assert freeze_layers < num_blocks,\
+            "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freeze_layers, nb=num_blocks)
 
-    if freeze_layers == -1:
+        if freeze_layers == -1:
+            for name, param in model.named_parameters():
+                param.requires_grad = on
+        else:
+            for name, param in model.named_parameters():
+                param.requires_grad = on
+                for layer in range(freeze_layers):
+                    block = "blocks.{layer}".format(layer=layer)
+                    if block in name:
+                        param.requires_grad = False
+    except:
         for name, param in model.named_parameters():
             param.requires_grad = on
-    else:
-        for name, param in model.named_parameters():
-            param.requires_grad = on
-            for layer in range(freeze_layers):
-                block = "blocks.{layer}".format(layer=layer)
-                if block in name:
-                    param.requires_grad = False
 
 
 def set_bn_train(m):
@@ -210,16 +252,16 @@ def calculate_all_sn(model):
                     block_idx = int(splited_name[int(idx+1)])
                     module_idx = int(splited_name[int(idx+2)])
                     operation_name = splited_name[idx+3]
-                    if isinstance(model, DataParallel):
+                    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
                         operations = model.module.blocks[block_idx][module_idx]
                     else:
                         operations = model.blocks[block_idx][module_idx]
                     operation = getattr(operations, operation_name)
                 else:
                     splited_name = name.split('.')
-                    idx = find_string(splited_name, 'module') if isinstance(model, DataParallel) else -1
+                    idx = find_string(splited_name, 'module') if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel) else -1
                     operation_name = splited_name[idx+1]
-                    if isinstance(model, DataParallel):
+                    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
                         operation = getattr(model.module, operation_name)
                     else:
                         operation = getattr(model, operation_name)
@@ -286,7 +328,7 @@ def plot_pr_curve(precision, recall, run_name, logger, log=False):
     fig.tight_layout()
     fig.savefig(save_path)
     if log:
-        logger.info("Saved image to {}".format(save_path))
+        logger.info("Save image to {}".format(save_path))
     return fig
 
 
@@ -308,7 +350,7 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger):
     ax2.imshow(fake_spectrum)
     ax2.set_title("Spectrum of fake images")
     fig.savefig(save_path)
-    logger.info("Saved image to {}".format(save_path))
+    logger.info("Save image to {}".format(save_path))
 
 
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
@@ -396,11 +438,11 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
                     save_image((img+1)/2, join(directory, str(labels[idx].item()), '{idx}.png'.format(idx=batch_size*i + idx)))
                 else:
                     pass
-    print('Saving png to ./generated_images/%s' % run_name)
+    print('Save png to ./generated_images/%s' % run_name)
 
 
 def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
-    if isinstance(gen_model, DataParallel):
+    if isinstance(gen_model, DataParallel) or isinstance(gen_model, DistributedDataParallel):
         z_dim = gen_model.module.z_dim
         num_classes = gen_model.module.num_classes
         conditional_strategy = dis_model.module.conditional_strategy

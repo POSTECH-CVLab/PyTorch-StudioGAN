@@ -8,22 +8,36 @@
 import json
 import os
 import sys
+import warnings
 from argparse import ArgumentParser
 
 from utils.misc import *
 from utils.make_hdf5 import make_hdf5
+from utils.log import make_run_name
 from loader import prepare_train_eval
 
+import torch
+from torch.backends import cudnn
+import torch.multiprocessing as mp
+
+
+
+RUN_NAME_FORMAT = (
+    "{framework}-"
+    "{phase}-"
+    "{timestamp}"
+)
 
 
 def main():
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('-c', '--config_path', type=str, default='./configs/CIFAR10/ContraGAN.json')
+    parser.add_argument('-c', '--config_path', type=str, default='./src/configs/CIFAR10/ContraGAN.json')
     parser.add_argument('--checkpoint_folder', type=str, default=None)
     parser.add_argument('-current', '--load_current', action='store_true', help='whether you load the current or best checkpoint')
     parser.add_argument('--log_output_path', type=str, default=None)
 
     parser.add_argument('--seed', type=int, default=-1, help='seed for generating random numbers')
+    parser.add_argument('-DDP', '--distributed_data_parallel', action='store_true')
     parser.add_argument('--num_workers', type=int, default=8, help='')
     parser.add_argument('-sync_bn', '--synchronized_bn', action='store_true', help='whether turn on synchronized batchnorm')
     parser.add_argument('-mpc', '--mixed_precision', action='store_true', help='whether turn on mixed precision training')
@@ -67,14 +81,41 @@ def main():
     else:
         raise NotImplementedError
 
-    cfgs = dict2clsattr(train_config, model_config)
-    if cfgs.dataset_name == 'cifar10':
-        assert cfgs.eval_type in ['train', 'test'], "cifar10 does not contain dataset for validation"
-    elif cfgs.dataset_name in ['imagenet', 'tiny_imagenet', 'custom']:
-        assert cfgs.eval_type == 'train' or cfgs.eval_type == 'valid', "not support the evalutation using test dataset"
-    hdf5_path_train = make_hdf5(cfgs, mode="train") if cfgs.load_all_data_in_memory else None
+    if model_config['data_processing']['dataset_name'] == 'cifar10':
+        assert train_config['eval_type'] in ['train', 'test'], "Cifar10 does not contain dataset for validation."
+    elif model_config['data_processing']['dataset_name'] in ['imagenet', 'tiny_imagenet', 'custom']:
+        assert train_config['eval_type'] == 'train' or train_config['eval_type'] == 'valid', \
+            "StudioGAN dose not support the evalutation protocol that uses the test dataset on imagenet, tiny imagenet, and custom datasets"
 
-    prepare_train_eval(cfgs, hdf5_path_train=hdf5_path_train)
+    if train_config['distributed_data_parallel']:
+        msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, and frequency_analysis with DDP. " +\
+            "Please change DDP with a single GPU training or DataParallel instead."
+        assert train_config['image_visualization'] + train_config['k_nearest_neighbor'] + \
+            train_config['interpolation'] + train_config['frequency_analysis'] == 0, msg
+
+    hdf5_path_train = make_hdf5(model_config['data_processing'], train_config, mode="train") \
+        if train_config['load_all_data_in_memory'] else None
+
+    if train_config['seed'] == -1:
+        cudnn.benchmark, cudnn.deterministic = True, False
+    else:
+        fix_all_seed(train_config['seed'])
+        cudnn.benchmark, cudnn.deterministic = False, True
+
+    world_size, rank = torch.cuda.device_count(), torch.cuda.current_device()
+    if world_size == 1: warnings.warn('You have chosen a specific GPU. This will completely disable data parallelism.')
+
+    if train_config['disable_debugging_API']: torch.autograd.set_detect_anomaly(False)
+    check_flag_0(model_config['train']['optimization']['batch_size'], world_size, train_config['freeze_layers'], train_config['checkpoint_folder'],
+                 model_config['train']['model']['architecture'], model_config['data_processing']['img_size'])
+
+    run_name = make_run_name(RUN_NAME_FORMAT, framework=train_config['config_path'].split('/')[-1][:-5], phase='train')
+
+    if train_config['distributed_data_parallel'] and world_size > 1:
+        print("Train the models through DistributedDataParallel (DDP) mode.")
+        mp.spawn(prepare_train_eval, nprocs=world_size, args=(world_size, run_name, train_config, model_config, hdf5_path_train))
+    else:
+        prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train=hdf5_path_train)
 
 if __name__ == '__main__':
     main()

@@ -32,6 +32,7 @@ from utils.losses import latent_optimise
 
 import torch
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 
 
 
@@ -39,10 +40,11 @@ class precision_recall(object):
     def __init__(self,inception_model, device):
         self.inception_model = inception_model
         self.device = device
+        self.disable_tqdm = device != 0
 
 
     def generate_images(self, gen, dis, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size):
-        if isinstance(gen, DataParallel):
+        if isinstance(gen, DataParallel) or isinstance(gen, DistributedDataParallel):
             z_dim = gen.module.z_dim
             num_classes = gen.module.num_classes
             conditional_strategy = dis.module.conditional_strategy
@@ -104,10 +106,10 @@ class precision_recall(object):
         return precision, recall
 
     def compute_precision_recall(self, dataloader, gen, dis, num_generate, num_runs, num_clusters, truncated_factor, prior,
-                                 latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size, num_angles=1001):
+                                 latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size, device, num_angles=1001):
         dataset_iter = iter(dataloader)
         n_batches = int(math.ceil(float(num_generate) / float(batch_size)))
-        for i in tqdm(range(n_batches)):
+        for i in tqdm(range(n_batches), disable = self.disable_tqdm):
             real_images, real_labels = next(dataset_iter)
             real_images, real_labels = real_images.to(self.device), real_labels.to(self.device)
             fake_images = self.generate_images(gen, dis, truncated_factor, prior, latent_op, latent_op_step,
@@ -143,15 +145,15 @@ class precision_recall(object):
         return (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall + epsilon)
 
 
-def calculate_f_beta_score(dataloader, gen, dis, inception_model, num_generate, num_runs, num_clusters, beta,
-                           truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
+def calculate_f_beta_score(dataloader, gen, dis, inception_model, num_generate, num_runs, num_clusters, beta, truncated_factor,
+                           prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, logger):
     inception_model.eval()
 
     batch_size = dataloader.batch_size
     PR = precision_recall(inception_model, device=device)
-    print("Calculating F_beta Score....")
+    if device == 0: logger.info("Calculate F_beta Score....")
     precision, recall = PR.compute_precision_recall(dataloader, gen, dis, num_generate, num_runs, num_clusters, truncated_factor,
-                                                    prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size)
+                                                    prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size, device)
 
     if not ((precision >= 0).all() and (precision <= 1).all()):
         raise ValueError('All values in precision must be in [0, 1].')

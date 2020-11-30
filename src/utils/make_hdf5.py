@@ -38,32 +38,32 @@ from torch.utils.data import DataLoader
 
 
 
-def make_hdf5(cfgs, mode):
-    if 'hdf5' in cfgs.dataset_name:
+def make_hdf5(model_config, train_config, mode):
+    if 'hdf5' in model_config['dataset_name']:
         raise ValueError('Reading from an HDF5 file which you will probably be '
                          'about to overwrite! Override this error only if you know '
                          'what you''re doing!')
 
-    file_name = '{dataset_name}_{size}_{mode}.hdf5'.format(dataset_name=cfgs.dataset_name, size=cfgs.img_size, mode=mode)
-    file_path = os.path.join(cfgs.data_path, file_name)
+    file_name = '{dataset_name}_{size}_{mode}.hdf5'.format(dataset_name=model_config['dataset_name'], size=model_config['img_size'], mode=mode)
+    file_path = os.path.join(model_config['data_path'], file_name)
     train = True if mode == "train" else False
 
     if os.path.isfile(file_path):
         print("{file_name} exist!\nThe file are located in the {file_path}".format(file_name=file_name, file_path=file_path))
     else:
-        dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=train, download=True, resize_size=cfgs.img_size,
+        dataset = LoadDataset(model_config['dataset_name'], model_config['data_path'], train=train, download=True, resize_size=model_config['img_size'],
                               hdf5_path=None, random_flip=False)
 
         loader = DataLoader(dataset,
-                            batch_size=cfgs.batch_size4prcsing,
+                            batch_size=model_config['batch_size4prcsing'],
                             shuffle=False,
                             pin_memory=False,
-                            num_workers=cfgs.num_workers,
+                            num_workers=train_config['num_workers'],
                             drop_last=False)
 
-        print('Starting to load %s into an HDF5 file with chunk size %i and compression %s...' % (cfgs.dataset_name,
-                                                                                                  cfgs.chunk_size,
-                                                                                                  cfgs.compression))
+        print('Starting to load %s into an HDF5 file with chunk size %i and compression %s...' % (model_config['dataset_name'],
+                                                                                                  model_config['chunk_size'],
+                                                                                                  model_config['compression']))
         # Loop over loader
         for i,(x,y) in enumerate(tqdm(loader)):
             # Numpyify x, y
@@ -74,13 +74,13 @@ def make_hdf5(cfgs, mode):
                 with h5.File(file_path, 'w') as f:
                     print('Producing dataset of len %d' % len(loader.dataset))
                     imgs_dset = f.create_dataset('imgs', x.shape, dtype='uint8', maxshape=(len(loader.dataset), 3,
-                                                                                           cfgs.img_size, cfgs.img_size),
-                                                chunks=(cfgs.chunk_size, 3, cfgs.img_size, cfgs.img_size), compression=cfgs.compression)
+                                                                                           model_config['img_size'], model_config['img_size']),
+                                                chunks=(model_config['chunk_size'], 3, model_config['img_size'], model_config['img_size']), compression=model_config['compression'])
                     print('Image chunks chosen as ' + str(imgs_dset.chunks))
                     imgs_dset[...] = x
 
                     labels_dset = f.create_dataset('labels', y.shape, dtype='int64', maxshape=(len(loader.dataset),),
-                                                    chunks=(cfgs.chunk_size,), compression=cfgs.compression)
+                                                    chunks=(model_config['chunk_size'],), compression=model_config['compression'])
                     print('Label chunks chosen as ' + str(labels_dset.chunks))
                     labels_dset[...] = y
             # Else append to the hdf5

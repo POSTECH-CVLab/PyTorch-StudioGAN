@@ -12,6 +12,7 @@ from utils.losses import latent_optimise
 
 import torch
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 
 
 
@@ -19,10 +20,10 @@ class evaluator(object):
     def __init__(self,inception_model, device):
         self.inception_model = inception_model
         self.device = device
-
+        self.disable_tqdm = device != 0
 
     def generate_images(self, gen, dis, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size):
-        if isinstance(gen, DataParallel):
+        if isinstance(gen, DataParallel) or isinstance(gen, DistributedDataParallel):
             z_dim = gen.module.z_dim
             num_classes = gen.module.num_classes
             conditional_strategy = dis.module.conditional_strategy
@@ -70,7 +71,7 @@ class evaluator(object):
                  latent_op_beta, split, batch_size):
         ys = []
         n_batches = int(math.ceil(float(n_eval) / float(batch_size)))
-        for i in tqdm(range(n_batches)):
+        for i in tqdm(range(n_batches), disable=self.disable_tqdm):
             batch_images = self.generate_images(gen, dis, truncated_factor, prior, latent_op, latent_op_step,
                                                 latent_op_alpha, latent_op_beta, batch_size)
             y = self.inception_softmax(batch_images)
@@ -88,7 +89,7 @@ class evaluator(object):
         n_batches = int(math.ceil(float(n_images)/float(batch_size)))
         dataset_iter = iter(dataloader)
         ys = []
-        for i in tqdm(range(n_batches)):
+        for i in tqdm(range(n_batches), disable=self.disable_tqdm):
             feed_list = next(dataset_iter)
             batch_images, batch_labels = feed_list[0], feed_list[1]
             batch_images = batch_images.to(self.device)
@@ -102,12 +103,12 @@ class evaluator(object):
 
 
 def calculate_incep_score(dataloader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                          latent_op, latent_op_step, latent_op_alpha, latent_op_beta, splits, device):
+                          latent_op, latent_op_step, latent_op_alpha, latent_op_beta, splits, device, logger):
     inception_model.eval()
 
     batch_size = dataloader.batch_size
     evaluator_instance = evaluator(inception_model, device=device)
-    print("Calculating Inception Score....")
-    kl_score, kl_std = evaluator_instance.eval_gen(generator, discriminator, n_generate, truncated_factor, prior,
-                                                   latent_op, latent_op_step, latent_op_alpha, latent_op_beta, splits, batch_size)
+    if device == 0: logger.info("Calculating Inception Score....")
+    kl_score, kl_std = evaluator_instance.eval_gen(generator, discriminator, n_generate, truncated_factor, prior, latent_op,
+                                                   latent_op_step, latent_op_alpha, latent_op_beta, splits, batch_size)
     return kl_score, kl_std
