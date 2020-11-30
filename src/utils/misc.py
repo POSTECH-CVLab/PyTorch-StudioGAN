@@ -283,7 +283,7 @@ def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_cl
     generator.eval()
 
 
-def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training):
+def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training, counter):
     gen_tmp = gen if gen_copy is None else gen_copy
 
     if training:
@@ -292,8 +292,12 @@ def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, pri
         return gen_tmp
 
     if standing_statistics:
-        apply_accumulate_stat(gen_tmp, standing_step, prior, batch_size, z_dim, num_classes, device)
-        gen_tmp.apply(set_deterministic_op_train)
+        if counter >= 1:
+            gen_tmp.eval()
+            gen_tmp.apply(set_deterministic_op_train)
+        else:
+            apply_accumulate_stat(gen_tmp, standing_step, prior, batch_size, z_dim, num_classes, device)
+            gen_tmp.apply(set_deterministic_op_train)
     else:
         gen_tmp.eval()
         gen_tmp.apply(set_bn_train)

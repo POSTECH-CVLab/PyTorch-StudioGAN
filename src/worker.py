@@ -153,6 +153,7 @@ class make_worker(object):
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.policy = "color,translation,cutout"
+        self.counter = 0
 
         self.sampler = define_sampler(self.dataset_name, self.conditional_strategy)
 
@@ -563,6 +564,7 @@ class make_worker(object):
 
     ################################################################################################################################
     def evaluation(self, step, standing_statistics, standing_step):
+        if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             if self.rank == 0: self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
             is_best = False
@@ -570,7 +572,7 @@ class make_worker(object):
 
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
@@ -620,7 +622,7 @@ class make_worker(object):
 
             self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
 
         return is_best
     ################################################################################################################################
@@ -628,10 +630,12 @@ class make_worker(object):
 
     ################################################################################################################################
     def save_images(self, is_generate, standing_statistics, standing_step, png=True, npz=True):
+        if self.rank == 0: self.logger.info('Start save images....')
+        if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             if png:
                 save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
@@ -646,11 +650,12 @@ class make_worker(object):
 
     ################################################################################################################################
     def run_image_visualization(self, nrow, ncol, standing_statistics, standing_step):
-        if self.rank == 0: self.logger.info('Start visualizing images....')
+        if self.rank == 0: self.logger.info('Start visualize images....')
+        if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             sampler = "default" if self.conditional_strategy == "no" else "class_order_some"
             if self.zcr:
@@ -671,56 +676,18 @@ class make_worker(object):
                             format(run_name=self.run_name), self.logger, ncol)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
-    ################################################################################################################################
-
-
-    ################################################################################################################################
-    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step):
-        if self.rank == 0: self.logger.info('Start linear interpolation analysis....')
-        assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
-            shared = generator.module.shared if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.shared
-            assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
-
-            if fix_z:
-                zs = torch.randn(nrow, 1, self.z_dim, device=self.rank)
-                zs = zs.repeat(1, ncol, 1).view(-1, self.z_dim)
-                name = "fix_z"
-            else:
-                zs = interp(torch.randn(nrow, 1, self.z_dim, device=self.rank),
-                            torch.randn(nrow, 1, self.z_dim, device=self.rank),
-                            ncol - 2).view(-1, self.z_dim)
-
-            if fix_y:
-                ys = sample_1hot(nrow, self.num_classes, device=self.rank)
-                ys = shared(ys).view(nrow, 1, -1)
-                ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
-                name = "fix_y"
-            else:
-                ys = interp(shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                            shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                            ncol-2).view(nrow * (ncol), -1)
-
-            interpolated_images = generator(zs, None, shared_label=ys, evaluation=True)
-
-            plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
-                            format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
-
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
 
 
     ################################################################################################################################
     def run_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_step):
         if self.rank == 0: self.logger.info('Start nearest neighbor analysis....')
+        if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.rank)
@@ -762,16 +729,57 @@ class make_worker(object):
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
+    ################################################################################################################################
+
+
+    ################################################################################################################################
+    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step):
+        if self.rank == 0: self.logger.info('Start linear interpolation analysis....')
+        if standing_statistics: self.counter += 1
+        assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+            shared = generator.module.shared if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.shared
+            assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
+
+            if fix_z:
+                zs = torch.randn(nrow, 1, self.z_dim, device=self.rank)
+                zs = zs.repeat(1, ncol, 1).view(-1, self.z_dim)
+                name = "fix_z"
+            else:
+                zs = interp(torch.randn(nrow, 1, self.z_dim, device=self.rank),
+                            torch.randn(nrow, 1, self.z_dim, device=self.rank),
+                            ncol - 2).view(-1, self.z_dim)
+
+            if fix_y:
+                ys = sample_1hot(nrow, self.num_classes, device=self.rank)
+                ys = shared(ys).view(nrow, 1, -1)
+                ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
+                name = "fix_y"
+            else:
+                ys = interp(shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                            shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
+                            ncol-2).view(nrow * (ncol), -1)
+
+            interpolated_images = generator(zs, None, shared_label=ys, evaluation=True)
+
+            plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/Interpolated_images_{fix_flag}.png".\
+                            format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
+
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
 
 
     ################################################################################################################################
     def run_frequency_analysis(self, num_images, standing_statistics, standing_step):
         if self.rank == 0: self.logger.info('Start linear interpolation analysis....')
+        if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             train_iter = iter(self.train_dataloader)
             num_batches = num_images//self.batch_size
@@ -823,5 +831,5 @@ class make_worker(object):
             plot_spectrum_image(real_gray_spectrum, fake_gray_spectrum, self.run_name, self.logger)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
