@@ -1472,4 +1472,4 @@
 [INFO] 2020-09-18 02:05:50 > FID score (Step: 100000, Using test moments): 152.08756576811282
 [INFO] 2020-09-18 02:05:50 > Inception score (Step: 100000, 10000 generated images): 4.064937114715576
 [INFO] 2020-09-18 02:05:50 > Best FID score (Step: 18000, Using test moments): 33.83028503195925
-[INFO] 2020-09-18 02:05:50 > Saved model to checkpoints/ProjGAN-train-2020_09_17_20_05_34ProjGANProjGANProjGANProjGAN
+[INFO] 2020-09-18 02:05:50 > Saved model to checkpoints/ProjGAN-train-2020_09_17_20_05_34
