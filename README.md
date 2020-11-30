@@ -171,8 +171,12 @@ The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linea
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
+<p align="center">
+  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/generated_images_1.png" />
+</p>
 
-* K-Nearest Neighbor Analysis (we have fixed K=7)
+
+* K-Nearest Neighbor Analysis (we have fixed K=7, the images in the first column are generated images.)
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
