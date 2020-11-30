@@ -100,14 +100,13 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -c CONFIG_PATH
 ```
 
-Try ``python3 src/main.py`` to see available options.
+Try ``python3 src/main.py`` to see available options.  
 
 Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
 ```
 ~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
 ```
-![Fig1](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/tensorboard.png)
-
+![Fig1](/docs/figures/tensorboared.png){: width="70%" height="70%"}
 
 ## Dataset
 
