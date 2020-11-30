@@ -32,10 +32,10 @@ from torch.utils.tensorboard import SummaryWriter
 def prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train):
     cfgs = dict2clsattr(train_config, model_config)
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
-
     if cfgs.distributed_data_parallel:
         print("Use GPU: {} for training".format(rank))
         setup(rank, world_size)
+        torch.cuda.set_device(rank)
 
     writer = SummaryWriter(log_dir=join('./logs', run_name)) if rank == 0 else None
     if rank == 0:
@@ -135,7 +135,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
             Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
             Gen_ema.source, Gen_ema.target = Gen, Gen_copy
 
-        writer = SummaryWriter(log_dir=join('./logs', run_name))
+        writer = SummaryWriter(log_dir=join('./logs', run_name)) if rank ==0 else None
         if cfgs.train_configs['train']:
             assert cfgs.seed == trained_seed, "seed for sampling random numbers should be same!"
 
@@ -155,10 +155,10 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
                 if cfgs.ema:
                     Gen_copy = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen_copy, process_group)
 
-            Gen = DDP(Gen, device_ids=[rank], output_device=rank, find_unused_parameters=True)
-            Dis = DDP(Dis, device_ids=[rank], output_device=rank, find_unused_parameters=True)
+            Gen = DDP(Gen, device_ids=[rank], broadcast_buffers=False, find_unused_parameters=True)
+            Dis = DDP(Dis, device_ids=[rank], broadcast_buffers=False, find_unused_parameters=True)
             if cfgs.ema:
-                Gen_copy = DDP(Gen_copy, device_ids=[rank], output_device=rank, find_unused_parameters=True)
+                Gen_copy = DDP(Gen_copy, device_ids=[rank], broadcast_buffers=False, find_unused_parameters=True)
         else:
             Gen = DataParallel(Gen, output_device=rank)
             Dis = DataParallel(Dis, output_device=rank)
