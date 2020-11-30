@@ -10,8 +10,8 @@
 - Extensive GAN implementations for Pytorch
 - Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets (being updated)
 - Better performance and lower memory consumption than original implementations
-- Providing pre-trained models that is fully compatible with up-to-date Pytorch environment
-- Support Multi-GPU, Mixed precision, Synchronized Batch Normalization, and Tensorboard Visualization
+- Providing pre-trained models that is fully compatible with up-to-date PyTorch environment
+- Support Multi-GPU(both DP and DDP), Mixed precision, Synchronized Batch Normalization, and Tensorboard Visualization
 
 ##  Implemented GANs
 
@@ -90,14 +90,19 @@ docker pull mgkang/studiogan:0.1
 CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)``
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DataParallel``
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
-Via Tensorboard, you can monitor generated images and trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DistributedDataParallel``
 ```
-~ PyTorch-StudioGAN/src/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -c CONFIG_PATH
+```
+
+Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
+```
+~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
 ```
 
 Try ``python3 src/main.py`` to see available options.
@@ -113,27 +118,31 @@ Try ``python3 src/main.py`` to see available options.
 
 ```
 ┌── docs
-└── src
-    └── data
-        └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
-            ├── train
-            │   ├── cls0
-            │   │   ├── train0.png
-            │   │   ├── train1.png
-            │   │   └── ...
-            │   ├── cls99
+├── src
+└── data
+    └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
+        ├── train
+        │   ├── cls0
+        │   │   ├── train0.png
+        │   │   ├── train1.png
+        │   │   └── ...
+        │   ├── cls1
+        │   └── ...
+        └── valid
+            ├── cls0
+            │   ├── valid0.png
+            │   ├── valid1.png
             │   └── ...
-            └── valid
-                ├── cls0
-                │   ├── valid0.png
-                │   ├── valid1.png
-                │   └── ...
-                ├── cls99
-                └── ...
+            ├── cls1
+            └── ...
 ```
 
 ## Supported Training Techniques
 
+* DistributedDataParallel ([PyTorch](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html)) 
+  ```
+  CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -DDP -c CONFIG_PATH
+  ```
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740)) 
   ```
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -mpc -c CONFIG_PATH
