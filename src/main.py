@@ -82,10 +82,16 @@ def main():
         raise NotImplementedError
 
     if model_config['data_processing']['dataset_name'] == 'cifar10':
-        assert train_config['eval_type'] in ['train', 'test'], "cifar10 does not contain dataset for validation"
+        assert train_config['eval_type'] in ['train', 'test'], "Cifar10 does not contain dataset for validation."
     elif model_config['data_processing']['dataset_name'] in ['imagenet', 'tiny_imagenet', 'custom']:
         assert train_config['eval_type'] == 'train' or train_config['eval_type'] == 'valid', \
-            "not support the evalutation using test dataset"
+            "StudioGAN dose not support the evalutation protocol that uses the test dataset on imagenet, tiny imagenet, and custom datasets"
+
+    if train_config['distributed_data_parallel']:
+        msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, and frequency_analysis with DDP. " +\
+            "Please change DDP with a single GPU training or DataParallel instead."
+        assert train_config['image_visualization'] + train_config['k_nearest_neighbor'] + \
+            train_config['interpolation'] + train_config['frequency_analysis'] == 0, msg
 
     hdf5_path_train = make_hdf5(model_config['data_processing'], train_config, mode="train") \
         if train_config['load_all_data_in_memory'] else None
@@ -106,7 +112,7 @@ def main():
     run_name = make_run_name(RUN_NAME_FORMAT, framework=train_config['config_path'].split('/')[-1][:-5], phase='train')
 
     if train_config['distributed_data_parallel'] and world_size > 1:
-        print("train the models through the distributed data parallel (DDP) method")
+        print("Train the models through DistributedDataParallel (DDP) mode.")
         mp.spawn(prepare_train_eval, nprocs=world_size, args=(world_size, run_name, train_config, model_config, hdf5_path_train))
     else:
         prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train=hdf5_path_train)

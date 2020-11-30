@@ -53,8 +53,8 @@ LOG_FORMAT = (
 
 class make_worker(object):
     def __init__(self, cfgs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
-                 Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, eval_batch_size, G_optimizer,
-                 D_optimizer, G_loss, D_loss, prev_ada_p, rank, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
+                 Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, G_optimizer, D_optimizer, G_loss,
+                 D_loss, prev_ada_p, rank, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
 
         self.cfgs = cfgs
         self.run_name = run_name
@@ -77,7 +77,6 @@ class make_worker(object):
         self.eval_dataset = eval_dataset
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
-        self.eval_batch_size = eval_batch_size
 
         self.freeze_layers = cfgs.freeze_layers
 
@@ -156,10 +155,6 @@ class make_worker(object):
         self.policy = "color,translation,cutout"
 
         self.group = dist.new_group([n for n in range(self.n_gpus)])
-
-        sampler = define_sampler(self.dataset_name, self.conditional_strategy)
-        if rank == 0: self.fixed_noise, self.fixed_fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1,
-                                                                                self.num_classes, None, self.rank, sampler=sampler)
 
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr,
@@ -478,15 +473,9 @@ class make_worker(object):
                 if self.ada:
                     self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
 
-                with torch.no_grad():
-                    generator = change_generator_mode(self.gen_model, self.Gen_copy, False, "N/A", self.prior, self.batch_size,
-                                                      self.z_dim, self.num_classes, self.rank, training=True)
-                    generated_images = generator(self.fixed_noise, self.fixed_fake_labels)
-                    self.writer.add_images('Generated samples', (generated_images+1)/2, step_count)
-
             if step_count % self.save_every == 0 or step_count == total_step:
                 if self.evaluate:
-                    if self.rank == 0: is_best = self.evaluation(step_count, False, "N/A")
+                    is_best = self.evaluation(step_count, False, "N/A")
                     if self.rank == 0: self.save(step_count, is_best)
                 else:
                     if self.rank == 0: self.save(step_count, False)
@@ -561,7 +550,7 @@ class make_worker(object):
                 torch.save(g_ema_states, g_ema_checkpoint_output_path_)
 
         if self.logger:
-            if self.rank == 0: self.logger.info("Saved model to {}".format(self.checkpoint_dir))
+            if self.rank == 0: self.logger.info("Save model to {}".format(self.checkpoint_dir))
 
         self.dis_model.train()
         self.gen_model.train()
@@ -579,7 +568,7 @@ class make_worker(object):
 
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
@@ -629,7 +618,7 @@ class make_worker(object):
 
             self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
 
         return is_best
     ################################################################################################################################
@@ -640,7 +629,7 @@ class make_worker(object):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             if png:
                 save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
@@ -656,17 +645,17 @@ class make_worker(object):
     ################################################################################################################################
     def run_image_visualization(self, nrow, ncol, standing_statistics, standing_step):
         if self.rank == 0: self.logger.info('Start visualizing images....')
-        assert self.eval_batch_size % 8 ==0, "batch size should be devided by 8!"
+        assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             sampler = "default" if self.conditional_strategy == "no" else "class_order_some"
             if self.zcr:
-                zs, fake_labels, zs_t = sample_latents(self.prior, self.eval_batch_size, self.z_dim, 1, self.num_classes,
+                zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                      self.sigma_noise, self.rank, sampler=sampler)
             else:
-                zs, fake_labels = sample_latents(self.prior, self.eval_batch_size, self.z_dim, 1, self.num_classes, None,
+                zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes, None,
                                                  self.rank, sampler=sampler)
 
             if self.latent_op:
@@ -680,17 +669,17 @@ class make_worker(object):
                             format(run_name=self.run_name), self.logger, ncol)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
     ################################################################################################################################
 
 
     ################################################################################################################################
     def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step):
         if self.rank == 0: self.logger.info('Start linear interpolation analysis....')
-        assert self.eval_batch_size % 8 ==0, "batch size should be devided by 8!"
+        assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
             shared = generator.module.shared if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
@@ -719,17 +708,17 @@ class make_worker(object):
                             format(run_name=self.run_name, fix_flag=name), self.logger, ncol)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
     ################################################################################################################################
 
 
     ################################################################################################################################
     def run_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_step):
         if self.rank == 0: self.logger.info('Start nearest neighbor analysis....')
-        assert self.eval_batch_size % 8 ==0, "batch size should be devided by 8!"
+        assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.rank)
@@ -738,16 +727,16 @@ class make_worker(object):
             resnet50_conv.eval()
 
             for c in tqdm(range(self.num_classes)):
-                fake_images, fake_labels = generate_images_for_KNN(self.eval_batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
+                fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
                                                                    self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.rank)
                 fake_image = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
 
                 num_samples, target_sampler = target_class_sampler(self.train_dataset, c)
-                train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.eval_batch_size, shuffle=False, sampler=target_sampler,
+                train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, sampler=target_sampler,
                                                                num_workers=self.num_workers, pin_memory=True)
                 train_iter = iter(train_dataloader)
-                for batch_idx in range(num_samples//self.eval_batch_size):
+                for batch_idx in range(num_samples//self.batch_size):
                     real_images, real_labels = next(train_iter)
                     real_images = real_images.to(self.rank)
                     real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
@@ -771,7 +760,7 @@ class make_worker(object):
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
     ################################################################################################################################
 
 
@@ -780,16 +769,16 @@ class make_worker(object):
         if self.rank == 0: self.logger.info('Start linear interpolation analysis....')
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=False)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False)
 
             train_iter = iter(self.train_dataloader)
-            num_batches = num_images//self.eval_batch_size
+            num_batches = num_images//self.batch_size
             for i in range(num_batches):
                 if self.zcr:
-                    zs, fake_labels, zs_t = sample_latents(self.prior, self.eval_batch_size, self.z_dim, 1, self.num_classes,
+                    zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                            self.sigma_noise, self.rank)
                 else:
-                    zs, fake_labels = sample_latents(self.prior, self.eval_batch_size, self.z_dim, 1, self.num_classes,
+                    zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                      None, self.rank)
 
                 if self.latent_op:
@@ -832,5 +821,5 @@ class make_worker(object):
             plot_spectrum_image(real_gray_spectrum, fake_gray_spectrum, self.run_name, self.logger)
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.eval_batch_size, self.z_dim, self.num_classes, self.rank, training=True)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=True)
     ################################################################################################################################

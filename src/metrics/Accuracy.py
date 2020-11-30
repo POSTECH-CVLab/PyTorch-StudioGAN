@@ -43,7 +43,7 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
     elif D_loss.__name__ == "loss_wgan_dis":
         raise NotImplementedError
 
-    if device == 0: logger.info("Calculating Accuracies....")
+    if device == 0: logger.info("Calculate Accuracies....")
 
     if eval_generated_sample:
         for batch_id in tqdm(range(total_batch), disable=disable_tqdm):

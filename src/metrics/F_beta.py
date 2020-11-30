@@ -151,7 +151,7 @@ def calculate_f_beta_score(dataloader, gen, dis, inception_model, num_generate, 
 
     batch_size = dataloader.batch_size
     PR = precision_recall(inception_model, device=device)
-    if device == 0: logger.info("Calculating F_beta Score....")
+    if device == 0: logger.info("Calculate F_beta Score....")
     precision, recall = PR.compute_precision_recall(dataloader, gen, dis, num_generate, num_runs, num_clusters, truncated_factor,
                                                     prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, batch_size, device)
 

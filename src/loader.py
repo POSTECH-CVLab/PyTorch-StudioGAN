@@ -33,7 +33,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
     cfgs = dict2clsattr(train_config, model_config)
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
     if cfgs.distributed_data_parallel:
-        print("Use GPU: {} for training".format(rank))
+        print("Use GPU: {} for training.".format(rank))
         setup(rank, world_size)
         torch.cuda.set_device(rank)
 
@@ -47,7 +47,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
         logger = None
 
     ##### load dataset #####
-    if rank == 0: logger.info('Loading train datasets...')
+    if rank == 0: logger.info('Load train datasets...')
     train_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=True, download=True, resize_size=cfgs.img_size,
                                 hdf5_path=hdf5_path_train, random_flip=cfgs.random_flip_preprocessing)
     if cfgs.reduce_train_dataset < 1.0:
@@ -55,7 +55,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
     if rank == 0: logger.info('Train dataset size : {dataset_size}'.format(dataset_size=len(train_dataset)))
 
-    if rank == 0: logger.info('Loading {mode} datasets...'.format(mode=cfgs.eval_type))
+    if rank == 0: logger.info('Load {mode} datasets...'.format(mode=cfgs.eval_type))
     eval_mode = True if cfgs.eval_type == 'train' else False
     eval_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=eval_mode, download=True, resize_size=cfgs.img_size,
                                hdf5_path=None, random_flip=False)
@@ -63,20 +63,18 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
 
     if cfgs.distributed_data_parallel:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        eval_batch_size = cfgs.batch_size
         cfgs.batch_size = cfgs.batch_size//world_size
     else:
-        eval_batch_size = cfgs.batch_size
         train_sampler = None
 
     train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=(train_sampler is None), pin_memory=True,
                                   num_workers=cfgs.num_workers, sampler=train_sampler, drop_last=True)
-    eval_dataloader = DataLoader(eval_dataset, batch_size=eval_batch_size, shuffle=False, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=False, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
 
     ##### build model #####
-    if rank == 0: logger.info('Building model...')
+    if rank == 0: logger.info('Build model...')
     module = __import__('models.{architecture}'.format(architecture=cfgs.architecture), fromlist=['something'])
-    if rank == 0: logger.info('Modules are located on models.{architecture}'.format(architecture=cfgs.architecture))
+    if rank == 0: logger.info('Modules are located on models.{architecture}.'.format(architecture=cfgs.architecture))
     Gen = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
                            cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
                            cfgs.g_init, cfgs.G_depth, cfgs.mixed_precision).to(rank)
@@ -86,7 +84,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
                                cfgs.normalize_embed, cfgs.d_init, cfgs.D_depth, cfgs.mixed_precision).to(rank)
 
     if cfgs.ema:
-        if rank == 0: logger.info('Preparing EMA for G with decay of {}'.format(cfgs.ema_decay))
+        if rank == 0: logger.info('Prepare EMA for G with decay of {}.'.format(cfgs.ema_decay))
         Gen_copy = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
                                     cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
                                     initialize=False, G_depth=cfgs.G_depth, mixed_precision=cfgs.mixed_precision).to(rank)
@@ -139,7 +137,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
 
         writer = SummaryWriter(log_dir=join('./logs', run_name)) if rank ==0 else None
         if cfgs.train_configs['train']:
-            assert cfgs.seed == trained_seed, "seed for sampling random numbers should be same!"
+            assert cfgs.seed == trained_seed, "Seed for sampling random numbers should be same!"
 
         if rank == 0: logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         if rank == 0: logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
@@ -174,9 +172,12 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
                     Gen_copy = convert_model(Gen_copy).to(rank)
 
     ##### load the inception network and prepare first/secend moments for calculating FID #####
-    if rank == 0 and cfgs.eval:
+    if cfgs.eval:
         inception_model = InceptionV3().to(rank)
-        if world_size > 1:
+        if world_size > 1 and cfgs.distributed_data_parallel:
+            toggle_grad(inception_model, on=True)
+            inception_model = DDP(inception_model, device_ids=[rank], broadcast_buffers=False, find_unused_parameters=True)
+        elif world_size > 1 and cfgs.distributed_data_parallel is False:
             inception_model = DataParallel(inception_model, output_device=rank)
         else:
             pass
@@ -206,7 +207,6 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
         eval_dataset=eval_dataset,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
-        eval_batch_size = eval_batch_size,
         G_optimizer=G_optimizer,
         D_optimizer=D_optimizer,
         G_loss=G_loss[cfgs.adv_loss],
@@ -236,7 +236,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
         worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
 
     if cfgs.interpolation:
-        assert cfgs.architecture in ["big_resnet", "biggan_deep"], "Not supported except for biggan and biggan_deep."
+        assert cfgs.architecture in ["big_resnet", "biggan_deep"], "StudioGAN does not support interpolation analysis except for biggan and biggan_deep."
         worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False,
                                         standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
         worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True,

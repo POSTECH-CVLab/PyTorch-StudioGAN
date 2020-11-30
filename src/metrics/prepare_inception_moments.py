@@ -40,13 +40,13 @@ def prepare_inception_moments(dataloader, eval_mode, generator, inception_model,
                                                     tqdm_disable=False,
                                                     run_name=run_name)
 
-        if device == 0: logger.info('Saving calculated means and covariances to disk...')
+        if device == 0: logger.info('Save calculated means and covariances to disk...')
         np.savez(save_path, **{'mu': mu, 'sigma': sigma})
 
     if is_file:
         pass
     else:
-        if device == 0: logger.info('calculate inception score of {} dataset'.format(eval_mode))
+        if device == 0: logger.info('calculate inception score of {} dataset.'.format(eval_mode))
         evaluator_instance = evaluator(inception_model, device=device)
         is_score, is_std = evaluator_instance.eval_dataset(dataloader, splits=splits)
         if device == 0: logger.info('Inception score={is_score}-Inception_std={is_std}'.format(is_score=is_score, is_std=is_std))
