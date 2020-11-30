@@ -152,6 +152,8 @@ class make_worker(object):
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.policy = "color,translation,cutout"
 
+        self.group = dist.new_group([n for n in range(self.n_gpus)])
+
         sampler = define_sampler(self.dataset_name, self.conditional_strategy)
 
         check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
@@ -478,8 +480,7 @@ class make_worker(object):
                     if self.rank == 0: self.save(step_count, False)
 
             if self.cfgs.distributed_data_parallel:
-                group = dist.new_group([n for n in range(self.n_gpus)])
-                dist.barrier(group)
+                dist.barrier(self.group)
 
         return step_count-1
     ################################################################################################################################
