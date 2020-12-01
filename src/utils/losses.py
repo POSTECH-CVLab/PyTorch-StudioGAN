@@ -153,7 +153,7 @@ class Conditional_Contrastive_loss(torch.nn.Module):
 
 class Conditional_Contrastive_loss_plus(torch.nn.Module):
     def __init__(self, device, batch_size, pos_collected_numerator):
-        super(Conditional_Contrastive_loss, self).__init__()
+        super(Conditional_Contrastive_loss_plus, self).__init__()
         self.device = device
         self.batch_size = batch_size
         self.pos_collected_numerator = pos_collected_numerator
