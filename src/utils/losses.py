@@ -291,7 +291,6 @@ class NT_Xent_loss(torch.nn.Module):
 
         labels = torch.zeros(2 * self.batch_size).to(self.device).long()
         loss = self.criterion(logits, labels)
-
         return loss / (2 * self.batch_size)
 
 
@@ -373,5 +372,4 @@ def calc_derv(inputs, labels, netD, conditional_strategy, device, netG=None):
                               create_graph=True, retain_graph=True, only_inputs=True)[0]
 
     gradients_norm = torch.unsqueeze((gradients.norm(2, dim=1) ** 2), dim=1)
-
     return gradients, gradients_norm
