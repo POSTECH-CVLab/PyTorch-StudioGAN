@@ -117,6 +117,7 @@ class Conditional_Contrastive_loss(torch.nn.Module):
     def _calculate_similarity_matrix(self):
         return self._cosine_simililarity_matrix
 
+
     def remove_diag(self, M):
         h, w = M.shape
         assert h==w, "h and w should be same"
@@ -125,9 +126,11 @@ class Conditional_Contrastive_loss(torch.nn.Module):
         mask = (mask).type(torch.bool).to(self.device)
         return M[mask].view(h, -1)
 
+
     def _cosine_simililarity_matrix(self, x, y):
         v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
         return v
+
 
     def forward(self, inst_embed, proxy, negative_mask, labels, temperature, margin):
         similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
@@ -161,6 +164,7 @@ class Conditional_Contrastive_loss_plus(torch.nn.Module):
     def _calculate_similarity_matrix(self):
         return self._cosine_simililarity_matrix
 
+
     def remove_diag(self, M):
         h, w = M.shape
         assert h==w, "h and w should be same"
@@ -169,9 +173,11 @@ class Conditional_Contrastive_loss_plus(torch.nn.Module):
         mask = (mask).type(torch.bool).to(self.device)
         return M[mask].view(h, -1)
 
+
     def _cosine_simililarity_matrix(self, x, y):
         v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
         return v
+
 
     def forward(self, inst_embed, proxy, negative_mask, labels, temperature, margin):
         p2i_similarity_matrix = self.calculate_similarity_matrix(proxy, inst_embed)
@@ -202,12 +208,14 @@ class Proxy_NCA_loss(torch.nn.Module):
         self.batch_size = batch_size
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
 
+
     def _get_positive_proxy_mask(self, labels):
         labels = labels.detach().cpu().numpy()
         rvs_one_hot_target = np.ones([self.num_classes, self.num_classes]) - np.eye(self.num_classes)
         rvs_one_hot_target = rvs_one_hot_target[labels]
         mask = torch.from_numpy((rvs_one_hot_target)).type(torch.bool)
         return mask.to(self.device)
+
 
     def forward(self, inst_embed, proxy, labels):
         all_labels = torch.tensor([c for c in range(self.num_classes)]).type(torch.long).to(self.device)
@@ -231,12 +239,14 @@ class NT_Xent_loss(torch.nn.Module):
         self.similarity_function = self._get_similarity_function(use_cosine_similarity)
         self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
+
     def _get_similarity_function(self, use_cosine_similarity):
         if use_cosine_similarity:
             self._cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
             return self._cosine_simililarity
         else:
             return self._dot_simililarity
+
 
     def _get_correlated_mask(self):
         diag = np.eye(2 * self.batch_size)
@@ -246,6 +256,7 @@ class NT_Xent_loss(torch.nn.Module):
         mask = (1 - mask).type(torch.bool)
         return mask.to(self.device)
 
+
     @staticmethod
     def _dot_simililarity(x, y):
         v = torch.tensordot(x.unsqueeze(1), y.T.unsqueeze(0), dims=2)
@@ -254,12 +265,14 @@ class NT_Xent_loss(torch.nn.Module):
         # v shape: (N, 2N)
         return v
 
+
     def _cosine_simililarity(self, x, y):
         # x shape: (N, 1, C)
         # y shape: (1, 2N, C)
         # v shape: (N, 2N)
         v = self._cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
         return v
+
 
     def forward(self, zis, zjs, temperature):
         representations = torch.cat([zjs, zis], dim=0)
