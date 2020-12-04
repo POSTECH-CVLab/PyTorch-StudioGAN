@@ -258,8 +258,6 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ICRGAN(C).json) |  - | - |
 | [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 32 | 64 |  9.649 | 7.369 | 0.995 | 0.994 | [Config](./src/configs/CIFAR10/DiffAugGAN(P).json) | [Log](./logs/CIFAR10/DiffAugGAN(P)-train-2020_09_18_14_33_57.log) | - |
 | [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 32 | 64 | 9.896 | 7.285 | 0.995 | 0.988 | [Config](./src/configs/CIFAR10/DiffAugGAN(C).json) | [Log](./logs/CIFAR10/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | - |
-| [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ADAGAN(P).json) |  - | - |
-| [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ADAGAN(C).json) | - | - |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | 64 | 9.576 | 8.465 | 0.993 | 0.990 | [Config](./src/configs/CIFAR10/LOGAN.json) |  [Log](./logs/CIFAR10/LOGAN-train-2020_09_17_13_46_47.log) | - |
   
 ※ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
@@ -286,8 +284,6 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(C).json) |  - |  - |
 | [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(P).json) |  - |  - |
 | [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(C).json) |  - |  - |
-| [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(P).json) |  - |  - |
-| [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(C).json) |  - |  - |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/LOGAN.json) |  - |  - |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
