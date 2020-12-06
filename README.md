@@ -253,7 +253,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | 32 | 64 | 9.562 | 7.911 | 0.994 | 0.991 | [Config](./src/configs/CIFAR10/BigGAN.json) | [Log](./logs/CIFAR10/BigGAN-train-2020_09_18_23_35_11.log) | - |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 32 | 64 |  9.729 | 8.065 | 0.993 | 0.992 | [Config](./src/configs/CIFAR10/ContraGAN.json) | [Log](./logs/CIFAR10/ContraGAN-train-2020_10_04_21_50_14.log) | - |
 | [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 32 | 64 |  9.911 | 7.199 | 0.994 | 0.994 | [Config](./src/configs/CIFAR10/CRGAN(P).json) | [Log](./logs/CIFAR10/CRGAN(P)-train-2020_09_17_13_45_19.log) | - |
-| [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/CRGAN(C).json) | - | - |
+| [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 32 | 64 |  9.812 | 7.685 | 0.995 | 0.993 | [Config](./src/configs/CIFAR10/CRGAN(C).json) | - | - |
 | [**ICRGAN(P)**](https://arxiv.org/abs/2002.04724) | 32 | 64 | 9.781 | 7.550 | 0.994 | 0.992 | [Config](./src/configs/CIFAR10/ICRGAN(P).json) | [Log](./logs/CIFAR10/ICRGAN(P)-train-2020_09_17_13_46_09.log) | - |
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 32 | 64 |  - | - | - | - | [Config](./src/configs/CIFAR10/ICRGAN(C).json) |  - | - |
 | [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 32 | 64 |  9.649 | 7.369 | 0.995 | 0.994 | [Config](./src/configs/CIFAR10/DiffAugGAN(P).json) | [Log](./logs/CIFAR10/DiffAugGAN(P)-train-2020_09_18_14_33_57.log) | - |
