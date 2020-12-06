@@ -289,16 +289,16 @@ We don't apply Synchronized Batch Normalization to all experiments.
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
 ### ImageNet
-```
-** Note: Experiments are still ongoing due to limited resources. Image generation experiment using BIGGAN is in progress successfully, and when the experiment is completed, we will update the logger file and models' weights. After that, we plan to conduct ImageNet generation experiments in the order of SNGAN -> SAGAN -> ContraGAN.
-```
+
+* Note: Experiments are still ongoing due to limited resources. Image generation experiment using BIGGAN is in progress successfully, and when the experiment is completed, we will update the logger file and models' weights. After that, we plan to conduct ImageNet generation experiments in the order of SNGAN -> SAGAN -> ContraGAN.
+
 | Name | Res. | Batch size | IS | FID | F_1/8 | F_8 | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/SNGAN.json) |  - | - |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/SAGAN.json) |  - | - |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/BigGAN256.json) |  - | - |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN256.json) | - | - |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 2048 | 83.548 | 9.239 | 0.980 | 0.985 | [Config](./src/configs/ILSVRC2012/BigGAN2048.json) | [Log](./logs/IMAGENET/BigGAN2048-train-2020_11_17_15_17_48.log) | - |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 2048 | 83.548 | 9.239 | 0.980 | 0.985 | [Config](./src/configs/ILSVRC2012/BigGAN2048.json) | [Intermediate Log](./logs/IMAGENET/BigGAN2048-train-2020_11_17_15_17_48.log) | - |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 2048 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN2048.json) | - | - |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
