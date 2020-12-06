@@ -290,7 +290,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 
 ### ImageNet
 
-* Note: Experiments are still ongoing due to limited resources. Image generation experiment using BIGGAN is in progress successfully, and when the experiment is completed, we will update the logger file and models' weights. After that, we plan to conduct ImageNet generation experiments in the order of SNGAN -> SAGAN -> ContraGAN.
+* Note: Experiments are still ongoing due to limited resources. Image generation experiment using BigGAN is in progress successfully, and when the experiment is completed, we will update the logger file and models' weights. After that, we plan to conduct ImageNet generation experiments in the order of SNGAN -> SAGAN -> ContraGAN.
 
 | Name | Res. | Batch size | IS | FID | F_1/8 | F_8 | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
