@@ -238,7 +238,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 
 ### CIFAR10
 
-| Name | Res. | Batch size | IS | FID | F_1/8 | F_8 | Config | Log | Weights |
+| Name | Res. | Batch size | IS (⭡) | FID (⭣) | F_1/8 (⭡) | F_8 (⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 32 | 64 | 6.697 | 50.281 | 0.851 | 0.788 | [Config](./src/configs/CIFAR10/DCGAN.json) | [Log](./logs/CIFAR10/DCGAN-train-2020_09_15_13_23_51.log) | - |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 32 | 64 |  5.537 | 67.229 | 0.790 |  0.702 | [Config](./src/configs/CIFAR10/LSGAN.json) | [Log](./logs/CIFAR10/LSGAN-train-2020_09_15_23_40_37.log) | - |
@@ -264,7 +264,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 
 ### Tiny ImageNet
 
-| Name | Res. | Batch size |IS | FID | F_1/8 | F_8 | Config | Log | Weights |
+| Name | Res. | Batch size | IS (⭡) | FID (⭣) | F_1/8 (⭡) | F_8 (⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) |  - |  - |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/LSGAN.json) |  - |  - |
@@ -292,7 +292,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 
 * Note: Experiments are still ongoing due to limited resources. Image generation experiment using BigGAN is in progress successfully, and when the experiment is completed, we will update the logger file and models' weights. After that, we plan to conduct ImageNet generation experiments in the order of SNGAN -> SAGAN -> ContraGAN.
 
-| Name | Res. | Batch size | IS | FID | F_1/8 | F_8 | Config | Log | Weights |
+| Name | Res. | Batch size | IS (⭡) | FID (⭣) | F_1/8 (⭡) | F_8 (⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/SNGAN.json) |  - | - |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/SAGAN.json) |  - | - |
