@@ -52,6 +52,7 @@
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
+| [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | AdaIN | - | - | - |
 
 [cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform.
 
