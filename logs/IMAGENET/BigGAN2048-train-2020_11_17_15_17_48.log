@@ -1953,3 +1953,1321 @@
 [INFO] 2020-12-06 08:22:07 > Start training....
 [INFO] 2020-12-06 08:42:15 > Step:  120100 Progress: 60.1% Elapsed: 0:20:07 temperature: no ada_p: No Discriminator_loss: 0.0204417 Generator_loss: 0.83101 
 [INFO] 2020-12-06 09:01:42 > Step:  120200 Progress: 60.1% Elapsed: 0:39:34 temperature: no ada_p: No Discriminator_loss: 0.0196699 Generator_loss: 0.886382 
+[INFO] 2020-12-06 09:21:10 > Step:  120300 Progress: 60.2% Elapsed: 0:59:02 temperature: no ada_p: No Discriminator_loss: 0.132509 Generator_loss: 0.378626 
+[INFO] 2020-12-06 09:40:43 > Step:  120400 Progress: 60.2% Elapsed: 1:18:36 temperature: no ada_p: No Discriminator_loss: 0.0136694 Generator_loss: 0.811682 
+[INFO] 2020-12-06 10:00:14 > Step:  120500 Progress: 60.2% Elapsed: 1:38:07 temperature: no ada_p: No Discriminator_loss: 0.0252321 Generator_loss: 0.714758 
+[INFO] 2020-12-06 10:19:44 > Step:  120600 Progress: 60.3% Elapsed: 1:57:37 temperature: no ada_p: No Discriminator_loss: 0.0360512 Generator_loss: 0.678584 
+[INFO] 2020-12-06 10:39:18 > Step:  120700 Progress: 60.4% Elapsed: 2:17:10 temperature: no ada_p: No Discriminator_loss: 0.0255912 Generator_loss: 0.82874 
+[INFO] 2020-12-06 10:58:48 > Step:  120800 Progress: 60.4% Elapsed: 2:36:40 temperature: no ada_p: No Discriminator_loss: 0.0239094 Generator_loss: 0.794561 
+[INFO] 2020-12-06 11:18:18 > Step:  120900 Progress: 60.5% Elapsed: 2:56:10 temperature: no ada_p: No Discriminator_loss: 0.0647466 Generator_loss: 0.559708 
+[INFO] 2020-12-06 11:37:52 > Step:  121000 Progress: 60.5% Elapsed: 3:15:44 temperature: no ada_p: No Discriminator_loss: 0.0391061 Generator_loss: 0.906159 
+[INFO] 2020-12-06 11:57:24 > Step:  121100 Progress: 60.6% Elapsed: 3:35:17 temperature: no ada_p: No Discriminator_loss: 0.0404945 Generator_loss: 0.55417 
+[INFO] 2020-12-06 12:16:57 > Step:  121200 Progress: 60.6% Elapsed: 3:54:49 temperature: no ada_p: No Discriminator_loss: 0.0222622 Generator_loss: 0.943413 
+[INFO] 2020-12-06 12:36:30 > Step:  121300 Progress: 60.7% Elapsed: 4:14:22 temperature: no ada_p: No Discriminator_loss: 0.0260408 Generator_loss: 0.700975 
+[INFO] 2020-12-06 12:56:00 > Step:  121400 Progress: 60.7% Elapsed: 4:33:52 temperature: no ada_p: No Discriminator_loss: 0.0186427 Generator_loss: 0.804202 
+[INFO] 2020-12-06 13:15:30 > Step:  121500 Progress: 60.8% Elapsed: 4:53:22 temperature: no ada_p: No Discriminator_loss: 0.0258103 Generator_loss: 0.797512 
+[INFO] 2020-12-06 13:35:04 > Step:  121600 Progress: 60.8% Elapsed: 5:12:56 temperature: no ada_p: No Discriminator_loss: 0.0360947 Generator_loss: 0.589775 
+[INFO] 2020-12-06 13:54:34 > Step:  121700 Progress: 60.9% Elapsed: 5:32:26 temperature: no ada_p: No Discriminator_loss: 0.0240834 Generator_loss: 0.823287 
+[INFO] 2020-12-06 14:14:05 > Step:  121800 Progress: 60.9% Elapsed: 5:51:57 temperature: no ada_p: No Discriminator_loss: 0.0375274 Generator_loss: 0.696587 
+[INFO] 2020-12-06 14:33:38 > Step:  121900 Progress: 61.0% Elapsed: 6:11:30 temperature: no ada_p: No Discriminator_loss: 0.0158029 Generator_loss: 0.860495 
+[INFO] 2020-12-06 14:53:07 > Step:  122000 Progress: 61.0% Elapsed: 6:31:00 temperature: no ada_p: No Discriminator_loss: 0.0330595 Generator_loss: 0.650086 
+[INFO] 2020-12-06 14:53:07 > Start Evaluation (122000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-06 14:53:07 > Calculating FID Score....
+[INFO] 2020-12-06 14:54:21 > Calculating Inception Score....
+[INFO] 2020-12-06 14:55:22 > Calculate F_beta Score....
+[INFO] 2020-12-06 14:57:54 > Calculate Accuracies....
+[INFO] 2020-12-06 14:58:53 > Calculate Accuracies....
+[INFO] 2020-12-06 14:59:43 > F_8 score (Step: 122000, Using valid images): 0.9810136046099085
+[INFO] 2020-12-06 14:59:43 > F_1/8 score (Step: 122000, Using valid images): 0.9795694196486167
+[INFO] 2020-12-06 14:59:43 > FID score (Step: 122000, Using valid moments): 10.220299841543465
+[INFO] 2020-12-06 14:59:43 > Inception score (Step: 122000, 50000 generated images): 70.73467254638672
+[INFO] 2020-12-06 14:59:43 > Best FID score (Step: 122000, Using valid moments): 10.220299841543465
+[INFO] 2020-12-06 14:59:57 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-06 15:19:26 > Step:  122100 Progress: 61.1% Elapsed: 6:57:19 temperature: no ada_p: No Discriminator_loss: 0.016858 Generator_loss: 0.866411 
+[INFO] 2020-12-06 15:38:58 > Step:  122200 Progress: 61.1% Elapsed: 7:16:50 temperature: no ada_p: No Discriminator_loss: 0.0140867 Generator_loss: 0.915756 
+[INFO] 2020-12-06 15:58:28 > Step:  122300 Progress: 61.2% Elapsed: 7:36:20 temperature: no ada_p: No Discriminator_loss: 0.0266238 Generator_loss: 0.715166 
+[INFO] 2020-12-06 16:17:58 > Step:  122400 Progress: 61.2% Elapsed: 7:55:50 temperature: no ada_p: No Discriminator_loss: 0.0366622 Generator_loss: 0.666534 
+[INFO] 2020-12-06 16:37:27 > Step:  122500 Progress: 61.3% Elapsed: 8:15:20 temperature: no ada_p: No Discriminator_loss: 0.0234607 Generator_loss: 0.6757 
+[INFO] 2020-12-06 16:57:01 > Step:  122600 Progress: 61.3% Elapsed: 8:34:54 temperature: no ada_p: No Discriminator_loss: 0.031737 Generator_loss: 0.64489 
+[INFO] 2020-12-06 17:16:31 > Step:  122700 Progress: 61.4% Elapsed: 8:54:24 temperature: no ada_p: No Discriminator_loss: 0.0307316 Generator_loss: 0.706161 
+[INFO] 2020-12-06 17:36:02 > Step:  122800 Progress: 61.4% Elapsed: 9:13:54 temperature: no ada_p: No Discriminator_loss: 0.0418363 Generator_loss: 0.622471 
+[INFO] 2020-12-06 17:55:36 > Step:  122900 Progress: 61.5% Elapsed: 9:33:28 temperature: no ada_p: No Discriminator_loss: 0.0328397 Generator_loss: 0.657195 
+[INFO] 2020-12-06 18:15:05 > Step:  123000 Progress: 61.5% Elapsed: 9:52:58 temperature: no ada_p: No Discriminator_loss: 0.0164205 Generator_loss: 0.905705 
+[INFO] 2020-12-06 18:34:34 > Step:  123100 Progress: 61.6% Elapsed: 10:12:26 temperature: no ada_p: No Discriminator_loss: 0.0346024 Generator_loss: 0.632125 
+[INFO] 2020-12-06 18:54:07 > Step:  123200 Progress: 61.6% Elapsed: 10:32:00 temperature: no ada_p: No Discriminator_loss: 0.0335759 Generator_loss: 0.626282 
+[INFO] 2020-12-06 19:13:37 > Step:  123300 Progress: 61.7% Elapsed: 10:51:29 temperature: no ada_p: No Discriminator_loss: 0.0222208 Generator_loss: 0.89447 
+[INFO] 2020-12-06 19:33:07 > Step:  123400 Progress: 61.7% Elapsed: 11:10:59 temperature: no ada_p: No Discriminator_loss: 0.027435 Generator_loss: 0.67513 
+[INFO] 2020-12-06 19:52:41 > Step:  123500 Progress: 61.8% Elapsed: 11:30:34 temperature: no ada_p: No Discriminator_loss: 0.0335691 Generator_loss: 0.651082 
+[INFO] 2020-12-06 20:12:14 > Step:  123600 Progress: 61.8% Elapsed: 11:50:06 temperature: no ada_p: No Discriminator_loss: 0.022923 Generator_loss: 0.773044 
+[INFO] 2020-12-06 20:31:49 > Step:  123700 Progress: 61.9% Elapsed: 12:09:41 temperature: no ada_p: No Discriminator_loss: 0.0245782 Generator_loss: 0.747158 
+[INFO] 2020-12-06 20:51:24 > Step:  123800 Progress: 61.9% Elapsed: 12:29:16 temperature: no ada_p: No Discriminator_loss: 0.0253683 Generator_loss: 0.744467 
+[INFO] 2020-12-06 21:10:54 > Step:  123900 Progress: 62.0% Elapsed: 12:48:46 temperature: no ada_p: No Discriminator_loss: 0.0194918 Generator_loss: 0.735131 
+[INFO] 2020-12-06 21:30:24 > Step:  124000 Progress: 62.0% Elapsed: 13:08:16 temperature: no ada_p: No Discriminator_loss: 0.0159261 Generator_loss: 0.833499 
+[INFO] 2020-12-06 21:30:24 > Start Evaluation (124000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-06 21:30:24 > Calculating FID Score....
+[INFO] 2020-12-06 21:31:35 > Calculating Inception Score....
+[INFO] 2020-12-06 21:32:36 > Calculate F_beta Score....
+[INFO] 2020-12-06 21:35:22 > Calculate Accuracies....
+[INFO] 2020-12-06 21:36:21 > Calculate Accuracies....
+[INFO] 2020-12-06 21:37:42 > F_8 score (Step: 124000, Using valid images): 0.9851971719092437
+[INFO] 2020-12-06 21:37:42 > F_1/8 score (Step: 124000, Using valid images): 0.9769238758814053
+[INFO] 2020-12-06 21:37:42 > FID score (Step: 124000, Using valid moments): 10.107192257252905
+[INFO] 2020-12-06 21:37:42 > Inception score (Step: 124000, 50000 generated images): 71.84070587158203
+[INFO] 2020-12-06 21:37:42 > Best FID score (Step: 124000, Using valid moments): 10.107192257252905
+[INFO] 2020-12-06 21:37:56 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-06 21:57:31 > Step:  124100 Progress: 62.1% Elapsed: 13:35:23 temperature: no ada_p: No Discriminator_loss: 0.0353978 Generator_loss: 0.720537 
+[INFO] 2020-12-06 22:17:04 > Step:  124200 Progress: 62.1% Elapsed: 13:54:56 temperature: no ada_p: No Discriminator_loss: 0.0357981 Generator_loss: 0.611242 
+[INFO] 2020-12-06 22:36:35 > Step:  124300 Progress: 62.2% Elapsed: 14:14:27 temperature: no ada_p: No Discriminator_loss: 0.0653942 Generator_loss: 0.623147 
+[INFO] 2020-12-06 22:56:09 > Step:  124400 Progress: 62.2% Elapsed: 14:34:02 temperature: no ada_p: No Discriminator_loss: 0.0553457 Generator_loss: 0.665758 
+[INFO] 2020-12-06 23:15:43 > Step:  124500 Progress: 62.3% Elapsed: 14:53:35 temperature: no ada_p: No Discriminator_loss: 0.0240113 Generator_loss: 0.619956 
+[INFO] 2020-12-06 23:35:15 > Step:  124600 Progress: 62.3% Elapsed: 15:13:08 temperature: no ada_p: No Discriminator_loss: 0.0199144 Generator_loss: 0.8516 
+[INFO] 2020-12-06 23:54:51 > Step:  124700 Progress: 62.4% Elapsed: 15:32:44 temperature: no ada_p: No Discriminator_loss: 0.0353967 Generator_loss: 0.631223 
+[INFO] 2020-12-07 00:14:25 > Step:  124800 Progress: 62.4% Elapsed: 15:52:17 temperature: no ada_p: No Discriminator_loss: 0.0286278 Generator_loss: 0.736635 
+[INFO] 2020-12-07 00:33:59 > Step:  124900 Progress: 62.5% Elapsed: 16:11:52 temperature: no ada_p: No Discriminator_loss: 0.0364962 Generator_loss: 0.589537 
+[INFO] 2020-12-07 00:53:33 > Step:  125000 Progress: 62.5% Elapsed: 16:31:25 temperature: no ada_p: No Discriminator_loss: 0.0282817 Generator_loss: 0.659897 
+[INFO] 2020-12-07 01:13:12 > Step:  125100 Progress: 62.5% Elapsed: 16:51:04 temperature: no ada_p: No Discriminator_loss: 0.0217582 Generator_loss: 0.76944 
+[INFO] 2020-12-07 01:32:45 > Step:  125200 Progress: 62.6% Elapsed: 17:10:38 temperature: no ada_p: No Discriminator_loss: 0.0191219 Generator_loss: 0.783774 
+[INFO] 2020-12-07 01:52:20 > Step:  125300 Progress: 62.6% Elapsed: 17:30:12 temperature: no ada_p: No Discriminator_loss: 0.0587702 Generator_loss: 0.521574 
+[INFO] 2020-12-07 02:11:56 > Step:  125400 Progress: 62.7% Elapsed: 17:49:48 temperature: no ada_p: No Discriminator_loss: 0.0247753 Generator_loss: 0.717535 
+[INFO] 2020-12-07 02:31:26 > Step:  125500 Progress: 62.7% Elapsed: 18:09:18 temperature: no ada_p: No Discriminator_loss: 0.0199377 Generator_loss: 0.80113 
+[INFO] 2020-12-07 02:50:55 > Step:  125600 Progress: 62.8% Elapsed: 18:28:47 temperature: no ada_p: No Discriminator_loss: 0.0162325 Generator_loss: 0.836847 
+[INFO] 2020-12-07 03:10:30 > Step:  125700 Progress: 62.8% Elapsed: 18:48:23 temperature: no ada_p: No Discriminator_loss: 0.0210417 Generator_loss: 0.887859 
+[INFO] 2020-12-07 03:30:04 > Step:  125800 Progress: 62.9% Elapsed: 19:07:57 temperature: no ada_p: No Discriminator_loss: 0.0244144 Generator_loss: 0.767223 
+[INFO] 2020-12-07 03:49:37 > Step:  125900 Progress: 62.9% Elapsed: 19:27:29 temperature: no ada_p: No Discriminator_loss: 0.061805 Generator_loss: 0.562058 
+[INFO] 2020-12-07 04:09:13 > Step:  126000 Progress: 63.0% Elapsed: 19:47:05 temperature: no ada_p: No Discriminator_loss: 0.0324291 Generator_loss: 0.679296 
+[INFO] 2020-12-07 04:09:13 > Start Evaluation (126000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-07 04:09:13 > Calculating FID Score....
+[INFO] 2020-12-07 04:10:24 > Calculating Inception Score....
+[INFO] 2020-12-07 04:11:25 > Calculate F_beta Score....
+[INFO] 2020-12-07 04:20:11 > Calculate Accuracies....
+[INFO] 2020-12-07 04:21:10 > Calculate Accuracies....
+[INFO] 2020-12-07 04:22:29 > F_8 score (Step: 126000, Using valid images): 0.9807726301909349
+[INFO] 2020-12-07 04:22:29 > F_1/8 score (Step: 126000, Using valid images): 0.9776328897973582
+[INFO] 2020-12-07 04:22:29 > FID score (Step: 126000, Using valid moments): 9.975169842508762
+[INFO] 2020-12-07 04:22:29 > Inception score (Step: 126000, 50000 generated images): 72.03771209716797
+[INFO] 2020-12-07 04:22:29 > Best FID score (Step: 126000, Using valid moments): 9.975169842508762
+[INFO] 2020-12-07 04:22:43 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-07 04:42:15 > Step:  126100 Progress: 63.0% Elapsed: 20:20:08 temperature: no ada_p: No Discriminator_loss: 0.0213356 Generator_loss: 0.924273 
+[INFO] 2020-12-07 05:01:45 > Step:  126200 Progress: 63.1% Elapsed: 20:39:38 temperature: no ada_p: No Discriminator_loss: 0.0403182 Generator_loss: 0.580194 
+[INFO] 2020-12-07 05:21:20 > Step:  126300 Progress: 63.1% Elapsed: 20:59:12 temperature: no ada_p: No Discriminator_loss: 0.0431253 Generator_loss: 0.62314 
+[INFO] 2020-12-07 05:40:54 > Step:  126400 Progress: 63.2% Elapsed: 21:18:46 temperature: no ada_p: No Discriminator_loss: 0.0193068 Generator_loss: 0.822593 
+[INFO] 2020-12-07 06:00:27 > Step:  126500 Progress: 63.2% Elapsed: 21:38:20 temperature: no ada_p: No Discriminator_loss: 0.0354954 Generator_loss: 0.723032 
+[INFO] 2020-12-07 06:20:03 > Step:  126600 Progress: 63.3% Elapsed: 21:57:55 temperature: no ada_p: No Discriminator_loss: 0.0273895 Generator_loss: 0.750711 
+[INFO] 2020-12-07 06:39:36 > Step:  126700 Progress: 63.3% Elapsed: 22:17:29 temperature: no ada_p: No Discriminator_loss: 0.0147475 Generator_loss: 0.850589 
+[INFO] 2020-12-07 06:59:09 > Step:  126800 Progress: 63.4% Elapsed: 22:37:01 temperature: no ada_p: No Discriminator_loss: 0.0627503 Generator_loss: 0.536649 
+[INFO] 2020-12-07 07:18:45 > Step:  126900 Progress: 63.4% Elapsed: 22:56:37 temperature: no ada_p: No Discriminator_loss: 0.0216153 Generator_loss: 0.75987 
+[INFO] 2020-12-07 07:38:17 > Step:  127000 Progress: 63.5% Elapsed: 23:16:10 temperature: no ada_p: No Discriminator_loss: 0.0145324 Generator_loss: 0.828335 
+[INFO] 2020-12-07 07:57:50 > Step:  127100 Progress: 63.5% Elapsed: 23:35:42 temperature: no ada_p: No Discriminator_loss: 0.138822 Generator_loss: 0.275829 
+[INFO] 2020-12-07 08:17:27 > Step:  127200 Progress: 63.6% Elapsed: 23:55:19 temperature: no ada_p: No Discriminator_loss: 0.0221426 Generator_loss: 0.807197 
+[INFO] 2020-12-07 08:37:05 > Step:  127300 Progress: 63.6% Elapsed: 1 day, 0:14:57 temperature: no ada_p: No Discriminator_loss: 0.0212135 Generator_loss: 0.808842 
+[INFO] 2020-12-07 08:56:41 > Step:  127400 Progress: 63.7% Elapsed: 1 day, 0:34:33 temperature: no ada_p: No Discriminator_loss: 0.0130553 Generator_loss: 0.861585 
+[INFO] 2020-12-07 09:16:17 > Step:  127500 Progress: 63.7% Elapsed: 1 day, 0:54:09 temperature: no ada_p: No Discriminator_loss: 0.0187529 Generator_loss: 0.913379 
+[INFO] 2020-12-07 09:35:54 > Step:  127600 Progress: 63.8% Elapsed: 1 day, 1:13:47 temperature: no ada_p: No Discriminator_loss: 0.0205221 Generator_loss: 0.837284 
+[INFO] 2020-12-07 09:55:28 > Step:  127700 Progress: 63.8% Elapsed: 1 day, 1:33:20 temperature: no ada_p: No Discriminator_loss: 0.0208065 Generator_loss: 0.827387 
+[INFO] 2020-12-07 10:15:00 > Step:  127800 Progress: 63.9% Elapsed: 1 day, 1:52:52 temperature: no ada_p: No Discriminator_loss: 0.0233629 Generator_loss: 0.745775 
+[INFO] 2020-12-07 10:34:41 > Step:  127900 Progress: 63.9% Elapsed: 1 day, 2:12:33 temperature: no ada_p: No Discriminator_loss: 0.0186295 Generator_loss: 0.816335 
+[INFO] 2020-12-07 10:54:17 > Step:  128000 Progress: 64.0% Elapsed: 1 day, 2:32:09 temperature: no ada_p: No Discriminator_loss: 0.023115 Generator_loss: 0.776134 
+[INFO] 2020-12-07 10:54:17 > Start Evaluation (128000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-07 10:54:17 > Calculating FID Score....
+[INFO] 2020-12-07 10:55:28 > Calculating Inception Score....
+[INFO] 2020-12-07 10:56:29 > Calculate F_beta Score....
+[INFO] 2020-12-07 10:59:10 > Calculate Accuracies....
+[INFO] 2020-12-07 11:00:09 > Calculate Accuracies....
+[INFO] 2020-12-07 11:01:26 > F_8 score (Step: 128000, Using valid images): 0.9827210838056011
+[INFO] 2020-12-07 11:01:26 > F_1/8 score (Step: 128000, Using valid images): 0.977931825271028
+[INFO] 2020-12-07 11:01:26 > FID score (Step: 128000, Using valid moments): 10.079530610150755
+[INFO] 2020-12-07 11:01:26 > Inception score (Step: 128000, 50000 generated images): 72.544677734375
+[INFO] 2020-12-07 11:01:26 > Best FID score (Step: 126000, Using valid moments): 9.975169842508762
+[INFO] 2020-12-07 11:01:33 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-07 11:21:08 > Step:  128100 Progress: 64.0% Elapsed: 1 day, 2:59:00 temperature: no ada_p: No Discriminator_loss: 0.0193847 Generator_loss: 0.82013 
+[INFO] 2020-12-07 11:40:44 > Step:  128200 Progress: 64.1% Elapsed: 1 day, 3:18:36 temperature: no ada_p: No Discriminator_loss: 0.0212732 Generator_loss: 0.741153 
+[INFO] 2020-12-07 12:00:18 > Step:  128300 Progress: 64.1% Elapsed: 1 day, 3:38:10 temperature: no ada_p: No Discriminator_loss: 0.0168545 Generator_loss: 0.882475 
+[INFO] 2020-12-07 12:19:50 > Step:  128400 Progress: 64.2% Elapsed: 1 day, 3:57:43 temperature: no ada_p: No Discriminator_loss: 0.0302574 Generator_loss: 0.777762 
+[INFO] 2020-12-07 12:39:29 > Step:  128500 Progress: 64.2% Elapsed: 1 day, 4:17:21 temperature: no ada_p: No Discriminator_loss: 0.0134913 Generator_loss: 0.817851 
+[INFO] 2020-12-07 12:59:03 > Step:  128600 Progress: 64.3% Elapsed: 1 day, 4:36:56 temperature: no ada_p: No Discriminator_loss: 0.0214161 Generator_loss: 0.746243 
+[INFO] 2020-12-07 13:18:37 > Step:  128700 Progress: 64.3% Elapsed: 1 day, 4:56:30 temperature: no ada_p: No Discriminator_loss: 0.0487671 Generator_loss: 0.633278 
+[INFO] 2020-12-07 13:38:13 > Step:  128800 Progress: 64.4% Elapsed: 1 day, 5:16:05 temperature: no ada_p: No Discriminator_loss: 0.0111718 Generator_loss: 0.921297 
+[INFO] 2020-12-07 13:57:46 > Step:  128900 Progress: 64.5% Elapsed: 1 day, 5:35:38 temperature: no ada_p: No Discriminator_loss: 0.0234365 Generator_loss: 0.809347 
+[INFO] 2020-12-07 14:17:18 > Step:  129000 Progress: 64.5% Elapsed: 1 day, 5:55:10 temperature: no ada_p: No Discriminator_loss: 0.0465954 Generator_loss: 0.513113 
+[INFO] 2020-12-07 14:36:52 > Step:  129100 Progress: 64.5% Elapsed: 1 day, 6:14:44 temperature: no ada_p: No Discriminator_loss: 0.0159464 Generator_loss: 0.797299 
+[INFO] 2020-12-07 14:56:24 > Step:  129200 Progress: 64.6% Elapsed: 1 day, 6:34:17 temperature: no ada_p: No Discriminator_loss: 0.0208618 Generator_loss: 0.8488 
+[INFO] 2020-12-07 15:15:55 > Step:  129300 Progress: 64.6% Elapsed: 1 day, 6:53:48 temperature: no ada_p: No Discriminator_loss: 0.0272752 Generator_loss: 0.703071 
+[INFO] 2020-12-07 15:35:29 > Step:  129400 Progress: 64.7% Elapsed: 1 day, 7:13:22 temperature: no ada_p: No Discriminator_loss: 0.0285291 Generator_loss: 0.780286 
+[INFO] 2020-12-07 15:55:01 > Step:  129500 Progress: 64.8% Elapsed: 1 day, 7:32:54 temperature: no ada_p: No Discriminator_loss: 0.0170906 Generator_loss: 0.857067 
+[INFO] 2020-12-07 16:14:34 > Step:  129600 Progress: 64.8% Elapsed: 1 day, 7:52:26 temperature: no ada_p: No Discriminator_loss: 0.0203782 Generator_loss: 0.931074 
+[INFO] 2020-12-07 16:34:09 > Step:  129700 Progress: 64.8% Elapsed: 1 day, 8:12:01 temperature: no ada_p: No Discriminator_loss: 0.0629205 Generator_loss: 0.521734 
+[INFO] 2020-12-07 16:53:41 > Step:  129800 Progress: 64.9% Elapsed: 1 day, 8:31:33 temperature: no ada_p: No Discriminator_loss: 0.0816445 Generator_loss: 0.590548 
+[INFO] 2020-12-07 17:13:13 > Step:  129900 Progress: 65.0% Elapsed: 1 day, 8:51:05 temperature: no ada_p: No Discriminator_loss: 0.044687 Generator_loss: 0.612198 
+[INFO] 2020-12-07 17:32:45 > Step:  130000 Progress: 65.0% Elapsed: 1 day, 9:10:37 temperature: no ada_p: No Discriminator_loss: 0.0481462 Generator_loss: 0.67232 
+[INFO] 2020-12-07 17:32:45 > Start Evaluation (130000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-07 17:32:45 > Calculating FID Score....
+[INFO] 2020-12-07 17:33:56 > Calculating Inception Score....
+[INFO] 2020-12-07 17:34:57 > Calculate F_beta Score....
+[INFO] 2020-12-07 17:38:37 > Calculate Accuracies....
+[INFO] 2020-12-07 17:39:36 > Calculate Accuracies....
+[INFO] 2020-12-07 17:40:53 > F_8 score (Step: 130000, Using valid images): 0.9818147361757728
+[INFO] 2020-12-07 17:40:53 > F_1/8 score (Step: 130000, Using valid images): 0.9791508899295708
+[INFO] 2020-12-07 17:40:53 > FID score (Step: 130000, Using valid moments): 10.017301211643542
+[INFO] 2020-12-07 17:40:53 > Inception score (Step: 130000, 50000 generated images): 73.32610321044922
+[INFO] 2020-12-07 17:40:53 > Best FID score (Step: 126000, Using valid moments): 9.975169842508762
+[INFO] 2020-12-07 17:41:00 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-07 18:00:38 > Step:  130100 Progress: 65.0% Elapsed: 1 day, 9:38:30 temperature: no ada_p: No Discriminator_loss: 0.0301 Generator_loss: 0.681608 
+[INFO] 2020-12-07 18:20:10 > Step:  130200 Progress: 65.1% Elapsed: 1 day, 9:58:02 temperature: no ada_p: No Discriminator_loss: 0.0214807 Generator_loss: 0.741619 
+[INFO] 2020-12-07 18:39:42 > Step:  130300 Progress: 65.1% Elapsed: 1 day, 10:17:34 temperature: no ada_p: No Discriminator_loss: 0.0384143 Generator_loss: 0.696392 
+[INFO] 2020-12-07 18:59:17 > Step:  130400 Progress: 65.2% Elapsed: 1 day, 10:37:09 temperature: no ada_p: No Discriminator_loss: 0.020291 Generator_loss: 0.828293 
+[INFO] 2020-12-07 19:18:48 > Step:  130500 Progress: 65.2% Elapsed: 1 day, 10:56:40 temperature: no ada_p: No Discriminator_loss: 0.0166336 Generator_loss: 0.850746 
+[INFO] 2020-12-07 19:38:19 > Step:  130600 Progress: 65.3% Elapsed: 1 day, 11:16:12 temperature: no ada_p: No Discriminator_loss: 0.0272595 Generator_loss: 0.720018 
+[INFO] 2020-12-07 19:57:55 > Step:  130700 Progress: 65.3% Elapsed: 1 day, 11:35:47 temperature: no ada_p: No Discriminator_loss: 0.0235333 Generator_loss: 0.950531 
+[INFO] 2020-12-07 20:17:27 > Step:  130800 Progress: 65.4% Elapsed: 1 day, 11:55:19 temperature: no ada_p: No Discriminator_loss: 0.0273318 Generator_loss: 0.722736 
+[INFO] 2020-12-07 20:36:59 > Step:  130900 Progress: 65.5% Elapsed: 1 day, 12:14:51 temperature: no ada_p: No Discriminator_loss: 0.0197885 Generator_loss: 0.825316 
+[INFO] 2020-12-07 20:56:35 > Step:  131000 Progress: 65.5% Elapsed: 1 day, 12:34:28 temperature: no ada_p: No Discriminator_loss: 0.0216134 Generator_loss: 0.722933 
+[INFO] 2020-12-07 21:16:09 > Step:  131100 Progress: 65.5% Elapsed: 1 day, 12:54:02 temperature: no ada_p: No Discriminator_loss: 0.0221428 Generator_loss: 0.786056 
+[INFO] 2020-12-07 21:35:42 > Step:  131200 Progress: 65.6% Elapsed: 1 day, 13:13:34 temperature: no ada_p: No Discriminator_loss: 0.0255303 Generator_loss: 0.803387 
+[INFO] 2020-12-07 21:55:19 > Step:  131300 Progress: 65.6% Elapsed: 1 day, 13:33:11 temperature: no ada_p: No Discriminator_loss: 0.0166155 Generator_loss: 0.881538 
+[INFO] 2020-12-07 22:14:51 > Step:  131400 Progress: 65.7% Elapsed: 1 day, 13:52:43 temperature: no ada_p: No Discriminator_loss: 0.0234559 Generator_loss: 0.764171 
+[INFO] 2020-12-07 22:34:21 > Step:  131500 Progress: 65.8% Elapsed: 1 day, 14:12:14 temperature: no ada_p: No Discriminator_loss: 0.0214779 Generator_loss: 0.834513 
+[INFO] 2020-12-07 22:53:57 > Step:  131600 Progress: 65.8% Elapsed: 1 day, 14:31:49 temperature: no ada_p: No Discriminator_loss: 0.0167422 Generator_loss: 0.860531 
+[INFO] 2020-12-07 23:13:29 > Step:  131700 Progress: 65.8% Elapsed: 1 day, 14:51:21 temperature: no ada_p: No Discriminator_loss: 0.0355549 Generator_loss: 0.744463 
+[INFO] 2020-12-07 23:33:02 > Step:  131800 Progress: 65.9% Elapsed: 1 day, 15:10:54 temperature: no ada_p: No Discriminator_loss: 0.0438651 Generator_loss: 0.611383 
+[INFO] 2020-12-07 23:52:38 > Step:  131900 Progress: 66.0% Elapsed: 1 day, 15:30:30 temperature: no ada_p: No Discriminator_loss: 0.0423212 Generator_loss: 0.612864 
+[INFO] 2020-12-08 00:12:10 > Step:  132000 Progress: 66.0% Elapsed: 1 day, 15:50:03 temperature: no ada_p: No Discriminator_loss: 0.0265984 Generator_loss: 0.757787 
+[INFO] 2020-12-08 00:12:10 > Start Evaluation (132000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-08 00:12:10 > Calculating FID Score....
+[INFO] 2020-12-08 00:13:22 > Calculating Inception Score....
+[INFO] 2020-12-08 00:14:23 > Calculate F_beta Score....
+[INFO] 2020-12-08 00:17:06 > Calculate Accuracies....
+[INFO] 2020-12-08 00:18:06 > Calculate Accuracies....
+[INFO] 2020-12-08 00:19:25 > F_8 score (Step: 132000, Using valid images): 0.9825205038678655
+[INFO] 2020-12-08 00:19:25 > F_1/8 score (Step: 132000, Using valid images): 0.9778080087864216
+[INFO] 2020-12-08 00:19:25 > FID score (Step: 132000, Using valid moments): 9.706061059672493
+[INFO] 2020-12-08 00:19:25 > Inception score (Step: 132000, 50000 generated images): 74.35037994384766
+[INFO] 2020-12-08 00:19:25 > Best FID score (Step: 132000, Using valid moments): 9.706061059672493
+[INFO] 2020-12-08 00:19:38 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-08 00:39:10 > Step:  132100 Progress: 66.0% Elapsed: 1 day, 16:17:02 temperature: no ada_p: No Discriminator_loss: 0.0186249 Generator_loss: 0.814599 
+[INFO] 2020-12-08 00:58:46 > Step:  132200 Progress: 66.1% Elapsed: 1 day, 16:36:38 temperature: no ada_p: No Discriminator_loss: 0.0183171 Generator_loss: 0.819464 
+[INFO] 2020-12-08 01:18:23 > Step:  132300 Progress: 66.1% Elapsed: 1 day, 16:56:15 temperature: no ada_p: No Discriminator_loss: 0.0185666 Generator_loss: 0.799637 
+[INFO] 2020-12-08 01:38:00 > Step:  132400 Progress: 66.2% Elapsed: 1 day, 17:15:52 temperature: no ada_p: No Discriminator_loss: 0.0204192 Generator_loss: 0.715848 
+[INFO] 2020-12-08 01:57:37 > Step:  132500 Progress: 66.2% Elapsed: 1 day, 17:35:30 temperature: no ada_p: No Discriminator_loss: 0.0378137 Generator_loss: 0.763485 
+[INFO] 2020-12-08 02:17:16 > Step:  132600 Progress: 66.3% Elapsed: 1 day, 17:55:08 temperature: no ada_p: No Discriminator_loss: 0.191707 Generator_loss: 0.210348 
+[INFO] 2020-12-08 02:36:48 > Step:  132700 Progress: 66.3% Elapsed: 1 day, 18:14:40 temperature: no ada_p: No Discriminator_loss: 0.0185891 Generator_loss: 0.707324 
+[INFO] 2020-12-08 02:56:21 > Step:  132800 Progress: 66.4% Elapsed: 1 day, 18:34:13 temperature: no ada_p: No Discriminator_loss: 0.0376865 Generator_loss: 0.597965 
+[INFO] 2020-12-08 03:15:59 > Step:  132900 Progress: 66.5% Elapsed: 1 day, 18:53:51 temperature: no ada_p: No Discriminator_loss: 0.0142409 Generator_loss: 0.808951 
+[INFO] 2020-12-08 03:35:33 > Step:  133000 Progress: 66.5% Elapsed: 1 day, 19:13:25 temperature: no ada_p: No Discriminator_loss: 0.0217373 Generator_loss: 0.886478 
+[INFO] 2020-12-08 03:55:07 > Step:  133100 Progress: 66.5% Elapsed: 1 day, 19:32:59 temperature: no ada_p: No Discriminator_loss: 0.0193916 Generator_loss: 0.827473 
+[INFO] 2020-12-08 04:14:46 > Step:  133200 Progress: 66.6% Elapsed: 1 day, 19:52:38 temperature: no ada_p: No Discriminator_loss: 0.0200014 Generator_loss: 0.785388 
+[INFO] 2020-12-08 04:34:20 > Step:  133300 Progress: 66.6% Elapsed: 1 day, 20:12:12 temperature: no ada_p: No Discriminator_loss: 0.0459811 Generator_loss: 0.568283 
+[INFO] 2020-12-08 04:53:55 > Step:  133400 Progress: 66.7% Elapsed: 1 day, 20:31:47 temperature: no ada_p: No Discriminator_loss: 0.0213073 Generator_loss: 0.893188 
+[INFO] 2020-12-08 05:13:35 > Step:  133500 Progress: 66.8% Elapsed: 1 day, 20:51:28 temperature: no ada_p: No Discriminator_loss: 0.0198274 Generator_loss: 0.765921 
+[INFO] 2020-12-08 05:33:10 > Step:  133600 Progress: 66.8% Elapsed: 1 day, 21:11:02 temperature: no ada_p: No Discriminator_loss: 0.0169724 Generator_loss: 0.905925 
+[INFO] 2020-12-08 05:52:43 > Step:  133700 Progress: 66.8% Elapsed: 1 day, 21:30:35 temperature: no ada_p: No Discriminator_loss: 0.034252 Generator_loss: 0.776337 
+[INFO] 2020-12-08 06:12:21 > Step:  133800 Progress: 66.9% Elapsed: 1 day, 21:50:13 temperature: no ada_p: No Discriminator_loss: 0.0159361 Generator_loss: 0.851859 
+[INFO] 2020-12-08 06:31:56 > Step:  133900 Progress: 67.0% Elapsed: 1 day, 22:09:48 temperature: no ada_p: No Discriminator_loss: 0.014319 Generator_loss: 0.832216 
+[INFO] 2020-12-08 06:51:32 > Step:  134000 Progress: 67.0% Elapsed: 1 day, 22:29:24 temperature: no ada_p: No Discriminator_loss: 0.0578523 Generator_loss: 0.626828 
+[INFO] 2020-12-08 06:51:32 > Start Evaluation (134000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-08 06:51:32 > Calculating FID Score....
+[INFO] 2020-12-08 06:52:43 > Calculating Inception Score....
+[INFO] 2020-12-08 06:53:44 > Calculate F_beta Score....
+[INFO] 2020-12-08 06:56:59 > Calculate Accuracies....
+[INFO] 2020-12-08 06:57:59 > Calculate Accuracies....
+[INFO] 2020-12-08 06:59:15 > F_8 score (Step: 134000, Using valid images): 0.9798059970959616
+[INFO] 2020-12-08 06:59:15 > F_1/8 score (Step: 134000, Using valid images): 0.9786958652678776
+[INFO] 2020-12-08 06:59:15 > FID score (Step: 134000, Using valid moments): 9.698182466499532
+[INFO] 2020-12-08 06:59:15 > Inception score (Step: 134000, 50000 generated images): 74.5545883178711
+[INFO] 2020-12-08 06:59:15 > Best FID score (Step: 134000, Using valid moments): 9.698182466499532
+[INFO] 2020-12-08 06:59:29 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-08 07:19:08 > Step:  134100 Progress: 67.0% Elapsed: 1 day, 22:57:00 temperature: no ada_p: No Discriminator_loss: 0.0192525 Generator_loss: 0.817404 
+[INFO] 2020-12-08 07:38:43 > Step:  134200 Progress: 67.1% Elapsed: 1 day, 23:16:35 temperature: no ada_p: No Discriminator_loss: 0.0349052 Generator_loss: 0.675114 
+[INFO] 2020-12-08 07:58:15 > Step:  134300 Progress: 67.2% Elapsed: 1 day, 23:36:08 temperature: no ada_p: No Discriminator_loss: 0.0303539 Generator_loss: 0.716409 
+[INFO] 2020-12-08 08:17:51 > Step:  134400 Progress: 67.2% Elapsed: 1 day, 23:55:43 temperature: no ada_p: No Discriminator_loss: 0.020958 Generator_loss: 0.747309 
+[INFO] 2020-12-08 08:37:23 > Step:  134500 Progress: 67.2% Elapsed: 2 days, 0:15:15 temperature: no ada_p: No Discriminator_loss: 0.0693663 Generator_loss: 0.477231 
+[INFO] 2020-12-08 08:56:55 > Step:  134600 Progress: 67.3% Elapsed: 2 days, 0:34:48 temperature: no ada_p: No Discriminator_loss: 0.0151766 Generator_loss: 0.867225 
+[INFO] 2020-12-08 09:16:31 > Step:  134700 Progress: 67.3% Elapsed: 2 days, 0:54:24 temperature: no ada_p: No Discriminator_loss: 0.0198064 Generator_loss: 0.809778 
+[INFO] 2020-12-08 09:36:04 > Step:  134800 Progress: 67.4% Elapsed: 2 days, 1:13:56 temperature: no ada_p: No Discriminator_loss: 0.0176733 Generator_loss: 0.805939 
+[INFO] 2020-12-08 09:55:37 > Step:  134900 Progress: 67.5% Elapsed: 2 days, 1:33:30 temperature: no ada_p: No Discriminator_loss: 0.0320222 Generator_loss: 0.639238 
+[INFO] 2020-12-08 10:15:10 > Step:  135000 Progress: 67.5% Elapsed: 2 days, 1:53:02 temperature: no ada_p: No Discriminator_loss: 0.0381888 Generator_loss: 0.706691 
+[INFO] 2020-12-08 10:34:47 > Step:  135100 Progress: 67.5% Elapsed: 2 days, 2:12:40 temperature: no ada_p: No Discriminator_loss: 0.0130895 Generator_loss: 0.942906 
+[INFO] 2020-12-08 10:54:19 > Step:  135200 Progress: 67.6% Elapsed: 2 days, 2:32:12 temperature: no ada_p: No Discriminator_loss: 0.0214964 Generator_loss: 0.809079 
+[INFO] 2020-12-08 11:13:52 > Step:  135300 Progress: 67.7% Elapsed: 2 days, 2:51:44 temperature: no ada_p: No Discriminator_loss: 0.0218805 Generator_loss: 0.732098 
+[INFO] 2020-12-08 11:33:29 > Step:  135400 Progress: 67.7% Elapsed: 2 days, 3:11:21 temperature: no ada_p: No Discriminator_loss: 0.0623019 Generator_loss: 0.560201 
+[INFO] 2020-12-08 11:53:03 > Step:  135500 Progress: 67.8% Elapsed: 2 days, 3:30:55 temperature: no ada_p: No Discriminator_loss: 0.0265664 Generator_loss: 0.739105 
+[INFO] 2020-12-08 12:12:36 > Step:  135600 Progress: 67.8% Elapsed: 2 days, 3:50:29 temperature: no ada_p: No Discriminator_loss: 0.0183292 Generator_loss: 0.872955 
+[INFO] 2020-12-08 12:32:13 > Step:  135700 Progress: 67.8% Elapsed: 2 days, 4:10:05 temperature: no ada_p: No Discriminator_loss: 0.0157114 Generator_loss: 0.895334 
+[INFO] 2020-12-08 12:51:45 > Step:  135800 Progress: 67.9% Elapsed: 2 days, 4:29:38 temperature: no ada_p: No Discriminator_loss: 0.032712 Generator_loss: 0.715016 
+[INFO] 2020-12-08 13:11:19 > Step:  135900 Progress: 68.0% Elapsed: 2 days, 4:49:11 temperature: no ada_p: No Discriminator_loss: 0.0238542 Generator_loss: 0.77732 
+[INFO] 2020-12-08 13:30:55 > Step:  136000 Progress: 68.0% Elapsed: 2 days, 5:08:47 temperature: no ada_p: No Discriminator_loss: 0.0253773 Generator_loss: 0.734112 
+[INFO] 2020-12-08 13:30:55 > Start Evaluation (136000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-08 13:30:55 > Calculating FID Score....
+[INFO] 2020-12-08 13:32:06 > Calculating Inception Score....
+[INFO] 2020-12-08 13:33:07 > Calculate F_beta Score....
+[INFO] 2020-12-08 13:37:02 > Calculate Accuracies....
+[INFO] 2020-12-08 13:38:01 > Calculate Accuracies....
+[INFO] 2020-12-08 13:39:22 > F_8 score (Step: 136000, Using valid images): 0.9826566803938039
+[INFO] 2020-12-08 13:39:22 > F_1/8 score (Step: 136000, Using valid images): 0.980401755839653
+[INFO] 2020-12-08 13:39:22 > FID score (Step: 136000, Using valid moments): 9.69048894465783
+[INFO] 2020-12-08 13:39:22 > Inception score (Step: 136000, 50000 generated images): 74.30313110351562
+[INFO] 2020-12-08 13:39:22 > Best FID score (Step: 136000, Using valid moments): 9.69048894465783
+[INFO] 2020-12-08 13:39:36 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-08 13:59:10 > Step:  136100 Progress: 68.0% Elapsed: 2 days, 5:37:03 temperature: no ada_p: No Discriminator_loss: 0.0258168 Generator_loss: 0.74858 
+[INFO] 2020-12-08 14:18:45 > Step:  136200 Progress: 68.1% Elapsed: 2 days, 5:56:37 temperature: no ada_p: No Discriminator_loss: 0.018686 Generator_loss: 0.823139 
+[INFO] 2020-12-08 14:38:24 > Step:  136300 Progress: 68.2% Elapsed: 2 days, 6:16:16 temperature: no ada_p: No Discriminator_loss: 0.0200063 Generator_loss: 0.950184 
+[INFO] 2020-12-08 14:57:59 > Step:  136400 Progress: 68.2% Elapsed: 2 days, 6:35:52 temperature: no ada_p: No Discriminator_loss: 0.0222455 Generator_loss: 0.768626 
+[INFO] 2020-12-08 15:17:35 > Step:  136500 Progress: 68.2% Elapsed: 2 days, 6:55:28 temperature: no ada_p: No Discriminator_loss: 0.029956 Generator_loss: 0.699408 
+[INFO] 2020-12-08 15:37:16 > Step:  136600 Progress: 68.3% Elapsed: 2 days, 7:15:08 temperature: no ada_p: No Discriminator_loss: 0.0185525 Generator_loss: 0.947336 
+[INFO] 2020-12-08 15:56:50 > Step:  136700 Progress: 68.3% Elapsed: 2 days, 7:34:42 temperature: no ada_p: No Discriminator_loss: 0.0133867 Generator_loss: 0.927907 
+[INFO] 2020-12-08 16:16:24 > Step:  136800 Progress: 68.4% Elapsed: 2 days, 7:54:16 temperature: no ada_p: No Discriminator_loss: 0.0153986 Generator_loss: 0.863818 
+[INFO] 2020-12-08 16:36:01 > Step:  136900 Progress: 68.5% Elapsed: 2 days, 8:13:53 temperature: no ada_p: No Discriminator_loss: 0.0252227 Generator_loss: 0.787863 
+[INFO] 2020-12-08 16:55:33 > Step:  137000 Progress: 68.5% Elapsed: 2 days, 8:33:26 temperature: no ada_p: No Discriminator_loss: 0.0151152 Generator_loss: 0.86984 
+[INFO] 2020-12-08 17:15:05 > Step:  137100 Progress: 68.5% Elapsed: 2 days, 8:52:58 temperature: no ada_p: No Discriminator_loss: 0.0255851 Generator_loss: 0.744732 
+[INFO] 2020-12-08 17:34:37 > Step:  137200 Progress: 68.6% Elapsed: 2 days, 9:12:30 temperature: no ada_p: No Discriminator_loss: 0.0469822 Generator_loss: 0.583697 
+[INFO] 2020-12-08 17:54:14 > Step:  137300 Progress: 68.7% Elapsed: 2 days, 9:32:06 temperature: no ada_p: No Discriminator_loss: 0.023491 Generator_loss: 0.998941 
+[INFO] 2020-12-08 18:13:46 > Step:  137400 Progress: 68.7% Elapsed: 2 days, 9:51:39 temperature: no ada_p: No Discriminator_loss: 0.0141073 Generator_loss: 0.8334 
+[INFO] 2020-12-08 18:33:18 > Step:  137500 Progress: 68.8% Elapsed: 2 days, 10:11:10 temperature: no ada_p: No Discriminator_loss: 0.0224277 Generator_loss: 0.817448 
+[INFO] 2020-12-08 18:52:55 > Step:  137600 Progress: 68.8% Elapsed: 2 days, 10:30:48 temperature: no ada_p: No Discriminator_loss: 0.0293789 Generator_loss: 0.687371 
+[INFO] 2020-12-08 19:12:30 > Step:  137700 Progress: 68.8% Elapsed: 2 days, 10:50:22 temperature: no ada_p: No Discriminator_loss: 0.0175564 Generator_loss: 0.852598 
+[INFO] 2020-12-08 19:32:03 > Step:  137800 Progress: 68.9% Elapsed: 2 days, 11:09:55 temperature: no ada_p: No Discriminator_loss: 0.0275247 Generator_loss: 0.690436 
+[INFO] 2020-12-08 19:51:40 > Step:  137900 Progress: 69.0% Elapsed: 2 days, 11:29:32 temperature: no ada_p: No Discriminator_loss: 0.0436889 Generator_loss: 0.686891 
+[INFO] 2020-12-08 20:11:13 > Step:  138000 Progress: 69.0% Elapsed: 2 days, 11:49:06 temperature: no ada_p: No Discriminator_loss: 0.0908835 Generator_loss: 0.400546 
+[INFO] 2020-12-08 20:11:13 > Start Evaluation (138000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-08 20:11:13 > Calculating FID Score....
+[INFO] 2020-12-08 20:12:25 > Calculating Inception Score....
+[INFO] 2020-12-08 20:13:26 > Calculate F_beta Score....
+[INFO] 2020-12-08 20:21:01 > Calculate Accuracies....
+[INFO] 2020-12-08 20:22:01 > Calculate Accuracies....
+[INFO] 2020-12-08 20:23:21 > F_8 score (Step: 138000, Using valid images): 0.9843888122526815
+[INFO] 2020-12-08 20:23:21 > F_1/8 score (Step: 138000, Using valid images): 0.9796693364584178
+[INFO] 2020-12-08 20:23:21 > FID score (Step: 138000, Using valid moments): 9.479937848935435
+[INFO] 2020-12-08 20:23:21 > Inception score (Step: 138000, 50000 generated images): 75.04940795898438
+[INFO] 2020-12-08 20:23:21 > Best FID score (Step: 138000, Using valid moments): 9.479937848935435
+[INFO] 2020-12-08 20:23:35 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-08 20:43:07 > Step:  138100 Progress: 69.0% Elapsed: 2 days, 12:21:00 temperature: no ada_p: No Discriminator_loss: 0.0183144 Generator_loss: 0.966197 
+[INFO] 2020-12-08 21:02:46 > Step:  138200 Progress: 69.1% Elapsed: 2 days, 12:40:39 temperature: no ada_p: No Discriminator_loss: 0.0231592 Generator_loss: 0.786927 
+[INFO] 2020-12-08 21:22:22 > Step:  138300 Progress: 69.2% Elapsed: 2 days, 13:00:14 temperature: no ada_p: No Discriminator_loss: 0.0248699 Generator_loss: 0.726317 
+[INFO] 2020-12-08 21:41:55 > Step:  138400 Progress: 69.2% Elapsed: 2 days, 13:19:47 temperature: no ada_p: No Discriminator_loss: 0.0164326 Generator_loss: 0.778168 
+[INFO] 2020-12-08 22:01:32 > Step:  138500 Progress: 69.2% Elapsed: 2 days, 13:39:25 temperature: no ada_p: No Discriminator_loss: 0.0214671 Generator_loss: 0.782538 
+[INFO] 2020-12-08 22:21:06 > Step:  138600 Progress: 69.3% Elapsed: 2 days, 13:58:58 temperature: no ada_p: No Discriminator_loss: 0.013205 Generator_loss: 0.933278 
+[INFO] 2020-12-08 22:40:37 > Step:  138700 Progress: 69.3% Elapsed: 2 days, 14:18:30 temperature: no ada_p: No Discriminator_loss: 0.022861 Generator_loss: 0.806991 
+[INFO] 2020-12-08 23:00:15 > Step:  138800 Progress: 69.4% Elapsed: 2 days, 14:38:07 temperature: no ada_p: No Discriminator_loss: 0.0165375 Generator_loss: 0.908083 
+[INFO] 2020-12-08 23:19:49 > Step:  138900 Progress: 69.5% Elapsed: 2 days, 14:57:42 temperature: no ada_p: No Discriminator_loss: 0.015885 Generator_loss: 0.847443 
+[INFO] 2020-12-08 23:39:22 > Step:  139000 Progress: 69.5% Elapsed: 2 days, 15:17:15 temperature: no ada_p: No Discriminator_loss: 0.0555127 Generator_loss: 0.519881 
+[INFO] 2020-12-08 23:58:58 > Step:  139100 Progress: 69.5% Elapsed: 2 days, 15:36:50 temperature: no ada_p: No Discriminator_loss: 0.0153757 Generator_loss: 0.915747 
+[INFO] 2020-12-09 00:18:31 > Step:  139200 Progress: 69.6% Elapsed: 2 days, 15:56:23 temperature: no ada_p: No Discriminator_loss: 0.0182412 Generator_loss: 0.691638 
+[INFO] 2020-12-09 00:38:03 > Step:  139300 Progress: 69.7% Elapsed: 2 days, 16:15:55 temperature: no ada_p: No Discriminator_loss: 0.024526 Generator_loss: 0.796905 
+[INFO] 2020-12-09 00:57:39 > Step:  139400 Progress: 69.7% Elapsed: 2 days, 16:35:31 temperature: no ada_p: No Discriminator_loss: 0.013235 Generator_loss: 0.851197 
+[INFO] 2020-12-09 01:17:16 > Step:  139500 Progress: 69.8% Elapsed: 2 days, 16:55:08 temperature: no ada_p: No Discriminator_loss: 0.0156933 Generator_loss: 0.89237 
+[INFO] 2020-12-09 01:36:50 > Step:  139600 Progress: 69.8% Elapsed: 2 days, 17:14:42 temperature: no ada_p: No Discriminator_loss: 0.0229843 Generator_loss: 0.771495 
+[INFO] 2020-12-09 01:56:22 > Step:  139700 Progress: 69.8% Elapsed: 2 days, 17:34:15 temperature: no ada_p: No Discriminator_loss: 0.0252359 Generator_loss: 0.810968 
+[INFO] 2020-12-09 02:15:59 > Step:  139800 Progress: 69.9% Elapsed: 2 days, 17:53:52 temperature: no ada_p: No Discriminator_loss: 0.0220604 Generator_loss: 0.965025 
+[INFO] 2020-12-09 02:35:31 > Step:  139900 Progress: 70.0% Elapsed: 2 days, 18:13:23 temperature: no ada_p: No Discriminator_loss: 0.0193456 Generator_loss: 0.998704 
+[INFO] 2020-12-09 02:55:04 > Step:  140000 Progress: 70.0% Elapsed: 2 days, 18:32:56 temperature: no ada_p: No Discriminator_loss: 0.0215956 Generator_loss: 0.748372 
+[INFO] 2020-12-09 02:55:04 > Start Evaluation (140000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-09 02:55:04 > Calculating FID Score....
+[INFO] 2020-12-09 02:56:15 > Calculating Inception Score....
+[INFO] 2020-12-09 02:57:16 > Calculate F_beta Score....
+[INFO] 2020-12-09 03:01:04 > Calculate Accuracies....
+[INFO] 2020-12-09 03:02:03 > Calculate Accuracies....
+[INFO] 2020-12-09 03:03:26 > F_8 score (Step: 140000, Using valid images): 0.9838489620216715
+[INFO] 2020-12-09 03:03:26 > F_1/8 score (Step: 140000, Using valid images): 0.9818575109301578
+[INFO] 2020-12-09 03:03:26 > FID score (Step: 140000, Using valid moments): 9.662684357330704
+[INFO] 2020-12-09 03:03:26 > Inception score (Step: 140000, 50000 generated images): 75.32533264160156
+[INFO] 2020-12-09 03:03:26 > Best FID score (Step: 138000, Using valid moments): 9.479937848935435
+[INFO] 2020-12-09 03:03:33 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-09 03:23:13 > Step:  140100 Progress: 70.0% Elapsed: 2 days, 19:01:05 temperature: no ada_p: No Discriminator_loss: 0.0277959 Generator_loss: 0.67876 
+[INFO] 2020-12-09 03:42:47 > Step:  140200 Progress: 70.1% Elapsed: 2 days, 19:20:39 temperature: no ada_p: No Discriminator_loss: 0.020125 Generator_loss: 0.865387 
+[INFO] 2020-12-09 04:02:21 > Step:  140300 Progress: 70.2% Elapsed: 2 days, 19:40:14 temperature: no ada_p: No Discriminator_loss: 0.0170101 Generator_loss: 0.791958 
+[INFO] 2020-12-09 04:21:59 > Step:  140400 Progress: 70.2% Elapsed: 2 days, 19:59:52 temperature: no ada_p: No Discriminator_loss: 0.0196126 Generator_loss: 0.847219 
+[INFO] 2020-12-09 04:41:33 > Step:  140500 Progress: 70.2% Elapsed: 2 days, 20:19:25 temperature: no ada_p: No Discriminator_loss: 0.108894 Generator_loss: 0.347802 
+[INFO] 2020-12-09 05:01:06 > Step:  140600 Progress: 70.3% Elapsed: 2 days, 20:38:58 temperature: no ada_p: No Discriminator_loss: 0.025892 Generator_loss: 0.812056 
+[INFO] 2020-12-09 05:20:43 > Step:  140700 Progress: 70.3% Elapsed: 2 days, 20:58:35 temperature: no ada_p: No Discriminator_loss: 0.0657145 Generator_loss: 0.529149 
+[INFO] 2020-12-09 05:40:17 > Step:  140800 Progress: 70.4% Elapsed: 2 days, 21:18:09 temperature: no ada_p: No Discriminator_loss: 0.0165156 Generator_loss: 0.812816 
+[INFO] 2020-12-09 05:59:50 > Step:  140900 Progress: 70.5% Elapsed: 2 days, 21:37:43 temperature: no ada_p: No Discriminator_loss: 0.0161521 Generator_loss: 0.867394 
+[INFO] 2020-12-09 06:19:28 > Step:  141000 Progress: 70.5% Elapsed: 2 days, 21:57:20 temperature: no ada_p: No Discriminator_loss: 0.0171602 Generator_loss: 0.846974 
+[INFO] 2020-12-09 06:39:01 > Step:  141100 Progress: 70.5% Elapsed: 2 days, 22:16:54 temperature: no ada_p: No Discriminator_loss: 0.0235641 Generator_loss: 0.838259 
+[INFO] 2020-12-09 06:58:34 > Step:  141200 Progress: 70.6% Elapsed: 2 days, 22:36:26 temperature: no ada_p: No Discriminator_loss: 0.0313755 Generator_loss: 0.755735 
+[INFO] 2020-12-09 07:18:11 > Step:  141300 Progress: 70.7% Elapsed: 2 days, 22:56:04 temperature: no ada_p: No Discriminator_loss: 0.0190802 Generator_loss: 0.906235 
+[INFO] 2020-12-09 07:37:44 > Step:  141400 Progress: 70.7% Elapsed: 2 days, 23:15:37 temperature: no ada_p: No Discriminator_loss: 0.0160007 Generator_loss: 0.81968 
+[INFO] 2020-12-09 07:57:17 > Step:  141500 Progress: 70.8% Elapsed: 2 days, 23:35:10 temperature: no ada_p: No Discriminator_loss: 0.031526 Generator_loss: 0.692883 
+[INFO] 2020-12-09 08:16:53 > Step:  141600 Progress: 70.8% Elapsed: 2 days, 23:54:46 temperature: no ada_p: No Discriminator_loss: 0.0198121 Generator_loss: 0.81498 
+[INFO] 2020-12-09 08:36:27 > Step:  141700 Progress: 70.9% Elapsed: 3 days, 0:14:20 temperature: no ada_p: No Discriminator_loss: 0.0272745 Generator_loss: 0.761144 
+[INFO] 2020-12-09 08:56:01 > Step:  141800 Progress: 70.9% Elapsed: 3 days, 0:33:53 temperature: no ada_p: No Discriminator_loss: 0.0241295 Generator_loss: 0.746943 
+[INFO] 2020-12-09 09:15:37 > Step:  141900 Progress: 71.0% Elapsed: 3 days, 0:53:30 temperature: no ada_p: No Discriminator_loss: 0.0132422 Generator_loss: 0.877644 
+[INFO] 2020-12-09 09:35:13 > Step:  142000 Progress: 71.0% Elapsed: 3 days, 1:13:06 temperature: no ada_p: No Discriminator_loss: 0.0265649 Generator_loss: 0.728005 
+[INFO] 2020-12-09 09:35:13 > Start Evaluation (142000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-09 09:35:13 > Calculating FID Score....
+[INFO] 2020-12-09 09:36:25 > Calculating Inception Score....
+[INFO] 2020-12-09 09:37:26 > Calculate F_beta Score....
+[INFO] 2020-12-09 09:40:32 > Calculate Accuracies....
+[INFO] 2020-12-09 09:41:31 > Calculate Accuracies....
+[INFO] 2020-12-09 09:42:51 > F_8 score (Step: 142000, Using valid images): 0.9847220062600938
+[INFO] 2020-12-09 09:42:51 > F_1/8 score (Step: 142000, Using valid images): 0.9815284493646105
+[INFO] 2020-12-09 09:42:51 > FID score (Step: 142000, Using valid moments): 9.439886181779798
+[INFO] 2020-12-09 09:42:51 > Inception score (Step: 142000, 50000 generated images): 75.70088195800781
+[INFO] 2020-12-09 09:42:51 > Best FID score (Step: 142000, Using valid moments): 9.439886181779798
+[INFO] 2020-12-09 09:43:05 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-09 10:02:38 > Step:  142100 Progress: 71.0% Elapsed: 3 days, 1:40:30 temperature: no ada_p: No Discriminator_loss: 0.0111274 Generator_loss: 0.867561 
+[INFO] 2020-12-09 10:22:10 > Step:  142200 Progress: 71.1% Elapsed: 3 days, 2:00:02 temperature: no ada_p: No Discriminator_loss: 0.0144707 Generator_loss: 0.91842 
+[INFO] 2020-12-09 10:41:49 > Step:  142300 Progress: 71.2% Elapsed: 3 days, 2:19:41 temperature: no ada_p: No Discriminator_loss: 0.0410041 Generator_loss: 0.626333 
+[INFO] 2020-12-09 11:01:23 > Step:  142400 Progress: 71.2% Elapsed: 3 days, 2:39:15 temperature: no ada_p: No Discriminator_loss: 0.0174883 Generator_loss: 0.760466 
+[INFO] 2020-12-09 11:20:56 > Step:  142500 Progress: 71.2% Elapsed: 3 days, 2:58:48 temperature: no ada_p: No Discriminator_loss: 0.0196323 Generator_loss: 0.738908 
+[INFO] 2020-12-09 11:40:35 > Step:  142600 Progress: 71.3% Elapsed: 3 days, 3:18:27 temperature: no ada_p: No Discriminator_loss: 0.0326702 Generator_loss: 0.775431 
+[INFO] 2020-12-09 12:00:08 > Step:  142700 Progress: 71.4% Elapsed: 3 days, 3:38:00 temperature: no ada_p: No Discriminator_loss: 0.0456614 Generator_loss: 0.610837 
+[INFO] 2020-12-09 12:19:41 > Step:  142800 Progress: 71.4% Elapsed: 3 days, 3:57:33 temperature: no ada_p: No Discriminator_loss: 0.0261967 Generator_loss: 0.774354 
+[INFO] 2020-12-09 12:39:19 > Step:  142900 Progress: 71.5% Elapsed: 3 days, 4:17:12 temperature: no ada_p: No Discriminator_loss: 0.0298518 Generator_loss: 0.782801 
+[INFO] 2020-12-09 12:58:54 > Step:  143000 Progress: 71.5% Elapsed: 3 days, 4:36:46 temperature: no ada_p: No Discriminator_loss: 0.0376774 Generator_loss: 0.617898 
+[INFO] 2020-12-09 13:18:27 > Step:  143100 Progress: 71.5% Elapsed: 3 days, 4:56:20 temperature: no ada_p: No Discriminator_loss: 0.00829115 Generator_loss: 0.846636 
+[INFO] 2020-12-09 13:38:06 > Step:  143200 Progress: 71.6% Elapsed: 3 days, 5:15:58 temperature: no ada_p: No Discriminator_loss: 0.0195417 Generator_loss: 0.786817 
+[INFO] 2020-12-09 13:57:39 > Step:  143300 Progress: 71.7% Elapsed: 3 days, 5:35:31 temperature: no ada_p: No Discriminator_loss: 0.0135975 Generator_loss: 0.95493 
+[INFO] 2020-12-09 14:17:11 > Step:  143400 Progress: 71.7% Elapsed: 3 days, 5:55:04 temperature: no ada_p: No Discriminator_loss: 0.0704116 Generator_loss: 0.482848 
+[INFO] 2020-12-09 14:36:48 > Step:  143500 Progress: 71.8% Elapsed: 3 days, 6:14:40 temperature: no ada_p: No Discriminator_loss: 0.0178935 Generator_loss: 0.826509 
+[INFO] 2020-12-09 14:56:22 > Step:  143600 Progress: 71.8% Elapsed: 3 days, 6:34:14 temperature: no ada_p: No Discriminator_loss: 0.0691015 Generator_loss: 0.534441 
+[INFO] 2020-12-09 15:15:55 > Step:  143700 Progress: 71.9% Elapsed: 3 days, 6:53:47 temperature: no ada_p: No Discriminator_loss: 0.0173397 Generator_loss: 0.81013 
+[INFO] 2020-12-09 15:35:32 > Step:  143800 Progress: 71.9% Elapsed: 3 days, 7:13:25 temperature: no ada_p: No Discriminator_loss: 0.021581 Generator_loss: 0.905813 
+[INFO] 2020-12-09 15:55:05 > Step:  143900 Progress: 72.0% Elapsed: 3 days, 7:32:57 temperature: no ada_p: No Discriminator_loss: 0.0138666 Generator_loss: 0.9391 
+[INFO] 2020-12-09 16:14:37 > Step:  144000 Progress: 72.0% Elapsed: 3 days, 7:52:29 temperature: no ada_p: No Discriminator_loss: 0.0177498 Generator_loss: 0.84093 
+[INFO] 2020-12-09 16:14:37 > Start Evaluation (144000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-09 16:14:37 > Calculating FID Score....
+[INFO] 2020-12-09 16:15:48 > Calculating Inception Score....
+[INFO] 2020-12-09 16:16:50 > Calculate F_beta Score....
+[INFO] 2020-12-09 16:20:17 > Calculate Accuracies....
+[INFO] 2020-12-09 16:21:16 > Calculate Accuracies....
+[INFO] 2020-12-09 16:22:31 > F_8 score (Step: 144000, Using valid images): 0.9872973109913261
+[INFO] 2020-12-09 16:22:31 > F_1/8 score (Step: 144000, Using valid images): 0.9779062260316751
+[INFO] 2020-12-09 16:22:31 > FID score (Step: 144000, Using valid moments): 9.400239885776784
+[INFO] 2020-12-09 16:22:31 > Inception score (Step: 144000, 50000 generated images): 77.1138916015625
+[INFO] 2020-12-09 16:22:31 > Best FID score (Step: 144000, Using valid moments): 9.400239885776784
+[INFO] 2020-12-09 16:22:45 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-09 16:42:22 > Step:  144100 Progress: 72.0% Elapsed: 3 days, 8:20:14 temperature: no ada_p: No Discriminator_loss: 0.012665 Generator_loss: 0.874937 
+[INFO] 2020-12-09 17:01:56 > Step:  144200 Progress: 72.1% Elapsed: 3 days, 8:39:48 temperature: no ada_p: No Discriminator_loss: 0.0140729 Generator_loss: 0.878399 
+[INFO] 2020-12-09 17:21:30 > Step:  144300 Progress: 72.2% Elapsed: 3 days, 8:59:23 temperature: no ada_p: No Discriminator_loss: 0.0257413 Generator_loss: 0.813746 
+[INFO] 2020-12-09 17:41:07 > Step:  144400 Progress: 72.2% Elapsed: 3 days, 9:18:59 temperature: no ada_p: No Discriminator_loss: 0.0270802 Generator_loss: 0.782597 
+[INFO] 2020-12-09 18:00:41 > Step:  144500 Progress: 72.2% Elapsed: 3 days, 9:38:34 temperature: no ada_p: No Discriminator_loss: 0.0372074 Generator_loss: 0.660756 
+[INFO] 2020-12-09 18:20:14 > Step:  144600 Progress: 72.3% Elapsed: 3 days, 9:58:06 temperature: no ada_p: No Discriminator_loss: 0.018998 Generator_loss: 0.770715 
+[INFO] 2020-12-09 18:39:45 > Step:  144700 Progress: 72.4% Elapsed: 3 days, 10:17:38 temperature: no ada_p: No Discriminator_loss: 0.0209881 Generator_loss: 0.856514 
+[INFO] 2020-12-09 18:59:22 > Step:  144800 Progress: 72.4% Elapsed: 3 days, 10:37:15 temperature: no ada_p: No Discriminator_loss: 0.0141309 Generator_loss: 0.835569 
+[INFO] 2020-12-09 19:18:55 > Step:  144900 Progress: 72.5% Elapsed: 3 days, 10:56:48 temperature: no ada_p: No Discriminator_loss: 0.0188859 Generator_loss: 0.800083 
+[INFO] 2020-12-09 19:38:28 > Step:  145000 Progress: 72.5% Elapsed: 3 days, 11:16:21 temperature: no ada_p: No Discriminator_loss: 0.0224387 Generator_loss: 0.808237 
+[INFO] 2020-12-09 19:58:07 > Step:  145100 Progress: 72.5% Elapsed: 3 days, 11:35:59 temperature: no ada_p: No Discriminator_loss: 0.0272633 Generator_loss: 0.721467 
+[INFO] 2020-12-09 20:17:38 > Step:  145200 Progress: 72.6% Elapsed: 3 days, 11:55:31 temperature: no ada_p: No Discriminator_loss: 0.0626173 Generator_loss: 0.497568 
+[INFO] 2020-12-09 20:37:10 > Step:  145300 Progress: 72.7% Elapsed: 3 days, 12:15:02 temperature: no ada_p: No Discriminator_loss: 0.0155832 Generator_loss: 0.921381 
+[INFO] 2020-12-09 20:56:48 > Step:  145400 Progress: 72.7% Elapsed: 3 days, 12:34:40 temperature: no ada_p: No Discriminator_loss: 0.0194324 Generator_loss: 0.830369 
+[INFO] 2020-12-09 21:16:21 > Step:  145500 Progress: 72.8% Elapsed: 3 days, 12:54:13 temperature: no ada_p: No Discriminator_loss: 0.0158082 Generator_loss: 0.874498 
+[INFO] 2020-12-09 21:35:52 > Step:  145600 Progress: 72.8% Elapsed: 3 days, 13:13:45 temperature: no ada_p: No Discriminator_loss: 0.0245285 Generator_loss: 0.824279 
+[INFO] 2020-12-09 21:55:31 > Step:  145700 Progress: 72.9% Elapsed: 3 days, 13:33:23 temperature: no ada_p: No Discriminator_loss: 0.0147449 Generator_loss: 0.837071 
+[INFO] 2020-12-09 22:15:07 > Step:  145800 Progress: 72.9% Elapsed: 3 days, 13:52:59 temperature: no ada_p: No Discriminator_loss: 0.0169783 Generator_loss: 0.901739 
+[INFO] 2020-12-09 22:34:39 > Step:  145900 Progress: 73.0% Elapsed: 3 days, 14:12:31 temperature: no ada_p: No Discriminator_loss: 0.0307078 Generator_loss: 0.790697 
+[INFO] 2020-12-09 22:54:15 > Step:  146000 Progress: 73.0% Elapsed: 3 days, 14:32:07 temperature: no ada_p: No Discriminator_loss: 0.0265267 Generator_loss: 0.736424 
+[INFO] 2020-12-09 22:54:15 > Start Evaluation (146000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-09 22:54:15 > Calculating FID Score....
+[INFO] 2020-12-09 22:55:27 > Calculating Inception Score....
+[INFO] 2020-12-09 22:56:28 > Calculate F_beta Score....
+[INFO] 2020-12-09 23:05:57 > Calculate Accuracies....
+[INFO] 2020-12-09 23:06:56 > Calculate Accuracies....
+[INFO] 2020-12-09 23:08:09 > F_8 score (Step: 146000, Using valid images): 0.9836754889465659
+[INFO] 2020-12-09 23:08:10 > F_1/8 score (Step: 146000, Using valid images): 0.9797323815141066
+[INFO] 2020-12-09 23:08:10 > FID score (Step: 146000, Using valid moments): 9.312695644878204
+[INFO] 2020-12-09 23:08:10 > Inception score (Step: 146000, 50000 generated images): 77.65465545654297
+[INFO] 2020-12-09 23:08:10 > Best FID score (Step: 146000, Using valid moments): 9.312695644878204
+[INFO] 2020-12-09 23:08:23 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-09 23:27:56 > Step:  146100 Progress: 73.0% Elapsed: 3 days, 15:05:49 temperature: no ada_p: No Discriminator_loss: 0.0282385 Generator_loss: 0.706745 
+[INFO] 2020-12-09 23:47:28 > Step:  146200 Progress: 73.1% Elapsed: 3 days, 15:25:20 temperature: no ada_p: No Discriminator_loss: 0.021986 Generator_loss: 0.816371 
+[INFO] 2020-12-10 00:07:06 > Step:  146300 Progress: 73.2% Elapsed: 3 days, 15:44:59 temperature: no ada_p: No Discriminator_loss: 0.0181779 Generator_loss: 0.836927 
+[INFO] 2020-12-10 00:26:42 > Step:  146400 Progress: 73.2% Elapsed: 3 days, 16:04:34 temperature: no ada_p: No Discriminator_loss: 0.0568881 Generator_loss: 0.512618 
+[INFO] 2020-12-10 00:46:17 > Step:  146500 Progress: 73.2% Elapsed: 3 days, 16:24:10 temperature: no ada_p: No Discriminator_loss: 0.0231564 Generator_loss: 0.821127 
+[INFO] 2020-12-10 01:05:55 > Step:  146600 Progress: 73.3% Elapsed: 3 days, 16:43:47 temperature: no ada_p: No Discriminator_loss: 0.0147625 Generator_loss: 0.852989 
+[INFO] 2020-12-10 01:25:28 > Step:  146700 Progress: 73.4% Elapsed: 3 days, 17:03:20 temperature: no ada_p: No Discriminator_loss: 0.00933918 Generator_loss: 0.893671 
+[INFO] 2020-12-10 01:45:01 > Step:  146800 Progress: 73.4% Elapsed: 3 days, 17:22:53 temperature: no ada_p: No Discriminator_loss: 0.0187371 Generator_loss: 0.918967 
+[INFO] 2020-12-10 02:04:37 > Step:  146900 Progress: 73.5% Elapsed: 3 days, 17:42:29 temperature: no ada_p: No Discriminator_loss: 0.0144023 Generator_loss: 0.811951 
+[INFO] 2020-12-10 02:24:11 > Step:  147000 Progress: 73.5% Elapsed: 3 days, 18:02:03 temperature: no ada_p: No Discriminator_loss: 0.0561043 Generator_loss: 0.550238 
+[INFO] 2020-12-10 02:43:44 > Step:  147100 Progress: 73.6% Elapsed: 3 days, 18:21:36 temperature: no ada_p: No Discriminator_loss: 0.0281222 Generator_loss: 0.697557 
+[INFO] 2020-12-10 03:03:16 > Step:  147200 Progress: 73.6% Elapsed: 3 days, 18:41:08 temperature: no ada_p: No Discriminator_loss: 0.0216773 Generator_loss: 0.790985 
+[INFO] 2020-12-10 03:22:54 > Step:  147300 Progress: 73.7% Elapsed: 3 days, 19:00:47 temperature: no ada_p: No Discriminator_loss: 0.0164442 Generator_loss: 0.821966 
+[INFO] 2020-12-10 03:42:27 > Step:  147400 Progress: 73.7% Elapsed: 3 days, 19:20:19 temperature: no ada_p: No Discriminator_loss: 0.0291339 Generator_loss: 0.740281 
+[INFO] 2020-12-10 04:02:00 > Step:  147500 Progress: 73.8% Elapsed: 3 days, 19:39:52 temperature: no ada_p: No Discriminator_loss: 0.0177627 Generator_loss: 0.954911 
+[INFO] 2020-12-10 04:21:38 > Step:  147600 Progress: 73.8% Elapsed: 3 days, 19:59:31 temperature: no ada_p: No Discriminator_loss: 0.0191499 Generator_loss: 0.787614 
+[INFO] 2020-12-10 04:41:12 > Step:  147700 Progress: 73.9% Elapsed: 3 days, 20:19:04 temperature: no ada_p: No Discriminator_loss: 0.0150815 Generator_loss: 0.934019 
+[INFO] 2020-12-10 05:00:45 > Step:  147800 Progress: 73.9% Elapsed: 3 days, 20:38:37 temperature: no ada_p: No Discriminator_loss: 0.0182933 Generator_loss: 0.792759 
+[INFO] 2020-12-10 05:20:24 > Step:  147900 Progress: 74.0% Elapsed: 3 days, 20:58:16 temperature: no ada_p: No Discriminator_loss: 0.0543511 Generator_loss: 0.520483 
+[INFO] 2020-12-10 05:39:56 > Step:  148000 Progress: 74.0% Elapsed: 3 days, 21:17:48 temperature: no ada_p: No Discriminator_loss: 0.0200175 Generator_loss: 0.940432 
+[INFO] 2020-12-10 05:39:56 > Start Evaluation (148000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-10 05:39:56 > Calculating FID Score....
+[INFO] 2020-12-10 05:41:07 > Calculating Inception Score....
+[INFO] 2020-12-10 05:42:09 > Calculate F_beta Score....
+[INFO] 2020-12-10 05:48:09 > Calculate Accuracies....
+[INFO] 2020-12-10 05:49:08 > Calculate Accuracies....
+[INFO] 2020-12-10 05:50:24 > F_8 score (Step: 148000, Using valid images): 0.9855911843455482
+[INFO] 2020-12-10 05:50:24 > F_1/8 score (Step: 148000, Using valid images): 0.9820395575038552
+[INFO] 2020-12-10 05:50:24 > FID score (Step: 148000, Using valid moments): 9.334954757251637
+[INFO] 2020-12-10 05:50:24 > Inception score (Step: 148000, 50000 generated images): 78.58883666992188
+[INFO] 2020-12-10 05:50:24 > Best FID score (Step: 146000, Using valid moments): 9.312695644878204
+[INFO] 2020-12-10 05:50:31 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-10 06:10:04 > Step:  148100 Progress: 74.1% Elapsed: 3 days, 21:47:56 temperature: no ada_p: No Discriminator_loss: 0.0222394 Generator_loss: 0.752334 
+[INFO] 2020-12-10 06:29:43 > Step:  148200 Progress: 74.1% Elapsed: 3 days, 22:07:35 temperature: no ada_p: No Discriminator_loss: 0.0397239 Generator_loss: 0.63745 
+[INFO] 2020-12-10 06:49:17 > Step:  148300 Progress: 74.2% Elapsed: 3 days, 22:27:09 temperature: no ada_p: No Discriminator_loss: 0.0150552 Generator_loss: 0.978732 
+[INFO] 2020-12-10 07:08:51 > Step:  148400 Progress: 74.2% Elapsed: 3 days, 22:46:43 temperature: no ada_p: No Discriminator_loss: 0.0203583 Generator_loss: 0.773541 
+[INFO] 2020-12-10 07:28:29 > Step:  148500 Progress: 74.2% Elapsed: 3 days, 23:06:21 temperature: no ada_p: No Discriminator_loss: 0.017313 Generator_loss: 0.994113 
+[INFO] 2020-12-10 07:48:03 > Step:  148600 Progress: 74.3% Elapsed: 3 days, 23:25:55 temperature: no ada_p: No Discriminator_loss: 0.017432 Generator_loss: 0.799309 
+[INFO] 2020-12-10 08:07:36 > Step:  148700 Progress: 74.4% Elapsed: 3 days, 23:45:28 temperature: no ada_p: No Discriminator_loss: 0.0441518 Generator_loss: 0.587474 
+[INFO] 2020-12-10 08:27:13 > Step:  148800 Progress: 74.4% Elapsed: 4 days, 0:05:05 temperature: no ada_p: No Discriminator_loss: 0.0254407 Generator_loss: 0.807713 
+[INFO] 2020-12-10 08:46:45 > Step:  148900 Progress: 74.5% Elapsed: 4 days, 0:24:38 temperature: no ada_p: No Discriminator_loss: 0.0190771 Generator_loss: 0.784937 
+[INFO] 2020-12-10 09:06:18 > Step:  149000 Progress: 74.5% Elapsed: 4 days, 0:44:10 temperature: no ada_p: No Discriminator_loss: 0.0406989 Generator_loss: 0.667539 
+[INFO] 2020-12-10 09:25:54 > Step:  149100 Progress: 74.6% Elapsed: 4 days, 1:03:46 temperature: no ada_p: No Discriminator_loss: 0.0143454 Generator_loss: 0.897149 
+[INFO] 2020-12-10 09:45:27 > Step:  149200 Progress: 74.6% Elapsed: 4 days, 1:23:19 temperature: no ada_p: No Discriminator_loss: 0.0113582 Generator_loss: 1.04218 
+[INFO] 2020-12-10 10:04:59 > Step:  149300 Progress: 74.7% Elapsed: 4 days, 1:42:52 temperature: no ada_p: No Discriminator_loss: 0.0221866 Generator_loss: 0.735225 
+[INFO] 2020-12-10 10:24:36 > Step:  149400 Progress: 74.7% Elapsed: 4 days, 2:02:28 temperature: no ada_p: No Discriminator_loss: 0.0500773 Generator_loss: 0.592436 
+[INFO] 2020-12-10 10:44:10 > Step:  149500 Progress: 74.8% Elapsed: 4 days, 2:22:02 temperature: no ada_p: No Discriminator_loss: 0.0327382 Generator_loss: 0.788931 
+[INFO] 2020-12-10 11:03:45 > Step:  149600 Progress: 74.8% Elapsed: 4 days, 2:41:37 temperature: no ada_p: No Discriminator_loss: 0.0161233 Generator_loss: 0.880755 
+[INFO] 2020-12-10 11:23:19 > Step:  149700 Progress: 74.9% Elapsed: 4 days, 3:01:11 temperature: no ada_p: No Discriminator_loss: 0.0321757 Generator_loss: 0.656505 
+[INFO] 2020-12-10 11:42:57 > Step:  149800 Progress: 74.9% Elapsed: 4 days, 3:20:49 temperature: no ada_p: No Discriminator_loss: 0.0204845 Generator_loss: 0.84084 
+[INFO] 2020-12-10 12:02:29 > Step:  149900 Progress: 75.0% Elapsed: 4 days, 3:40:22 temperature: no ada_p: No Discriminator_loss: 0.0557174 Generator_loss: 0.525689 
+[INFO] 2020-12-10 12:22:01 > Step:  150000 Progress: 75.0% Elapsed: 4 days, 3:59:53 temperature: no ada_p: No Discriminator_loss: 0.0238839 Generator_loss: 0.720755 
+[INFO] 2020-12-10 12:22:01 > Start Evaluation (150000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-10 12:22:01 > Calculating FID Score....
+[INFO] 2020-12-10 12:23:13 > Calculating Inception Score....
+[INFO] 2020-12-10 12:24:14 > Calculate F_beta Score....
+[INFO] 2020-12-10 12:29:22 > Calculate Accuracies....
+[INFO] 2020-12-10 12:30:22 > Calculate Accuracies....
+[INFO] 2020-12-10 12:31:37 > F_8 score (Step: 150000, Using valid images): 0.9848201577975365
+[INFO] 2020-12-10 12:31:37 > F_1/8 score (Step: 150000, Using valid images): 0.9816335216930153
+[INFO] 2020-12-10 12:31:37 > FID score (Step: 150000, Using valid moments): 9.102821464492365
+[INFO] 2020-12-10 12:31:37 > Inception score (Step: 150000, 50000 generated images): 78.10664367675781
+[INFO] 2020-12-10 12:31:37 > Best FID score (Step: 150000, Using valid moments): 9.102821464492365
+[INFO] 2020-12-10 12:31:51 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-10 12:51:32 > Step:  150100 Progress: 75.0% Elapsed: 4 days, 4:29:24 temperature: no ada_p: No Discriminator_loss: 0.017165 Generator_loss: 0.879969 
+[INFO] 2020-12-10 13:11:07 > Step:  150200 Progress: 75.1% Elapsed: 4 days, 4:48:59 temperature: no ada_p: No Discriminator_loss: 0.0164501 Generator_loss: 0.814132 
+[INFO] 2020-12-10 13:30:40 > Step:  150300 Progress: 75.1% Elapsed: 4 days, 5:08:33 temperature: no ada_p: No Discriminator_loss: 0.044371 Generator_loss: 0.613 
+[INFO] 2020-12-10 13:50:19 > Step:  150400 Progress: 75.2% Elapsed: 4 days, 5:28:11 temperature: no ada_p: No Discriminator_loss: 0.0347047 Generator_loss: 0.687939 
+[INFO] 2020-12-10 14:09:53 > Step:  150500 Progress: 75.2% Elapsed: 4 days, 5:47:45 temperature: no ada_p: No Discriminator_loss: 0.0215256 Generator_loss: 0.779363 
+[INFO] 2020-12-10 14:29:27 > Step:  150600 Progress: 75.3% Elapsed: 4 days, 6:07:19 temperature: no ada_p: No Discriminator_loss: 0.0194038 Generator_loss: 0.854767 
+[INFO] 2020-12-10 14:49:05 > Step:  150700 Progress: 75.3% Elapsed: 4 days, 6:26:58 temperature: no ada_p: No Discriminator_loss: 0.0174714 Generator_loss: 0.945128 
+[INFO] 2020-12-10 15:08:38 > Step:  150800 Progress: 75.4% Elapsed: 4 days, 6:46:31 temperature: no ada_p: No Discriminator_loss: 0.0175609 Generator_loss: 0.826651 
+[INFO] 2020-12-10 15:28:10 > Step:  150900 Progress: 75.4% Elapsed: 4 days, 7:06:03 temperature: no ada_p: No Discriminator_loss: 0.0263901 Generator_loss: 0.755205 
+[INFO] 2020-12-10 15:47:49 > Step:  151000 Progress: 75.5% Elapsed: 4 days, 7:25:41 temperature: no ada_p: No Discriminator_loss: 0.015083 Generator_loss: 0.853498 
+[INFO] 2020-12-10 16:07:24 > Step:  151100 Progress: 75.5% Elapsed: 4 days, 7:45:16 temperature: no ada_p: No Discriminator_loss: 0.0280417 Generator_loss: 0.785321 
+[INFO] 2020-12-10 16:26:57 > Step:  151200 Progress: 75.6% Elapsed: 4 days, 8:04:50 temperature: no ada_p: No Discriminator_loss: 0.0194559 Generator_loss: 0.821128 
+[INFO] 2020-12-10 16:46:35 > Step:  151300 Progress: 75.6% Elapsed: 4 days, 8:24:28 temperature: no ada_p: No Discriminator_loss: 0.0151833 Generator_loss: 0.905173 
+[INFO] 2020-12-10 17:06:10 > Step:  151400 Progress: 75.7% Elapsed: 4 days, 8:44:02 temperature: no ada_p: No Discriminator_loss: 0.704131 Generator_loss: -7.43911 
+[INFO] 2020-12-10 17:25:43 > Step:  151500 Progress: 75.8% Elapsed: 4 days, 9:03:35 temperature: no ada_p: No Discriminator_loss: 0.336226 Generator_loss: 0.127696 
+[INFO] 2020-12-10 17:45:20 > Step:  151600 Progress: 75.8% Elapsed: 4 days, 9:23:13 temperature: no ada_p: No Discriminator_loss: 0.0638157 Generator_loss: 0.478167 
+[INFO] 2020-12-10 18:04:57 > Step:  151700 Progress: 75.8% Elapsed: 4 days, 9:42:50 temperature: no ada_p: No Discriminator_loss: 0.0293777 Generator_loss: 0.831948 
+[INFO] 2020-12-10 18:24:32 > Step:  151800 Progress: 75.9% Elapsed: 4 days, 10:02:24 temperature: no ada_p: No Discriminator_loss: 0.0222003 Generator_loss: 0.957575 
+[INFO] 2020-12-10 18:44:05 > Step:  151900 Progress: 75.9% Elapsed: 4 days, 10:21:57 temperature: no ada_p: No Discriminator_loss: 0.0209649 Generator_loss: 0.993874 
+[INFO] 2020-12-10 19:03:45 > Step:  152000 Progress: 76.0% Elapsed: 4 days, 10:41:37 temperature: no ada_p: No Discriminator_loss: 0.0133707 Generator_loss: 0.926071 
+[INFO] 2020-12-10 19:03:45 > Start Evaluation (152000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-10 19:03:45 > Calculating FID Score....
+[INFO] 2020-12-10 19:04:56 > Calculating Inception Score....
+[INFO] 2020-12-10 19:05:57 > Calculate F_beta Score....
+[INFO] 2020-12-10 19:11:44 > Calculate Accuracies....
+[INFO] 2020-12-10 19:12:44 > Calculate Accuracies....
+[INFO] 2020-12-10 19:14:04 > F_8 score (Step: 152000, Using valid images): 0.9834692851564569
+[INFO] 2020-12-10 19:14:04 > F_1/8 score (Step: 152000, Using valid images): 0.9829723367685036
+[INFO] 2020-12-10 19:14:04 > FID score (Step: 152000, Using valid moments): 9.139287335246877
+[INFO] 2020-12-10 19:14:04 > Inception score (Step: 152000, 50000 generated images): 79.08562469482422
+[INFO] 2020-12-10 19:14:04 > Best FID score (Step: 150000, Using valid moments): 9.102821464492365
+[INFO] 2020-12-10 19:14:11 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-10 19:33:47 > Step:  152100 Progress: 76.0% Elapsed: 4 days, 11:11:39 temperature: no ada_p: No Discriminator_loss: 0.0173222 Generator_loss: 0.897991 
+[INFO] 2020-12-10 19:53:21 > Step:  152200 Progress: 76.1% Elapsed: 4 days, 11:31:14 temperature: no ada_p: No Discriminator_loss: 0.0144579 Generator_loss: 0.898845 
+[INFO] 2020-12-10 20:13:02 > Step:  152300 Progress: 76.1% Elapsed: 4 days, 11:50:55 temperature: no ada_p: No Discriminator_loss: 0.018177 Generator_loss: 0.816918 
+[INFO] 2020-12-10 20:32:38 > Step:  152400 Progress: 76.2% Elapsed: 4 days, 12:10:30 temperature: no ada_p: No Discriminator_loss: 0.0209696 Generator_loss: 0.782022 
+[INFO] 2020-12-10 20:52:14 > Step:  152500 Progress: 76.2% Elapsed: 4 days, 12:30:06 temperature: no ada_p: No Discriminator_loss: 0.012968 Generator_loss: 0.854241 
+[INFO] 2020-12-10 21:11:56 > Step:  152600 Progress: 76.3% Elapsed: 4 days, 12:49:49 temperature: no ada_p: No Discriminator_loss: 0.0207461 Generator_loss: 0.823439 
+[INFO] 2020-12-10 21:31:32 > Step:  152700 Progress: 76.3% Elapsed: 4 days, 13:09:24 temperature: no ada_p: No Discriminator_loss: 0.0120265 Generator_loss: 0.97749 
+[INFO] 2020-12-10 21:51:07 > Step:  152800 Progress: 76.4% Elapsed: 4 days, 13:29:00 temperature: no ada_p: No Discriminator_loss: 0.0185163 Generator_loss: 1.00416 
+[INFO] 2020-12-10 22:10:46 > Step:  152900 Progress: 76.4% Elapsed: 4 days, 13:48:39 temperature: no ada_p: No Discriminator_loss: 0.0278001 Generator_loss: 0.750441 
+[INFO] 2020-12-10 22:30:19 > Step:  153000 Progress: 76.5% Elapsed: 4 days, 14:08:11 temperature: no ada_p: No Discriminator_loss: 0.0485222 Generator_loss: 0.584798 
+[INFO] 2020-12-10 22:49:51 > Step:  153100 Progress: 76.5% Elapsed: 4 days, 14:27:43 temperature: no ada_p: No Discriminator_loss: 0.0139557 Generator_loss: 0.853745 
+[INFO] 2020-12-10 23:09:29 > Step:  153200 Progress: 76.6% Elapsed: 4 days, 14:47:22 temperature: no ada_p: No Discriminator_loss: 0.0129301 Generator_loss: 0.897346 
+[INFO] 2020-12-10 23:29:04 > Step:  153300 Progress: 76.6% Elapsed: 4 days, 15:06:57 temperature: no ada_p: No Discriminator_loss: 0.0204826 Generator_loss: 0.857419 
+[INFO] 2020-12-10 23:48:38 > Step:  153400 Progress: 76.7% Elapsed: 4 days, 15:26:31 temperature: no ada_p: No Discriminator_loss: 0.20442 Generator_loss: 0.286736 
+[INFO] 2020-12-11 00:08:18 > Step:  153500 Progress: 76.8% Elapsed: 4 days, 15:46:10 temperature: no ada_p: No Discriminator_loss: 0.015073 Generator_loss: 0.871065 
+[INFO] 2020-12-11 00:27:53 > Step:  153600 Progress: 76.8% Elapsed: 4 days, 16:05:45 temperature: no ada_p: No Discriminator_loss: 0.0215096 Generator_loss: 0.812742 
+[INFO] 2020-12-11 00:47:27 > Step:  153700 Progress: 76.8% Elapsed: 4 days, 16:25:19 temperature: no ada_p: No Discriminator_loss: 0.0125058 Generator_loss: 0.939874 
+[INFO] 2020-12-11 01:07:06 > Step:  153800 Progress: 76.9% Elapsed: 4 days, 16:44:58 temperature: no ada_p: No Discriminator_loss: 0.0330198 Generator_loss: 0.651821 
+[INFO] 2020-12-11 01:26:42 > Step:  153900 Progress: 77.0% Elapsed: 4 days, 17:04:34 temperature: no ada_p: No Discriminator_loss: 0.0190141 Generator_loss: 0.776422 
+[INFO] 2020-12-11 01:46:15 > Step:  154000 Progress: 77.0% Elapsed: 4 days, 17:24:08 temperature: no ada_p: No Discriminator_loss: 0.0237145 Generator_loss: 0.777252 
+[INFO] 2020-12-11 01:46:15 > Start Evaluation (154000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-11 01:46:16 > Calculating FID Score....
+[INFO] 2020-12-11 01:47:27 > Calculating Inception Score....
+[INFO] 2020-12-11 01:48:28 > Calculate F_beta Score....
+[INFO] 2020-12-11 01:55:24 > Calculate Accuracies....
+[INFO] 2020-12-11 01:56:23 > Calculate Accuracies....
+[INFO] 2020-12-11 01:57:44 > F_8 score (Step: 154000, Using valid images): 0.9837345048479493
+[INFO] 2020-12-11 01:57:44 > F_1/8 score (Step: 154000, Using valid images): 0.9829154384772107
+[INFO] 2020-12-11 01:57:44 > FID score (Step: 154000, Using valid moments): 9.083725386286858
+[INFO] 2020-12-11 01:57:44 > Inception score (Step: 154000, 50000 generated images): 79.52587127685547
+[INFO] 2020-12-11 01:57:44 > Best FID score (Step: 154000, Using valid moments): 9.083725386286858
+[INFO] 2020-12-11 01:57:58 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-11 02:17:36 > Step:  154100 Progress: 77.0% Elapsed: 4 days, 17:55:28 temperature: no ada_p: No Discriminator_loss: 0.0151608 Generator_loss: 0.917251 
+[INFO] 2020-12-11 02:37:13 > Step:  154200 Progress: 77.1% Elapsed: 4 days, 18:15:06 temperature: no ada_p: No Discriminator_loss: 0.0914211 Generator_loss: 0.652101 
+[INFO] 2020-12-11 02:56:48 > Step:  154300 Progress: 77.1% Elapsed: 4 days, 18:34:40 temperature: no ada_p: No Discriminator_loss: 0.0211846 Generator_loss: 0.749817 
+[INFO] 2020-12-11 03:16:21 > Step:  154400 Progress: 77.2% Elapsed: 4 days, 18:54:14 temperature: no ada_p: No Discriminator_loss: 0.016884 Generator_loss: 0.772724 
+[INFO] 2020-12-11 03:36:00 > Step:  154500 Progress: 77.2% Elapsed: 4 days, 19:13:52 temperature: no ada_p: No Discriminator_loss: 0.021673 Generator_loss: 0.829109 
+[INFO] 2020-12-11 03:55:34 > Step:  154600 Progress: 77.3% Elapsed: 4 days, 19:33:26 temperature: no ada_p: No Discriminator_loss: 0.0137586 Generator_loss: 0.860972 
+[INFO] 2020-12-11 04:15:07 > Step:  154700 Progress: 77.3% Elapsed: 4 days, 19:52:59 temperature: no ada_p: No Discriminator_loss: 0.0179455 Generator_loss: 0.953437 
+[INFO] 2020-12-11 04:34:48 > Step:  154800 Progress: 77.4% Elapsed: 4 days, 20:12:40 temperature: no ada_p: No Discriminator_loss: 0.0147903 Generator_loss: 0.928277 
+[INFO] 2020-12-11 04:54:22 > Step:  154900 Progress: 77.5% Elapsed: 4 days, 20:32:14 temperature: no ada_p: No Discriminator_loss: 0.0169749 Generator_loss: 0.831486 
+[INFO] 2020-12-11 05:13:55 > Step:  155000 Progress: 77.5% Elapsed: 4 days, 20:51:48 temperature: no ada_p: No Discriminator_loss: 0.0634706 Generator_loss: 0.583824 
+[INFO] 2020-12-11 05:33:34 > Step:  155100 Progress: 77.5% Elapsed: 4 days, 21:11:27 temperature: no ada_p: No Discriminator_loss: 0.0148916 Generator_loss: 0.93485 
+[INFO] 2020-12-11 05:53:07 > Step:  155200 Progress: 77.6% Elapsed: 4 days, 21:31:00 temperature: no ada_p: No Discriminator_loss: 0.0256644 Generator_loss: 0.718696 
+[INFO] 2020-12-11 06:12:39 > Step:  155300 Progress: 77.6% Elapsed: 4 days, 21:50:32 temperature: no ada_p: No Discriminator_loss: 0.0305754 Generator_loss: 0.678721 
+[INFO] 2020-12-11 06:32:19 > Step:  155400 Progress: 77.7% Elapsed: 4 days, 22:10:11 temperature: no ada_p: No Discriminator_loss: 0.0115092 Generator_loss: 0.907035 
+[INFO] 2020-12-11 06:51:52 > Step:  155500 Progress: 77.8% Elapsed: 4 days, 22:29:45 temperature: no ada_p: No Discriminator_loss: 0.0121664 Generator_loss: 0.872703 
+[INFO] 2020-12-11 07:11:26 > Step:  155600 Progress: 77.8% Elapsed: 4 days, 22:49:19 temperature: no ada_p: No Discriminator_loss: 0.019043 Generator_loss: 0.785288 
+[INFO] 2020-12-11 07:31:05 > Step:  155700 Progress: 77.8% Elapsed: 4 days, 23:08:57 temperature: no ada_p: No Discriminator_loss: 0.0172917 Generator_loss: 0.932428 
+[INFO] 2020-12-11 07:50:40 > Step:  155800 Progress: 77.9% Elapsed: 4 days, 23:28:32 temperature: no ada_p: No Discriminator_loss: 0.0112232 Generator_loss: 0.941589 
+[INFO] 2020-12-11 08:10:14 > Step:  155900 Progress: 78.0% Elapsed: 4 days, 23:48:06 temperature: no ada_p: No Discriminator_loss: 0.015605 Generator_loss: 0.870913 
+[INFO] 2020-12-11 08:29:51 > Step:  156000 Progress: 78.0% Elapsed: 5 days, 0:07:44 temperature: no ada_p: No Discriminator_loss: 0.0186513 Generator_loss: 0.741742 
+[INFO] 2020-12-11 08:29:51 > Start Evaluation (156000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-11 08:29:52 > Calculating FID Score....
+[INFO] 2020-12-11 08:31:03 > Calculating Inception Score....
+[INFO] 2020-12-11 08:32:04 > Calculate F_beta Score....
+[INFO] 2020-12-11 08:40:17 > Calculate Accuracies....
+[INFO] 2020-12-11 08:41:16 > Calculate Accuracies....
+[INFO] 2020-12-11 08:42:35 > F_8 score (Step: 156000, Using valid images): 0.9853811549177915
+[INFO] 2020-12-11 08:42:35 > F_1/8 score (Step: 156000, Using valid images): 0.980813522527402
+[INFO] 2020-12-11 08:42:35 > FID score (Step: 156000, Using valid moments): 8.999042639443985
+[INFO] 2020-12-11 08:42:35 > Inception score (Step: 156000, 50000 generated images): 79.90914916992188
+[INFO] 2020-12-11 08:42:35 > Best FID score (Step: 156000, Using valid moments): 8.999042639443985
+[INFO] 2020-12-11 08:42:49 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-11 09:02:23 > Step:  156100 Progress: 78.0% Elapsed: 5 days, 0:40:16 temperature: no ada_p: No Discriminator_loss: 0.0647839 Generator_loss: 0.483463 
+[INFO] 2020-12-11 09:21:56 > Step:  156200 Progress: 78.1% Elapsed: 5 days, 0:59:48 temperature: no ada_p: No Discriminator_loss: 0.0190781 Generator_loss: 0.871591 
+[INFO] 2020-12-11 09:41:33 > Step:  156300 Progress: 78.1% Elapsed: 5 days, 1:19:26 temperature: no ada_p: No Discriminator_loss: 0.0146272 Generator_loss: 0.95347 
+[INFO] 2020-12-11 10:01:10 > Step:  156400 Progress: 78.2% Elapsed: 5 days, 1:39:02 temperature: no ada_p: No Discriminator_loss: 0.0396602 Generator_loss: 0.703498 
+[INFO] 2020-12-11 10:20:43 > Step:  156500 Progress: 78.2% Elapsed: 5 days, 1:58:35 temperature: no ada_p: No Discriminator_loss: 0.0220227 Generator_loss: 0.800133 
+[INFO] 2020-12-11 10:40:20 > Step:  156600 Progress: 78.3% Elapsed: 5 days, 2:18:12 temperature: no ada_p: No Discriminator_loss: 0.0198971 Generator_loss: 0.832941 
+[INFO] 2020-12-11 10:59:54 > Step:  156700 Progress: 78.3% Elapsed: 5 days, 2:37:46 temperature: no ada_p: No Discriminator_loss: 0.013803 Generator_loss: 1.0273 
+[INFO] 2020-12-11 11:19:28 > Step:  156800 Progress: 78.4% Elapsed: 5 days, 2:57:20 temperature: no ada_p: No Discriminator_loss: 0.0156012 Generator_loss: 0.836527 
+[INFO] 2020-12-11 11:39:01 > Step:  156900 Progress: 78.5% Elapsed: 5 days, 3:16:53 temperature: no ada_p: No Discriminator_loss: 0.0175998 Generator_loss: 0.790784 
+[INFO] 2020-12-11 11:58:39 > Step:  157000 Progress: 78.5% Elapsed: 5 days, 3:36:32 temperature: no ada_p: No Discriminator_loss: 0.0112978 Generator_loss: 0.91643 
+[INFO] 2020-12-11 12:18:14 > Step:  157100 Progress: 78.5% Elapsed: 5 days, 3:56:06 temperature: no ada_p: No Discriminator_loss: 0.0209655 Generator_loss: 0.791482 
+[INFO] 2020-12-11 12:37:47 > Step:  157200 Progress: 78.6% Elapsed: 5 days, 4:15:39 temperature: no ada_p: No Discriminator_loss: 0.0133046 Generator_loss: 0.915951 
+[INFO] 2020-12-11 12:57:24 > Step:  157300 Progress: 78.6% Elapsed: 5 days, 4:35:17 temperature: no ada_p: No Discriminator_loss: 0.0117317 Generator_loss: 0.900514 
+[INFO] 2020-12-11 13:16:59 > Step:  157400 Progress: 78.7% Elapsed: 5 days, 4:54:51 temperature: no ada_p: No Discriminator_loss: 0.0217694 Generator_loss: 0.79503 
+[INFO] 2020-12-11 13:36:32 > Step:  157500 Progress: 78.8% Elapsed: 5 days, 5:14:24 temperature: no ada_p: No Discriminator_loss: 0.0174587 Generator_loss: 0.855854 
+[INFO] 2020-12-11 13:56:10 > Step:  157600 Progress: 78.8% Elapsed: 5 days, 5:34:03 temperature: no ada_p: No Discriminator_loss: 0.0197836 Generator_loss: 0.780419 
+[INFO] 2020-12-11 14:15:44 > Step:  157700 Progress: 78.8% Elapsed: 5 days, 5:53:36 temperature: no ada_p: No Discriminator_loss: 0.0148896 Generator_loss: 0.792845 
+[INFO] 2020-12-11 14:35:17 > Step:  157800 Progress: 78.9% Elapsed: 5 days, 6:13:09 temperature: no ada_p: No Discriminator_loss: 0.0221532 Generator_loss: 0.847657 
+[INFO] 2020-12-11 14:54:55 > Step:  157900 Progress: 79.0% Elapsed: 5 days, 6:32:47 temperature: no ada_p: No Discriminator_loss: 0.0115664 Generator_loss: 0.861173 
+[INFO] 2020-12-11 15:14:28 > Step:  158000 Progress: 79.0% Elapsed: 5 days, 6:52:21 temperature: no ada_p: No Discriminator_loss: 0.0174665 Generator_loss: 0.775645 
+[INFO] 2020-12-11 15:14:28 > Start Evaluation (158000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-11 15:14:28 > Calculating FID Score....
+[INFO] 2020-12-11 15:15:40 > Calculating Inception Score....
+[INFO] 2020-12-11 15:16:41 > Calculate F_beta Score....
+[INFO] 2020-12-11 15:22:59 > Calculate Accuracies....
+[INFO] 2020-12-11 15:23:58 > Calculate Accuracies....
+[INFO] 2020-12-11 15:25:15 > F_8 score (Step: 158000, Using valid images): 0.9857519438497346
+[INFO] 2020-12-11 15:25:15 > F_1/8 score (Step: 158000, Using valid images): 0.9819705105675455
+[INFO] 2020-12-11 15:25:15 > FID score (Step: 158000, Using valid moments): 8.838863169846377
+[INFO] 2020-12-11 15:25:15 > Inception score (Step: 158000, 50000 generated images): 79.53129577636719
+[INFO] 2020-12-11 15:25:15 > Best FID score (Step: 158000, Using valid moments): 8.838863169846377
+[INFO] 2020-12-11 15:25:28 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-11 15:45:02 > Step:  158100 Progress: 79.0% Elapsed: 5 days, 7:22:54 temperature: no ada_p: No Discriminator_loss: 0.0148471 Generator_loss: 0.912398 
+[INFO] 2020-12-11 16:04:41 > Step:  158200 Progress: 79.1% Elapsed: 5 days, 7:42:33 temperature: no ada_p: No Discriminator_loss: 0.0144011 Generator_loss: 0.806845 
+[INFO] 2020-12-11 16:24:17 > Step:  158300 Progress: 79.1% Elapsed: 5 days, 8:02:09 temperature: no ada_p: No Discriminator_loss: 0.0140503 Generator_loss: 0.939795 
+[INFO] 2020-12-11 16:43:51 > Step:  158400 Progress: 79.2% Elapsed: 5 days, 8:21:43 temperature: no ada_p: No Discriminator_loss: 0.0317569 Generator_loss: 0.750811 
+[INFO] 2020-12-11 17:03:29 > Step:  158500 Progress: 79.2% Elapsed: 5 days, 8:41:21 temperature: no ada_p: No Discriminator_loss: 0.0177718 Generator_loss: 0.920039 
+[INFO] 2020-12-11 17:23:07 > Step:  158600 Progress: 79.3% Elapsed: 5 days, 9:00:59 temperature: no ada_p: No Discriminator_loss: 0.0208118 Generator_loss: 0.725891 
+[INFO] 2020-12-11 17:42:41 > Step:  158700 Progress: 79.3% Elapsed: 5 days, 9:20:33 temperature: no ada_p: No Discriminator_loss: 0.0282046 Generator_loss: 0.718677 
+[INFO] 2020-12-11 18:02:18 > Step:  158800 Progress: 79.4% Elapsed: 5 days, 9:40:10 temperature: no ada_p: No Discriminator_loss: 0.0212308 Generator_loss: 0.751461 
+[INFO] 2020-12-11 18:21:52 > Step:  158900 Progress: 79.5% Elapsed: 5 days, 9:59:44 temperature: no ada_p: No Discriminator_loss: 0.0222538 Generator_loss: 0.728366 
+[INFO] 2020-12-11 18:41:26 > Step:  159000 Progress: 79.5% Elapsed: 5 days, 10:19:18 temperature: no ada_p: No Discriminator_loss: 0.0182607 Generator_loss: 0.9384 
+[INFO] 2020-12-11 19:01:02 > Step:  159100 Progress: 79.5% Elapsed: 5 days, 10:38:55 temperature: no ada_p: No Discriminator_loss: 0.0231263 Generator_loss: 0.826078 
+[INFO] 2020-12-11 19:20:38 > Step:  159200 Progress: 79.6% Elapsed: 5 days, 10:58:31 temperature: no ada_p: No Discriminator_loss: 0.0111984 Generator_loss: 0.920479 
+[INFO] 2020-12-11 19:40:14 > Step:  159300 Progress: 79.7% Elapsed: 5 days, 11:18:07 temperature: no ada_p: No Discriminator_loss: 0.0181251 Generator_loss: 0.947024 
+[INFO] 2020-12-11 19:59:50 > Step:  159400 Progress: 79.7% Elapsed: 5 days, 11:37:42 temperature: no ada_p: No Discriminator_loss: 0.0155871 Generator_loss: 0.789071 
+[INFO] 2020-12-11 20:19:27 > Step:  159500 Progress: 79.8% Elapsed: 5 days, 11:57:20 temperature: no ada_p: No Discriminator_loss: 0.0151751 Generator_loss: 0.856921 
+[INFO] 2020-12-11 20:39:00 > Step:  159600 Progress: 79.8% Elapsed: 5 days, 12:16:53 temperature: no ada_p: No Discriminator_loss: 0.0245395 Generator_loss: 0.718079 
+[INFO] 2020-12-11 20:58:34 > Step:  159700 Progress: 79.8% Elapsed: 5 days, 12:36:26 temperature: no ada_p: No Discriminator_loss: 0.0297902 Generator_loss: 0.751562 
+[INFO] 2020-12-11 21:18:10 > Step:  159800 Progress: 79.9% Elapsed: 5 days, 12:56:02 temperature: no ada_p: No Discriminator_loss: 0.0245029 Generator_loss: 0.800809 
+[INFO] 2020-12-11 21:37:43 > Step:  159900 Progress: 80.0% Elapsed: 5 days, 13:15:35 temperature: no ada_p: No Discriminator_loss: 0.0136744 Generator_loss: 0.890723 
+[INFO] 2020-12-11 21:57:15 > Step:  160000 Progress: 80.0% Elapsed: 5 days, 13:35:07 temperature: no ada_p: No Discriminator_loss: 0.014907 Generator_loss: 0.838372 
+[INFO] 2020-12-11 21:57:15 > Start Evaluation (160000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-11 21:57:15 > Calculating FID Score....
+[INFO] 2020-12-11 21:58:26 > Calculating Inception Score....
+[INFO] 2020-12-11 21:59:28 > Calculate F_beta Score....
+[INFO] 2020-12-11 22:04:45 > Calculate Accuracies....
+[INFO] 2020-12-11 22:05:44 > Calculate Accuracies....
+[INFO] 2020-12-11 22:06:59 > F_8 score (Step: 160000, Using valid images): 0.9857505482931813
+[INFO] 2020-12-11 22:06:59 > F_1/8 score (Step: 160000, Using valid images): 0.9802053243890648
+[INFO] 2020-12-11 22:06:59 > FID score (Step: 160000, Using valid moments): 8.957255438653533
+[INFO] 2020-12-11 22:06:59 > Inception score (Step: 160000, 50000 generated images): 80.70714569091797
+[INFO] 2020-12-11 22:06:59 > Best FID score (Step: 158000, Using valid moments): 8.838863169846377
+[INFO] 2020-12-11 22:07:06 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-11 22:26:47 > Step:  160100 Progress: 80.0% Elapsed: 5 days, 14:04:39 temperature: no ada_p: No Discriminator_loss: 0.0870939 Generator_loss: 0.467022 
+[INFO] 2020-12-11 22:46:22 > Step:  160200 Progress: 80.1% Elapsed: 5 days, 14:24:14 temperature: no ada_p: No Discriminator_loss: 0.0197352 Generator_loss: 0.990211 
+[INFO] 2020-12-11 23:05:56 > Step:  160300 Progress: 80.2% Elapsed: 5 days, 14:43:48 temperature: no ada_p: No Discriminator_loss: 0.0156224 Generator_loss: 0.99959 
+[INFO] 2020-12-11 23:25:37 > Step:  160400 Progress: 80.2% Elapsed: 5 days, 15:03:30 temperature: no ada_p: No Discriminator_loss: 0.0174058 Generator_loss: 0.837252 
+[INFO] 2020-12-11 23:45:15 > Step:  160500 Progress: 80.2% Elapsed: 5 days, 15:23:07 temperature: no ada_p: No Discriminator_loss: 0.0307841 Generator_loss: 0.698951 
+[INFO] 2020-12-12 00:04:51 > Step:  160600 Progress: 80.3% Elapsed: 5 days, 15:42:43 temperature: no ada_p: No Discriminator_loss: 0.0164288 Generator_loss: 0.782205 
+[INFO] 2020-12-12 00:24:30 > Step:  160700 Progress: 80.3% Elapsed: 5 days, 16:02:22 temperature: no ada_p: No Discriminator_loss: 0.0199944 Generator_loss: 0.825228 
+[INFO] 2020-12-12 00:44:05 > Step:  160800 Progress: 80.4% Elapsed: 5 days, 16:21:58 temperature: no ada_p: No Discriminator_loss: 0.0243091 Generator_loss: 0.886384 
+[INFO] 2020-12-12 01:03:40 > Step:  160900 Progress: 80.5% Elapsed: 5 days, 16:41:32 temperature: no ada_p: No Discriminator_loss: 0.0175893 Generator_loss: 0.870425 
+[INFO] 2020-12-12 01:23:18 > Step:  161000 Progress: 80.5% Elapsed: 5 days, 17:01:10 temperature: no ada_p: No Discriminator_loss: 0.0190027 Generator_loss: 0.845256 
+[INFO] 2020-12-12 01:42:53 > Step:  161100 Progress: 80.5% Elapsed: 5 days, 17:20:45 temperature: no ada_p: No Discriminator_loss: 0.0314377 Generator_loss: 0.749527 
+[INFO] 2020-12-12 02:02:27 > Step:  161200 Progress: 80.6% Elapsed: 5 days, 17:40:19 temperature: no ada_p: No Discriminator_loss: 0.0176309 Generator_loss: 0.787615 
+[INFO] 2020-12-12 02:22:05 > Step:  161300 Progress: 80.7% Elapsed: 5 days, 17:59:58 temperature: no ada_p: No Discriminator_loss: 0.0201479 Generator_loss: 0.69645 
+[INFO] 2020-12-12 02:41:40 > Step:  161400 Progress: 80.7% Elapsed: 5 days, 18:19:33 temperature: no ada_p: No Discriminator_loss: 0.0105131 Generator_loss: 0.930465 
+[INFO] 2020-12-12 03:01:13 > Step:  161500 Progress: 80.8% Elapsed: 5 days, 18:39:05 temperature: no ada_p: No Discriminator_loss: 0.0187939 Generator_loss: 0.826819 
+[INFO] 2020-12-12 03:20:50 > Step:  161600 Progress: 80.8% Elapsed: 5 days, 18:58:42 temperature: no ada_p: No Discriminator_loss: 0.0165761 Generator_loss: 1.00684 
+[INFO] 2020-12-12 03:40:25 > Step:  161700 Progress: 80.8% Elapsed: 5 days, 19:18:17 temperature: no ada_p: No Discriminator_loss: 0.0153263 Generator_loss: 0.886144 
+[INFO] 2020-12-12 03:59:57 > Step:  161800 Progress: 80.9% Elapsed: 5 days, 19:37:50 temperature: no ada_p: No Discriminator_loss: 0.0730403 Generator_loss: 0.489275 
+[INFO] 2020-12-12 04:19:30 > Step:  161900 Progress: 81.0% Elapsed: 5 days, 19:57:23 temperature: no ada_p: No Discriminator_loss: 0.0221967 Generator_loss: 0.941986 
+[INFO] 2020-12-12 04:39:11 > Step:  162000 Progress: 81.0% Elapsed: 5 days, 20:17:03 temperature: no ada_p: No Discriminator_loss: 0.0388839 Generator_loss: 0.680943 
+[INFO] 2020-12-12 04:39:11 > Start Evaluation (162000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-12 04:39:11 > Calculating FID Score....
+[INFO] 2020-12-12 04:40:22 > Calculating Inception Score....
+[INFO] 2020-12-12 04:41:23 > Calculate F_beta Score....
+[INFO] 2020-12-12 04:44:30 > Calculate Accuracies....
+[INFO] 2020-12-12 04:45:29 > Calculate Accuracies....
+[INFO] 2020-12-12 04:46:57 > F_8 score (Step: 162000, Using valid images): 0.985749189508683
+[INFO] 2020-12-12 04:46:57 > F_1/8 score (Step: 162000, Using valid images): 0.9821994008579452
+[INFO] 2020-12-12 04:46:57 > FID score (Step: 162000, Using valid moments): 8.748665481640728
+[INFO] 2020-12-12 04:46:57 > Inception score (Step: 162000, 50000 generated images): 81.67446899414062
+[INFO] 2020-12-12 04:46:57 > Best FID score (Step: 162000, Using valid moments): 8.748665481640728
+[INFO] 2020-12-12 04:47:10 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-12 05:06:45 > Step:  162100 Progress: 81.0% Elapsed: 5 days, 20:44:37 temperature: no ada_p: No Discriminator_loss: 0.020226 Generator_loss: 0.924687 
+[INFO] 2020-12-12 05:26:19 > Step:  162200 Progress: 81.1% Elapsed: 5 days, 21:04:11 temperature: no ada_p: No Discriminator_loss: 0.0308455 Generator_loss: 0.793873 
+[INFO] 2020-12-12 05:45:57 > Step:  162300 Progress: 81.2% Elapsed: 5 days, 21:23:50 temperature: no ada_p: No Discriminator_loss: 0.0147778 Generator_loss: 0.843071 
+[INFO] 2020-12-12 06:05:33 > Step:  162400 Progress: 81.2% Elapsed: 5 days, 21:43:25 temperature: no ada_p: No Discriminator_loss: 0.0982617 Generator_loss: 0.411087 
+[INFO] 2020-12-12 06:25:07 > Step:  162500 Progress: 81.2% Elapsed: 5 days, 22:03:00 temperature: no ada_p: No Discriminator_loss: 0.0157386 Generator_loss: 0.866413 
+[INFO] 2020-12-12 06:44:49 > Step:  162600 Progress: 81.3% Elapsed: 5 days, 22:22:41 temperature: no ada_p: No Discriminator_loss: 0.017779 Generator_loss: 0.968305 
+[INFO] 2020-12-12 07:04:26 > Step:  162700 Progress: 81.3% Elapsed: 5 days, 22:42:18 temperature: no ada_p: No Discriminator_loss: 0.0322629 Generator_loss: 0.637373 
+[INFO] 2020-12-12 07:24:01 > Step:  162800 Progress: 81.4% Elapsed: 5 days, 23:01:53 temperature: no ada_p: No Discriminator_loss: 0.0161141 Generator_loss: 0.922917 
+[INFO] 2020-12-12 07:43:40 > Step:  162900 Progress: 81.5% Elapsed: 5 days, 23:21:32 temperature: no ada_p: No Discriminator_loss: 0.0512884 Generator_loss: 0.57426 
+[INFO] 2020-12-12 08:03:15 > Step:  163000 Progress: 81.5% Elapsed: 5 days, 23:41:07 temperature: no ada_p: No Discriminator_loss: 0.0153328 Generator_loss: 0.879916 
+[INFO] 2020-12-12 08:22:50 > Step:  163100 Progress: 81.5% Elapsed: 6 days, 0:00:42 temperature: no ada_p: No Discriminator_loss: 0.0495608 Generator_loss: 0.588105 
+[INFO] 2020-12-12 08:42:29 > Step:  163200 Progress: 81.6% Elapsed: 6 days, 0:20:21 temperature: no ada_p: No Discriminator_loss: 0.0199541 Generator_loss: 0.787345 
+[INFO] 2020-12-12 09:02:02 > Step:  163300 Progress: 81.7% Elapsed: 6 days, 0:39:55 temperature: no ada_p: No Discriminator_loss: 0.0152542 Generator_loss: 0.91948 
+[INFO] 2020-12-12 09:21:35 > Step:  163400 Progress: 81.7% Elapsed: 6 days, 0:59:27 temperature: no ada_p: No Discriminator_loss: 0.013889 Generator_loss: 0.85992 
+[INFO] 2020-12-12 09:41:12 > Step:  163500 Progress: 81.8% Elapsed: 6 days, 1:19:05 temperature: no ada_p: No Discriminator_loss: 0.0108432 Generator_loss: 0.849825 
+[INFO] 2020-12-12 10:00:46 > Step:  163600 Progress: 81.8% Elapsed: 6 days, 1:38:39 temperature: no ada_p: No Discriminator_loss: 0.0429169 Generator_loss: 0.613797 
+[INFO] 2020-12-12 10:20:20 > Step:  163700 Progress: 81.8% Elapsed: 6 days, 1:58:13 temperature: no ada_p: No Discriminator_loss: 0.0143173 Generator_loss: 0.910004 
+[INFO] 2020-12-12 10:39:57 > Step:  163800 Progress: 81.9% Elapsed: 6 days, 2:17:50 temperature: no ada_p: No Discriminator_loss: 0.0137963 Generator_loss: 0.989121 
+[INFO] 2020-12-12 10:59:33 > Step:  163900 Progress: 82.0% Elapsed: 6 days, 2:37:25 temperature: no ada_p: No Discriminator_loss: 0.0120643 Generator_loss: 0.832602 
+[INFO] 2020-12-12 11:19:07 > Step:  164000 Progress: 82.0% Elapsed: 6 days, 2:56:59 temperature: no ada_p: No Discriminator_loss: 0.0151385 Generator_loss: 0.937191 
+[INFO] 2020-12-12 11:19:07 > Start Evaluation (164000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-12 11:19:07 > Calculating FID Score....
+[INFO] 2020-12-12 11:20:19 > Calculating Inception Score....
+[INFO] 2020-12-12 11:21:20 > Calculate F_beta Score....
+[INFO] 2020-12-12 11:25:09 > Calculate Accuracies....
+[INFO] 2020-12-12 11:26:09 > Calculate Accuracies....
+[INFO] 2020-12-12 11:27:32 > F_8 score (Step: 164000, Using valid images): 0.9861420990591949
+[INFO] 2020-12-12 11:27:32 > F_1/8 score (Step: 164000, Using valid images): 0.9802006161679585
+[INFO] 2020-12-12 11:27:32 > FID score (Step: 164000, Using valid moments): 8.586955144455146
+[INFO] 2020-12-12 11:27:32 > Inception score (Step: 164000, 50000 generated images): 82.26203918457031
+[INFO] 2020-12-12 11:27:32 > Best FID score (Step: 164000, Using valid moments): 8.586955144455146
+[INFO] 2020-12-12 11:27:46 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-12 11:47:23 > Step:  164100 Progress: 82.0% Elapsed: 6 days, 3:25:16 temperature: no ada_p: No Discriminator_loss: 0.0111661 Generator_loss: 0.902329 
+[INFO] 2020-12-12 12:07:00 > Step:  164200 Progress: 82.1% Elapsed: 6 days, 3:44:53 temperature: no ada_p: No Discriminator_loss: 0.0109024 Generator_loss: 0.978593 
+[INFO] 2020-12-12 12:26:37 > Step:  164300 Progress: 82.2% Elapsed: 6 days, 4:04:29 temperature: no ada_p: No Discriminator_loss: 0.0686805 Generator_loss: 0.465587 
+[INFO] 2020-12-12 12:46:13 > Step:  164400 Progress: 82.2% Elapsed: 6 days, 4:24:05 temperature: no ada_p: No Discriminator_loss: 0.0272615 Generator_loss: 0.716908 
+[INFO] 2020-12-12 13:05:52 > Step:  164500 Progress: 82.2% Elapsed: 6 days, 4:43:45 temperature: no ada_p: No Discriminator_loss: 0.0171424 Generator_loss: 0.83037 
+[INFO] 2020-12-12 13:25:28 > Step:  164600 Progress: 82.3% Elapsed: 6 days, 5:03:20 temperature: no ada_p: No Discriminator_loss: 0.0155547 Generator_loss: 0.760231 
+[INFO] 2020-12-12 13:45:03 > Step:  164700 Progress: 82.3% Elapsed: 6 days, 5:22:55 temperature: no ada_p: No Discriminator_loss: 0.0169559 Generator_loss: 0.838341 
+[INFO] 2020-12-12 14:04:44 > Step:  164800 Progress: 82.4% Elapsed: 6 days, 5:42:36 temperature: no ada_p: No Discriminator_loss: 0.0251115 Generator_loss: 0.862766 
+[INFO] 2020-12-12 14:24:20 > Step:  164900 Progress: 82.5% Elapsed: 6 days, 6:02:12 temperature: no ada_p: No Discriminator_loss: 0.0397098 Generator_loss: 0.581638 
+[INFO] 2020-12-12 14:43:54 > Step:  165000 Progress: 82.5% Elapsed: 6 days, 6:21:47 temperature: no ada_p: No Discriminator_loss: 0.0145261 Generator_loss: 0.916094 
+[INFO] 2020-12-12 15:03:33 > Step:  165100 Progress: 82.5% Elapsed: 6 days, 6:41:25 temperature: no ada_p: No Discriminator_loss: 0.0176299 Generator_loss: 1.05394 
+[INFO] 2020-12-12 15:23:07 > Step:  165200 Progress: 82.6% Elapsed: 6 days, 7:01:00 temperature: no ada_p: No Discriminator_loss: 0.0212156 Generator_loss: 0.846196 
+[INFO] 2020-12-12 15:42:41 > Step:  165300 Progress: 82.7% Elapsed: 6 days, 7:20:34 temperature: no ada_p: No Discriminator_loss: 0.0150092 Generator_loss: 0.939105 
+[INFO] 2020-12-12 16:02:21 > Step:  165400 Progress: 82.7% Elapsed: 6 days, 7:40:13 temperature: no ada_p: No Discriminator_loss: 0.0142844 Generator_loss: 0.939066 
+[INFO] 2020-12-12 16:21:56 > Step:  165500 Progress: 82.8% Elapsed: 6 days, 7:59:48 temperature: no ada_p: No Discriminator_loss: 0.0201159 Generator_loss: 0.793538 
+[INFO] 2020-12-12 16:41:29 > Step:  165600 Progress: 82.8% Elapsed: 6 days, 8:19:21 temperature: no ada_p: No Discriminator_loss: 0.0221289 Generator_loss: 0.708656 
+[INFO] 2020-12-12 17:01:08 > Step:  165700 Progress: 82.8% Elapsed: 6 days, 8:39:00 temperature: no ada_p: No Discriminator_loss: 0.0282843 Generator_loss: 0.720051 
+[INFO] 2020-12-12 17:20:43 > Step:  165800 Progress: 82.9% Elapsed: 6 days, 8:58:35 temperature: no ada_p: No Discriminator_loss: 0.0155635 Generator_loss: 0.979124 
+[INFO] 2020-12-12 17:40:15 > Step:  165900 Progress: 83.0% Elapsed: 6 days, 9:18:08 temperature: no ada_p: No Discriminator_loss: 0.0157801 Generator_loss: 0.901339 
+[INFO] 2020-12-12 17:59:54 > Step:  166000 Progress: 83.0% Elapsed: 6 days, 9:37:47 temperature: no ada_p: No Discriminator_loss: 0.0132423 Generator_loss: 0.945603 
+[INFO] 2020-12-12 17:59:54 > Start Evaluation (166000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-12 17:59:54 > Calculating FID Score....
+[INFO] 2020-12-12 18:01:06 > Calculating Inception Score....
+[INFO] 2020-12-12 18:02:07 > Calculate F_beta Score....
+[INFO] 2020-12-12 18:06:04 > Calculate Accuracies....
+[INFO] 2020-12-12 18:07:03 > Calculate Accuracies....
+[INFO] 2020-12-12 18:08:25 > F_8 score (Step: 166000, Using valid images): 0.9863549772386684
+[INFO] 2020-12-12 18:08:25 > F_1/8 score (Step: 166000, Using valid images): 0.9831053972567447
+[INFO] 2020-12-12 18:08:25 > FID score (Step: 166000, Using valid moments): 8.740109753325157
+[INFO] 2020-12-12 18:08:25 > Inception score (Step: 166000, 50000 generated images): 83.0975570678711
+[INFO] 2020-12-12 18:08:25 > Best FID score (Step: 164000, Using valid moments): 8.586955144455146
+[INFO] 2020-12-12 18:08:32 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-12 18:28:07 > Step:  166100 Progress: 83.0% Elapsed: 6 days, 10:05:59 temperature: no ada_p: No Discriminator_loss: 0.0154829 Generator_loss: 0.818707 
+[INFO] 2020-12-12 18:47:41 > Step:  166200 Progress: 83.1% Elapsed: 6 days, 10:25:34 temperature: no ada_p: No Discriminator_loss: 0.0143693 Generator_loss: 0.958396 
+[INFO] 2020-12-12 19:07:20 > Step:  166300 Progress: 83.2% Elapsed: 6 days, 10:45:12 temperature: no ada_p: No Discriminator_loss: 0.0178352 Generator_loss: 0.835001 
+[INFO] 2020-12-12 19:26:57 > Step:  166400 Progress: 83.2% Elapsed: 6 days, 11:04:49 temperature: no ada_p: No Discriminator_loss: 0.0407631 Generator_loss: 0.603577 
+[INFO] 2020-12-12 19:46:32 > Step:  166500 Progress: 83.2% Elapsed: 6 days, 11:24:24 temperature: no ada_p: No Discriminator_loss: 0.0212074 Generator_loss: 1.00586 
+[INFO] 2020-12-12 20:06:10 > Step:  166600 Progress: 83.3% Elapsed: 6 days, 11:44:02 temperature: no ada_p: No Discriminator_loss: 0.019912 Generator_loss: 0.80189 
+[INFO] 2020-12-12 20:25:46 > Step:  166700 Progress: 83.4% Elapsed: 6 days, 12:03:38 temperature: no ada_p: No Discriminator_loss: 0.0168787 Generator_loss: 0.787495 
+[INFO] 2020-12-12 20:45:19 > Step:  166800 Progress: 83.4% Elapsed: 6 days, 12:23:12 temperature: no ada_p: No Discriminator_loss: 0.0877638 Generator_loss: 0.420675 
+[INFO] 2020-12-12 21:04:53 > Step:  166900 Progress: 83.5% Elapsed: 6 days, 12:42:45 temperature: no ada_p: No Discriminator_loss: 0.0547443 Generator_loss: 0.906268 
+[INFO] 2020-12-12 21:24:32 > Step:  167000 Progress: 83.5% Elapsed: 6 days, 13:02:25 temperature: no ada_p: No Discriminator_loss: 0.0180764 Generator_loss: 0.874092 
+[INFO] 2020-12-12 21:44:06 > Step:  167100 Progress: 83.5% Elapsed: 6 days, 13:21:58 temperature: no ada_p: No Discriminator_loss: 0.0221984 Generator_loss: 0.782518 
+[INFO] 2020-12-12 22:03:40 > Step:  167200 Progress: 83.6% Elapsed: 6 days, 13:41:32 temperature: no ada_p: No Discriminator_loss: 0.0175681 Generator_loss: 0.886226 
+[INFO] 2020-12-12 22:23:22 > Step:  167300 Progress: 83.7% Elapsed: 6 days, 14:01:14 temperature: no ada_p: No Discriminator_loss: 0.028599 Generator_loss: 0.783917 
+[INFO] 2020-12-12 22:42:56 > Step:  167400 Progress: 83.7% Elapsed: 6 days, 14:20:48 temperature: no ada_p: No Discriminator_loss: 0.0279331 Generator_loss: 0.775579 
+[INFO] 2020-12-12 23:02:31 > Step:  167500 Progress: 83.8% Elapsed: 6 days, 14:40:23 temperature: no ada_p: No Discriminator_loss: 0.0116841 Generator_loss: 0.908229 
+[INFO] 2020-12-12 23:22:13 > Step:  167600 Progress: 83.8% Elapsed: 6 days, 15:00:05 temperature: no ada_p: No Discriminator_loss: 0.0195829 Generator_loss: 0.816819 
+[INFO] 2020-12-12 23:41:48 > Step:  167700 Progress: 83.9% Elapsed: 6 days, 15:19:40 temperature: no ada_p: No Discriminator_loss: 0.0257693 Generator_loss: 0.794589 
+[INFO] 2020-12-13 00:01:22 > Step:  167800 Progress: 83.9% Elapsed: 6 days, 15:39:14 temperature: no ada_p: No Discriminator_loss: 0.0170126 Generator_loss: 0.954981 
+[INFO] 2020-12-13 00:21:02 > Step:  167900 Progress: 84.0% Elapsed: 6 days, 15:58:55 temperature: no ada_p: No Discriminator_loss: 0.00933363 Generator_loss: 0.797572 
+[INFO] 2020-12-13 00:40:36 > Step:  168000 Progress: 84.0% Elapsed: 6 days, 16:18:29 temperature: no ada_p: No Discriminator_loss: 0.0143944 Generator_loss: 0.923715 
+[INFO] 2020-12-13 00:40:36 > Start Evaluation (168000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-13 00:40:36 > Calculating FID Score....
+[INFO] 2020-12-13 00:41:48 > Calculating Inception Score....
+[INFO] 2020-12-13 00:42:49 > Calculate F_beta Score....
+[INFO] 2020-12-13 00:47:24 > Calculate Accuracies....
+[INFO] 2020-12-13 00:48:23 > Calculate Accuracies....
+[INFO] 2020-12-13 00:49:44 > F_8 score (Step: 168000, Using valid images): 0.9849791371990487
+[INFO] 2020-12-13 00:49:44 > F_1/8 score (Step: 168000, Using valid images): 0.9822960278111631
+[INFO] 2020-12-13 00:49:44 > FID score (Step: 168000, Using valid moments): 8.602963937408333
+[INFO] 2020-12-13 00:49:44 > Inception score (Step: 168000, 50000 generated images): 82.71665954589844
+[INFO] 2020-12-13 00:49:44 > Best FID score (Step: 164000, Using valid moments): 8.586955144455146
+[INFO] 2020-12-13 00:49:51 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-13 01:09:24 > Step:  168100 Progress: 84.0% Elapsed: 6 days, 16:47:17 temperature: no ada_p: No Discriminator_loss: 0.0217549 Generator_loss: 0.86278 
+[INFO] 2020-12-13 01:29:05 > Step:  168200 Progress: 84.1% Elapsed: 6 days, 17:06:57 temperature: no ada_p: No Discriminator_loss: 0.0160962 Generator_loss: 0.887353 
+[INFO] 2020-12-13 01:48:41 > Step:  168300 Progress: 84.2% Elapsed: 6 days, 17:26:33 temperature: no ada_p: No Discriminator_loss: 0.0538071 Generator_loss: 0.582448 
+[INFO] 2020-12-13 02:08:17 > Step:  168400 Progress: 84.2% Elapsed: 6 days, 17:46:09 temperature: no ada_p: No Discriminator_loss: 0.0209595 Generator_loss: 0.765584 
+[INFO] 2020-12-13 02:27:57 > Step:  168500 Progress: 84.2% Elapsed: 6 days, 18:05:49 temperature: no ada_p: No Discriminator_loss: 0.0103644 Generator_loss: 0.978532 
+[INFO] 2020-12-13 02:47:32 > Step:  168600 Progress: 84.3% Elapsed: 6 days, 18:25:25 temperature: no ada_p: No Discriminator_loss: 0.0362797 Generator_loss: 0.583735 
+[INFO] 2020-12-13 03:07:07 > Step:  168700 Progress: 84.4% Elapsed: 6 days, 18:44:59 temperature: no ada_p: No Discriminator_loss: 0.0170242 Generator_loss: 0.779805 
+[INFO] 2020-12-13 03:26:46 > Step:  168800 Progress: 84.4% Elapsed: 6 days, 19:04:39 temperature: no ada_p: No Discriminator_loss: 0.0142504 Generator_loss: 0.848274 
+[INFO] 2020-12-13 03:46:21 > Step:  168900 Progress: 84.5% Elapsed: 6 days, 19:24:14 temperature: no ada_p: No Discriminator_loss: 0.0114715 Generator_loss: 0.909104 
+[INFO] 2020-12-13 04:05:55 > Step:  169000 Progress: 84.5% Elapsed: 6 days, 19:43:47 temperature: no ada_p: No Discriminator_loss: 0.104731 Generator_loss: 0.421277 
+[INFO] 2020-12-13 04:25:29 > Step:  169100 Progress: 84.5% Elapsed: 6 days, 20:03:21 temperature: no ada_p: No Discriminator_loss: 0.0135638 Generator_loss: 0.971227 
+[INFO] 2020-12-13 04:45:08 > Step:  169200 Progress: 84.6% Elapsed: 6 days, 20:23:01 temperature: no ada_p: No Discriminator_loss: 0.0230162 Generator_loss: 0.818918 
+[INFO] 2020-12-13 05:04:43 > Step:  169300 Progress: 84.7% Elapsed: 6 days, 20:42:35 temperature: no ada_p: No Discriminator_loss: 0.011279 Generator_loss: 1.00221 
+[INFO] 2020-12-13 05:24:16 > Step:  169400 Progress: 84.7% Elapsed: 6 days, 21:02:09 temperature: no ada_p: No Discriminator_loss: 0.0176715 Generator_loss: 0.795979 
+[INFO] 2020-12-13 05:43:56 > Step:  169500 Progress: 84.8% Elapsed: 6 days, 21:21:49 temperature: no ada_p: No Discriminator_loss: 0.0387944 Generator_loss: 0.698502 
+[INFO] 2020-12-13 06:03:31 > Step:  169600 Progress: 84.8% Elapsed: 6 days, 21:41:23 temperature: no ada_p: No Discriminator_loss: 0.0174185 Generator_loss: 0.787785 
+[INFO] 2020-12-13 06:23:06 > Step:  169700 Progress: 84.9% Elapsed: 6 days, 22:00:58 temperature: no ada_p: No Discriminator_loss: 0.0484146 Generator_loss: 0.596276 
+[INFO] 2020-12-13 06:42:46 > Step:  169800 Progress: 84.9% Elapsed: 6 days, 22:20:39 temperature: no ada_p: No Discriminator_loss: 0.0334157 Generator_loss: 0.694281 
+[INFO] 2020-12-13 07:02:22 > Step:  169900 Progress: 85.0% Elapsed: 6 days, 22:40:15 temperature: no ada_p: No Discriminator_loss: 0.0767198 Generator_loss: 0.529679 
+[INFO] 2020-12-13 07:21:58 > Step:  170000 Progress: 85.0% Elapsed: 6 days, 22:59:50 temperature: no ada_p: No Discriminator_loss: 0.013822 Generator_loss: 0.921694 
+[INFO] 2020-12-13 07:21:58 > Start Evaluation (170000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-13 07:21:58 > Calculating FID Score....
+[INFO] 2020-12-13 07:23:09 > Calculating Inception Score....
+[INFO] 2020-12-13 07:24:10 > Calculate F_beta Score....
+[INFO] 2020-12-13 07:28:38 > Calculate Accuracies....
+[INFO] 2020-12-13 07:29:38 > Calculate Accuracies....
+[INFO] 2020-12-13 07:30:54 > F_8 score (Step: 170000, Using valid images): 0.9889295100577401
+[INFO] 2020-12-13 07:30:54 > F_1/8 score (Step: 170000, Using valid images): 0.9808418992957468
+[INFO] 2020-12-13 07:30:54 > FID score (Step: 170000, Using valid moments): 8.502364905790103
+[INFO] 2020-12-13 07:30:54 > Inception score (Step: 170000, 50000 generated images): 84.03691864013672
+[INFO] 2020-12-13 07:30:54 > Best FID score (Step: 170000, Using valid moments): 8.502364905790103
+[INFO] 2020-12-13 07:31:08 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-13 07:50:49 > Step:  170100 Progress: 85.0% Elapsed: 6 days, 23:28:41 temperature: no ada_p: No Discriminator_loss: 0.020359 Generator_loss: 0.925606 
+[INFO] 2020-12-13 08:10:24 > Step:  170200 Progress: 85.1% Elapsed: 6 days, 23:48:16 temperature: no ada_p: No Discriminator_loss: 0.0150205 Generator_loss: 0.952128 
+[INFO] 2020-12-13 08:29:58 > Step:  170300 Progress: 85.2% Elapsed: 7 days, 0:07:50 temperature: no ada_p: No Discriminator_loss: 0.0195105 Generator_loss: 0.914016 
+[INFO] 2020-12-13 08:49:38 > Step:  170400 Progress: 85.2% Elapsed: 7 days, 0:27:31 temperature: no ada_p: No Discriminator_loss: 0.0117554 Generator_loss: 0.867361 
+[INFO] 2020-12-13 09:09:13 > Step:  170500 Progress: 85.2% Elapsed: 7 days, 0:47:05 temperature: no ada_p: No Discriminator_loss: 0.0161374 Generator_loss: 0.857716 
+[INFO] 2020-12-13 09:28:48 > Step:  170600 Progress: 85.3% Elapsed: 7 days, 1:06:40 temperature: no ada_p: No Discriminator_loss: 0.0207543 Generator_loss: 0.834386 
+[INFO] 2020-12-13 09:48:27 > Step:  170700 Progress: 85.4% Elapsed: 7 days, 1:26:20 temperature: no ada_p: No Discriminator_loss: 0.0414997 Generator_loss: 0.613945 
+[INFO] 2020-12-13 10:08:03 > Step:  170800 Progress: 85.4% Elapsed: 7 days, 1:45:55 temperature: no ada_p: No Discriminator_loss: 0.0159324 Generator_loss: 0.927553 
+[INFO] 2020-12-13 10:27:36 > Step:  170900 Progress: 85.5% Elapsed: 7 days, 2:05:29 temperature: no ada_p: No Discriminator_loss: 0.00937927 Generator_loss: 0.95534 
+[INFO] 2020-12-13 10:47:17 > Step:  171000 Progress: 85.5% Elapsed: 7 days, 2:25:09 temperature: no ada_p: No Discriminator_loss: 0.012326 Generator_loss: 0.915811 
+[INFO] 2020-12-13 11:06:55 > Step:  171100 Progress: 85.5% Elapsed: 7 days, 2:44:47 temperature: no ada_p: No Discriminator_loss: 0.0168624 Generator_loss: 0.844154 
+[INFO] 2020-12-13 11:26:31 > Step:  171200 Progress: 85.6% Elapsed: 7 days, 3:04:23 temperature: no ada_p: No Discriminator_loss: 0.0207558 Generator_loss: 0.753108 
+[INFO] 2020-12-13 11:46:11 > Step:  171300 Progress: 85.7% Elapsed: 7 days, 3:24:04 temperature: no ada_p: No Discriminator_loss: 0.0147109 Generator_loss: 0.905189 
+[INFO] 2020-12-13 12:05:46 > Step:  171400 Progress: 85.7% Elapsed: 7 days, 3:43:38 temperature: no ada_p: No Discriminator_loss: 0.0226845 Generator_loss: 0.868976 
+[INFO] 2020-12-13 12:25:19 > Step:  171500 Progress: 85.8% Elapsed: 7 days, 4:03:12 temperature: no ada_p: No Discriminator_loss: 0.0144032 Generator_loss: 0.892336 
+[INFO] 2020-12-13 12:44:52 > Step:  171600 Progress: 85.8% Elapsed: 7 days, 4:22:44 temperature: no ada_p: No Discriminator_loss: 0.0128035 Generator_loss: 0.874861 
+[INFO] 2020-12-13 13:04:33 > Step:  171700 Progress: 85.9% Elapsed: 7 days, 4:42:26 temperature: no ada_p: No Discriminator_loss: 0.0129501 Generator_loss: 0.869903 
+[INFO] 2020-12-13 13:24:06 > Step:  171800 Progress: 85.9% Elapsed: 7 days, 5:01:59 temperature: no ada_p: No Discriminator_loss: 0.0426235 Generator_loss: 0.667199 
+[INFO] 2020-12-13 13:43:39 > Step:  171900 Progress: 86.0% Elapsed: 7 days, 5:21:31 temperature: no ada_p: No Discriminator_loss: 0.0137458 Generator_loss: 0.912491 
+[INFO] 2020-12-13 14:03:18 > Step:  172000 Progress: 86.0% Elapsed: 7 days, 5:41:10 temperature: no ada_p: No Discriminator_loss: 0.0117274 Generator_loss: 0.916214 
+[INFO] 2020-12-13 14:03:18 > Start Evaluation (172000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-13 14:03:18 > Calculating FID Score....
+[INFO] 2020-12-13 14:04:30 > Calculating Inception Score....
+[INFO] 2020-12-13 14:05:31 > Calculate F_beta Score....
+[INFO] 2020-12-13 14:08:20 > Calculate Accuracies....
+[INFO] 2020-12-13 14:09:19 > Calculate Accuracies....
+[INFO] 2020-12-13 14:10:36 > F_8 score (Step: 172000, Using valid images): 0.9859999123777461
+[INFO] 2020-12-13 14:10:36 > F_1/8 score (Step: 172000, Using valid images): 0.9834757866889866
+[INFO] 2020-12-13 14:10:36 > FID score (Step: 172000, Using valid moments): 8.487273265705483
+[INFO] 2020-12-13 14:10:36 > Inception score (Step: 172000, 50000 generated images): 83.49514770507812
+[INFO] 2020-12-13 14:10:36 > Best FID score (Step: 172000, Using valid moments): 8.487273265705483
+[INFO] 2020-12-13 14:10:50 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-13 14:30:25 > Step:  172100 Progress: 86.1% Elapsed: 7 days, 6:08:17 temperature: no ada_p: No Discriminator_loss: 0.0174445 Generator_loss: 0.879992 
+[INFO] 2020-12-13 14:49:58 > Step:  172200 Progress: 86.1% Elapsed: 7 days, 6:27:51 temperature: no ada_p: No Discriminator_loss: 0.026713 Generator_loss: 0.693143 
+[INFO] 2020-12-13 15:09:41 > Step:  172300 Progress: 86.2% Elapsed: 7 days, 6:47:34 temperature: no ada_p: No Discriminator_loss: 0.0145403 Generator_loss: 0.939556 
+[INFO] 2020-12-13 15:29:16 > Step:  172400 Progress: 86.2% Elapsed: 7 days, 7:07:08 temperature: no ada_p: No Discriminator_loss: 0.0191048 Generator_loss: 0.818245 
+[INFO] 2020-12-13 15:48:51 > Step:  172500 Progress: 86.2% Elapsed: 7 days, 7:26:43 temperature: no ada_p: No Discriminator_loss: 0.0157049 Generator_loss: 0.962127 
+[INFO] 2020-12-13 16:08:31 > Step:  172600 Progress: 86.3% Elapsed: 7 days, 7:46:23 temperature: no ada_p: No Discriminator_loss: 0.0171463 Generator_loss: 0.903235 
+[INFO] 2020-12-13 16:28:04 > Step:  172700 Progress: 86.4% Elapsed: 7 days, 8:05:56 temperature: no ada_p: No Discriminator_loss: 0.0167922 Generator_loss: 0.909877 
+[INFO] 2020-12-13 16:47:37 > Step:  172800 Progress: 86.4% Elapsed: 7 days, 8:25:30 temperature: no ada_p: No Discriminator_loss: 0.0103438 Generator_loss: 0.945887 
+[INFO] 2020-12-13 17:07:18 > Step:  172900 Progress: 86.5% Elapsed: 7 days, 8:45:10 temperature: no ada_p: No Discriminator_loss: 0.0237293 Generator_loss: 0.782334 
+[INFO] 2020-12-13 17:26:53 > Step:  173000 Progress: 86.5% Elapsed: 7 days, 9:04:45 temperature: no ada_p: No Discriminator_loss: 0.0267061 Generator_loss: 0.762439 
+[INFO] 2020-12-13 17:46:26 > Step:  173100 Progress: 86.6% Elapsed: 7 days, 9:24:18 temperature: no ada_p: No Discriminator_loss: 0.0101263 Generator_loss: 1.01085 
+[INFO] 2020-12-13 18:06:04 > Step:  173200 Progress: 86.6% Elapsed: 7 days, 9:43:56 temperature: no ada_p: No Discriminator_loss: 0.0233793 Generator_loss: 0.802959 
+[INFO] 2020-12-13 18:25:38 > Step:  173300 Progress: 86.7% Elapsed: 7 days, 10:03:30 temperature: no ada_p: No Discriminator_loss: 0.0665838 Generator_loss: 0.488922 
+[INFO] 2020-12-13 18:45:11 > Step:  173400 Progress: 86.7% Elapsed: 7 days, 10:23:04 temperature: no ada_p: No Discriminator_loss: 0.0128471 Generator_loss: 0.983541 
+[INFO] 2020-12-13 19:04:51 > Step:  173500 Progress: 86.8% Elapsed: 7 days, 10:42:43 temperature: no ada_p: No Discriminator_loss: 0.0186874 Generator_loss: 0.861573 
+[INFO] 2020-12-13 19:24:28 > Step:  173600 Progress: 86.8% Elapsed: 7 days, 11:02:20 temperature: no ada_p: No Discriminator_loss: 0.0282864 Generator_loss: 0.781275 
+[INFO] 2020-12-13 19:44:03 > Step:  173700 Progress: 86.9% Elapsed: 7 days, 11:21:56 temperature: no ada_p: No Discriminator_loss: 0.0149967 Generator_loss: 0.942934 
+[INFO] 2020-12-13 20:03:44 > Step:  173800 Progress: 86.9% Elapsed: 7 days, 11:41:36 temperature: no ada_p: No Discriminator_loss: 0.0197222 Generator_loss: 0.907982 
+[INFO] 2020-12-13 20:23:23 > Step:  173900 Progress: 87.0% Elapsed: 7 days, 12:01:15 temperature: no ada_p: No Discriminator_loss: 0.025697 Generator_loss: 0.721347 
+[INFO] 2020-12-13 20:42:59 > Step:  174000 Progress: 87.0% Elapsed: 7 days, 12:20:51 temperature: no ada_p: No Discriminator_loss: 0.0138059 Generator_loss: 1.01105 
+[INFO] 2020-12-13 20:42:59 > Start Evaluation (174000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-13 20:42:59 > Calculating FID Score....
+[INFO] 2020-12-13 20:44:11 > Calculating Inception Score....
+[INFO] 2020-12-13 20:45:12 > Calculate F_beta Score....
+[INFO] 2020-12-13 20:48:19 > Calculate Accuracies....
+[INFO] 2020-12-13 20:49:18 > Calculate Accuracies....
+[INFO] 2020-12-13 20:50:34 > F_8 score (Step: 174000, Using valid images): 0.9868885297719371
+[INFO] 2020-12-13 20:50:34 > F_1/8 score (Step: 174000, Using valid images): 0.9831690680257648
+[INFO] 2020-12-13 20:50:34 > FID score (Step: 174000, Using valid moments): 8.653514124012304
+[INFO] 2020-12-13 20:50:34 > Inception score (Step: 174000, 50000 generated images): 83.68343353271484
+[INFO] 2020-12-13 20:50:34 > Best FID score (Step: 172000, Using valid moments): 8.487273265705483
+[INFO] 2020-12-13 20:50:41 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-13 21:10:15 > Step:  174100 Progress: 87.1% Elapsed: 7 days, 12:48:08 temperature: no ada_p: No Discriminator_loss: 0.0160395 Generator_loss: 0.858325 
+[INFO] 2020-12-13 21:29:55 > Step:  174200 Progress: 87.1% Elapsed: 7 days, 13:07:47 temperature: no ada_p: No Discriminator_loss: 0.057281 Generator_loss: 0.53809 
+[INFO] 2020-12-13 21:49:29 > Step:  174300 Progress: 87.2% Elapsed: 7 days, 13:27:21 temperature: no ada_p: No Discriminator_loss: 0.015562 Generator_loss: 0.779181 
+[INFO] 2020-12-13 22:09:02 > Step:  174400 Progress: 87.2% Elapsed: 7 days, 13:46:55 temperature: no ada_p: No Discriminator_loss: 0.0166159 Generator_loss: 0.802637 
+[INFO] 2020-12-13 22:28:43 > Step:  174500 Progress: 87.2% Elapsed: 7 days, 14:06:36 temperature: no ada_p: No Discriminator_loss: 0.0201742 Generator_loss: 0.765744 
+[INFO] 2020-12-13 22:48:17 > Step:  174600 Progress: 87.3% Elapsed: 7 days, 14:26:09 temperature: no ada_p: No Discriminator_loss: 0.017997 Generator_loss: 0.862917 
+[INFO] 2020-12-13 23:07:51 > Step:  174700 Progress: 87.4% Elapsed: 7 days, 14:45:43 temperature: no ada_p: No Discriminator_loss: 0.0268528 Generator_loss: 0.763413 
+[INFO] 2020-12-13 23:27:31 > Step:  174800 Progress: 87.4% Elapsed: 7 days, 15:05:23 temperature: no ada_p: No Discriminator_loss: 0.0143909 Generator_loss: 0.955572 
+[INFO] 2020-12-13 23:47:05 > Step:  174900 Progress: 87.5% Elapsed: 7 days, 15:24:57 temperature: no ada_p: No Discriminator_loss: 0.0133511 Generator_loss: 0.853706 
+[INFO] 2020-12-14 00:06:39 > Step:  175000 Progress: 87.5% Elapsed: 7 days, 15:44:32 temperature: no ada_p: No Discriminator_loss: 0.0159349 Generator_loss: 0.916868 
+[INFO] 2020-12-14 00:26:20 > Step:  175100 Progress: 87.5% Elapsed: 7 days, 16:04:13 temperature: no ada_p: No Discriminator_loss: 0.0636994 Generator_loss: 0.639556 
+[INFO] 2020-12-14 00:45:55 > Step:  175200 Progress: 87.6% Elapsed: 7 days, 16:23:47 temperature: no ada_p: No Discriminator_loss: 0.0787847 Generator_loss: 0.433876 
+[INFO] 2020-12-14 01:05:29 > Step:  175300 Progress: 87.6% Elapsed: 7 days, 16:43:21 temperature: no ada_p: No Discriminator_loss: 0.0192782 Generator_loss: 0.781307 
+[INFO] 2020-12-14 01:25:09 > Step:  175400 Progress: 87.7% Elapsed: 7 days, 17:03:01 temperature: no ada_p: No Discriminator_loss: 0.0147854 Generator_loss: 0.980065 
+[INFO] 2020-12-14 01:44:43 > Step:  175500 Progress: 87.8% Elapsed: 7 days, 17:22:35 temperature: no ada_p: No Discriminator_loss: 0.0175096 Generator_loss: 0.937981 
+[INFO] 2020-12-14 02:04:17 > Step:  175600 Progress: 87.8% Elapsed: 7 days, 17:42:09 temperature: no ada_p: No Discriminator_loss: 0.0166102 Generator_loss: 0.866769 
+[INFO] 2020-12-14 02:23:57 > Step:  175700 Progress: 87.8% Elapsed: 7 days, 18:01:49 temperature: no ada_p: No Discriminator_loss: 0.110111 Generator_loss: 0.297778 
+[INFO] 2020-12-14 02:43:31 > Step:  175800 Progress: 87.9% Elapsed: 7 days, 18:21:23 temperature: no ada_p: No Discriminator_loss: 0.029179 Generator_loss: 0.712781 
+[INFO] 2020-12-14 03:03:05 > Step:  175900 Progress: 87.9% Elapsed: 7 days, 18:40:57 temperature: no ada_p: No Discriminator_loss: 0.0143069 Generator_loss: 0.889659 
+[INFO] 2020-12-14 03:22:44 > Step:  176000 Progress: 88.0% Elapsed: 7 days, 19:00:36 temperature: no ada_p: No Discriminator_loss: 0.0140067 Generator_loss: 0.925021 
+[INFO] 2020-12-14 03:22:44 > Start Evaluation (176000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-14 03:22:44 > Calculating FID Score....
+[INFO] 2020-12-14 03:23:55 > Calculating Inception Score....
+[INFO] 2020-12-14 03:24:56 > Calculate F_beta Score....
+[INFO] 2020-12-14 03:28:48 > Calculate Accuracies....
+[INFO] 2020-12-14 03:29:48 > Calculate Accuracies....
+[INFO] 2020-12-14 03:31:04 > F_8 score (Step: 176000, Using valid images): 0.9854914550903421
+[INFO] 2020-12-14 03:31:04 > F_1/8 score (Step: 176000, Using valid images): 0.9820001090372117
+[INFO] 2020-12-14 03:31:04 > FID score (Step: 176000, Using valid moments): 8.471404537961064
+[INFO] 2020-12-14 03:31:04 > Inception score (Step: 176000, 50000 generated images): 85.1881103515625
+[INFO] 2020-12-14 03:31:04 > Best FID score (Step: 176000, Using valid moments): 8.471404537961064
+[INFO] 2020-12-14 03:31:18 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-14 03:50:53 > Step:  176100 Progress: 88.0% Elapsed: 7 days, 19:28:46 temperature: no ada_p: No Discriminator_loss: 0.0236255 Generator_loss: 0.796151 
+[INFO] 2020-12-14 04:10:26 > Step:  176200 Progress: 88.1% Elapsed: 7 days, 19:48:19 temperature: no ada_p: No Discriminator_loss: 0.0215864 Generator_loss: 0.798813 
+[INFO] 2020-12-14 04:30:05 > Step:  176300 Progress: 88.1% Elapsed: 7 days, 20:07:57 temperature: no ada_p: No Discriminator_loss: 0.0141988 Generator_loss: 0.955354 
+[INFO] 2020-12-14 04:49:40 > Step:  176400 Progress: 88.2% Elapsed: 7 days, 20:27:33 temperature: no ada_p: No Discriminator_loss: 0.0169539 Generator_loss: 0.850304 
+[INFO] 2020-12-14 05:09:15 > Step:  176500 Progress: 88.2% Elapsed: 7 days, 20:47:07 temperature: no ada_p: No Discriminator_loss: 0.0100329 Generator_loss: 0.935218 
+[INFO] 2020-12-14 05:28:49 > Step:  176600 Progress: 88.3% Elapsed: 7 days, 21:06:42 temperature: no ada_p: No Discriminator_loss: 0.0132586 Generator_loss: 0.999942 
+[INFO] 2020-12-14 05:48:32 > Step:  176700 Progress: 88.3% Elapsed: 7 days, 21:26:25 temperature: no ada_p: No Discriminator_loss: 0.00916929 Generator_loss: 0.888027 
+[INFO] 2020-12-14 06:08:09 > Step:  176800 Progress: 88.4% Elapsed: 7 days, 21:46:02 temperature: no ada_p: No Discriminator_loss: 0.0146833 Generator_loss: 0.893644 
+[INFO] 2020-12-14 06:27:45 > Step:  176900 Progress: 88.4% Elapsed: 7 days, 22:05:38 temperature: no ada_p: No Discriminator_loss: 0.0192888 Generator_loss: 0.794724 
+[INFO] 2020-12-14 06:47:27 > Step:  177000 Progress: 88.5% Elapsed: 7 days, 22:25:19 temperature: no ada_p: No Discriminator_loss: 0.0134271 Generator_loss: 0.913364 
+[INFO] 2020-12-14 07:07:01 > Step:  177100 Progress: 88.5% Elapsed: 7 days, 22:44:54 temperature: no ada_p: No Discriminator_loss: 0.0183593 Generator_loss: 0.89855 
+[INFO] 2020-12-14 07:26:34 > Step:  177200 Progress: 88.6% Elapsed: 7 days, 23:04:27 temperature: no ada_p: No Discriminator_loss: 0.0470967 Generator_loss: 0.651561 
+[INFO] 2020-12-14 07:46:15 > Step:  177300 Progress: 88.6% Elapsed: 7 days, 23:24:07 temperature: no ada_p: No Discriminator_loss: 0.0117124 Generator_loss: 1.02071 
+[INFO] 2020-12-14 08:05:51 > Step:  177400 Progress: 88.7% Elapsed: 7 days, 23:43:43 temperature: no ada_p: No Discriminator_loss: 0.0169682 Generator_loss: 0.875434 
+[INFO] 2020-12-14 08:25:26 > Step:  177500 Progress: 88.8% Elapsed: 8 days, 0:03:19 temperature: no ada_p: No Discriminator_loss: 0.014526 Generator_loss: 1.02898 
+[INFO] 2020-12-14 08:45:09 > Step:  177600 Progress: 88.8% Elapsed: 8 days, 0:23:01 temperature: no ada_p: No Discriminator_loss: 0.0231113 Generator_loss: 0.728757 
+[INFO] 2020-12-14 09:04:42 > Step:  177700 Progress: 88.8% Elapsed: 8 days, 0:42:34 temperature: no ada_p: No Discriminator_loss: 0.0154787 Generator_loss: 0.918362 
+[INFO] 2020-12-14 09:24:15 > Step:  177800 Progress: 88.9% Elapsed: 8 days, 1:02:08 temperature: no ada_p: No Discriminator_loss: 0.0206997 Generator_loss: 0.830882 
+[INFO] 2020-12-14 09:43:57 > Step:  177900 Progress: 88.9% Elapsed: 8 days, 1:21:50 temperature: no ada_p: No Discriminator_loss: 0.0179676 Generator_loss: 0.924286 
+[INFO] 2020-12-14 10:03:33 > Step:  178000 Progress: 89.0% Elapsed: 8 days, 1:41:25 temperature: no ada_p: No Discriminator_loss: 0.0434495 Generator_loss: 0.608874 
+[INFO] 2020-12-14 10:03:33 > Start Evaluation (178000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-14 10:03:33 > Calculating FID Score....
+[INFO] 2020-12-14 10:04:45 > Calculating Inception Score....
+[INFO] 2020-12-14 10:05:46 > Calculate F_beta Score....
+[INFO] 2020-12-14 10:08:25 > Calculate Accuracies....
+[INFO] 2020-12-14 10:09:25 > Calculate Accuracies....
+[INFO] 2020-12-14 10:10:30 > F_8 score (Step: 178000, Using valid images): 0.9859096858100479
+[INFO] 2020-12-14 10:10:30 > F_1/8 score (Step: 178000, Using valid images): 0.9832098379162143
+[INFO] 2020-12-14 10:10:30 > FID score (Step: 178000, Using valid moments): 8.429019136143324
+[INFO] 2020-12-14 10:10:30 > Inception score (Step: 178000, 50000 generated images): 84.38909149169922
+[INFO] 2020-12-14 10:10:30 > Best FID score (Step: 178000, Using valid moments): 8.429019136143324
+[INFO] 2020-12-14 10:10:44 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-14 10:30:20 > Step:  178100 Progress: 89.0% Elapsed: 8 days, 2:08:12 temperature: no ada_p: No Discriminator_loss: 0.0452692 Generator_loss: 0.848747 
+[INFO] 2020-12-14 10:50:02 > Step:  178200 Progress: 89.1% Elapsed: 8 days, 2:27:54 temperature: no ada_p: No Discriminator_loss: 0.0150503 Generator_loss: 0.939512 
+[INFO] 2020-12-14 11:09:38 > Step:  178300 Progress: 89.1% Elapsed: 8 days, 2:47:31 temperature: no ada_p: No Discriminator_loss: 0.0171625 Generator_loss: 0.918296 
+[INFO] 2020-12-14 11:29:14 > Step:  178400 Progress: 89.2% Elapsed: 8 days, 3:07:06 temperature: no ada_p: No Discriminator_loss: 0.0175713 Generator_loss: 0.740495 
+[INFO] 2020-12-14 11:48:54 > Step:  178500 Progress: 89.2% Elapsed: 8 days, 3:26:47 temperature: no ada_p: No Discriminator_loss: 0.0148809 Generator_loss: 0.826651 
+[INFO] 2020-12-14 12:08:32 > Step:  178600 Progress: 89.3% Elapsed: 8 days, 3:46:24 temperature: no ada_p: No Discriminator_loss: 0.0195741 Generator_loss: 0.784609 
+[INFO] 2020-12-14 12:28:09 > Step:  178700 Progress: 89.3% Elapsed: 8 days, 4:06:02 temperature: no ada_p: No Discriminator_loss: 0.0561346 Generator_loss: 0.630625 
+[INFO] 2020-12-14 12:47:52 > Step:  178800 Progress: 89.4% Elapsed: 8 days, 4:25:44 temperature: no ada_p: No Discriminator_loss: 0.00882162 Generator_loss: 0.920825 
+[INFO] 2020-12-14 13:07:30 > Step:  178900 Progress: 89.5% Elapsed: 8 days, 4:45:23 temperature: no ada_p: No Discriminator_loss: 0.0260636 Generator_loss: 0.811977 
+[INFO] 2020-12-14 13:27:08 > Step:  179000 Progress: 89.5% Elapsed: 8 days, 5:05:00 temperature: no ada_p: No Discriminator_loss: 0.0194889 Generator_loss: 0.888915 
+[INFO] 2020-12-14 13:46:42 > Step:  179100 Progress: 89.5% Elapsed: 8 days, 5:24:34 temperature: no ada_p: No Discriminator_loss: 0.020566 Generator_loss: 0.816873 
+[INFO] 2020-12-14 14:06:24 > Step:  179200 Progress: 89.6% Elapsed: 8 days, 5:44:16 temperature: no ada_p: No Discriminator_loss: 0.0224116 Generator_loss: 0.758082 
+[INFO] 2020-12-14 14:26:00 > Step:  179300 Progress: 89.6% Elapsed: 8 days, 6:03:52 temperature: no ada_p: No Discriminator_loss: 0.0196476 Generator_loss: 0.848537 
+[INFO] 2020-12-14 14:45:34 > Step:  179400 Progress: 89.7% Elapsed: 8 days, 6:23:27 temperature: no ada_p: No Discriminator_loss: 0.0159491 Generator_loss: 0.891544 
+[INFO] 2020-12-14 15:05:17 > Step:  179500 Progress: 89.8% Elapsed: 8 days, 6:43:10 temperature: no ada_p: No Discriminator_loss: 0.0110467 Generator_loss: 0.885342 
+[INFO] 2020-12-14 15:24:54 > Step:  179600 Progress: 89.8% Elapsed: 8 days, 7:02:46 temperature: no ada_p: No Discriminator_loss: 0.0368913 Generator_loss: 0.698702 
+[INFO] 2020-12-14 15:44:30 > Step:  179700 Progress: 89.8% Elapsed: 8 days, 7:22:22 temperature: no ada_p: No Discriminator_loss: 0.0171729 Generator_loss: 0.871844 
+[INFO] 2020-12-14 16:04:12 > Step:  179800 Progress: 89.9% Elapsed: 8 days, 7:42:05 temperature: no ada_p: No Discriminator_loss: 0.0133153 Generator_loss: 0.889799 
+[INFO] 2020-12-14 16:23:48 > Step:  179900 Progress: 90.0% Elapsed: 8 days, 8:01:41 temperature: no ada_p: No Discriminator_loss: 0.0130855 Generator_loss: 0.964303 
+[INFO] 2020-12-14 16:43:24 > Step:  180000 Progress: 90.0% Elapsed: 8 days, 8:21:17 temperature: no ada_p: No Discriminator_loss: 0.0236796 Generator_loss: 0.811998 
+[INFO] 2020-12-14 16:43:24 > Start Evaluation (180000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-14 16:43:24 > Calculating FID Score....
+[INFO] 2020-12-14 16:44:36 > Calculating Inception Score....
+[INFO] 2020-12-14 16:45:37 > Calculate F_beta Score....
+[INFO] 2020-12-14 16:49:22 > Calculate Accuracies....
+[INFO] 2020-12-14 16:50:21 > Calculate Accuracies....
+[INFO] 2020-12-14 16:51:35 > F_8 score (Step: 180000, Using valid images): 0.9855653028687511
+[INFO] 2020-12-14 16:51:35 > F_1/8 score (Step: 180000, Using valid images): 0.9833808362054551
+[INFO] 2020-12-14 16:51:35 > FID score (Step: 180000, Using valid moments): 8.242262771546791
+[INFO] 2020-12-14 16:51:35 > Inception score (Step: 180000, 50000 generated images): 84.56593322753906
+[INFO] 2020-12-14 16:51:35 > Best FID score (Step: 180000, Using valid moments): 8.242262771546791
+[INFO] 2020-12-14 16:51:49 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-14 17:11:31 > Step:  180100 Progress: 90.0% Elapsed: 8 days, 8:49:24 temperature: no ada_p: No Discriminator_loss: 0.0155201 Generator_loss: 0.805415 
+[INFO] 2020-12-14 17:31:09 > Step:  180200 Progress: 90.1% Elapsed: 8 days, 9:09:01 temperature: no ada_p: No Discriminator_loss: 0.0149132 Generator_loss: 0.916269 
+[INFO] 2020-12-14 17:50:47 > Step:  180300 Progress: 90.1% Elapsed: 8 days, 9:28:39 temperature: no ada_p: No Discriminator_loss: 0.0165538 Generator_loss: 0.93085 
+[INFO] 2020-12-14 18:10:30 > Step:  180400 Progress: 90.2% Elapsed: 8 days, 9:48:22 temperature: no ada_p: No Discriminator_loss: 0.0132661 Generator_loss: 0.926544 
+[INFO] 2020-12-14 18:30:08 > Step:  180500 Progress: 90.2% Elapsed: 8 days, 10:08:01 temperature: no ada_p: No Discriminator_loss: 0.0120273 Generator_loss: 1.06283 
+[INFO] 2020-12-14 18:49:45 > Step:  180600 Progress: 90.3% Elapsed: 8 days, 10:27:38 temperature: no ada_p: No Discriminator_loss: 0.011765 Generator_loss: 0.928367 
+[INFO] 2020-12-14 19:09:27 > Step:  180700 Progress: 90.3% Elapsed: 8 days, 10:47:20 temperature: no ada_p: No Discriminator_loss: 0.0121118 Generator_loss: 0.928177 
+[INFO] 2020-12-14 19:29:05 > Step:  180800 Progress: 90.4% Elapsed: 8 days, 11:06:58 temperature: no ada_p: No Discriminator_loss: 0.0127387 Generator_loss: 0.87054 
+[INFO] 2020-12-14 19:48:42 > Step:  180900 Progress: 90.5% Elapsed: 8 days, 11:26:35 temperature: no ada_p: No Discriminator_loss: 0.0138718 Generator_loss: 0.890734 
+[INFO] 2020-12-14 20:08:23 > Step:  181000 Progress: 90.5% Elapsed: 8 days, 11:46:15 temperature: no ada_p: No Discriminator_loss: 0.0159183 Generator_loss: 0.91118 
+[INFO] 2020-12-14 20:27:59 > Step:  181100 Progress: 90.5% Elapsed: 8 days, 12:05:51 temperature: no ada_p: No Discriminator_loss: 0.0165305 Generator_loss: 0.877199 
+[INFO] 2020-12-14 20:47:32 > Step:  181200 Progress: 90.6% Elapsed: 8 days, 12:25:25 temperature: no ada_p: No Discriminator_loss: 0.0345119 Generator_loss: 0.655056 
+[INFO] 2020-12-14 21:07:10 > Step:  181300 Progress: 90.6% Elapsed: 8 days, 12:45:02 temperature: no ada_p: No Discriminator_loss: 0.0130708 Generator_loss: 0.945439 
+[INFO] 2020-12-14 21:26:46 > Step:  181400 Progress: 90.7% Elapsed: 8 days, 13:04:38 temperature: no ada_p: No Discriminator_loss: 0.0154499 Generator_loss: 0.983875 
+[INFO] 2020-12-14 21:46:20 > Step:  181500 Progress: 90.8% Elapsed: 8 days, 13:24:12 temperature: no ada_p: No Discriminator_loss: 0.0918806 Generator_loss: 0.323507 
+[INFO] 2020-12-14 22:05:53 > Step:  181600 Progress: 90.8% Elapsed: 8 days, 13:43:46 temperature: no ada_p: No Discriminator_loss: 0.0158363 Generator_loss: 0.855281 
+[INFO] 2020-12-14 22:25:35 > Step:  181700 Progress: 90.8% Elapsed: 8 days, 14:03:27 temperature: no ada_p: No Discriminator_loss: 0.0272664 Generator_loss: 0.80715 
+[INFO] 2020-12-14 22:45:09 > Step:  181800 Progress: 90.9% Elapsed: 8 days, 14:23:01 temperature: no ada_p: No Discriminator_loss: 0.0190952 Generator_loss: 0.842584 
+[INFO] 2020-12-14 23:04:43 > Step:  181900 Progress: 91.0% Elapsed: 8 days, 14:42:36 temperature: no ada_p: No Discriminator_loss: 0.0152727 Generator_loss: 0.934147 
+[INFO] 2020-12-14 23:24:24 > Step:  182000 Progress: 91.0% Elapsed: 8 days, 15:02:16 temperature: no ada_p: No Discriminator_loss: 0.0104687 Generator_loss: 0.982474 
+[INFO] 2020-12-14 23:24:24 > Start Evaluation (182000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-14 23:24:24 > Calculating FID Score....
+[INFO] 2020-12-14 23:25:36 > Calculating Inception Score....
+[INFO] 2020-12-14 23:26:37 > Calculate F_beta Score....
+[INFO] 2020-12-14 23:30:09 > Calculate Accuracies....
+[INFO] 2020-12-14 23:31:08 > Calculate Accuracies....
+[INFO] 2020-12-14 23:32:30 > F_8 score (Step: 182000, Using valid images): 0.9862922691968504
+[INFO] 2020-12-14 23:32:30 > F_1/8 score (Step: 182000, Using valid images): 0.9834500442316747
+[INFO] 2020-12-14 23:32:30 > FID score (Step: 182000, Using valid moments): 8.341364994942978
+[INFO] 2020-12-14 23:32:30 > Inception score (Step: 182000, 50000 generated images): 85.24459075927734
+[INFO] 2020-12-14 23:32:30 > Best FID score (Step: 180000, Using valid moments): 8.242262771546791
+[INFO] 2020-12-14 23:32:37 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-14 23:52:12 > Step:  182100 Progress: 91.0% Elapsed: 8 days, 15:30:04 temperature: no ada_p: No Discriminator_loss: 0.0250841 Generator_loss: 0.76904 
+[INFO] 2020-12-15 00:11:47 > Step:  182200 Progress: 91.1% Elapsed: 8 days, 15:49:39 temperature: no ada_p: No Discriminator_loss: 0.014595 Generator_loss: 0.858212 
+[INFO] 2020-12-15 00:31:26 > Step:  182300 Progress: 91.1% Elapsed: 8 days, 16:09:19 temperature: no ada_p: No Discriminator_loss: 0.0223587 Generator_loss: 1.03474 
+[INFO] 2020-12-15 00:51:00 > Step:  182400 Progress: 91.2% Elapsed: 8 days, 16:28:52 temperature: no ada_p: No Discriminator_loss: 0.00988096 Generator_loss: 0.932182 
+[INFO] 2020-12-15 01:10:34 > Step:  182500 Progress: 91.2% Elapsed: 8 days, 16:48:26 temperature: no ada_p: No Discriminator_loss: 0.0100947 Generator_loss: 0.922037 
+[INFO] 2020-12-15 01:30:14 > Step:  182600 Progress: 91.3% Elapsed: 8 days, 17:08:06 temperature: no ada_p: No Discriminator_loss: 0.0120362 Generator_loss: 0.941551 
+[INFO] 2020-12-15 01:49:50 > Step:  182700 Progress: 91.3% Elapsed: 8 days, 17:27:42 temperature: no ada_p: No Discriminator_loss: 0.0147904 Generator_loss: 0.877791 
+[INFO] 2020-12-15 02:09:25 > Step:  182800 Progress: 91.4% Elapsed: 8 days, 17:47:17 temperature: no ada_p: No Discriminator_loss: 0.017196 Generator_loss: 0.870757 
+[INFO] 2020-12-15 02:29:05 > Step:  182900 Progress: 91.5% Elapsed: 8 days, 18:06:57 temperature: no ada_p: No Discriminator_loss: 0.0265003 Generator_loss: 0.78514 
+[INFO] 2020-12-15 02:48:44 > Step:  183000 Progress: 91.5% Elapsed: 8 days, 18:26:36 temperature: no ada_p: No Discriminator_loss: 0.0155502 Generator_loss: 0.908277 
+[INFO] 2020-12-15 03:08:21 > Step:  183100 Progress: 91.5% Elapsed: 8 days, 18:46:13 temperature: no ada_p: No Discriminator_loss: 0.0167412 Generator_loss: 0.823423 
+[INFO] 2020-12-15 03:28:02 > Step:  183200 Progress: 91.6% Elapsed: 8 days, 19:05:54 temperature: no ada_p: No Discriminator_loss: 0.0146889 Generator_loss: 0.900425 
+[INFO] 2020-12-15 03:47:39 > Step:  183300 Progress: 91.6% Elapsed: 8 days, 19:25:32 temperature: no ada_p: No Discriminator_loss: 0.0142541 Generator_loss: 0.984445 
+[INFO] 2020-12-15 04:07:17 > Step:  183400 Progress: 91.7% Elapsed: 8 days, 19:45:09 temperature: no ada_p: No Discriminator_loss: 0.0209499 Generator_loss: 0.759947 
+[INFO] 2020-12-15 04:26:57 > Step:  183500 Progress: 91.8% Elapsed: 8 days, 20:04:50 temperature: no ada_p: No Discriminator_loss: 0.0123959 Generator_loss: 0.934191 
+[INFO] 2020-12-15 04:46:34 > Step:  183600 Progress: 91.8% Elapsed: 8 days, 20:24:26 temperature: no ada_p: No Discriminator_loss: 0.0186707 Generator_loss: 0.845185 
+[INFO] 2020-12-15 05:06:08 > Step:  183700 Progress: 91.8% Elapsed: 8 days, 20:44:00 temperature: no ada_p: No Discriminator_loss: 0.0150847 Generator_loss: 0.864325 
+[INFO] 2020-12-15 05:25:41 > Step:  183800 Progress: 91.9% Elapsed: 8 days, 21:03:33 temperature: no ada_p: No Discriminator_loss: 0.0320856 Generator_loss: 0.765957 
+[INFO] 2020-12-15 05:45:20 > Step:  183900 Progress: 92.0% Elapsed: 8 days, 21:23:13 temperature: no ada_p: No Discriminator_loss: 0.0143319 Generator_loss: 0.924569 
+[INFO] 2020-12-15 06:04:54 > Step:  184000 Progress: 92.0% Elapsed: 8 days, 21:42:46 temperature: no ada_p: No Discriminator_loss: 0.0114533 Generator_loss: 0.925006 
+[INFO] 2020-12-15 06:04:54 > Start Evaluation (184000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-15 06:04:54 > Calculating FID Score....
+[INFO] 2020-12-15 06:06:05 > Calculating Inception Score....
+[INFO] 2020-12-15 06:07:07 > Calculate F_beta Score....
+[INFO] 2020-12-15 06:10:39 > Calculate Accuracies....
+[INFO] 2020-12-15 06:11:39 > Calculate Accuracies....
+[INFO] 2020-12-15 06:13:09 > F_8 score (Step: 184000, Using valid images): 0.9861497256923457
+[INFO] 2020-12-15 06:13:09 > F_1/8 score (Step: 184000, Using valid images): 0.983903105214486
+[INFO] 2020-12-15 06:13:09 > FID score (Step: 184000, Using valid moments): 8.310038187889802
+[INFO] 2020-12-15 06:13:09 > Inception score (Step: 184000, 50000 generated images): 86.5125503540039
+[INFO] 2020-12-15 06:13:09 > Best FID score (Step: 180000, Using valid moments): 8.242262771546791
+[INFO] 2020-12-15 06:13:16 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-15 06:32:49 > Step:  184100 Progress: 92.0% Elapsed: 8 days, 22:10:41 temperature: no ada_p: No Discriminator_loss: 0.0181836 Generator_loss: 0.864371 
+[INFO] 2020-12-15 06:52:31 > Step:  184200 Progress: 92.1% Elapsed: 8 days, 22:30:23 temperature: no ada_p: No Discriminator_loss: 0.0116016 Generator_loss: 0.996846 
+[INFO] 2020-12-15 07:12:07 > Step:  184300 Progress: 92.2% Elapsed: 8 days, 22:49:59 temperature: no ada_p: No Discriminator_loss: 0.016562 Generator_loss: 0.828504 
+[INFO] 2020-12-15 07:31:41 > Step:  184400 Progress: 92.2% Elapsed: 8 days, 23:09:33 temperature: no ada_p: No Discriminator_loss: 0.0109228 Generator_loss: 0.902562 
+[INFO] 2020-12-15 07:51:21 > Step:  184500 Progress: 92.2% Elapsed: 8 days, 23:29:13 temperature: no ada_p: No Discriminator_loss: 0.0154673 Generator_loss: 0.886772 
+[INFO] 2020-12-15 08:10:56 > Step:  184600 Progress: 92.3% Elapsed: 8 days, 23:48:48 temperature: no ada_p: No Discriminator_loss: 0.0210499 Generator_loss: 0.828385 
+[INFO] 2020-12-15 08:30:31 > Step:  184700 Progress: 92.3% Elapsed: 9 days, 0:08:23 temperature: no ada_p: No Discriminator_loss: 0.0180478 Generator_loss: 0.854987 
+[INFO] 2020-12-15 08:50:13 > Step:  184800 Progress: 92.4% Elapsed: 9 days, 0:28:05 temperature: no ada_p: No Discriminator_loss: 0.0807214 Generator_loss: 0.356752 
+[INFO] 2020-12-15 09:09:49 > Step:  184900 Progress: 92.5% Elapsed: 9 days, 0:47:41 temperature: no ada_p: No Discriminator_loss: 0.0168777 Generator_loss: 0.943071 
+[INFO] 2020-12-15 09:29:25 > Step:  185000 Progress: 92.5% Elapsed: 9 days, 1:07:18 temperature: no ada_p: No Discriminator_loss: 0.00931087 Generator_loss: 1.05212 
+[INFO] 2020-12-15 09:49:08 > Step:  185100 Progress: 92.5% Elapsed: 9 days, 1:27:00 temperature: no ada_p: No Discriminator_loss: 0.0165813 Generator_loss: 0.778568 
+[INFO] 2020-12-15 10:08:46 > Step:  185200 Progress: 92.6% Elapsed: 9 days, 1:46:38 temperature: no ada_p: No Discriminator_loss: 0.0175262 Generator_loss: 0.892818 
+[INFO] 2020-12-15 10:28:23 > Step:  185300 Progress: 92.7% Elapsed: 9 days, 2:06:15 temperature: no ada_p: No Discriminator_loss: 0.0114499 Generator_loss: 0.884076 
+[INFO] 2020-12-15 10:48:03 > Step:  185400 Progress: 92.7% Elapsed: 9 days, 2:25:56 temperature: no ada_p: No Discriminator_loss: 0.0112801 Generator_loss: 0.914791 
+[INFO] 2020-12-15 11:07:39 > Step:  185500 Progress: 92.8% Elapsed: 9 days, 2:45:31 temperature: no ada_p: No Discriminator_loss: 0.0211185 Generator_loss: 0.805067 
+[INFO] 2020-12-15 11:27:12 > Step:  185600 Progress: 92.8% Elapsed: 9 days, 3:05:05 temperature: no ada_p: No Discriminator_loss: 0.0201694 Generator_loss: 0.846367 
+[INFO] 2020-12-15 11:46:52 > Step:  185700 Progress: 92.8% Elapsed: 9 days, 3:24:44 temperature: no ada_p: No Discriminator_loss: 0.0129739 Generator_loss: 0.90177 
+[INFO] 2020-12-15 12:06:28 > Step:  185800 Progress: 92.9% Elapsed: 9 days, 3:44:20 temperature: no ada_p: No Discriminator_loss: 0.0225173 Generator_loss: 0.761016 
+[INFO] 2020-12-15 12:26:05 > Step:  185900 Progress: 93.0% Elapsed: 9 days, 4:03:58 temperature: no ada_p: No Discriminator_loss: 0.0193304 Generator_loss: 0.836306 
+[INFO] 2020-12-15 12:45:47 > Step:  186000 Progress: 93.0% Elapsed: 9 days, 4:23:39 temperature: no ada_p: No Discriminator_loss: 0.00838203 Generator_loss: 0.925505 
+[INFO] 2020-12-15 12:45:47 > Start Evaluation (186000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-15 12:45:47 > Calculating FID Score....
+[INFO] 2020-12-15 12:46:58 > Calculating Inception Score....
+[INFO] 2020-12-15 12:48:00 > Calculate F_beta Score....
+[INFO] 2020-12-15 12:50:58 > Calculate Accuracies....
+[INFO] 2020-12-15 12:51:57 > Calculate Accuracies....
+[INFO] 2020-12-15 12:53:13 > F_8 score (Step: 186000, Using valid images): 0.9871199014092047
+[INFO] 2020-12-15 12:53:13 > F_1/8 score (Step: 186000, Using valid images): 0.9842846224639447
+[INFO] 2020-12-15 12:53:13 > FID score (Step: 186000, Using valid moments): 8.245242438260846
+[INFO] 2020-12-15 12:53:13 > Inception score (Step: 186000, 50000 generated images): 85.28752136230469
+[INFO] 2020-12-15 12:53:13 > Best FID score (Step: 180000, Using valid moments): 8.242262771546791
+[INFO] 2020-12-15 12:53:20 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-15 13:12:56 > Step:  186100 Progress: 93.0% Elapsed: 9 days, 4:50:48 temperature: no ada_p: No Discriminator_loss: 0.0123575 Generator_loss: 0.956932 
+[INFO] 2020-12-15 13:32:29 > Step:  186200 Progress: 93.1% Elapsed: 9 days, 5:10:22 temperature: no ada_p: No Discriminator_loss: 0.020494 Generator_loss: 0.743324 
+[INFO] 2020-12-15 13:52:03 > Step:  186300 Progress: 93.2% Elapsed: 9 days, 5:29:56 temperature: no ada_p: No Discriminator_loss: 0.0187334 Generator_loss: 0.911569 
+[INFO] 2020-12-15 14:11:45 > Step:  186400 Progress: 93.2% Elapsed: 9 days, 5:49:37 temperature: no ada_p: No Discriminator_loss: 0.0128432 Generator_loss: 0.972076 
+[INFO] 2020-12-15 14:31:20 > Step:  186500 Progress: 93.2% Elapsed: 9 days, 6:09:13 temperature: no ada_p: No Discriminator_loss: 0.0194105 Generator_loss: 0.860853 
+[INFO] 2020-12-15 14:50:54 > Step:  186600 Progress: 93.3% Elapsed: 9 days, 6:28:47 temperature: no ada_p: No Discriminator_loss: 0.0350165 Generator_loss: 0.643331 
+[INFO] 2020-12-15 15:10:38 > Step:  186700 Progress: 93.3% Elapsed: 9 days, 6:48:30 temperature: no ada_p: No Discriminator_loss: 0.0103836 Generator_loss: 1.0012 
+[INFO] 2020-12-15 15:30:15 > Step:  186800 Progress: 93.4% Elapsed: 9 days, 7:08:07 temperature: no ada_p: No Discriminator_loss: 0.0141901 Generator_loss: 0.939367 
+[INFO] 2020-12-15 15:49:51 > Step:  186900 Progress: 93.5% Elapsed: 9 days, 7:27:44 temperature: no ada_p: No Discriminator_loss: 0.0156209 Generator_loss: 1.02519 
+[INFO] 2020-12-15 16:09:34 > Step:  187000 Progress: 93.5% Elapsed: 9 days, 7:47:26 temperature: no ada_p: No Discriminator_loss: 0.0204869 Generator_loss: 0.786773 
+[INFO] 2020-12-15 16:29:09 > Step:  187100 Progress: 93.5% Elapsed: 9 days, 8:07:02 temperature: no ada_p: No Discriminator_loss: 0.0199914 Generator_loss: 0.80267 
+[INFO] 2020-12-15 16:48:44 > Step:  187200 Progress: 93.6% Elapsed: 9 days, 8:26:36 temperature: no ada_p: No Discriminator_loss: 0.0275657 Generator_loss: 0.762344 
+[INFO] 2020-12-15 17:08:26 > Step:  187300 Progress: 93.7% Elapsed: 9 days, 8:46:18 temperature: no ada_p: No Discriminator_loss: 0.0117411 Generator_loss: 0.844139 
+[INFO] 2020-12-15 17:28:02 > Step:  187400 Progress: 93.7% Elapsed: 9 days, 9:05:55 temperature: no ada_p: No Discriminator_loss: 0.0130801 Generator_loss: 0.913709 
+[INFO] 2020-12-15 17:47:38 > Step:  187500 Progress: 93.8% Elapsed: 9 days, 9:25:30 temperature: no ada_p: No Discriminator_loss: 0.0420244 Generator_loss: 0.630448 
+[INFO] 2020-12-15 18:07:20 > Step:  187600 Progress: 93.8% Elapsed: 9 days, 9:45:12 temperature: no ada_p: No Discriminator_loss: 0.0163182 Generator_loss: 0.87751 
+[INFO] 2020-12-15 18:26:58 > Step:  187700 Progress: 93.8% Elapsed: 9 days, 10:04:50 temperature: no ada_p: No Discriminator_loss: 0.0123139 Generator_loss: 0.976665 
+[INFO] 2020-12-15 18:46:34 > Step:  187800 Progress: 93.9% Elapsed: 9 days, 10:24:26 temperature: no ada_p: No Discriminator_loss: 0.0183889 Generator_loss: 0.916875 
+[INFO] 2020-12-15 19:06:15 > Step:  187900 Progress: 94.0% Elapsed: 9 days, 10:44:07 temperature: no ada_p: No Discriminator_loss: 0.0118189 Generator_loss: 1.00201 
+[INFO] 2020-12-15 19:25:50 > Step:  188000 Progress: 94.0% Elapsed: 9 days, 11:03:42 temperature: no ada_p: No Discriminator_loss: 0.0126971 Generator_loss: 0.923731 
+[INFO] 2020-12-15 19:25:50 > Start Evaluation (188000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-15 19:25:50 > Calculating FID Score....
+[INFO] 2020-12-15 19:27:01 > Calculating Inception Score....
+[INFO] 2020-12-15 19:28:02 > Calculate F_beta Score....
+[INFO] 2020-12-15 19:30:47 > Calculate Accuracies....
+[INFO] 2020-12-15 19:31:46 > Calculate Accuracies....
+[INFO] 2020-12-15 19:33:00 > F_8 score (Step: 188000, Using valid images): 0.9887161821677121
+[INFO] 2020-12-15 19:33:00 > F_1/8 score (Step: 188000, Using valid images): 0.9848206940214734
+[INFO] 2020-12-15 19:33:00 > FID score (Step: 188000, Using valid moments): 8.232919427914737
+[INFO] 2020-12-15 19:33:00 > Inception score (Step: 188000, 50000 generated images): 85.71957397460938
+[INFO] 2020-12-15 19:33:00 > Best FID score (Step: 188000, Using valid moments): 8.232919427914737
+[INFO] 2020-12-15 19:33:14 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-15 19:52:50 > Step:  188100 Progress: 94.0% Elapsed: 9 days, 11:30:42 temperature: no ada_p: No Discriminator_loss: 0.116288 Generator_loss: 0.428318 
+[INFO] 2020-12-15 20:12:31 > Step:  188200 Progress: 94.1% Elapsed: 9 days, 11:50:23 temperature: no ada_p: No Discriminator_loss: 0.0111089 Generator_loss: 0.900674 
+[INFO] 2020-12-15 20:32:09 > Step:  188300 Progress: 94.2% Elapsed: 9 days, 12:10:02 temperature: no ada_p: No Discriminator_loss: 0.0159377 Generator_loss: 0.849942 
+[INFO] 2020-12-15 20:51:45 > Step:  188400 Progress: 94.2% Elapsed: 9 days, 12:29:38 temperature: no ada_p: No Discriminator_loss: 0.0199515 Generator_loss: 0.862068 
+[INFO] 2020-12-15 21:11:26 > Step:  188500 Progress: 94.2% Elapsed: 9 days, 12:49:18 temperature: no ada_p: No Discriminator_loss: 0.0167461 Generator_loss: 1.02873 
+[INFO] 2020-12-15 21:31:04 > Step:  188600 Progress: 94.3% Elapsed: 9 days, 13:08:56 temperature: no ada_p: No Discriminator_loss: 0.0400855 Generator_loss: 0.67917 
+[INFO] 2020-12-15 21:50:39 > Step:  188700 Progress: 94.3% Elapsed: 9 days, 13:28:32 temperature: no ada_p: No Discriminator_loss: 0.0136367 Generator_loss: 0.825129 
+[INFO] 2020-12-15 22:10:15 > Step:  188800 Progress: 94.4% Elapsed: 9 days, 13:48:08 temperature: no ada_p: No Discriminator_loss: 0.0538123 Generator_loss: 0.555944 
+[INFO] 2020-12-15 22:29:58 > Step:  188900 Progress: 94.5% Elapsed: 9 days, 14:07:50 temperature: no ada_p: No Discriminator_loss: 0.0169651 Generator_loss: 0.959905 
+[INFO] 2020-12-15 22:49:34 > Step:  189000 Progress: 94.5% Elapsed: 9 days, 14:27:26 temperature: no ada_p: No Discriminator_loss: 0.0227151 Generator_loss: 0.754722 
+[INFO] 2020-12-15 23:09:10 > Step:  189100 Progress: 94.5% Elapsed: 9 days, 14:47:02 temperature: no ada_p: No Discriminator_loss: 0.0119829 Generator_loss: 0.940106 
+[INFO] 2020-12-15 23:28:53 > Step:  189200 Progress: 94.6% Elapsed: 9 days, 15:06:45 temperature: no ada_p: No Discriminator_loss: 0.00948176 Generator_loss: 0.991643 
+[INFO] 2020-12-15 23:48:30 > Step:  189300 Progress: 94.7% Elapsed: 9 days, 15:26:23 temperature: no ada_p: No Discriminator_loss: 0.0333538 Generator_loss: 0.653729 
+[INFO] 2020-12-16 00:08:06 > Step:  189400 Progress: 94.7% Elapsed: 9 days, 15:45:59 temperature: no ada_p: No Discriminator_loss: 0.00953094 Generator_loss: 0.923204 
+[INFO] 2020-12-16 00:27:47 > Step:  189500 Progress: 94.8% Elapsed: 9 days, 16:05:40 temperature: no ada_p: No Discriminator_loss: 0.0107203 Generator_loss: 0.971924 
+[INFO] 2020-12-16 00:47:24 > Step:  189600 Progress: 94.8% Elapsed: 9 days, 16:25:16 temperature: no ada_p: No Discriminator_loss: 0.0156122 Generator_loss: 0.89165 
+[INFO] 2020-12-16 01:07:01 > Step:  189700 Progress: 94.8% Elapsed: 9 days, 16:44:53 temperature: no ada_p: No Discriminator_loss: 0.0242464 Generator_loss: 0.772666 
+[INFO] 2020-12-16 01:26:43 > Step:  189800 Progress: 94.9% Elapsed: 9 days, 17:04:35 temperature: no ada_p: No Discriminator_loss: 0.0184955 Generator_loss: 0.986068 
+[INFO] 2020-12-16 01:46:19 > Step:  189900 Progress: 95.0% Elapsed: 9 days, 17:24:11 temperature: no ada_p: No Discriminator_loss: 0.0136414 Generator_loss: 1.00187 
+[INFO] 2020-12-16 02:05:55 > Step:  190000 Progress: 95.0% Elapsed: 9 days, 17:43:47 temperature: no ada_p: No Discriminator_loss: 0.0185799 Generator_loss: 0.839568 
+[INFO] 2020-12-16 02:05:55 > Start Evaluation (190000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-16 02:05:55 > Calculating FID Score....
+[INFO] 2020-12-16 02:07:06 > Calculating Inception Score....
+[INFO] 2020-12-16 02:08:08 > Calculate F_beta Score....
+[INFO] 2020-12-16 02:12:34 > Calculate Accuracies....
+[INFO] 2020-12-16 02:13:34 > Calculate Accuracies....
+[INFO] 2020-12-16 02:14:58 > F_8 score (Step: 190000, Using valid images): 0.9879492877338646
+[INFO] 2020-12-16 02:14:58 > F_1/8 score (Step: 190000, Using valid images): 0.9835644441705709
+[INFO] 2020-12-16 02:14:58 > FID score (Step: 190000, Using valid moments): 8.173519412832206
+[INFO] 2020-12-16 02:14:58 > Inception score (Step: 190000, 50000 generated images): 85.87283325195312
+[INFO] 2020-12-16 02:14:58 > Best FID score (Step: 190000, Using valid moments): 8.173519412832206
+[INFO] 2020-12-16 02:15:11 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-16 02:34:55 > Step:  190100 Progress: 95.0% Elapsed: 9 days, 18:12:48 temperature: no ada_p: No Discriminator_loss: 0.0195244 Generator_loss: 0.925848 
+[INFO] 2020-12-16 02:54:35 > Step:  190200 Progress: 95.1% Elapsed: 9 days, 18:32:28 temperature: no ada_p: No Discriminator_loss: 0.0224024 Generator_loss: 0.764217 
+[INFO] 2020-12-16 03:14:12 > Step:  190300 Progress: 95.2% Elapsed: 9 days, 18:52:04 temperature: no ada_p: No Discriminator_loss: 0.0139466 Generator_loss: 0.955565 
+[INFO] 2020-12-16 03:33:54 > Step:  190400 Progress: 95.2% Elapsed: 9 days, 19:11:46 temperature: no ada_p: No Discriminator_loss: 0.0151553 Generator_loss: 0.985533 
+[INFO] 2020-12-16 03:53:32 > Step:  190500 Progress: 95.2% Elapsed: 9 days, 19:31:24 temperature: no ada_p: No Discriminator_loss: 0.0176707 Generator_loss: 0.87804 
+[INFO] 2020-12-16 04:13:09 > Step:  190600 Progress: 95.3% Elapsed: 9 days, 19:51:01 temperature: no ada_p: No Discriminator_loss: 0.0143218 Generator_loss: 1.0322 
+[INFO] 2020-12-16 04:32:50 > Step:  190700 Progress: 95.3% Elapsed: 9 days, 20:10:42 temperature: no ada_p: No Discriminator_loss: 0.00895263 Generator_loss: 0.958205 
+[INFO] 2020-12-16 04:52:27 > Step:  190800 Progress: 95.4% Elapsed: 9 days, 20:30:20 temperature: no ada_p: No Discriminator_loss: 0.0117376 Generator_loss: 0.950846 
+[INFO] 2020-12-16 05:12:03 > Step:  190900 Progress: 95.5% Elapsed: 9 days, 20:49:56 temperature: no ada_p: No Discriminator_loss: 0.0112816 Generator_loss: 0.972199 
+[INFO] 2020-12-16 05:31:43 > Step:  191000 Progress: 95.5% Elapsed: 9 days, 21:09:36 temperature: no ada_p: No Discriminator_loss: 0.0116078 Generator_loss: 0.979224 
+[INFO] 2020-12-16 05:51:20 > Step:  191100 Progress: 95.5% Elapsed: 9 days, 21:29:12 temperature: no ada_p: No Discriminator_loss: 0.0144775 Generator_loss: 0.989429 
+[INFO] 2020-12-16 06:10:56 > Step:  191200 Progress: 95.6% Elapsed: 9 days, 21:48:49 temperature: no ada_p: No Discriminator_loss: 0.0203465 Generator_loss: 0.848232 
+[INFO] 2020-12-16 06:30:32 > Step:  191300 Progress: 95.7% Elapsed: 9 days, 22:08:25 temperature: no ada_p: No Discriminator_loss: 0.0134021 Generator_loss: 0.835016 
+[INFO] 2020-12-16 06:50:13 > Step:  191400 Progress: 95.7% Elapsed: 9 days, 22:28:05 temperature: no ada_p: No Discriminator_loss: 0.0144572 Generator_loss: 0.925115 
+[INFO] 2020-12-16 07:09:49 > Step:  191500 Progress: 95.8% Elapsed: 9 days, 22:47:42 temperature: no ada_p: No Discriminator_loss: 0.00824397 Generator_loss: 1.0025 
+[INFO] 2020-12-16 07:29:25 > Step:  191600 Progress: 95.8% Elapsed: 9 days, 23:07:17 temperature: no ada_p: No Discriminator_loss: 0.0246532 Generator_loss: 0.750176 
+[INFO] 2020-12-16 07:49:08 > Step:  191700 Progress: 95.9% Elapsed: 9 days, 23:27:00 temperature: no ada_p: No Discriminator_loss: 0.0130399 Generator_loss: 0.838358 
+[INFO] 2020-12-16 08:08:47 > Step:  191800 Progress: 95.9% Elapsed: 9 days, 23:46:39 temperature: no ada_p: No Discriminator_loss: 0.0186201 Generator_loss: 0.767161 
+[INFO] 2020-12-16 08:28:24 > Step:  191900 Progress: 96.0% Elapsed: 10 days, 0:06:16 temperature: no ada_p: No Discriminator_loss: 0.0121238 Generator_loss: 0.998028 
+[INFO] 2020-12-16 08:48:05 > Step:  192000 Progress: 96.0% Elapsed: 10 days, 0:25:57 temperature: no ada_p: No Discriminator_loss: 0.0148435 Generator_loss: 0.840977 
+[INFO] 2020-12-16 08:48:05 > Start Evaluation (192000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-16 08:48:05 > Calculating FID Score....
+[INFO] 2020-12-16 08:49:16 > Calculating Inception Score....
+[INFO] 2020-12-16 08:50:17 > Calculate F_beta Score....
+[INFO] 2020-12-16 09:02:58 > Calculate Accuracies....
+[INFO] 2020-12-16 09:03:57 > Calculate Accuracies....
+[INFO] 2020-12-16 09:05:17 > F_8 score (Step: 192000, Using valid images): 0.9866102539366854
+[INFO] 2020-12-16 09:05:17 > F_1/8 score (Step: 192000, Using valid images): 0.9831377851030374
+[INFO] 2020-12-16 09:05:17 > FID score (Step: 192000, Using valid moments): 8.198588363590602
+[INFO] 2020-12-16 09:05:17 > Inception score (Step: 192000, 50000 generated images): 86.19815826416016
+[INFO] 2020-12-16 09:05:17 > Best FID score (Step: 190000, Using valid moments): 8.173519412832206
+[INFO] 2020-12-16 09:05:24 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-16 09:25:02 > Step:  192100 Progress: 96.0% Elapsed: 10 days, 1:02:55 temperature: no ada_p: No Discriminator_loss: 0.0117451 Generator_loss: 0.882178 
+[INFO] 2020-12-16 09:44:39 > Step:  192200 Progress: 96.1% Elapsed: 10 days, 1:22:31 temperature: no ada_p: No Discriminator_loss: 0.0197763 Generator_loss: 0.82409 
+[INFO] 2020-12-16 10:04:22 > Step:  192300 Progress: 96.2% Elapsed: 10 days, 1:42:14 temperature: no ada_p: No Discriminator_loss: 0.0144314 Generator_loss: 0.876677 
+[INFO] 2020-12-16 10:24:00 > Step:  192400 Progress: 96.2% Elapsed: 10 days, 2:01:52 temperature: no ada_p: No Discriminator_loss: 0.0601223 Generator_loss: 0.570539 
+[INFO] 2020-12-16 10:43:36 > Step:  192500 Progress: 96.2% Elapsed: 10 days, 2:21:29 temperature: no ada_p: No Discriminator_loss: 0.0129606 Generator_loss: 0.863766 
+[INFO] 2020-12-16 11:03:18 > Step:  192600 Progress: 96.3% Elapsed: 10 days, 2:41:10 temperature: no ada_p: No Discriminator_loss: 0.00978854 Generator_loss: 1.00255 
+[INFO] 2020-12-16 11:22:55 > Step:  192700 Progress: 96.4% Elapsed: 10 days, 3:00:48 temperature: no ada_p: No Discriminator_loss: 0.0196527 Generator_loss: 0.854302 
+[INFO] 2020-12-16 11:42:32 > Step:  192800 Progress: 96.4% Elapsed: 10 days, 3:20:24 temperature: no ada_p: No Discriminator_loss: 0.05783 Generator_loss: 0.615114 
+[INFO] 2020-12-16 12:02:14 > Step:  192900 Progress: 96.5% Elapsed: 10 days, 3:40:07 temperature: no ada_p: No Discriminator_loss: 0.0165725 Generator_loss: 0.855215 
+[INFO] 2020-12-16 12:21:52 > Step:  193000 Progress: 96.5% Elapsed: 10 days, 3:59:44 temperature: no ada_p: No Discriminator_loss: 0.0150307 Generator_loss: 0.857325 
+[INFO] 2020-12-16 12:41:30 > Step:  193100 Progress: 96.5% Elapsed: 10 days, 4:19:22 temperature: no ada_p: No Discriminator_loss: 0.0132666 Generator_loss: 0.928258 
+[INFO] 2020-12-16 13:01:10 > Step:  193200 Progress: 96.6% Elapsed: 10 days, 4:39:03 temperature: no ada_p: No Discriminator_loss: 0.0192252 Generator_loss: 0.830948 
+[INFO] 2020-12-16 13:20:49 > Step:  193300 Progress: 96.7% Elapsed: 10 days, 4:58:41 temperature: no ada_p: No Discriminator_loss: 0.0106628 Generator_loss: 0.988291 
+[INFO] 2020-12-16 13:40:26 > Step:  193400 Progress: 96.7% Elapsed: 10 days, 5:18:18 temperature: no ada_p: No Discriminator_loss: 0.0135887 Generator_loss: 0.920392 
+[INFO] 2020-12-16 14:00:08 > Step:  193500 Progress: 96.8% Elapsed: 10 days, 5:38:00 temperature: no ada_p: No Discriminator_loss: 0.0119393 Generator_loss: 0.918464 
+[INFO] 2020-12-16 14:19:45 > Step:  193600 Progress: 96.8% Elapsed: 10 days, 5:57:37 temperature: no ada_p: No Discriminator_loss: 0.0204205 Generator_loss: 0.775833 
+[INFO] 2020-12-16 14:39:20 > Step:  193700 Progress: 96.9% Elapsed: 10 days, 6:17:13 temperature: no ada_p: No Discriminator_loss: 0.0572883 Generator_loss: 0.499349 
+[INFO] 2020-12-16 14:58:56 > Step:  193800 Progress: 96.9% Elapsed: 10 days, 6:36:48 temperature: no ada_p: No Discriminator_loss: 0.0128532 Generator_loss: 0.949122 
+[INFO] 2020-12-16 15:18:38 > Step:  193900 Progress: 97.0% Elapsed: 10 days, 6:56:30 temperature: no ada_p: No Discriminator_loss: 0.0117351 Generator_loss: 0.985865 
+[INFO] 2020-12-16 15:38:15 > Step:  194000 Progress: 97.0% Elapsed: 10 days, 7:16:07 temperature: no ada_p: No Discriminator_loss: 0.0740454 Generator_loss: 0.467533 
+[INFO] 2020-12-16 15:38:15 > Start Evaluation (194000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-16 15:38:15 > Calculating FID Score....
+[INFO] 2020-12-16 15:39:27 > Calculating Inception Score....
+[INFO] 2020-12-16 15:40:28 > Calculate F_beta Score....
+[INFO] 2020-12-16 15:53:38 > Calculate Accuracies....
+[INFO] 2020-12-16 15:54:37 > Calculate Accuracies....
+[INFO] 2020-12-16 15:55:59 > F_8 score (Step: 194000, Using valid images): 0.9871122448723408
+[INFO] 2020-12-16 15:55:59 > F_1/8 score (Step: 194000, Using valid images): 0.9831339773895985
+[INFO] 2020-12-16 15:55:59 > FID score (Step: 194000, Using valid moments): 8.111684020291477
+[INFO] 2020-12-16 15:55:59 > Inception score (Step: 194000, 50000 generated images): 86.32205200195312
+[INFO] 2020-12-16 15:55:59 > Best FID score (Step: 194000, Using valid moments): 8.111684020291477
+[INFO] 2020-12-16 15:56:13 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-16 16:15:49 > Step:  194100 Progress: 97.0% Elapsed: 10 days, 7:53:41 temperature: no ada_p: No Discriminator_loss: 0.022199 Generator_loss: 0.838223 
+[INFO] 2020-12-16 16:35:31 > Step:  194200 Progress: 97.1% Elapsed: 10 days, 8:13:24 temperature: no ada_p: No Discriminator_loss: 0.0104361 Generator_loss: 1.04942 
+[INFO] 2020-12-16 16:55:09 > Step:  194300 Progress: 97.2% Elapsed: 10 days, 8:33:01 temperature: no ada_p: No Discriminator_loss: 0.0152157 Generator_loss: 0.953734 
+[INFO] 2020-12-16 17:14:47 > Step:  194400 Progress: 97.2% Elapsed: 10 days, 8:52:39 temperature: no ada_p: No Discriminator_loss: 0.410135 Generator_loss: 0.0266621 
+[INFO] 2020-12-16 17:34:29 > Step:  194500 Progress: 97.2% Elapsed: 10 days, 9:12:21 temperature: no ada_p: No Discriminator_loss: 0.0199773 Generator_loss: 0.889183 
+[INFO] 2020-12-16 17:54:06 > Step:  194600 Progress: 97.3% Elapsed: 10 days, 9:31:58 temperature: no ada_p: No Discriminator_loss: 0.0154187 Generator_loss: 0.921597 
+[INFO] 2020-12-16 18:13:42 > Step:  194700 Progress: 97.4% Elapsed: 10 days, 9:51:34 temperature: no ada_p: No Discriminator_loss: 0.0180014 Generator_loss: 0.809724 
+[INFO] 2020-12-16 18:33:24 > Step:  194800 Progress: 97.4% Elapsed: 10 days, 10:11:16 temperature: no ada_p: No Discriminator_loss: 0.0134139 Generator_loss: 1.02104 
+[INFO] 2020-12-16 18:53:02 > Step:  194900 Progress: 97.5% Elapsed: 10 days, 10:30:54 temperature: no ada_p: No Discriminator_loss: 0.0231406 Generator_loss: 0.805358 
+[INFO] 2020-12-16 19:12:38 > Step:  195000 Progress: 97.5% Elapsed: 10 days, 10:50:31 temperature: no ada_p: No Discriminator_loss: 0.0195963 Generator_loss: 0.807318 
+[INFO] 2020-12-16 19:32:19 > Step:  195100 Progress: 97.5% Elapsed: 10 days, 11:10:11 temperature: no ada_p: No Discriminator_loss: 0.021697 Generator_loss: 0.817061 
+[INFO] 2020-12-16 19:51:55 > Step:  195200 Progress: 97.6% Elapsed: 10 days, 11:29:48 temperature: no ada_p: No Discriminator_loss: 0.017713 Generator_loss: 0.893562 
+[INFO] 2020-12-16 20:11:32 > Step:  195300 Progress: 97.7% Elapsed: 10 days, 11:49:24 temperature: no ada_p: No Discriminator_loss: 0.0134983 Generator_loss: 0.862492 
+[INFO] 2020-12-16 20:31:13 > Step:  195400 Progress: 97.7% Elapsed: 10 days, 12:09:06 temperature: no ada_p: No Discriminator_loss: 0.00898388 Generator_loss: 0.958109 
+[INFO] 2020-12-16 20:50:50 > Step:  195500 Progress: 97.8% Elapsed: 10 days, 12:28:42 temperature: no ada_p: No Discriminator_loss: 0.00985482 Generator_loss: 0.936745 
+[INFO] 2020-12-16 21:10:27 > Step:  195600 Progress: 97.8% Elapsed: 10 days, 12:48:19 temperature: no ada_p: No Discriminator_loss: 0.0109874 Generator_loss: 1.01489 
+[INFO] 2020-12-16 21:30:07 > Step:  195700 Progress: 97.9% Elapsed: 10 days, 13:07:59 temperature: no ada_p: No Discriminator_loss: 0.0117033 Generator_loss: 0.894047 
+[INFO] 2020-12-16 21:49:44 > Step:  195800 Progress: 97.9% Elapsed: 10 days, 13:27:37 temperature: no ada_p: No Discriminator_loss: 0.0101749 Generator_loss: 0.980601 
+[INFO] 2020-12-16 22:09:21 > Step:  195900 Progress: 98.0% Elapsed: 10 days, 13:47:14 temperature: no ada_p: No Discriminator_loss: 0.0459641 Generator_loss: 0.706008 
+[INFO] 2020-12-16 22:29:02 > Step:  196000 Progress: 98.0% Elapsed: 10 days, 14:06:54 temperature: no ada_p: No Discriminator_loss: 0.0112835 Generator_loss: 0.89668 
+[INFO] 2020-12-16 22:29:02 > Start Evaluation (196000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-16 22:29:02 > Calculating FID Score....
+[INFO] 2020-12-16 22:30:35 > Calculating Inception Score....
+[INFO] 2020-12-16 22:31:37 > Calculate F_beta Score....
+[INFO] 2020-12-16 22:46:29 > Calculate Accuracies....
+[INFO] 2020-12-16 22:47:29 > Calculate Accuracies....
+[INFO] 2020-12-16 22:48:53 > F_8 score (Step: 196000, Using valid images): 0.9873253689209744
+[INFO] 2020-12-16 22:48:53 > F_1/8 score (Step: 196000, Using valid images): 0.9834478158914026
+[INFO] 2020-12-16 22:48:53 > FID score (Step: 196000, Using valid moments): 8.110559332181765
+[INFO] 2020-12-16 22:48:53 > Inception score (Step: 196000, 50000 generated images): 88.539306640625
+[INFO] 2020-12-16 22:48:53 > Best FID score (Step: 196000, Using valid moments): 8.110559332181765
+[INFO] 2020-12-16 22:49:06 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-16 23:08:45 > Step:  196100 Progress: 98.0% Elapsed: 10 days, 14:46:37 temperature: no ada_p: No Discriminator_loss: 0.10716 Generator_loss: 0.289355 
+[INFO] 2020-12-16 23:28:21 > Step:  196200 Progress: 98.1% Elapsed: 10 days, 15:06:13 temperature: no ada_p: No Discriminator_loss: 0.0240385 Generator_loss: 0.79723 
+[INFO] 2020-12-16 23:47:58 > Step:  196300 Progress: 98.2% Elapsed: 10 days, 15:25:50 temperature: no ada_p: No Discriminator_loss: 0.013023 Generator_loss: 0.900505 
+[INFO] 2020-12-17 00:07:44 > Step:  196400 Progress: 98.2% Elapsed: 10 days, 15:45:36 temperature: no ada_p: No Discriminator_loss: 0.205534 Generator_loss: 0.234317 
+[INFO] 2020-12-17 00:27:21 > Step:  196500 Progress: 98.2% Elapsed: 10 days, 16:05:13 temperature: no ada_p: No Discriminator_loss: 0.0138706 Generator_loss: 0.929597 
+[INFO] 2020-12-17 00:46:58 > Step:  196600 Progress: 98.3% Elapsed: 10 days, 16:24:50 temperature: no ada_p: No Discriminator_loss: 0.0184035 Generator_loss: 1.04573 
+[INFO] 2020-12-17 01:06:42 > Step:  196700 Progress: 98.4% Elapsed: 10 days, 16:44:34 temperature: no ada_p: No Discriminator_loss: 0.0133066 Generator_loss: 0.974577 
+[INFO] 2020-12-17 01:26:20 > Step:  196800 Progress: 98.4% Elapsed: 10 days, 17:04:13 temperature: no ada_p: No Discriminator_loss: 0.0308135 Generator_loss: 0.698583 
+[INFO] 2020-12-17 01:40:00 > Generator checkpoint is ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48/model=G-best-weights-step=196000.pth
+[INFO] 2020-12-17 01:40:00 > Discriminator checkpoint is ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48/model=D-best-weights-step=196000.pth
+[INFO] 2020-12-17 01:40:04 > Start Evaluation (196000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-17 01:40:04 > Calculating FID Score....
+[INFO] 2020-12-17 01:41:43 > Calculating Inception Score....
+[INFO] 2020-12-17 01:42:33 > Calculate F_beta Score....
+[INFO] 2020-12-17 01:47:09 > Calculate Accuracies....
+[INFO] 2020-12-17 01:48:01 > Calculate Accuracies....
+[INFO] 2020-12-17 01:49:23 > F_8 score (Step: 196000, Using valid images): 0.9868282499018984
+[INFO] 2020-12-17 01:49:23 > F_1/8 score (Step: 196000, Using valid images): 0.984408021782108
+[INFO] 2020-12-17 01:49:23 > FID score (Step: 196000, Using valid moments): 7.782857987341117
+[INFO] 2020-12-17 01:49:23 > Inception score (Step: 196000, 50000 generated images): 99.32755279541016
+[INFO] 2020-12-17 01:49:23 > Best FID score (Step: 196000, Using valid moments): 7.782857987341117
+[INFO] 2020-12-17 01:53:22 > Generator checkpoint is ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48/model=G-best-weights-step=196000.pth
+[INFO] 2020-12-17 01:53:22 > Discriminator checkpoint is ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48/model=D-best-weights-step=196000.pth
+[INFO] 2020-12-17 01:53:24 > Start Evaluation (196000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-17 01:53:24 > Calculating FID Score....
+[INFO] 2020-12-17 01:54:41 > Calculating Inception Score....
+[INFO] 2020-12-17 01:55:31 > Calculate F_beta Score....
+[INFO] 2020-12-17 02:10:47 > Calculate Accuracies....
+[INFO] 2020-12-17 02:11:39 > Calculate Accuracies....
+[INFO] 2020-12-17 02:13:10 > F_8 score (Step: 196000, Using valid images): 0.9880556149101344
+[INFO] 2020-12-17 02:13:10 > F_1/8 score (Step: 196000, Using valid images): 0.9847880596088049
+[INFO] 2020-12-17 02:13:10 > FID score (Step: 196000, Using valid moments): 7.851977208196786
+[INFO] 2020-12-17 02:13:10 > Inception score (Step: 196000, 50000 generated images): 99.9658203125
+[INFO] 2020-12-17 02:13:10 > Best FID score (Step: 196000, Using valid moments): 7.851977208196786
+[INFO] 2020-12-17 02:13:10 > Start visualize images....
+[INFO] 2020-12-17 02:13:14 > Saved image to ./figures/BigGAN2048-train-2020_11_17_15_17_48/generated_canvas.png
+[INFO] 2020-12-17 02:13:14 > Start nearest neighbor analysis....
+[INFO] 2020-12-17 06:02:17 > Generator checkpoint is ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48/model=G-best-weights-step=196000.pth
+[INFO] 2020-12-17 06:02:17 > Discriminator checkpoint is ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48/model=D-best-weights-step=196000.pth
+[INFO] 2020-12-17 06:02:20 > Start training....
+[INFO] 2020-12-17 06:22:39 > Step:  196100 Progress: 98.0% Elapsed: 0:20:18 temperature: no ada_p: No Discriminator_loss: 0.0113611 Generator_loss: 0.970432 
+[INFO] 2020-12-17 06:42:14 > Step:  196200 Progress: 98.1% Elapsed: 0:39:53 temperature: no ada_p: No Discriminator_loss: 0.0146435 Generator_loss: 0.947875 
+[INFO] 2020-12-17 07:01:49 > Step:  196300 Progress: 98.2% Elapsed: 0:59:28 temperature: no ada_p: No Discriminator_loss: 0.0254625 Generator_loss: 0.721149 
+[INFO] 2020-12-17 07:21:28 > Step:  196400 Progress: 98.2% Elapsed: 1:19:07 temperature: no ada_p: No Discriminator_loss: 0.0498731 Generator_loss: 0.647367 
+[INFO] 2020-12-17 07:41:05 > Step:  196500 Progress: 98.2% Elapsed: 1:38:45 temperature: no ada_p: No Discriminator_loss: 0.0102121 Generator_loss: 0.909361 
+[INFO] 2020-12-17 08:00:42 > Step:  196600 Progress: 98.3% Elapsed: 1:58:22 temperature: no ada_p: No Discriminator_loss: 0.0884785 Generator_loss: 0.438469 
+[INFO] 2020-12-17 08:20:22 > Step:  196700 Progress: 98.4% Elapsed: 2:18:01 temperature: no ada_p: No Discriminator_loss: 0.0159156 Generator_loss: 0.891482 
+[INFO] 2020-12-17 08:39:59 > Step:  196800 Progress: 98.4% Elapsed: 2:37:38 temperature: no ada_p: No Discriminator_loss: 0.00958041 Generator_loss: 0.991616 
+[INFO] 2020-12-17 08:59:36 > Step:  196900 Progress: 98.5% Elapsed: 2:57:15 temperature: no ada_p: No Discriminator_loss: 0.0153428 Generator_loss: 0.919836 
+[INFO] 2020-12-17 09:19:16 > Step:  197000 Progress: 98.5% Elapsed: 3:16:55 temperature: no ada_p: No Discriminator_loss: 0.00755624 Generator_loss: 0.941584 
+[INFO] 2020-12-17 09:38:54 > Step:  197100 Progress: 98.6% Elapsed: 3:36:33 temperature: no ada_p: No Discriminator_loss: 0.0107904 Generator_loss: 0.995186 
+[INFO] 2020-12-17 09:58:31 > Step:  197200 Progress: 98.6% Elapsed: 3:56:10 temperature: no ada_p: No Discriminator_loss: 0.00931117 Generator_loss: 1.04053 
+[INFO] 2020-12-17 10:18:13 > Step:  197300 Progress: 98.7% Elapsed: 4:15:52 temperature: no ada_p: No Discriminator_loss: 0.0196519 Generator_loss: 0.863437 
+[INFO] 2020-12-17 10:37:49 > Step:  197400 Progress: 98.7% Elapsed: 4:35:29 temperature: no ada_p: No Discriminator_loss: 0.0187004 Generator_loss: 0.888808 
+[INFO] 2020-12-17 10:57:27 > Step:  197500 Progress: 98.8% Elapsed: 4:55:06 temperature: no ada_p: No Discriminator_loss: 0.0139718 Generator_loss: 0.978061 
+[INFO] 2020-12-17 11:17:06 > Step:  197600 Progress: 98.8% Elapsed: 5:14:46 temperature: no ada_p: No Discriminator_loss: 0.00847605 Generator_loss: 0.975844 
+[INFO] 2020-12-17 11:36:42 > Step:  197700 Progress: 98.9% Elapsed: 5:34:22 temperature: no ada_p: No Discriminator_loss: 0.0135379 Generator_loss: 0.868536 
+[INFO] 2020-12-17 11:56:18 > Step:  197800 Progress: 98.9% Elapsed: 5:53:57 temperature: no ada_p: No Discriminator_loss: 0.0383323 Generator_loss: 0.667498 
+[INFO] 2020-12-17 12:15:57 > Step:  197900 Progress: 99.0% Elapsed: 6:13:37 temperature: no ada_p: No Discriminator_loss: 0.013323 Generator_loss: 0.907628 
+[INFO] 2020-12-17 12:35:35 > Step:  198000 Progress: 99.0% Elapsed: 6:33:15 temperature: no ada_p: No Discriminator_loss: 0.0111757 Generator_loss: 1.03089 
+[INFO] 2020-12-17 12:35:35 > Start Evaluation (198000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-17 12:35:35 > Calculating FID Score....
+[INFO] 2020-12-17 12:37:29 > Calculating Inception Score....
+[INFO] 2020-12-17 12:38:31 > Calculate F_beta Score....
+[INFO] 2020-12-17 13:16:24 > Calculate Accuracies....
+[INFO] 2020-12-17 13:17:22 > Calculate Accuracies....
+[INFO] 2020-12-17 13:18:44 > F_8 score (Step: 198000, Using valid images): 0.9883182887921157
+[INFO] 2020-12-17 13:18:44 > F_1/8 score (Step: 198000, Using valid images): 0.9851742893593453
+[INFO] 2020-12-17 13:18:44 > FID score (Step: 198000, Using valid moments): 8.00762087768544
+[INFO] 2020-12-17 13:18:44 > Inception score (Step: 198000, 50000 generated images): 88.07674407958984
+[INFO] 2020-12-17 13:18:44 > Best FID score (Step: 198000, Using valid moments): 8.00762087768544
+[INFO] 2020-12-17 13:18:58 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-17 20:35:21 > Step:  198100 Progress: 99.1% Elapsed: 0:20:06 temperature: no ada_p: No Discriminator_loss: 0.0212069 Generator_loss: 0.783195 
+[INFO] 2020-12-17 20:54:45 > Step:  198200 Progress: 99.1% Elapsed: 0:39:31 temperature: no ada_p: No Discriminator_loss: 0.016206 Generator_loss: 0.857402 
+[INFO] 2020-12-17 21:14:12 > Step:  198300 Progress: 99.2% Elapsed: 0:58:57 temperature: no ada_p: No Discriminator_loss: 0.0132549 Generator_loss: 0.912876 
+[INFO] 2020-12-17 21:33:39 > Step:  198400 Progress: 99.2% Elapsed: 1:18:24 temperature: no ada_p: No Discriminator_loss: 0.0195344 Generator_loss: 0.818448 
+[INFO] 2020-12-17 21:53:05 > Step:  198500 Progress: 99.2% Elapsed: 1:37:50 temperature: no ada_p: No Discriminator_loss: 0.00990038 Generator_loss: 0.965478 
+[INFO] 2020-12-17 22:12:32 > Step:  198600 Progress: 99.3% Elapsed: 1:57:17 temperature: no ada_p: No Discriminator_loss: 0.0129643 Generator_loss: 0.987325 
+[INFO] 2020-12-17 22:32:01 > Step:  198700 Progress: 99.4% Elapsed: 2:16:47 temperature: no ada_p: No Discriminator_loss: 0.0109071 Generator_loss: 0.996126 
+[INFO] 2020-12-17 22:51:28 > Step:  198800 Progress: 99.4% Elapsed: 2:36:13 temperature: no ada_p: No Discriminator_loss: 0.0507433 Generator_loss: 0.549228 
+[INFO] 2020-12-17 23:10:54 > Step:  198900 Progress: 99.5% Elapsed: 2:55:40 temperature: no ada_p: No Discriminator_loss: 0.0418053 Generator_loss: 0.672548 
+[INFO] 2020-12-17 23:30:23 > Step:  199000 Progress: 99.5% Elapsed: 3:15:09 temperature: no ada_p: No Discriminator_loss: 0.00794321 Generator_loss: 0.954256 
+[INFO] 2020-12-17 23:49:51 > Step:  199100 Progress: 99.6% Elapsed: 3:34:36 temperature: no ada_p: No Discriminator_loss: 0.014456 Generator_loss: 0.893425 
+[INFO] 2020-12-18 00:09:18 > Step:  199200 Progress: 99.6% Elapsed: 3:54:04 temperature: no ada_p: No Discriminator_loss: 0.0187708 Generator_loss: 0.85047 
+[INFO] 2020-12-18 00:28:48 > Step:  199300 Progress: 99.7% Elapsed: 4:13:33 temperature: no ada_p: No Discriminator_loss: 0.0152847 Generator_loss: 0.940753 
+[INFO] 2020-12-18 00:48:14 > Step:  199400 Progress: 99.7% Elapsed: 4:33:00 temperature: no ada_p: No Discriminator_loss: 0.0125523 Generator_loss: 1.01344 
+[INFO] 2020-12-18 01:07:42 > Step:  199500 Progress: 99.8% Elapsed: 4:52:28 temperature: no ada_p: No Discriminator_loss: 0.0141438 Generator_loss: 0.859247 
+[INFO] 2020-12-18 01:27:12 > Step:  199600 Progress: 99.8% Elapsed: 5:11:58 temperature: no ada_p: No Discriminator_loss: 0.0383454 Generator_loss: 0.584893 
+[INFO] 2020-12-18 01:46:39 > Step:  199700 Progress: 99.9% Elapsed: 5:31:25 temperature: no ada_p: No Discriminator_loss: 0.0108776 Generator_loss: 0.998994 
+[INFO] 2020-12-18 02:06:06 > Step:  199800 Progress: 99.9% Elapsed: 5:50:52 temperature: no ada_p: No Discriminator_loss: 0.0125745 Generator_loss: 0.87607 
+[INFO] 2020-12-18 02:25:36 > Step:  199900 Progress: 100.0% Elapsed: 6:10:22 temperature: no ada_p: No Discriminator_loss: 0.0199607 Generator_loss: 0.854751 
+[INFO] 2020-12-18 02:45:04 > Step:  200000 Progress: 100.0% Elapsed: 6:29:49 temperature: no ada_p: No Discriminator_loss: 0.0101699 Generator_loss: 0.897855 
+[INFO] 2020-12-18 02:45:04 > Start Evaluation (200000 Step): BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-18 04:13:23 > F_8 score (Step: 200000, Using valid images): 0.9859823470321828
+[INFO] 2020-12-18 04:13:23 > F_1/8 score (Step: 200000, Using valid images): 0.983132900445464
+[INFO] 2020-12-18 04:13:23 > FID score (Step: 200000, Using valid moments): 8.10802271348308
+[INFO] 2020-12-18 04:13:23 > Inception score (Step: 200000, 50000 generated images): 87.558837890625
+[INFO] 2020-12-18 04:13:23 > Best FID score (Step: 198000, Using valid moments): 8.00762087768544
+[INFO] 2020-12-18 04:13:30 > Save model to ./checkpoints/BigGAN2048-train-2020_11_17_15_17_48
+[INFO] 2020-12-18 06:38:22 > F_8 score (Step: 198000, Using valid images): 0.9887270546320229
+[INFO] 2020-12-18 06:38:22 > F_1/8 score (Step: 198000, Using valid images): 0.985222448510062
+[INFO] 2020-12-18 06:38:22 > FID score (Step: 198000, Using valid moments): 7.8928087503921915
+[INFO] 2020-12-18 06:38:22 > Inception score (Step: 198000, 50000 generated images): 99.70494842529297
+[INFO] 2020-12-18 06:38:22 > Best FID score (Step: 198000, Using valid moments): 7.8928087503921915
