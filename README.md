@@ -55,6 +55,7 @@
 | [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | AdaIN | - | - | - |
 
 [cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform.
+[AdaIN](https://arxiv.org/abs/1703.06868) : Adaptive Instance Normalization.
 
 
 ## Requirements
