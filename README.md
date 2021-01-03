@@ -279,9 +279,9 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 64 | 256 | 9.071 | 49.021 | 0.923 | 0.731 | [Config](./src/configs/TINY_ILSVRC2012/SNGAN.json) | [Log](./logs/TINY_IMAGENET/SNGAN-train-2021_01_01_08_38_10.log) |  - |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | 64 | 256 | 8.484 | 50.784 | 0.887 | 0.720 | [Config](./src/configs/TINY_ILSVRC2012/SAGAN.json) | [Log](./logs/TINY_IMAGENET/SAGAN-train-2021_01_01_08_39_04.log) |  - |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | 64 | 1024 | 11.956 | 29.694 | - | - | [Config](./src/configs/TINY_ILSVRC2012/BigGAN.json) | [Log](./logs/TINY_IMAGENET/proj_biggan_tiny64_hinge_no-train-2020_10_10_21_49_10.log)|  - |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | 1024 | 13.494 | 27.027 | 0.975 | 0.902 | [Config](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | [Log](./logs/TINY_IMAGENET/contra_biggan_tiny64_hinge_no-train-2020_10_07_21_40_44.log)|  - |
-| [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | 14.887 | 21.488 | 0.969 | 0.936 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(P).json) |  - |  - |
-| [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | 15.623 | 19.716 | 0.983 | 0.941 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(C).json) |  - |  - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | 1024 | 13.494 | 27.027 | 0.975 | 0.902 | [Config](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | [Log](./logs/TINY_IMAGENET/ContraGAN-train-2021_01_01_09_35_08.log)|  - |
+| [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | 14.887 | 21.488 | 0.969 | 0.936 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(P).json) | [Log](./logs/TINY_IMAGENET/CRGAN(P)-train-2021_01_01_08_55_18.log) |  - |
+| [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | 15.623 | 19.716 | 0.983 | 0.941 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(C).json) | [Log](./logs/TINY_IMAGENET/CRGAN(C)-train-2021_01_01_08_56_13.log) |  - |
 | [**ICRGAN(P)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(P).json) |  - |  - |
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(C).json) |  - |  - |
 | [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(P).json) |  - |  - |
