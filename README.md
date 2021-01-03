@@ -268,7 +268,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 
 | Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 256 | 5.640 | 91.625 | 0.606 | 0.391 | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) |  - |  - |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 256 | 5.640 | 91.625 | 0.606 | 0.391 | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) | [Log](./logs/TINY_IMAGENET/DCGAN-train-2021_01_01_08_11_26.log) |  - |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | 256 | 5.381 | 90.008 | 0.638 | 0.390 | [Config](./src/configs/TINY_ILSVRC2012/LSGAN.json) |  - |  - |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | 256 | 5.146 | 102.094 | 0.503 | 0.307 | [Config](./src/configs/TINY_ILSVRC2012/GGAN.json) |  - |  - |
 | [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 64 | 256 | 9.556 | 40.003 | 0.945 | 0.750 | [Config](./src/configs/TINY_ILSVRC2012/WGAN-WC.json) |  - |  - |
