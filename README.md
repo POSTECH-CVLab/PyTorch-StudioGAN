@@ -269,15 +269,15 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 256 | 5.640 | 91.625 | 0.606 | 0.391 | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) | [Log](./logs/TINY_IMAGENET/DCGAN-train-2021_01_01_08_11_26.log) |  - |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | 256 | 5.381 | 90.008 | 0.638 | 0.390 | [Config](./src/configs/TINY_ILSVRC2012/LSGAN.json) |  - |  - |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | 256 | 5.146 | 102.094 | 0.503 | 0.307 | [Config](./src/configs/TINY_ILSVRC2012/GGAN.json) |  - |  - |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 64 | 256 | 9.556 | 40.003 | 0.945 | 0.750 | [Config](./src/configs/TINY_ILSVRC2012/WGAN-WC.json) |  - |  - |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 64 | 256 | 1.580 | 304.667 | 0.0 | 0.0 |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-GP.json) |  - |  - |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 64 | 256 | 9.323 | 40.822 | 0.926 | 0.732 |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-DRA.json) |  - |  - |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 64 | 256 | 6.603 | 72.239 | 0.675 | 0.521 | [Config](./src/configs/TINY_ILSVRC2012/ACGAN.json) |  - |  - |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 64 | 256 | 5.881 | 84.636 | 0.645 | 0.432 | [Config](./src/configs/TINY_ILSVRC2012/ProjGAN.json) |  - |  - |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 64 | 256 | 9.071 | 49.021 | 0.923 | 0.731 | [Config](./src/configs/TINY_ILSVRC2012/SNGAN.json) |  - |  - |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 64 | 256 | 8.484 | 50.784 | 0.887 | 0.720 | [Config](./src/configs/TINY_ILSVRC2012/SAGAN.json) |  - |  - |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | 256 | 5.381 | 90.008 | 0.638 | 0.390 | [Config](./src/configs/TINY_ILSVRC2012/LSGAN.json) | [Log](./logs/TINY_IMAGENET/LSGAN-train-2021_01_01_08_13_17.log) |  - |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | 256 | 5.146 | 102.094 | 0.503 | 0.307 | [Config](./src/configs/TINY_ILSVRC2012/GGAN.json) | [Log](./logs/TINY_IMAGENET/GGAN-train-2021_01_01_08_13_58.log) |  - |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 64 | 256 | 9.556 | 40.003 | 0.945 | 0.750 | [Config](./src/configs/TINY_ILSVRC2012/WGAN-WC.json) | [Log](./logs/TINY_IMAGENET/WGAN-WC-train-2021_01_01_08_31_18.log) |  - |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 64 | 256 | 1.580 | 304.667 | 0.0 | 0.0 |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-GP.json) | [Log](./logs/TINY_IMAGENET/WGAN-GP-train-2021_01_01_08_31_25.log) |  - |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 64 | 256 | 9.323 | 40.822 | 0.926 | 0.732 |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-DRA.json) | [Log](./logs/TINY_IMAGENET/WGAN-DRA-train-2021_01_01_08_32_04.log) |  - |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 64 | 256 | 6.603 | 72.239 | 0.675 | 0.521 | [Config](./src/configs/TINY_ILSVRC2012/ACGAN.json) | [Log](./logs/TINY_IMAGENET/ACGAN-train-2021_01_01_08_32_50.log) |  - |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 64 | 256 | 5.881 | 84.636 | 0.645 | 0.432 | [Config](./src/configs/TINY_ILSVRC2012/ProjGAN.json) | [Log](./logs/TINY_IMAGENET/ProjGAN-train-2021_01_01_08_37_21.log) |  - |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 64 | 256 | 9.071 | 49.021 | 0.923 | 0.731 | [Config](./src/configs/TINY_ILSVRC2012/SNGAN.json) | [Log](./logs/TINY_IMAGENET/SNGAN-train-2021_01_01_08_38_10.log) |  - |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 64 | 256 | 8.484 | 50.784 | 0.887 | 0.720 | [Config](./src/configs/TINY_ILSVRC2012/SAGAN.json) | [Log](./logs/TINY_IMAGENET/SAGAN-train-2021_01_01_08_39_04.log) |  - |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | 64 | 1024 | 11.956 | 29.694 | - | - | [Config](./src/configs/TINY_ILSVRC2012/BigGAN.json) | [Log](./logs/TINY_IMAGENET/proj_biggan_tiny64_hinge_no-train-2020_10_10_21_49_10.log)|  - |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | 1024 | 13.455 | 25.521 | - | - | [Config](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | [Log](./logs/TINY_IMAGENET/contra_biggan_tiny64_hinge_no-train-2020_10_07_21_40_44.log)|  - |
 | [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(P).json) |  - |  - |
