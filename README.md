@@ -234,8 +234,7 @@ Precision measures how accurately the generator can learn the target distributio
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
-We report the best IS, FID, and F_beta values of various GANs.  
-We don't apply Synchronized Batch Normalization to all experiments.  
+We report the best IS, FID, and F_beta values of various GANs.
 (P) and (C) refer to GANs using PD (Projection Discriminator) and CL (Contrastive Learning) as conditional models, respectively.
 
 ### CIFAR10
@@ -292,7 +291,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 
 ### ImageNet
 
-* Note: Experiments are still ongoing due to limited resources. Image generation experiment using BigGAN is in progress successfully, and when the experiment is completed, we will update the logger file and models' weights. After that, we plan to conduct ImageNet generation experiments in the order of SNGAN -> SAGAN -> ContraGAN.
+* Note: We plan to conduct ImageNet generation experiments in the order of SNGAN -> SAGAN -> ContraGAN.
 
 | Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
