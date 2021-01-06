@@ -286,7 +286,7 @@ We don't apply Synchronized Batch Normalization to all experiments.
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | 15.830 | 21.940 | 0.980 | 0.944 | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(C).json) |  - |  - |
 | [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | 18.375 | 16.012 | 0.979 | 0.970 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(P).json) |  - |  - |
 | [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | 17.901 | 15.607 | 0.985 | 0.959 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(C).json) |  - |  - |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/LOGAN.json) |  - |  - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | 256 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/LOGAN.json) |  - |  - |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
