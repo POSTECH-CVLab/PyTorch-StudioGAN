@@ -292,15 +292,16 @@ def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, pri
         return gen_tmp
 
     if standing_statistics:
-        if counter >= 1:
+        if counter > 1:
             gen_tmp.eval()
             gen_tmp.apply(set_deterministic_op_train)
         else:
+            gen_tmp.train()
             apply_accumulate_stat(gen_tmp, standing_step, prior, batch_size, z_dim, num_classes, device)
+            gen_tmp.eval()
             gen_tmp.apply(set_deterministic_op_train)
     else:
         gen_tmp.eval()
-        gen_tmp.apply(set_bn_train)
         gen_tmp.apply(set_deterministic_op_train)
     return gen_tmp
 
