@@ -33,7 +33,7 @@
   
       "optimization": {
         "optimizer": "Adam",
-        "batch_size": 1024,
+        "batch_size": 256,
         "accumulation_steps": 1,
         "d_lr": 0.0004,
         "g_lr": 0.0001,
