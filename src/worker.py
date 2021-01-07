@@ -153,6 +153,7 @@ class make_worker(object):
         self.start_time = datetime.now()
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
+        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
         self.policy = "color,translation,cutout"
         self.counter = 0
 
@@ -164,13 +165,15 @@ class make_worker(object):
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr,
                      self.zcr, self.distributed_data_parallel, self.synchronized_bn)
 
-        if self.conditional_strategy == 'ContraGAN':
-            self.contrastive_criterion = Conditional_Contrastive_loss(self.rank, self.batch_size, self.pos_collected_numerator)
-        elif self.conditional_strategy == 'Proxy_NCA_GAN':
+        if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
             if isinstance(self.dis_model, DataParallel) or isinstance(self.dis_model, DistributedDataParallel):
                 self.embedding_layer = self.dis_model.module.embedding
             else:
                 self.embedding_layer = self.dis_model.embedding
+
+        if self.conditional_strategy == 'ContraGAN':
+            self.contrastive_criterion = Conditional_Contrastive_loss(self.rank, self.batch_size, self.pos_collected_numerator)
+        elif self.conditional_strategy == 'Proxy_NCA_GAN':
             self.NCA_criterion = Proxy_NCA_loss(self.rank, self.embedding_layer, self.num_classes, self.batch_size)
         elif self.conditional_strategy == 'NT_Xent_GAN':
             self.NT_Xent_criterion = NT_Xent_loss(self.rank, self.batch_size)
@@ -587,6 +590,18 @@ class make_worker(object):
                                                                            num_run4PR, num_cluster4PR, beta4PR, self.truncated_factor, self.prior, self.latent_op,
                                                                            self.latent_op_step4eval, self.latent_op_alpha, self.latent_op_beta, self.rank, self.logger)
             PR_Curve = plot_pr_curve(precision, recall, self.run_name, self.logger)
+
+            if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
+                classes = torch.tensor([c for c in range(self.num_classes)], dtype=torch.long).to(self.rank)
+                if self.dataset_name == "CIFAR10":
+                    labels = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+                else:
+                    labels = classes.detach().cpu().numpy()
+                proxies = self.embedding_layer(classes)
+                sim_p = self.cosine_similarity(proxies.unsqueeze(1), proxies.unsqueeze(0))
+                sim_heatmap = plot_sim_heatmap(sim_p.detach().cpu().numpy(), labels,
+                                               classes.detach().cpu().numpy(), self.run_name, self.logger)
+
             if self.D_loss.__name__ != "loss_wgan_dis":
                 real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
@@ -614,6 +629,8 @@ class make_worker(object):
                 self.writer.add_scalars('F_beta_inv score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta_inv}, step)
                 self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):kl_score}, step)
                 self.writer.add_figure('PR_Curve', PR_Curve, global_step=step)
+                if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
+                    self.writer.add_figure('Similarity_heatmap', sim_heatmap, global_step=step)
                 self.logger.info('F_{beta} score (Step: {step}, Using {type} images): {F_beta}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta=f_beta))
                 self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
                 self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))

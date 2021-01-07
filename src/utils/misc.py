@@ -381,6 +381,36 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
     logger.info("Save image to {}".format(save_path))
 
 
+def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger):
+    directory = join('./figures', run_name)
+
+    if not exists(abspath(directory)):
+        os.makedirs(directory)
+
+    save_path = join(directory, "sim_heatmap.png")
+
+    sns.set(style="white")
+    fig, ax = plt.subplots(figsize=(18, 18))
+    cmap = sns.diverging_palette(220, 20, as_cmap=True)
+    # Generate a mask for the upper triangle
+    mask = np.zeros_like(similarity, dtype=np.bool)
+    mask[np.triu_indices_from(mask, k=1)] = True
+
+
+    # Draw the heatmap with the mask and correct aspect ratio
+    sns.heatmap(similarity, mask=mask, cmap=cmap, center=0.5,
+            xticklabels=xlabels, yticklabels=ylabels,
+            square=True, linewidths=.5, fmt='.2f',
+            annot=True, cbar_kws={"shrink": .5}, vmax=1)
+
+    ax.set_title("Heatmap of cosine similarity scores").set_fontsize(15)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+
+    fig.savefig(save_path)
+    logger.info("Save image to {}".format(save_path))
+    return fig
+
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
                     truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
     if is_generate is True:
