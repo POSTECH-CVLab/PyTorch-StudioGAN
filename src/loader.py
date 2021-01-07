@@ -245,3 +245,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
     if cfgs.frequency_analysis:
         worker.run_frequency_analysis(num_images=len(train_dataset)//cfgs.num_classes,
                                       standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+
+    if cfgs.tsne_analysis:
+        worker.run_tsne(dataloader = eval_dataloader,
+                        standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)

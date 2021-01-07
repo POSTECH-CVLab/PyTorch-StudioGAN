@@ -56,6 +56,7 @@ def main():
     parser.add_argument('-knn', '--k_nearest_neighbor', action='store_true', help='select whether conduct k-nearest neighbor analysis')
     parser.add_argument('-itp', '--interpolation', action='store_true', help='whether conduct interpolation analysis')
     parser.add_argument('-fa', '--frequency_analysis', action='store_true', help='whether conduct frequency analysis')
+    parser.add_argument('-tsne', '--tsne_analysis', action='store_true', help='whether conduct tsne analysis')
     parser.add_argument('--nrow', type=int, default=10, help='number of rows to plot image canvas')
     parser.add_argument('--ncol', type=int, default=8, help='number of cols to plot image canvas')
 
@@ -70,7 +71,8 @@ def main():
             not args.image_visualization and \
             not args.k_nearest_neighbor and \
             not args.interpolation and \
-            not args.frequency_analysis:
+            not args.frequency_analysis and \
+            not args.tsne_analysis:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
@@ -91,7 +93,7 @@ def main():
         msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, and frequency_analysis with DDP. " +\
             "Please change DDP with a single GPU training or DataParallel instead."
         assert train_config['image_visualization'] + train_config['k_nearest_neighbor'] + \
-            train_config['interpolation'] + train_config['frequency_analysis'] == 0, msg
+            train_config['interpolation'] + train_config['frequency_analysis'] + train_config['tsne_analysis'] == 0, msg
 
     hdf5_path_train = make_hdf5(model_config['data_processing'], train_config, mode="train") \
         if train_config['load_all_data_in_memory'] else None

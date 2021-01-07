@@ -9,6 +9,7 @@ import numpy as np
 import sys
 import glob
 from scipy import ndimage
+from sklearn.manifold import TSNE
 from os.path import join
 from PIL import Image
 from tqdm import tqdm
@@ -657,7 +658,6 @@ class make_worker(object):
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
-            sampler = "default" if self.conditional_strategy == "no" else "class_order_some"
             if self.zcr:
                 zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
                                                      self.sigma_noise, self.rank, sampler=self.sampler)
@@ -833,4 +833,88 @@ class make_worker(object):
 
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
                                               self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
+    ################################################################################################################################
+
+
+    def run_tsne(self, dataloader, standing_statistics, standing_step):
+        if self.rank == 0: self.logger.info('Start tsne analysis....')
+        if standing_statistics: self.counter += 1
+        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+            if isinstance(self.gen_model, DataParallel) or isinstance(self.gen_model, DistributedDataParallel):
+                dis_model = self.dis_model.module
+            else:
+                dis_model = self.dis_model
+
+            save_output = SaveOutput()
+            hook_handles = []
+            real, fake = {}, {}
+            tsne_iter = iter(dataloader)
+            num_batches = len(dataloader.dataset)//self.batch_size
+            for name, layer in dis_model.named_children():
+                if name == "linear1":
+                    handle = layer.register_forward_pre_hook(save_output)
+                    hook_handles.append(handle)
+
+            for i in range(num_batches):
+                if self.zcr:
+                    zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                           self.sigma_noise, self.rank)
+                else:
+                    zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
+                                                     None, self.rank)
+
+                if self.latent_op:
+                    zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                                         self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
+                                         False, self.rank)
+
+                real_images, real_labels = next(tsne_iter)
+                real_images, real_labels = real_images.to(self.rank), real_labels.to(self.rank)
+                fake_images = generator(zs, fake_labels, evaluation=True)
+
+                if self.conditional_strategy == "ACGAN":
+                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
+                elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
+                    dis_out_real = self.dis_model(real_images, real_labels)
+                elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
+                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels)
+                else:
+                    raise NotImplementedError
+
+                if i == 0:
+                    real["embeds"] = save_output.outputs[0][0].detach().cpu().numpy()
+                    real["labels"] = real_labels.detach().cpu().numpy()
+                else:
+                    real["embeds"] = np.concatenate([real["embeds"], save_output.outputs[0][0].cpu().detach().numpy()], axis=0)
+                    real["labels"] = np.concatenate([real["labels"], real_labels.detach().cpu().numpy()])
+
+                save_output.clear()
+
+                if self.conditional_strategy == "ACGAN":
+                    cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
+                elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
+                    dis_out_fake = self.dis_model(fake_images, fake_labels)
+                elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
+                    cls_proxies_fake, cls_embed_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
+                else:
+                    raise NotImplementedError
+
+                if i == 0:
+                    fake["embeds"] = save_output.outputs[0][0].detach().cpu().numpy()
+                    fake["labels"] = fake_labels.detach().cpu().numpy()
+                else:
+                    fake["embeds"] = np.concatenate([fake["embeds"], save_output.outputs[0][0].cpu().detach().numpy()], axis=0)
+                    fake["labels"] = np.concatenate([fake["labels"], fake_labels.detach().cpu().numpy()])
+
+                save_output.clear()
+
+            # t-SNE
+            tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+            real_tsne_results = tsne.fit_transform(real["embeds"])
+            plot_tsne_scatter_plot(real, real_tsne_results, "real", self.run_name, self.logger)
+
+            fake_tsne_results = tsne.fit_transform(fake["embeds"])
+            plot_tsne_scatter_plot(fake, fake_tsne_results, "fake", self.run_name, self.logger)
     ################################################################################################################################

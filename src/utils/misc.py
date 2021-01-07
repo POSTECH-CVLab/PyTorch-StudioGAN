@@ -12,6 +12,7 @@ import os
 import sys
 import shutil
 import warnings
+import seaborn as sns
 import matplotlib.pyplot as plt
 from os.path import dirname, abspath, exists, join
 from scipy import linalg
@@ -357,6 +358,28 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger):
     fig.savefig(save_path)
     logger.info("Save image to {}".format(save_path))
 
+def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
+    directory = join('./figures', run_name, flag)
+
+    if not exists(abspath(directory)):
+        os.makedirs(directory)
+
+    save_path = join(directory, "tsne_scatter.png")
+
+    df['tsne-2d-one'] = tsne_results[:,0]
+    df['tsne-2d-two'] = tsne_results[:,1]
+    plt.figure(figsize=(16,10))
+    sns.scatterplot(
+        x="tsne-2d-one", y="tsne-2d-two",
+        hue="labels",
+        palette=sns.color_palette("hls", 10),
+        data=df,
+        legend="full",
+        alpha=0.3
+    )
+    plt.savefig(save_path)
+    logger.info("Save image to {}".format(save_path))
+
 
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
                     truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
@@ -466,3 +489,14 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
         batch_images = gen_model(zs, fake_labels, evaluation=True)
 
     return batch_images, list(fake_labels.detach().cpu().numpy())
+
+class SaveOutput:
+    def __init__(self):
+        self.outputs = []
+
+    def __call__(self, module, module_input):
+    # def __call__(self, module, module_in, module_out):
+        self.outputs.append(module_input)
+
+    def clear(self):
+        self.outputs = []
