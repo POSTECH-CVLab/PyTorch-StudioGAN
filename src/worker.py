@@ -599,8 +599,7 @@ class make_worker(object):
                     labels = classes.detach().cpu().numpy()
                 proxies = self.embedding_layer(classes)
                 sim_p = self.cosine_similarity(proxies.unsqueeze(1), proxies.unsqueeze(0))
-                sim_heatmap = plot_sim_heatmap(sim_p.detach().cpu().numpy(), labels,
-                                               classes.detach().cpu().numpy(), self.run_name, self.logger)
+                sim_heatmap = plot_sim_heatmap(sim_p.detach().cpu().numpy(), labels, labels, self.run_name, self.logger)
 
             if self.D_loss.__name__ != "loss_wgan_dis":
                 real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
