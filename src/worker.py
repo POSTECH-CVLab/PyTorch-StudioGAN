@@ -593,7 +593,7 @@ class make_worker(object):
 
             if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
                 classes = torch.tensor([c for c in range(self.num_classes)], dtype=torch.long).to(self.rank)
-                if self.dataset_name == "CIFAR10":
+                if self.dataset_name == "cifar10":
                     labels = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
                 else:
                     labels = classes.detach().cpu().numpy()
