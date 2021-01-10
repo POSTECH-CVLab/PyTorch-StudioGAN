@@ -338,7 +338,7 @@ def plot_pr_curve(precision, recall, run_name, logger, log=False):
     return fig
 
 
-def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger):
+def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, log=False):
     directory = join('./figures', run_name)
 
     if not exists(abspath(directory)):
@@ -356,7 +356,8 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger):
     ax2.imshow(fake_spectrum)
     ax2.set_title("Spectrum of fake images")
     fig.savefig(save_path)
-    logger.info("Save image to {}".format(save_path))
+    if log:
+        logger.info("Save image to {}".format(save_path))
 
 def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
     directory = join('./figures', run_name, flag)
