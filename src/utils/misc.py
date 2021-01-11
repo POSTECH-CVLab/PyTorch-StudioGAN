@@ -382,7 +382,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
     logger.info("Save image to {}".format(save_path))
 
 
-def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger):
+def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger, log=False):
     directory = join('./figures', run_name)
 
     if not exists(abspath(directory)):
@@ -409,7 +409,8 @@ def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger):
     ax.set_ylabel("")
 
     fig.savefig(save_path)
-    logger.info("Save image to {}".format(save_path))
+    if log:
+        logger.info("Save image to {}".format(save_path))
     return fig
 
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
