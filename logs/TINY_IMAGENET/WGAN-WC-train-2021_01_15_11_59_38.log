@@ -1624,12 +1624,3 @@
 [INFO] 2021-01-16 12:54:56 > Inception score (Step: 100000, 10000 generated images): 9.270998001098633
 [INFO] 2021-01-16 12:54:56 > Best FID score (Step: 90000, Using valid moments): 41.453856936054365
 [INFO] 2021-01-16 12:54:58 > Save model to checkpoints/WGAN-WC-train-2021_01_15_11_59_38
-[INFO] 2021-01-16 12:54:58 > Start Evaluation (100000 Step): WGAN-WC-train-2021_01_15_11_59_38
-[INFO] 2021-01-16 12:54:58 > Calculating FID Score....
-[INFO] 2021-01-16 12:55:19 > Calculating Inception Score....
-[INFO] 2021-01-16 12:55:32 > Calculate F_beta Score....
-[INFO] 2021-01-16 12:56:10 > F_8 score (Step: 100000, Using valid images): 0.7240903237040855
-[INFO] 2021-01-16 12:56:10 > F_1/8 score (Step: 100000, Using valid images): 0.9190589358465644
-[INFO] 2021-01-16 12:56:10 > FID score (Step: 100000, Using valid moments): 43.3434688969071
-[INFO] 2021-01-16 12:56:10 > Inception score (Step: 100000, 10000 generated images): 9.162474632263184
-[INFO] 2021-01-16 12:56:10 > Best FID score (Step: 90000, Using valid moments): 41.453856936054365
