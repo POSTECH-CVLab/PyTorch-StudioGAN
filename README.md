@@ -333,7 +333,7 @@ We report the best IS, FID, and F_beta values of various GANs.
 ## Citation
 StudioGAN is established for the following research project. Please cite our work if you use StudioGAN.
 ```bib
-@article{kang2020ContraGAN,
+@inproceedings{kang2020ContraGAN,
   title   = {{ContraGAN: Contrastive Learning for Conditional Image Generation}},
   author  = {Minguk Kang and Jaesik Park},
   journal = {Conference on Neural Information Processing Systems (NeurIPS)},
