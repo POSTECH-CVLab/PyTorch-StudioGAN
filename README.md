@@ -286,7 +286,7 @@ We report the best IS, FID, and F_beta values of various GANs.
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | 15.830 | 21.940 | 0.980 | 0.944 | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(C).json) | [Log](./logs/TINY_IMAGENET/ICRGAN(C)-train-2021_01_03_12_11_56.log) | [Link](https://drive.google.com/drive/folders/1VxSRKEk3ZPoNSU1GGzY2phJkagmnsYvX?usp=sharing) |
 | [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | 18.375 | 16.012 | 0.979 | 0.970 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(P).json) |  - |  - |
 | [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | 17.901 | 15.607 | 0.985 | 0.959 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(C).json) |  - |  - |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | 256 | 6.964 | 70.660 | 0.857 | 0.621 | [Config](./src/configs/TINY_ILSVRC2012/LOGAN.json) | [Log](./logs/TINY_IMAGENET/LOGAN-train-2021_01_17_05_06_23.log) |  - |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | 256 | 6.964 | 70.660 | 0.857 | 0.621 | [Config](./src/configs/TINY_ILSVRC2012/LOGAN.json) | [Log](./logs/TINY_IMAGENET/LOGAN-train-2021_01_17_05_06_23.log) | [Link](https://drive.google.com/drive/folders/11EFytTW5JBD-HKc0DE8Zq0dqBXHcRmPP?usp=sharing) |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
