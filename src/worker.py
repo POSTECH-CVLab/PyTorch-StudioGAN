@@ -185,13 +185,17 @@ class make_worker(object):
 
         if self.dataset_name == "imagenet":
             self.num_eval = {'train':50000, 'valid':50000}
+            self.set_bn_train = False
         elif self.dataset_name == "tiny_imagenet":
             self.num_eval = {'train':50000, 'valid':10000}
+            self.set_bn_train = False
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
+            self.set_bn_train = True
         elif self.dataset_name == "custom":
             num_train_images, num_eval_images = len(self.train_dataset.data), len(self.eval_dataset.data)
             self.num_eval = {'train':num_train_images, 'valid':num_eval_images}
+            self.set_bn_train = False
         else:
             raise NotImplementedError
 
@@ -576,7 +580,7 @@ class make_worker(object):
 
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter, set_bn_train=self.set_bn_train)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
                                                               self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
@@ -652,7 +656,7 @@ class make_worker(object):
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.dis_model.eval()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter, set_bn_train=self.set_bn_train)
 
             if png:
                 save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
@@ -672,7 +676,7 @@ class make_worker(object):
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter, set_bn_train=self.set_bn_train)
 
             if self.zcr:
                 zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, 1, self.num_classes,
@@ -703,7 +707,7 @@ class make_worker(object):
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter, set_bn_train=self.set_bn_train)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.rank)
@@ -756,7 +760,7 @@ class make_worker(object):
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter, set_bn_train=self.set_bn_train)
             shared = generator.module.shared if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
 
@@ -796,7 +800,7 @@ class make_worker(object):
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter, set_bn_train=self.set_bn_train)
 
             train_iter = iter(self.train_dataloader)
             num_batches = num_images//self.batch_size
@@ -857,7 +861,7 @@ class make_worker(object):
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, standing_statistics, standing_step, self.prior,
-                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
+                                              self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter, set_bn_train=self.set_bn_train)
             if isinstance(self.gen_model, DataParallel) or isinstance(self.gen_model, DistributedDataParallel):
                 dis_model = self.dis_model.module
             else:

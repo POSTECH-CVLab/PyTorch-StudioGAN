@@ -193,7 +193,7 @@ def toggle_grad(model, on, freeze_layers=-1):
             param.requires_grad = on
 
 
-def set_bn_train(m):
+def set_batch_norm_train(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.train()
 
@@ -284,7 +284,7 @@ def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_cl
     generator.eval()
 
 
-def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training, counter):
+def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training, counter, set_bn_train=False):
     gen_tmp = gen if gen_copy is None else gen_copy
 
     if training:
@@ -303,6 +303,8 @@ def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, pri
             gen_tmp.apply(set_deterministic_op_train)
     else:
         gen_tmp.eval()
+        if set_bn_train:
+            gen_tmp.apply(set_batch_norm_train)
         gen_tmp.apply(set_deterministic_op_train)
     return gen_tmp
 
