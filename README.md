@@ -118,7 +118,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 * CIFAR10: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
 * Tiny Imagenet, Imagenet, or a custom dataset: 
-  1. download [Tiny Imagenet](https://tiny-imagenet.herokuapp.com) and [Imagenet](http://www.image-net.org). Prepare your own dataset.
+  1. download [Tiny Imagenet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) and [Imagenet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
 ```
