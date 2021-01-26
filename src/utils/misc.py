@@ -193,9 +193,17 @@ def toggle_grad(model, on, freeze_layers=-1):
             param.requires_grad = on
 
 
-def set_batch_norm_train(m):
+def set_bn_train(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.train()
+
+def untrack_bn_statistics(m):
+    if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
+        m.track_running_stats = False
+
+def track_bn_statistics(m):
+    if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
+        m.track_running_stats = True
 
 
 def set_deterministic_op_train(m):
@@ -238,9 +246,11 @@ def find_string(list_, string):
         if string == s:
             return i
 
+
 def find_and_remove(path):
     if os.path.isfile(path):
         os.remove(path)
+
 
 def calculate_all_sn(model):
     sigmas = {}
@@ -284,12 +294,13 @@ def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_cl
     generator.eval()
 
 
-def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training, counter, set_bn_train=False):
+def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, prior, batch_size, z_dim, num_classes, device, training, counter):
     gen_tmp = gen if gen_copy is None else gen_copy
 
     if training:
         gen.train()
         gen_tmp.train()
+        gen_tmp.apply(track_bn_statistics)
         return gen_tmp
 
     if standing_statistics:
@@ -303,8 +314,8 @@ def change_generator_mode(gen, gen_copy, standing_statistics, standing_step, pri
             gen_tmp.apply(set_deterministic_op_train)
     else:
         gen_tmp.eval()
-        if set_bn_train:
-            gen_tmp.apply(set_batch_norm_train)
+        gen_tmp.apply(set_bn_train)
+        gen_tmp.apply(untrack_bn_statistics)
         gen_tmp.apply(set_deterministic_op_train)
     return gen_tmp
 
@@ -361,6 +372,7 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, log=Fals
     if log:
         logger.info("Save image to {}".format(save_path))
 
+
 def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
     directory = join('./figures', run_name, flag)
 
@@ -414,6 +426,7 @@ def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger, log=False):
     if log:
         logger.info("Save image to {}".format(save_path))
     return fig
+
 
 def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
                     truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
@@ -524,6 +537,7 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
 
     return batch_images, list(fake_labels.detach().cpu().numpy())
 
+
 class SaveOutput:
     def __init__(self):
         self.outputs = []
@@ -534,3 +548,13 @@ class SaveOutput:
 
     def clear(self):
         self.outputs = []
+
+
+def calculate_ortho_reg(m, rank):
+    with torch.enable_grad():
+        reg = 1e-6
+        param_flat = m.view(m.shape[0], -1)
+        sym = torch.mm(param_flat, torch.t(param_flat))
+        sym -= torch.eye(param_flat.shape[0]).to(rank)
+        ortho_loss = reg * sym.abs().sum()
+    return ortho_loss

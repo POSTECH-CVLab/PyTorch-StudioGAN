@@ -45,6 +45,6 @@ def random_translation(x, ratio):
 
     grid_x = (grid_x + t_x) + max_t_x
     grid_y = (grid_y + t_y) + max_t_y
-    x_pad = F.pad(input=x, pad=[max_t_x, max_t_x, max_t_y, max_t_y], mode='reflect')
+    x_pad = F.pad(input=x, pad=[max_t_y, max_t_y, max_t_x, max_t_x], mode='reflect')
     x = x_pad.permute(0, 2, 3, 1).contiguous()[grid_batch, grid_x, grid_y].permute(0, 3, 1, 2)
     return x
