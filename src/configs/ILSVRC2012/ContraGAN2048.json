@@ -1,4 +1,3 @@
-
 {
     "data_processing":{ 
       "dataset_name": "imagenet",
@@ -14,8 +13,8 @@
       "model": {
         "architecture": "big_resnet",
         "conditional_strategy": "ContraGAN",
-        "pos_collected_numerator": true,
-        "hypersphere_dim": 1024,
+        "pos_collected_numerator": false,
+        "hypersphere_dim": 1536,
         "nonlinear_embed": false,
         "normalize_embed": true,
         "g_spectral_norm": true,

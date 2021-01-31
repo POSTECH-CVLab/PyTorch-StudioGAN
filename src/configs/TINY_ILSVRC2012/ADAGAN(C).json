@@ -44,11 +44,11 @@
         "beta2": 0.999,
         "g_steps_per_iter": 1,
         "d_steps_per_iter": 1,
-        "total_step": 200000
+        "total_step": 312500
       },
   
       "loss_function": {
-        "adv_loss": "hinge",
+        "adv_loss": "vanilla",
   
         "contrastive_lambda": 1.0,
         "margin": 0.0, 
@@ -89,8 +89,8 @@
         "diff_aug": false,
 
         "ada": true,
-        "ada_target": 0.1,
-        "ada_length": 500000,
+        "ada_target": 0.6,
+        "ada_length": 50000000,
    
         "prior": "gaussian",
         "truncated_factor": 1,

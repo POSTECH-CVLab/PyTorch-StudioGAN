@@ -1,18 +1,14 @@
 """
 MIT License
-
 Copyright (c) 2019 Kim Seonghyeon
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,6 +20,7 @@ SOFTWARE.
 
 
 import math
+import numpy as np
 
 from utils.ada_op import upfirdn2d
 
@@ -282,7 +279,7 @@ def affine_grid(grid, mat):
     return (grid.view(n, h * w, 3) @ mat.transpose(1, 2)).view(n, h, w, 2)
 
 
-def get_padding(G, height, width):
+def get_padding(G, height, width, pad_k):
     extreme = (
         G[:, :2, :]
         @ torch.tensor([(-1.0, -1, 1), (-1, 1, 1), (1, -1, 1), (1, 1, 1)]).t()
@@ -308,7 +305,10 @@ def get_padding(G, height, width):
         .tolist()
     )
 
-    return pad_low[0], pad_high[0], pad_low[1], pad_high[1]
+    h_pad_lth = np.clip([pad_low[0], pad_high[0]], a_max= height - pad_k - 1, a_min= -100000)
+    w_pad_lth = np.clip([pad_low[1], pad_high[1]], a_max= width - pad_k - 1, a_min= -100000)
+
+    return int(h_pad_lth[0]), int(h_pad_lth[1]), int(w_pad_lth[0]), int(w_pad_lth[1])
 
 
 def try_sample_affine_and_pad(img, p, pad_k, G=None):
@@ -316,25 +316,18 @@ def try_sample_affine_and_pad(img, p, pad_k, G=None):
 
     G_try = G
 
-    while True:
-        if G is None:
-            G_try = sample_affine(p, batch, height, width)
+    if G is None:
+        G_try = sample_affine(p, batch, height, width)
 
-        pad_x1, pad_x2, pad_y1, pad_y2 = get_padding(
-            torch.inverse(G_try), height, width
-        )
+    pad_x1, pad_x2, pad_y1, pad_y2 = get_padding(
+        torch.inverse(G_try), height, width, pad_k,
+    )
 
-        try:
-            img_pad = F.pad(
-                img,
-                (pad_x1 + pad_k, pad_x2 + pad_k, pad_y1 + pad_k, pad_y2 + pad_k),
-                mode="reflect",
-            )
-
-        except RuntimeError:
-            continue
-
-        break
+    img_pad = F.pad(
+        img,
+        (pad_x1 + pad_k, pad_x2 + pad_k, pad_y1 + pad_k, pad_y2 + pad_k),
+        mode="reflect",
+    )
 
     return img_pad, G_try, (pad_x1, pad_x2, pad_y1, pad_y2)
 
@@ -360,7 +353,6 @@ def random_apply_affine(img, p, G=None, antialiasing_kernel=SYM6):
     h_p = img_pad.shape[2] - len_k + 1
     h_o = img.shape[2]
     w_o = img.shape[3]
-
     img_2x = upfirdn2d(img_pad, kernel_flip, up=2)
 
     grid = make_grid(
