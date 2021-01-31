@@ -165,6 +165,9 @@ class make_worker(object):
                      self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr,
                      self.zcr, self.distributed_data_parallel, self.synchronized_bn)
 
+        if self.ada:
+            self.adtv_aug = Adaptive_Augment(self.prev_ada_p, self.ada_target, self.ada_length, self.batch_size, self.rank)
+
         if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
             if isinstance(self.dis_model, DataParallel) or isinstance(self.dis_model, DistributedDataParallel):
                 self.embedding_layer = self.dis_model.module.embedding
@@ -207,16 +210,7 @@ class make_worker(object):
         step_count = current_step
         train_iter = iter(self.train_dataloader)
 
-        if self.ada:
-            self.ada_augment = torch.tensor([0.0, 0.0], device = self.rank)
-            if self.prev_ada_p is not None:
-                self.ada_aug_p = self.prev_ada_p
-            else:
-                self.ada_aug_p = 0.0
-            self.ada_aug_step = self.ada_target/self.ada_length
-        else:
-            self.ada_aug_p = 'No'
-
+        self.ada_aug_p = self.adtv_aug.initialize() if self.ada else 'No'
         while step_count <= total_step:
             # ================== TRAIN D ================== #
             toggle_grad(self.dis_model, on=True, freeze_layers=self.freeze_layers)
@@ -352,15 +346,7 @@ class make_worker(object):
                             dis_acml_loss += self.regret_penalty_lambda*calc_derv4dra(self.dis_model, self.conditional_strategy, real_images,
                                                                                       real_labels, self.rank)
                         if self.ada:
-                            ada_aug_data = torch.tensor((torch.sign(dis_out_real).sum().item(), dis_out_real.shape[0]), device = self.rank)
-                            self.ada_augment += ada_aug_data
-                            if self.ada_augment[1] > (self.batch_size*4 - 1):
-                                authen_out_signs, num_outputs = self.ada_augment.tolist()
-                                r_t_stat = authen_out_signs/num_outputs
-                                sign = 1 if r_t_stat > self.ada_target else -1
-                                self.ada_aug_p += sign*self.ada_aug_step*num_outputs
-                                self.ada_aug_p = min(1.0, max(0.0, self.ada_aug_p))
-                                self.ada_augment.mul_(0.0)
+                            self.ada_aug_p = self.adtv_aug.update(dis_out_real)
 
                         dis_acml_loss = dis_acml_loss/self.accumulation_steps
 
