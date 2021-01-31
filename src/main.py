@@ -41,6 +41,7 @@ def main():
     parser.add_argument('--num_workers', type=int, default=8, help='')
     parser.add_argument('-sync_bn', '--synchronized_bn', action='store_true', help='whether turn on synchronized batchnorm')
     parser.add_argument('-mpc', '--mixed_precision', action='store_true', help='whether turn on mixed precision training')
+    parser.add_argument('-LARS', '--LARS_optimizer', action='store_true', help='whether turn on LARS optimizer')
     parser.add_argument('-rm_API', '--disable_debugging_API', action='store_true', help='whether disable pytorch autograd debugging mode')
 
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
