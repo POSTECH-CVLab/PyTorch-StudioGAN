@@ -51,10 +51,8 @@
 
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
-| [**WCGAN**](https://arxiv.org/abs/1806.00420) | ICLR' 18 | Big ResNet | cWC | PD | Hinge | True |
 | [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | AdaIN | - | - | - |
 
-[cWC](https://arxiv.org/abs/1806.00420) : conditional Whitening and Coloring batch transform.
 [AdaIN](https://arxiv.org/abs/1703.06868) : Adaptive Instance Normalization.
 
 
@@ -72,6 +70,7 @@
 - torchvision >= 0.7.0
 - tensorboard
 - 5.4.0 <= gcc <= 7.4.0 (Recommended for proper use of [adaptive discriminator augmentation module](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/tree/master/src/utils/ada_op))
+- torchlars (need to use LARS optimizer, can install by typing "pip install torchlars" in the command line)
 
 
 You can install the recommended environment as follows:
@@ -332,6 +331,8 @@ We report the best IS, FID, and F_beta values of various GANs.
 **[10] Pytorch FID:** https://github.com/mseitzer/pytorch-fid
 
 **[11] Tensorflow Precision and Recall:** https://github.com/msmsajjadi/precision-recall-distributions
+
+**[12] torchlars:** https://github.com/kakaobrain/torchlars
 
 
 ## Citation
