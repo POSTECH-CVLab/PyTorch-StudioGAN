@@ -301,7 +301,7 @@ We report the best IS, FID, and F_beta values of various GANs.
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/SNGAN.json) |  - | - |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/SAGAN.json) |  - | - |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 256 | 28.633 | 24.684 | 0.941 | 0.921 | [Config](./src/configs/ILSVRC2012/BigGAN256.json) | [Log](./logs/IMAGENET/BigGAN256-train-2021_01_24_03_52_15.log) | [Link]() |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 256 | 28.633 | 24.684 | 0.941 | 0.921 | [Config](./src/configs/ILSVRC2012/BigGAN256.json) | [Log](./logs/IMAGENET/BigGAN256-train-2021_01_24_03_52_15.log) | [Link](https://drive.google.com/drive/folders/1DNX7-q6N0UgOKTqFG45KKZ1aY2o9pAx2?usp=sharing) |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 256 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN256.json) | [Log](./logs/IMAGENET/) | [Link]() |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 2048 | 99.705 | 7.893 | 0.985 | 0.989 | [Config](./src/configs/ILSVRC2012/BigGAN2048.json) | [Log](./logs/IMAGENET/BigGAN2048-train-2020_11_17_15_17_48.log) | [Link](https://drive.google.com/drive/folders/1_RTYZ0RXbVLWufE7bbWPvp8n_QJbA8K0?usp=sharing) |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 2048 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN2048.json) | - | - |
