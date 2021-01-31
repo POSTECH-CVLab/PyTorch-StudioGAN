@@ -295,7 +295,8 @@ We report the best IS, FID, and F_beta values of various GANs.
 
 ### ImageNet
 
-* Note: We plan to conduct ImageNet generation experiments in the order of SNGAN -> SAGAN -> ContraGAN.
+* Note: We plan to conduct ImageNet generation experiments in the order of ContraGAN -> SNGAN -> SAGAN.
+* After training, we accumulate batch norm's statistics using "-std_stat and --standing_step BATCH_SIZE or BATCH_SIZE*2" options.
 
 | Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
