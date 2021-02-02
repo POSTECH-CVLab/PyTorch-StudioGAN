@@ -81,7 +81,7 @@ conda env create -f environment.yml -n studiogan
 
 With docker, you can use:
 ```
-docker pull mgkang/studiogan:0.1
+docker pull mgkang/studiogan:latest
 ```
 
 This is my command to make a container named "studioGAN". 
