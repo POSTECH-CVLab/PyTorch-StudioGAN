@@ -81,7 +81,7 @@ conda env create -f environment.yml -n studiogan
 
 With docker, you can use:
 ```
-docker pull mgkang/studiogan:latest
+docker pull mgkang/studio_gan:latest
 ```
 
 
@@ -116,7 +116,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 
 * CIFAR10: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
-* Tiny Imagenet, Imagenet, or a custom dataset: 
+* Tiny Imagenet, Imagenet, or a custom dataset:
   1. download [Tiny Imagenet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) and [Imagenet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
@@ -147,11 +147,11 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
   ```
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -DDP -c CONFIG_PATH
   ```
-* Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740)) 
+* Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
   ```
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -mpc -c CONFIG_PATH
   ```
-* Standing Statistics ([Brock et al.](https://arxiv.org/abs/1809.11096)) 
+* Standing Statistics ([Brock et al.](https://arxiv.org/abs/1809.11096))
   ```
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
   ```
@@ -228,7 +228,7 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 
 
 ### Precision and Recall (PR)
-Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035). 
+Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
 ## Benchmark
 
@@ -262,7 +262,7 @@ We report the best IS, FID, and F_beta values of various GANs.
 | [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 |  |  |  |  | [Config](./src/configs/CIFAR10/ADAGAN(P).json) | [Log]() | [Link]() |
 | [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 |  |  |  |  | [Config](./src/configs/CIFAR10/ADAGAN(C).json) | [Log]() | [Link]() |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | 32 | 64 | 9.576 | 8.465 | 0.993 | 0.990 | [Config](./src/configs/CIFAR10/LOGAN.json) |  [Log](./logs/CIFAR10/LOGAN-train-2020_09_17_13_46_47.log) | [Link](https://drive.google.com/drive/folders/1E9ST1wnh6_rA2Q1eIjydadeWPiZHufvu?usp=sharing) |
-  
+
 ※ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
 
 ### Tiny ImageNet
