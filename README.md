@@ -81,12 +81,13 @@ conda env create -f environment.yml -n studiogan
 
 With docker, you can use:
 ```
-docker pull mgkang/studio_gan:latest
+docker pull mgkang/studiogan:0.1
 ```
 
-This is my command to make a container named "studioGAN", and you can use port number 6006 to connect the tensoreboard. 
+This is my command to make a container named "studioGAN". 
+Also, you can use port number 6006 to connect the tensoreboard. 
 ```
-docker run -it --gpus all --shm-size 256g -p 6006:6006 --name studioGAN -v /home/user:/root/code --workdir /root/code mgkang/studio_gan:latest /bin/zsh
+docker run -it --gpus all --shm-size 128g -p 6006:6006 --name studioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
 ```
 
 
