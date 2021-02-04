@@ -44,7 +44,7 @@
         "beta2": 0.999,
         "g_steps_per_iter": 1,
         "d_steps_per_iter": 1,
-        "total_step": 312500
+        "total_step": 200000
       },
   
       "loss_function": {
@@ -90,7 +90,7 @@
 
         "ada": true,
         "ada_target": 0.6,
-        "ada_length": 50000000,
+        "ada_length": 100000000,
    
         "prior": "gaussian",
         "truncated_factor": 1,
