@@ -275,7 +275,6 @@ We report the best IS, FID, and F_beta values of various GANs.
 
 | Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-
 | [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 32 | 64 |  9.812 | 7.685 | 0.995 | 0.993 | [Config](./src/configs/CIFAR10/CRGAN(C).json) | [Log](./logs/CIFAR10/CRGAN(C)-train-2020_12_04_13_51_40.log) | [Link](https://drive.google.com/drive/folders/1_Bkt_3NE95Ekxo8YG840wSNDTPmQDQb3?usp=sharing) |
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 32 | 64 |  10.117 | 7.547 | 0.996 | 0.993 | [Config](./src/configs/CIFAR10/ICRGAN(C).json) | [Log](./logs/CIFAR10/ICRGAN(C)-train-2020_12_04_13_53_13.log) | [Link](https://drive.google.com/drive/folders/1vXoYnKEw3YwLG6ZutYFz_LCLr10VGa9T?usp=sharing) |
 | [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 32 | 64 | 9.896 | 7.285 | 0.995 | 0.988 | [Config](./src/configs/CIFAR10/DiffAugGAN(C).json) | [Log](./logs/CIFAR10/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | [Link](https://drive.google.com/drive/folders/1MKZgtyLg79Ti2nWRea6sAWMY1KfMqoKI?usp=sharing) |
