@@ -32,6 +32,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 def prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train):
     cfgs = dict2clsattr(train_config, model_config)
+    assert cfgs.training_statistics*cfgs.standing_statistics == 0,\
+    "You can't turn on train_statistics and standing_statistics simultaneously."
+    if cfgs.train_configs['train']*cfgs.standing_statistics:
+        print("When training, StudioGAN does not apply standing_statistics for evaluation. "+\
+              "After training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model")
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
     if cfgs.distributed_data_parallel:
         print("Use GPU: {} for training.".format(rank))
@@ -217,6 +222,7 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
         D_loss=D_loss[cfgs.adv_loss],
         prev_ada_p=prev_ada_p,
         rank=rank,
+        training_statistics=cfgs.training_statistics,
         checkpoint_dir=checkpoint_dir,
         mu=mu,
         sigma=sigma,
