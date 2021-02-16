@@ -30,18 +30,24 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 
-def prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train):
+def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_config, model_config, hdf5_path_train):
     cfgs = dict2clsattr(train_config, model_config)
+
     assert cfgs.bn_stat_OnTheFly*cfgs.standing_statistics == 0,\
     "You can't turn on train_statistics and standing_statistics simultaneously."
     if cfgs.train_configs['train']*cfgs.standing_statistics:
         print("When training, StudioGAN does not apply standing_statistics for evaluation. "+\
               "After training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model")
+
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
+
     if cfgs.distributed_data_parallel:
+        rank = cfgs.nr*(gpus_per_node) + local_rank
         print("Use GPU: {} for training.".format(rank))
         setup(rank, world_size)
         torch.cuda.set_device(rank)
+    else:
+        rank = local_rank
 
     writer = SummaryWriter(log_dir=join('./logs', run_name)) if rank == 0 else None
     if rank == 0:
@@ -164,10 +170,10 @@ def prepare_train_eval(rank, world_size, run_name, train_config, model_config, h
                 if cfgs.ema:
                     Gen_copy = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen_copy, process_group)
 
-            Gen = DDP(Gen, device_ids=[rank], broadcast_buffers=False, find_unused_parameters=True)
-            Dis = DDP(Dis, device_ids=[rank], broadcast_buffers=False, find_unused_parameters=True)
+            Gen = DDP(Gen, device_ids=[rank])
+            Dis = DDP(Dis, device_ids=[rank])
             if cfgs.ema:
-                Gen_copy = DDP(Gen_copy, device_ids=[rank], broadcast_buffers=False, find_unused_parameters=True)
+                Gen_copy = DDP(Gen_copy, device_ids=[rank])
         else:
             Gen = DataParallel(Gen, output_device=rank)
             Dis = DataParallel(Dis, output_device=rank)

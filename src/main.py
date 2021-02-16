@@ -36,8 +36,11 @@ def main():
     parser.add_argument('-current', '--load_current', action='store_true', help='whether you load the current or best checkpoint')
     parser.add_argument('--log_output_path', type=str, default=None)
 
-    parser.add_argument('--seed', type=int, default=-1, help='seed for generating random numbers')
     parser.add_argument('-DDP', '--distributed_data_parallel', action='store_true')
+    parser.add_argument('-n', '--nodes', default=1, type=int, metavar='N')
+    parser.add_argument('-nr', '--nr', default=0, type=int, help='ranking within the nodes')
+
+    parser.add_argument('--seed', type=int, default=-1, help='seed for generating random numbers')
     parser.add_argument('--num_workers', type=int, default=8, help='')
     parser.add_argument('-sync_bn', '--synchronized_bn', action='store_true', help='whether turn on synchronized batchnorm')
     parser.add_argument('-mpc', '--mixed_precision', action='store_true', help='whether turn on mixed precision training')
@@ -106,8 +109,11 @@ def main():
         fix_all_seed(train_config['seed'])
         cudnn.benchmark, cudnn.deterministic = False, True
 
-    world_size, rank = torch.cuda.device_count(), torch.cuda.current_device()
-    if world_size == 1: warnings.warn('You have chosen a specific GPU. This will completely disable data parallelism.')
+    gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
+    world_size = gpus_per_node*train_config['nodes']
+
+    if world_size == 1:
+        warnings.warn('You have chosen a specific GPU. This will completely disable data parallelism.')
 
     if train_config['disable_debugging_API']: torch.autograd.set_detect_anomaly(False)
     check_flag_0(model_config['train']['optimization']['batch_size'], world_size, train_config['freeze_layers'], train_config['checkpoint_folder'],
@@ -117,9 +123,13 @@ def main():
 
     if train_config['distributed_data_parallel'] and world_size > 1:
         print("Train the models through DistributedDataParallel (DDP) mode.")
-        mp.spawn(prepare_train_eval, nprocs=world_size, args=(world_size, run_name, train_config, model_config, hdf5_path_train))
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '2222'
+        mp.spawn(prepare_train_eval, nprocs=gpus_per_node, args=(gpus_per_node, world_size, run_name,
+                                                                 train_config, model_config, hdf5_path_train))
     else:
-        prepare_train_eval(rank, world_size, run_name, train_config, model_config, hdf5_path_train=hdf5_path_train)
+        prepare_train_eval(rank, gpus_per_node, world_size, run_name, train_config, model_config,
+                           hdf5_path_train=hdf5_path_train)
 
 if __name__ == '__main__':
     main()
