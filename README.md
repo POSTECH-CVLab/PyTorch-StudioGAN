@@ -152,7 +152,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 
 * DistributedDataParallel
   ```
-  CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -DDP -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,...,N python3 -m torch.distributed.launch --nproc_per_node=N src/main.py -t -DDP -c CONFIG_PATH
   ```
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
   ```
