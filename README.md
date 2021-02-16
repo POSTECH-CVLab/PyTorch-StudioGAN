@@ -51,7 +51,7 @@
 
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
-| [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | AdaIN | - | - | - |
+| [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | AdaIN | - | Vanilla | True |
 
 [AdaIN](https://arxiv.org/abs/1703.06868) : Adaptive Instance Normalization.
 
