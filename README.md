@@ -32,9 +32,9 @@
 | [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR' 20 |  Big ResNet | cBN | PD/CL | Hinge | True |
 | [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv' 20 |  Big ResNet | cBN | PD/CL | Hinge | True |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv' 19 |  Big ResNet | cBN | PD | Hinge | True |
-| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | arXiv' 20 |  Big ResNet | cBN | PD/CL | Hinge | True |
-| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | arXiv' 20 |  Big ResNet | cBN | PD/CL | Hinge | True |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | arXiv' 20 | Big ResNet | cBN | CL | Hinge | True |
+| [**DiffAugGAN**](https://arxiv.org/abs/2006.10738) | Neurips' 20 |  Big ResNet | cBN | PD/CL | Hinge | True |
+| [**ADAGAN**](https://arxiv.org/abs/2006.06676) | Neurips' 20 |  Big ResNet | cBN | PD/CL | Hinge | True |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips' 20 | Big ResNet | cBN | CL | Hinge | True |
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW' 20 | - | - | - | - | - |
 
 *G/D_type indicates the way how we inject label information to the Generator or Discriminator.
