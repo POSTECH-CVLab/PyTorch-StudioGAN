@@ -11,7 +11,7 @@
 - Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets (being updated)
 - Better performance and lower memory consumption than original implementations
 - Providing pre-trained models that are fully compatible with up-to-date PyTorch environment
-- Support Multi-GPU(both DP and DDP), Mixed precision, Synchronized Batch Normalization, and Tensorboard Visualization
+- Support Multi-GPU(both DP and DDP), Mixed Precision, Synchronized Batch Normalization, and Tensorboard Visualization
 
 ##  Implemented GANs
 
