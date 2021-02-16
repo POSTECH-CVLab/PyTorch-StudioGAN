@@ -262,6 +262,8 @@ We report the best IS, FID, and F_beta values of various GANs.
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 32 | 64 |  9.729 | 8.065 | 0.993 | 0.992 | [Config](./src/configs/CIFAR10/ContraGAN.json) | [Log](./logs/CIFAR10/ContraGAN-train-2020_10_04_21_50_14.log) | [Link](https://drive.google.com/drive/folders/10nxLyB7PyUsaGiBn6xD0e3_teYlB9Q59?usp=sharing) |
 
 #### + Contrastive Conditioning
+| Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 32 | 64 |  9.911 | 7.199 | 0.994 | 0.994 | [Config](./src/configs/CIFAR10/CRGAN(P).json) | [Log](./logs/CIFAR10/CRGAN(P)-train-2020_09_17_13_45_19.log) | [Link](https://drive.google.com/drive/folders/1I9HYBU2t2CYmqsrKeeoivYiIUXHqO8k7?usp=sharing) |
 | [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 32 | 64 |  9.812 | 7.685 | 0.995 | 0.993 | [Config](./src/configs/CIFAR10/CRGAN(C).json) | [Log](./logs/CIFAR10/CRGAN(C)-train-2020_12_04_13_51_40.log) | [Link](https://drive.google.com/drive/folders/1_Bkt_3NE95Ekxo8YG840wSNDTPmQDQb3?usp=sharing) |
 | [**ICRGAN(P)**](https://arxiv.org/abs/2002.04724) | 32 | 64 | 9.781 | 7.550 | 0.994 | 0.992 | [Config](./src/configs/CIFAR10/ICRGAN(P).json) | [Log](./logs/CIFAR10/ICRGAN(P)-train-2020_09_17_13_46_09.log) | [Link](https://drive.google.com/drive/folders/1ZsX9Xu7j7MCG0V53FSk5K8HJpnsRIvtw?usp=sharing) |
