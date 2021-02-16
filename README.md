@@ -317,6 +317,7 @@ We report the best IS, FID, and F_beta values of various GANs.
 | [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | 15.830 | 21.940 | 0.980 | 0.944 | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(C).json) | [Log](./logs/TINY_IMAGENET/ICRGAN(C)-train-2021_01_03_12_11_56.log) | [Link](https://drive.google.com/drive/folders/1VxSRKEk3ZPoNSU1GGzY2phJkagmnsYvX?usp=sharing) |
 | [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | 17.303 | 15.755 | 0.984 | 0.962 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(C).json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(C)-train-2021_01_17_04_59_40.log) | [Link](https://drive.google.com/drive/folders/1tk5zDV-HCFEnPhHgST7PzmwR5ZXiaT3S?usp=sharing) |
 | [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 |  |  |  |  | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(C).json) | [Log]() | [Link]() |
+
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
 ### ImageNet
