@@ -11,7 +11,7 @@
 - Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets (being updated)
 - Better performance and lower memory consumption than original implementations
 - Providing pre-trained models that are fully compatible with up-to-date PyTorch environment
-- Support Multi-GPU(both DP and DDP), Mixed Precision, Synchronized Batch Normalization, and Tensorboard Visualization
+- Support Multi-GPU (both DP and DDP), Mixed Precision, Synchronized Batch Normalization, LARS, Tensorboard Visualization, and other analysis methods
 
 ##  Implemented GANs
 
@@ -170,7 +170,10 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
   ```
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -l -c CONFIG_PATH
   ```
-
+* LARS
+  ```
+  CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -l -c CONFIG_PATH -LARS
+  ```
 
 ## To Visualize and Analyze Generated Images
 
@@ -218,7 +221,7 @@ Inception Score (IS) is a metric to measure how much GAN generates high-fidelity
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
 ```
-CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -s -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -s -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
@@ -275,7 +278,11 @@ We report the best IS, FID, and F_beta values of various GANs.
 | [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 32 | 64 | 9.896 | 7.285 | 0.995 | 0.988 | [Config](./src/configs/CIFAR10/DiffAugGAN(C).json) | [Log](./logs/CIFAR10/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | [Link](https://drive.google.com/drive/folders/1MKZgtyLg79Ti2nWRea6sAWMY1KfMqoKI?usp=sharing) |
 | [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 32 | 64 | 9.411 | 10.830 | 0.990 | 0.964 | [Config](./src/configs/CIFAR10/ADAGAN(C).json) | [Log](./logs/CIFAR10/ADAGAN(C)-train-2021_01_31_12_59_47.log) | [Link](https://drive.google.com/drive/folders/1JzSvohfIsEXKwqEUnezyRsfBiiLVMMo-?usp=sharing) |
 
-※ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
+※ IS, FID, and F_beta values are computed using 10K test and 10K generated Images. 
+※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
+```
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER -current --eval_type "test"
+```
 
 ### Tiny ImageNet
 
@@ -309,6 +316,10 @@ We report the best IS, FID, and F_beta values of various GANs.
 | [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(C).json) | - | - |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
+※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
+```
 
 ### ImageNet
 
@@ -325,6 +336,10 @@ We report the best IS, FID, and F_beta values of various GANs.
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 2048 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN2048.json) | - | - |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
+※ When evaluating, the statistics of batch normalization layers are calculated in advance (moving average of the previous statistics).
+```
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -sync_bn -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
+```
 
 ## References
 
