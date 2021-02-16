@@ -56,7 +56,7 @@ LOG_FORMAT = (
 class make_worker(object):
     def __init__(self, cfgs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model, inception_model, Gen_copy,
                  Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, G_optimizer, D_optimizer, G_loss,
-                 D_loss, prev_ada_p, rank, training_statistics, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
+                 D_loss, prev_ada_p, rank, bn_stat_OnTheFly, checkpoint_dir, mu, sigma, best_fid, best_fid_checkpoint_path):
 
         self.cfgs = cfgs
         self.run_name = run_name
@@ -139,7 +139,7 @@ class make_worker(object):
         self.latent_norm_reg_weight = cfgs.latent_norm_reg_weight
 
         self.rank = rank
-        self.training_statistics = training_statistics
+        self.bn_stat_OnTheFly = bn_stat_OnTheFly
         self.print_every = cfgs.print_every
         self.save_every = cfgs.save_every
         self.checkpoint_dir = checkpoint_dir
@@ -563,7 +563,7 @@ class make_worker(object):
             num_split, num_run4PR, num_cluster4PR, beta4PR = 1, 10, 20, 8
 
             self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
@@ -630,7 +630,7 @@ class make_worker(object):
                     self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
 
             self.dis_model.train()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
 
         return is_best
@@ -643,7 +643,7 @@ class make_worker(object):
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             if png:
@@ -655,7 +655,7 @@ class make_worker(object):
                                 self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
                                 self.latent_op_alpha, self.latent_op_beta, self.rank)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -666,7 +666,7 @@ class make_worker(object):
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             if self.zcr:
@@ -686,7 +686,7 @@ class make_worker(object):
             plot_img_canvas((generated_images.detach().cpu()+1)/2, "./figures/{run_name}/generated_canvas.png".\
                             format(run_name=self.run_name), self.logger, ncol)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -697,7 +697,7 @@ class make_worker(object):
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
@@ -739,7 +739,7 @@ class make_worker(object):
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -750,7 +750,7 @@ class make_worker(object):
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
             shared = generator.module.shared if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
@@ -780,7 +780,7 @@ class make_worker(object):
                 plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\
                                 format(num=num, run_name=self.run_name, fix_flag=name), self.logger, ncol, logging=False)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -790,7 +790,7 @@ class make_worker(object):
         if self.rank == 0: self.logger.info('Start frequency analysis....')
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
 
             train_iter = iter(self.train_dataloader)
@@ -842,7 +842,7 @@ class make_worker(object):
 
             plot_spectrum_image(real_gray_spectrum, fake_gray_spectrum, self.run_name, self.logger)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -852,7 +852,7 @@ class make_worker(object):
         if self.rank == 0: self.logger.info('Start tsne analysis....')
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=False, counter=self.counter)
             if isinstance(self.gen_model, DataParallel) or isinstance(self.gen_model, DistributedDataParallel):
                 dis_model = self.dis_model.module
@@ -930,6 +930,6 @@ class make_worker(object):
             fake_tsne_results = tsne.fit_transform(fake["embeds"])
             plot_tsne_scatter_plot(fake, fake_tsne_results, "fake", self.run_name, self.logger)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.training_statistics, standing_statistics, standing_step,
+            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.rank, training=True, counter=self.counter)
     ################################################################################################################################
