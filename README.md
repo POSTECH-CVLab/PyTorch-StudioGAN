@@ -279,6 +279,7 @@ We report the best IS, FID, and F_beta values of various GANs.
 | [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 32 | 64 | 9.411 | 10.830 | 0.990 | 0.964 | [Config](./src/configs/CIFAR10/ADAGAN(C).json) | [Log](./logs/CIFAR10/ADAGAN(C)-train-2021_01_31_12_59_47.log) | [Link](https://drive.google.com/drive/folders/1JzSvohfIsEXKwqEUnezyRsfBiiLVMMo-?usp=sharing) |
 
 ※ IS, FID, and F_beta values are computed using 10K test and 10K generated Images. 
+
 ※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
 ```
 CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER -current --eval_type "test"
@@ -316,6 +317,7 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 | [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(C).json) | - | - |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
+
 ※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
@@ -336,6 +338,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH 
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 2048 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN2048.json) | - | - |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
+
 ※ When evaluating, the statistics of batch normalization layers are calculated in advance (moving average of the previous statistics).
 ```
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -sync_bn -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
