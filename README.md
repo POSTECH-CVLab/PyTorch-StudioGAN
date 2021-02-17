@@ -8,10 +8,10 @@
 
 ##  Features
 - Extensive GAN implementations for Pytorch
-- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets (being updated)
+- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets
 - Better performance and lower memory consumption than original implementations
 - Providing pre-trained models that are fully compatible with up-to-date PyTorch environment
-- Support Multi-GPU (both DP and DDP), Mixed Precision, Synchronized Batch Normalization, LARS, Tensorboard Visualization, and other analysis methods
+- Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, LARS, Tensorboard Visualization, and other analysis methods
 
 ##  Implemented GANs
 
@@ -106,7 +106,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DistributedDataParallel``
 ```
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m torch.distributed.launch --nproc_per_node=4 src/main.py -t -e -DDP -c CONFIG_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 1 -nr 0 -c CONFIG_PATH
 ```
 Try ``python3 src/main.py`` to see available options.
 
@@ -152,7 +152,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 
 * DistributedDataParallel
   ```
-  CUDA_VISIBLE_DEVICES=0,1,...,N python3 -m torch.distributed.launch --nproc_per_node=N src/main.py -t -DDP -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,...,N python3 src/main.py -t -DDP -n TOTAL_NODES -nr CURRENT_NODE -c CONFIG_PATH
   ```
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
   ```
