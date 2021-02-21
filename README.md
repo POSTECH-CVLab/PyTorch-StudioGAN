@@ -278,7 +278,7 @@ We report the best IS, FID, and F_beta values of various GANs.
 
 ※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
 ```
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER -current --eval_type "test"
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "test"
 ```
 
 ### Tiny ImageNet (3x64x64)
