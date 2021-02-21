@@ -7,7 +7,7 @@
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
 ##  Features
-- Extensive GAN implementations for Pytorch
+- Extensive GAN implementations for PyTorch
 - Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets
 - Better performance and lower memory consumption than original implementations
 - Providing pre-trained models that are fully compatible with up-to-date PyTorch environment
@@ -41,10 +41,10 @@
 **EMA means applying an exponential moving average update to the generator.
 ***Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.
 
-[cBN](https://arxiv.org/abs/1610.07629) : Conditional batch normalization.
-[AC](https://arxiv.org/abs/1610.09585) : Auxiliary classifier.
-[PD](https://arxiv.org/abs/1802.05637) : Projection discriminator.
-[CL](https://arxiv.org/abs/2006.12681) : Contrastive learning.
+[cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization.
+[AC](https://arxiv.org/abs/1610.09585) : Auxiliary Classifier.
+[PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator.
+[CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning.
 
 
 ## To be Implemented
@@ -247,7 +247,7 @@ Precision measures how accurately the generator can learn the target distributio
 We report the best IS, FID, and F_beta values of various GANs.
 (P) and (C) refer to GANs using PD (Projection Discriminator) and CL (Contrastive Learning) as conditional models, respectively.
 
-### CIFAR10
+### CIFAR10 (3x32x32)
 
 | Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -285,36 +285,36 @@ We report the best IS, FID, and F_beta values of various GANs.
 CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER -current --eval_type "test"
 ```
 
-### Tiny ImageNet
+### Tiny ImageNet (3x64x64)
 
-| Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 256 | 5.640 | 91.625 | 0.606 | 0.391 | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) | [Log](./logs/TINY_IMAGENET/DCGAN-train-2021_01_01_08_11_26.log) | [Link](https://drive.google.com/drive/folders/1unNCrGZarh5605yExX7L9nGaqSmZYoz3?usp=sharing) |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 | 256 | 5.381 | 90.008 | 0.638 | 0.390 | [Config](./src/configs/TINY_ILSVRC2012/LSGAN.json) | [Log](./logs/TINY_IMAGENET/LSGAN-train-2021_01_01_08_13_17.log) | [Link](https://drive.google.com/drive/folders/1U011WruNfOX8KWpfMoNwufRPlG93q10h?usp=sharing) |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 | 256 | 5.146 | 102.094 | 0.503 | 0.307 | [Config](./src/configs/TINY_ILSVRC2012/GGAN.json) | [Log](./logs/TINY_IMAGENET/GGAN-train-2021_01_01_08_13_58.log) | [Link](https://drive.google.com/drive/folders/1A4RS05pOsVC-sguij7AI7lWcO2x9HQI-?usp=sharing) |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 64 | 256 | 9.696 | 41.454 | 0.940 | 0.735 | [Config](./src/configs/TINY_ILSVRC2012/WGAN-WC.json) | [Log](./logs/TINY_IMAGENET/WGAN-WC-train-2021_01_15_11_59_38.log) | [Link](https://drive.google.com/drive/folders/1kI7uS9hIHX_wPtbr1f9n8K-G59-89_5E?usp=sharing) |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 64 | 256 | 1.322 | 311.805 | 0.016 | 0.000 |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-GP.json) | [Log](./logs/TINY_IMAGENET/WGAN-GP-train-2021_01_15_11_59_40.log) | [Link](https://drive.google.com/drive/folders/1hSCWA0ESZh8DDZpUcPw2eNsJl9ZfT3yO?usp=sharing) |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 64 | 256 | 9.564 | 40.655 | 0.938 | 0.724 |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-DRA.json) | [Log](./logs/TINY_IMAGENET/WGAN-DRA-train-2021_01_15_11_59_46.log) | [Link](https://drive.google.com/drive/folders/1aJ05B3q0_pMLOS2fd0X0d8lHTRZqYoJZ?usp=sharing) |
-| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 64 | 256 | 6.342 | 78.513 | 0.668 | 0.518 | [Config](./src/configs/TINY_ILSVRC2012/ACGAN.json) | [Log](./logs/TINY_IMAGENET/ACGAN-train-2021_01_15_11_59_50.log) | [Link](https://drive.google.com/drive/folders/1viYGp4-3SoddvJddiS9Pp2Y1QCwi_ufd?usp=sharing) |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 64 | 256 | 6.224 | 89.175 | 0.626 | 0.428 | [Config](./src/configs/TINY_ILSVRC2012/ProjGAN.json) | [Log](./logs/TINY_IMAGENET/ProjGAN-train-2021_01_15_11_59_49.log) | [Link](https://drive.google.com/drive/folders/1YKd1gh7-1BGAyTfxVxKtTM3H6LQdPM8T?usp=sharing) |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 64 | 256 | 8.412 | 53.590 | 0.900 | 0.703 | [Config](./src/configs/TINY_ILSVRC2012/SNGAN.json) | [Log](./logs/TINY_IMAGENET/SNGAN-train-2021_01_15_11_59_43.log) | [Link](https://drive.google.com/drive/folders/1NYyvlFKrPU3aa88LUJcKyerEyJw_FgUR?usp=sharing) |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 64 | 256 | 8.342 | 51.414 | 0.898 | 0.698 | [Config](./src/configs/TINY_ILSVRC2012/SAGAN.json) | [Log](./logs/TINY_IMAGENET/SAGAN-train-2021_01_15_12_16_42.log) | [Link](https://drive.google.com/drive/folders/1J_A8fyaasglEuQB3M9A2u6HdPfsMt5xl?usp=sharing) |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 64 | 1024 | 11.998 | 31.920 | 0.956 | 0.879 | [Config](./src/configs/TINY_ILSVRC2012/BigGAN.json) | [Log](./logs/TINY_IMAGENET/BigGAN-train-2021_01_18_11_42_25.log)| [Link](https://drive.google.com/drive/folders/1euAxIUzYGom1swguOJApcC-uQfOPx99V?usp=sharing) |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 64 | 256 | 6.964 | 70.660 | 0.857 | 0.621 | [Config](./src/configs/TINY_ILSVRC2012/LOGAN.json) | [Log](./logs/TINY_IMAGENET/LOGAN-train-2021_01_17_05_06_23.log) | [Link](https://drive.google.com/drive/folders/11EFytTW5JBD-HKc0DE8Zq0dqBXHcRmPP?usp=sharing) |
-| [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | 14.887 | 21.488 | 0.969 | 0.936 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(P).json) | [Log](./logs/TINY_IMAGENET/CRGAN(P)-train-2021_01_01_08_55_18.log) | [Link](https://drive.google.com/drive/folders/17w4QgeINDNcfOT0fpHLALIRnEZ_Z36ze?usp=sharing) |
-| [**ICRGAN(P)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | 5.605 | 91.326 | 0.525 | 0.399 | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(P).json) | [Log](./logs/TINY_IMAGENET/ICRGAN(P)-train-2021_01_04_11_19_15.log)|  [Link](https://drive.google.com/drive/folders/1dU-NzqIauXbK_JJf6aWT45IPmtbyti0T?usp=sharing) |
-| [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | 17.075 | 16.338 | 0.979 | 0.971 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(P).json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(P)-train-2021_01_17_04_59_53.log) | [Link](https://drive.google.com/drive/folders/1YXfQgDcrEQCzviSStZsmVKTBlg4gs1Jg?usp=sharing) |
-| [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | 15.158 | 24.121 | 0.953 | 0.942 | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(P).json) | [Log](./logs/TINY_IMAGENET/ADAGAN(P)-train-2021_02_16_15_41_34.log) | [Link](https://drive.google.com/drive/folders/1KzyHoGp44YJ9bUyKQ6Ysm7T6RV2CUFNa?usp=sharing) |
+| Name | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | 256 | 5.640 | 91.625 | 0.606 | 0.391 | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) | [Log](./logs/TINY_IMAGENET/DCGAN-train-2021_01_01_08_11_26.log) | [Link](https://drive.google.com/drive/folders/1unNCrGZarh5605yExX7L9nGaqSmZYoz3?usp=sharing) |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | 256 | 5.381 | 90.008 | 0.638 | 0.390 | [Config](./src/configs/TINY_ILSVRC2012/LSGAN.json) | [Log](./logs/TINY_IMAGENET/LSGAN-train-2021_01_01_08_13_17.log) | [Link](https://drive.google.com/drive/folders/1U011WruNfOX8KWpfMoNwufRPlG93q10h?usp=sharing) |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | 256 | 5.146 | 102.094 | 0.503 | 0.307 | [Config](./src/configs/TINY_ILSVRC2012/GGAN.json) | [Log](./logs/TINY_IMAGENET/GGAN-train-2021_01_01_08_13_58.log) | [Link](https://drive.google.com/drive/folders/1A4RS05pOsVC-sguij7AI7lWcO2x9HQI-?usp=sharing) |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | 256 | 9.696 | 41.454 | 0.940 | 0.735 | [Config](./src/configs/TINY_ILSVRC2012/WGAN-WC.json) | [Log](./logs/TINY_IMAGENET/WGAN-WC-train-2021_01_15_11_59_38.log) | [Link](https://drive.google.com/drive/folders/1kI7uS9hIHX_wPtbr1f9n8K-G59-89_5E?usp=sharing) |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | 256 | 1.322 | 311.805 | 0.016 | 0.000 |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-GP.json) | [Log](./logs/TINY_IMAGENET/WGAN-GP-train-2021_01_15_11_59_40.log) | [Link](https://drive.google.com/drive/folders/1hSCWA0ESZh8DDZpUcPw2eNsJl9ZfT3yO?usp=sharing) |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | 256 | 9.564 | 40.655 | 0.938 | 0.724 |  [Config](./src/configs/TINY_ILSVRC2012/WGAN-DRA.json) | [Log](./logs/TINY_IMAGENET/WGAN-DRA-train-2021_01_15_11_59_46.log) | [Link](https://drive.google.com/drive/folders/1aJ05B3q0_pMLOS2fd0X0d8lHTRZqYoJZ?usp=sharing) |
+| [**ACGAN**](https://arxiv.org/abs/1610.09585) | 256 | 6.342 | 78.513 | 0.668 | 0.518 | [Config](./src/configs/TINY_ILSVRC2012/ACGAN.json) | [Log](./logs/TINY_IMAGENET/ACGAN-train-2021_01_15_11_59_50.log) | [Link](https://drive.google.com/drive/folders/1viYGp4-3SoddvJddiS9Pp2Y1QCwi_ufd?usp=sharing) |
+| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | 256 | 6.224 | 89.175 | 0.626 | 0.428 | [Config](./src/configs/TINY_ILSVRC2012/ProjGAN.json) | [Log](./logs/TINY_IMAGENET/ProjGAN-train-2021_01_15_11_59_49.log) | [Link](https://drive.google.com/drive/folders/1YKd1gh7-1BGAyTfxVxKtTM3H6LQdPM8T?usp=sharing) |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 256 | 8.412 | 53.590 | 0.900 | 0.703 | [Config](./src/configs/TINY_ILSVRC2012/SNGAN.json) | [Log](./logs/TINY_IMAGENET/SNGAN-train-2021_01_15_11_59_43.log) | [Link](https://drive.google.com/drive/folders/1NYyvlFKrPU3aa88LUJcKyerEyJw_FgUR?usp=sharing) |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 256 | 8.342 | 51.414 | 0.898 | 0.698 | [Config](./src/configs/TINY_ILSVRC2012/SAGAN.json) | [Log](./logs/TINY_IMAGENET/SAGAN-train-2021_01_15_12_16_42.log) | [Link](https://drive.google.com/drive/folders/1J_A8fyaasglEuQB3M9A2u6HdPfsMt5xl?usp=sharing) |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 1024 | 11.998 | 31.920 | 0.956 | 0.879 | [Config](./src/configs/TINY_ILSVRC2012/BigGAN.json) | [Log](./logs/TINY_IMAGENET/BigGAN-train-2021_01_18_11_42_25.log)| [Link](https://drive.google.com/drive/folders/1euAxIUzYGom1swguOJApcC-uQfOPx99V?usp=sharing) |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953) | 256 | 6.964 | 70.660 | 0.857 | 0.621 | [Config](./src/configs/TINY_ILSVRC2012/LOGAN.json) | [Log](./logs/TINY_IMAGENET/LOGAN-train-2021_01_17_05_06_23.log) | [Link](https://drive.google.com/drive/folders/11EFytTW5JBD-HKc0DE8Zq0dqBXHcRmPP?usp=sharing) |
+| [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 1024 | 14.887 | 21.488 | 0.969 | 0.936 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(P).json) | [Log](./logs/TINY_IMAGENET/CRGAN(P)-train-2021_01_01_08_55_18.log) | [Link](https://drive.google.com/drive/folders/17w4QgeINDNcfOT0fpHLALIRnEZ_Z36ze?usp=sharing) |
+| [**ICRGAN(P)**](https://arxiv.org/abs/2002.04724) | 1024 | 5.605 | 91.326 | 0.525 | 0.399 | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(P).json) | [Log](./logs/TINY_IMAGENET/ICRGAN(P)-train-2021_01_04_11_19_15.log)|  [Link](https://drive.google.com/drive/folders/1dU-NzqIauXbK_JJf6aWT45IPmtbyti0T?usp=sharing) |
+| [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 1024 | 17.075 | 16.338 | 0.979 | 0.971 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(P).json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(P)-train-2021_01_17_04_59_53.log) | [Link](https://drive.google.com/drive/folders/1YXfQgDcrEQCzviSStZsmVKTBlg4gs1Jg?usp=sharing) |
+| [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 1024 | 15.158 | 24.121 | 0.953 | 0.942 | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(P).json) | [Log](./logs/TINY_IMAGENET/ADAGAN(P)-train-2021_02_16_15_41_34.log) | [Link](https://drive.google.com/drive/folders/1KzyHoGp44YJ9bUyKQ6Ysm7T6RV2CUFNa?usp=sharing) |
 
 #### `>` Replace Projection Discriminator with Contrastive Learning
 
-| Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 64 | 1024 | 13.494 | 27.027 | 0.975 | 0.902 | [Config](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | [Log](./logs/TINY_IMAGENET/ContraGAN-train-2021_01_01_09_35_08.log)| [Link](https://drive.google.com/drive/folders/1wFwCf0Zgjc5ODMNhS_9EPlstNh71ouC_?usp=sharing) |
-| [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | 15.623 | 19.716 | 0.983 | 0.941 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(C).json) | [Log](./logs/TINY_IMAGENET/CRGAN(C)-train-2021_01_01_08_56_13.log) | [Link](https://drive.google.com/drive/folders/1Iv1EilJDQ4V5L28KecRDC1ENoWpbVjwe?usp=sharing) |
-| [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | 15.830 | 21.940 | 0.980 | 0.944 | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(C).json) | [Log](./logs/TINY_IMAGENET/ICRGAN(C)-train-2021_01_03_12_11_56.log) | [Link](https://drive.google.com/drive/folders/1VxSRKEk3ZPoNSU1GGzY2phJkagmnsYvX?usp=sharing) |
-| [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | 17.303 | 15.755 | 0.984 | 0.962 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(C).json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(C)-train-2021_01_17_04_59_40.log) | [Link](https://drive.google.com/drive/folders/1tk5zDV-HCFEnPhHgST7PzmwR5ZXiaT3S?usp=sharing) |
-| [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | 8.398 | 55.025 | 0.878 | 0.677 | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(C).json) | [Log](./logs/TINY_IMAGENET/ADAGAN(C)-train-2021_02_16_15_41_20.log) | [Link](https://drive.google.com/drive/folders/1SmY4l_ns3sXonEsXZG88eLY-X8mb9GT2?usp=sharing) |
+| Name | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 1024 | 13.494 | 27.027 | 0.975 | 0.902 | [Config](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | [Log](./logs/TINY_IMAGENET/ContraGAN-train-2021_01_01_09_35_08.log)| [Link](https://drive.google.com/drive/folders/1wFwCf0Zgjc5ODMNhS_9EPlstNh71ouC_?usp=sharing) |
+| [**CRGAN(C)**](https://arxiv.org/abs/1910.12027) | 1024 | 15.623 | 19.716 | 0.983 | 0.941 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(C).json) | [Log](./logs/TINY_IMAGENET/CRGAN(C)-train-2021_01_01_08_56_13.log) | [Link](https://drive.google.com/drive/folders/1Iv1EilJDQ4V5L28KecRDC1ENoWpbVjwe?usp=sharing) |
+| [**ICRGAN(C)**](https://arxiv.org/abs/2002.04724) | 1024 | 15.830 | 21.940 | 0.980 | 0.944 | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(C).json) | [Log](./logs/TINY_IMAGENET/ICRGAN(C)-train-2021_01_03_12_11_56.log) | [Link](https://drive.google.com/drive/folders/1VxSRKEk3ZPoNSU1GGzY2phJkagmnsYvX?usp=sharing) |
+| [**DiffAugGAN(C)**](https://arxiv.org/abs/2006.10738) | 1024 | 17.303 | 15.755 | 0.984 | 0.962 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(C).json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(C)-train-2021_01_17_04_59_40.log) | [Link](https://drive.google.com/drive/folders/1tk5zDV-HCFEnPhHgST7PzmwR5ZXiaT3S?usp=sharing) |
+| [**ADAGAN(C)**](https://arxiv.org/abs/2006.06676) | 1024 | 8.398 | 55.025 | 0.878 | 0.677 | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(C).json) | [Log](./logs/TINY_IMAGENET/ADAGAN(C)-train-2021_02_16_15_41_20.log) | [Link](https://drive.google.com/drive/folders/1SmY4l_ns3sXonEsXZG88eLY-X8mb9GT2?usp=sharing) |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
@@ -323,16 +323,15 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
 ```
 
-### ImageNet
+### ImageNet (3x128x128)
 
-| Name | Res. | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 128 | 256 | 32.247 | 26.792 | 0.938 | 0.913 | [Config](./src/configs/ILSVRC2012/SNGAN.json) | [Log](./logs/IMAGENET/SNGAN-train-2021_02_05_01_08_08.log) | [Link](https://drive.google.com/drive/folders/1Ek2wAMlxpajL_M8aub4DKQ9B313K8XhS?usp=sharing) |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 128 | 256 | 17.930 | 48.513 | 0.828 | 0.803 | [Config](./src/configs/ILSVRC2012/SAGAN.json) | [Log](./logs/IMAGENET/SAGAN-train-2021_02_11_16_18_59.log) | [Link](https://drive.google.com/drive/folders/1tMaJteLHx3MaYBRhGWHNBH1ZLbtVKuhe?usp=sharing) |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 256 | 28.633 | 24.684 | 0.941 | 0.921 | [Config](./src/configs/ILSVRC2012/BigGAN256.json) | [Log](./logs/IMAGENET/BigGAN256-train-2021_01_24_03_52_15.log) | [Link](https://drive.google.com/drive/folders/1DNX7-q6N0UgOKTqFG45KKZ1aY2o9pAx2?usp=sharing) |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 256 | 25.249 | 25.161 | 0.947 | 0.855 | [Config](./src/configs/ILSVRC2012/ContraGAN256.json) | [Log](./logs/IMAGENET/ContraGAN256-train-2021_01_25_13_55_18.log) | [Link](https://drive.google.com/drive/folders/1pbP6LQ00VF7si-LXLvd_D00Pk5_E_JnP?usp=sharing) |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 128 | 2048 | 99.705 | 7.893 | 0.985 | 0.989 | [Config](./src/configs/ILSVRC2012/BigGAN2048.json) | [Log](./logs/IMAGENET/BigGAN2048-train-2020_11_17_15_17_48.log) | [Link](https://drive.google.com/drive/folders/1_RTYZ0RXbVLWufE7bbWPvp8n_QJbA8K0?usp=sharing) |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 128 | 2048 | - | - | - | - | [Config](./src/configs/ILSVRC2012/ContraGAN2048.json) | - | - |
+| Name | Batch size | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
+|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+| [**SNGAN**](https://arxiv.org/abs/1802.05957) | 256 | 32.247 | 26.792 | 0.938 | 0.913 | [Config](./src/configs/ILSVRC2012/SNGAN.json) | [Log](./logs/IMAGENET/SNGAN-train-2021_02_05_01_08_08.log) | [Link](https://drive.google.com/drive/folders/1Ek2wAMlxpajL_M8aub4DKQ9B313K8XhS?usp=sharing) |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318) | 256 | 17.930 | 48.513 | 0.828 | 0.803 | [Config](./src/configs/ILSVRC2012/SAGAN.json) | [Log](./logs/IMAGENET/SAGAN-train-2021_02_11_16_18_59.log) | [Link](https://drive.google.com/drive/folders/1tMaJteLHx3MaYBRhGWHNBH1ZLbtVKuhe?usp=sharing) |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 256 | 28.633 | 24.684 | 0.941 | 0.921 | [Config](./src/configs/ILSVRC2012/BigGAN256.json) | [Log](./logs/IMAGENET/BigGAN256-train-2021_01_24_03_52_15.log) | [Link](https://drive.google.com/drive/folders/1DNX7-q6N0UgOKTqFG45KKZ1aY2o9pAx2?usp=sharing) |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | 256 | 25.249 | 25.161 | 0.947 | 0.855 | [Config](./src/configs/ILSVRC2012/ContraGAN256.json) | [Log](./logs/IMAGENET/ContraGAN256-train-2021_01_25_13_55_18.log) | [Link](https://drive.google.com/drive/folders/1pbP6LQ00VF7si-LXLvd_D00Pk5_E_JnP?usp=sharing) |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | 2048 | 99.705 | 7.893 | 0.985 | 0.989 | [Config](./src/configs/ILSVRC2012/BigGAN2048.json) | [Log](./logs/IMAGENET/BigGAN2048-train-2020_11_17_15_17_48.log) | [Link](https://drive.google.com/drive/folders/1_RTYZ0RXbVLWufE7bbWPvp8n_QJbA8K0?usp=sharing) |
 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
