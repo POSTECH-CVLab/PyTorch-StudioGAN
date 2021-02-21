@@ -304,7 +304,7 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 | [**CRGAN(P)**](https://arxiv.org/abs/1910.12027) | 64 | 1024 | 14.887 | 21.488 | 0.969 | 0.936 | [Config](./src/configs/TINY_ILSVRC2012/CRGAN(P).json) | [Log](./logs/TINY_IMAGENET/CRGAN(P)-train-2021_01_01_08_55_18.log) | [Link](https://drive.google.com/drive/folders/17w4QgeINDNcfOT0fpHLALIRnEZ_Z36ze?usp=sharing) |
 | [**ICRGAN(P)**](https://arxiv.org/abs/2002.04724) | 64 | 1024 | 5.605 | 91.326 | 0.525 | 0.399 | [Config](./src/configs/TINY_ILSVRC2012/ICRGAN(P).json) | [Log](./logs/TINY_IMAGENET/ICRGAN(P)-train-2021_01_04_11_19_15.log)|  [Link](https://drive.google.com/drive/folders/1dU-NzqIauXbK_JJf6aWT45IPmtbyti0T?usp=sharing) |
 | [**DiffAugGAN(P)**](https://arxiv.org/abs/2006.10738) | 64 | 1024 | 17.075 | 16.338 | 0.979 | 0.971 | [Config](./src/configs/TINY_ILSVRC2012/DiffAugGAN(P).json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(P)-train-2021_01_17_04_59_53.log) | [Link](https://drive.google.com/drive/folders/1YXfQgDcrEQCzviSStZsmVKTBlg4gs1Jg?usp=sharing) |
-| [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | - | - | - | - | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(P).json) | - | - |
+| [**ADAGAN(P)**](https://arxiv.org/abs/2006.06676) | 64 | 1024 | 15.158 | 24.121 | 0.953 | 0.942 | [Config](./src/configs/TINY_ILSVRC2012/ADAGAN(P).json) | [Log](./logs/TINY_IMAGENET/ADAGAN(P)-train-2021_02_16_15_41_34.log) | [Link](https://drive.google.com/drive/folders/1KzyHoGp44YJ9bUyKQ6Ysm7T6RV2CUFNa?usp=sharing) |
 
 #### `>` Replace Projection Discriminator with Contrastive Learning
 
