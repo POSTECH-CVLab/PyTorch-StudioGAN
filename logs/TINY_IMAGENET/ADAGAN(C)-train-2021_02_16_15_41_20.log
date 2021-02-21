@@ -1190,17 +1190,3 @@
 [INFO] 2021-02-18 00:28:13 > Inception score (Step: 64000, 10000 generated images): 4.256056308746338
 [INFO] 2021-02-18 00:28:13 > Best FID score (Step: 12000, Using valid moments): 55.02478022216019
 [INFO] 2021-02-18 00:28:15 > Save model to checkpoints/ADAGAN(C)-train-2021_02_16_15_41_20
-[INFO] 2021-02-18 00:31:25 > Step:   64100 Progress: 32.0% Elapsed: 1 day, 8:49:57 temperature: 1.0 ada_p: 0.290931 Discriminator_loss: 5.54455 Generator_loss: 4.90034 
-[INFO] 2021-02-18 00:34:35 > Step:   64200 Progress: 32.1% Elapsed: 1 day, 8:53:06 temperature: 1.0 ada_p: 0.291447 Discriminator_loss: 5.25482 Generator_loss: 5.13627 
-[INFO] 2021-02-18 00:37:45 > Step:   64300 Progress: 32.1% Elapsed: 1 day, 8:56:17 temperature: 1.0 ada_p: 0.292012 Discriminator_loss: 5.44831 Generator_loss: 5.14972 
-[INFO] 2021-02-18 00:40:55 > Step:   64400 Progress: 32.2% Elapsed: 1 day, 8:59:26 temperature: 1.0 ada_p: 0.292528 Discriminator_loss: 5.23127 Generator_loss: 5.23359 
-[INFO] 2021-02-18 00:44:04 > Step:   64500 Progress: 32.2% Elapsed: 1 day, 9:02:36 temperature: 1.0 ada_p: 0.293093 Discriminator_loss: 5.30969 Generator_loss: 5.5394 
-[INFO] 2021-02-18 00:47:14 > Step:   64600 Progress: 32.3% Elapsed: 1 day, 9:05:46 temperature: 1.0 ada_p: 0.293659 Discriminator_loss: 5.3335 Generator_loss: 4.80664 
-[INFO] 2021-02-18 00:50:26 > Step:   64700 Progress: 32.4% Elapsed: 1 day, 9:08:57 temperature: 1.0 ada_p: 0.294224 Discriminator_loss: 5.23877 Generator_loss: 5.32391 
-[INFO] 2021-02-18 00:53:35 > Step:   64800 Progress: 32.4% Elapsed: 1 day, 9:12:06 temperature: 1.0 ada_p: 0.294838 Discriminator_loss: 5.29754 Generator_loss: 5.22071 
-[INFO] 2021-02-18 00:56:44 > Step:   64900 Progress: 32.5% Elapsed: 1 day, 9:15:16 temperature: 1.0 ada_p: 0.295453 Discriminator_loss: 5.44565 Generator_loss: 4.82347 
-[INFO] 2021-02-18 00:59:54 > Step:   65000 Progress: 32.5% Elapsed: 1 day, 9:18:26 temperature: 1.0 ada_p: 0.296067 Discriminator_loss: 5.30915 Generator_loss: 5.44985 
-[INFO] 2021-02-18 01:03:04 > Step:   65100 Progress: 32.6% Elapsed: 1 day, 9:21:36 temperature: 1.0 ada_p: 0.296681 Discriminator_loss: 5.36832 Generator_loss: 4.83233 
-[INFO] 2021-02-18 01:06:13 > Step:   65200 Progress: 32.6% Elapsed: 1 day, 9:24:44 temperature: 1.0 ada_p: 0.297247 Discriminator_loss: 5.3273 Generator_loss: 4.90408 
-[INFO] 2021-02-18 01:09:23 > Step:   65300 Progress: 32.6% Elapsed: 1 day, 9:27:54 temperature: 1.0 ada_p: 0.297665 Discriminator_loss: 5.39896 Generator_loss: 5.66795 
-[INFO] 2021-02-18 01:12:31 > Step:   65400 Progress: 32.7% Elapsed: 1 day, 9:31:03 temperature: 1.0 ada_p: 0.298279 Discriminator_loss: 5.29989 Generator_loss: 5.39621 
