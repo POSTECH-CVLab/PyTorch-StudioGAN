@@ -16,7 +16,7 @@
 ##  Implemented GANs
 
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
+|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv' 15 | CNN/ResNet*** | N/A | N/A | Vanilla | False |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV' 17 | CNN/ResNet*** | N/A | N/A | Least Sqaure | False |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv' 17 | CNN/ResNet*** | N/A | N/A | Hinge | False |
@@ -50,7 +50,7 @@
 ## To be Implemented
 
 | Name| Venue | Architecture | G_type*| D_type*| Loss | EMA**|
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
+|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | AdaIN | - | Vanilla | True |
 
 [AdaIN](https://arxiv.org/abs/1703.06868) : Adaptive Instance Normalization.
@@ -250,7 +250,7 @@ We report the best IS, FID, and F_beta values of various GANs.
 ### CIFAR10 (3x32x32)
 
 | Name | B.S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 6.697 | 50.281 | 0.851 | 0.788 | [Config](./src/configs/CIFAR10/DCGAN.json) | [Log](./logs/CIFAR10/DCGAN-train-2020_09_15_13_23_51.log) | [Link](https://drive.google.com/drive/folders/1_AAkKkwdSJaRjnNxg-FxiLfIU8nHgPLh?usp=sharing) |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 64 |  5.537 | 67.229 | 0.790 |  0.702 | [Config](./src/configs/CIFAR10/LSGAN.json) | [Log](./logs/CIFAR10/LSGAN-train-2020_09_15_23_40_37.log) | [Link](https://drive.google.com/drive/folders/1s4gT44ar6C2PF1-LfCcCEJWIWR4bIKHu?usp=sharing) |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | 64 |  6.175 | 43.008 | 0.907 | 0.835 |  [Config](./src/configs/CIFAR10/GGAN.json) | [Log](./logs/CIFAR10/GGAN-train-2020_09_15_23_11_09.log) | [Link](https://drive.google.com/drive/folders/1lGhmGt4W0LtlaoX0ABFOg-ND98cwnrRt?usp=sharing) |
@@ -283,7 +283,7 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 ### Tiny ImageNet (3x64x64)
 
 | Name | B.S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 256 | 5.640 | 91.625 | 0.606 | 0.391 | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) | [Log](./logs/TINY_IMAGENET/DCGAN-train-2021_01_01_08_11_26.log) | [Link](https://drive.google.com/drive/folders/1unNCrGZarh5605yExX7L9nGaqSmZYoz3?usp=sharing) |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | 256 | 5.381 | 90.008 | 0.638 | 0.390 | [Config](./src/configs/TINY_ILSVRC2012/LSGAN.json) | [Log](./logs/TINY_IMAGENET/LSGAN-train-2021_01_01_08_13_17.log) | [Link](https://drive.google.com/drive/folders/1U011WruNfOX8KWpfMoNwufRPlG93q10h?usp=sharing) |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | 256 | 5.146 | 102.094 | 0.503 | 0.307 | [Config](./src/configs/TINY_ILSVRC2012/GGAN.json) | [Log](./logs/TINY_IMAGENET/GGAN-train-2021_01_01_08_13_58.log) | [Link](https://drive.google.com/drive/folders/1A4RS05pOsVC-sguij7AI7lWcO2x9HQI-?usp=sharing) |
@@ -316,7 +316,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH 
 ### ImageNet (3x128x128)
 
 | Name | B.S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
-|:-----------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
+|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 256 | 32.247 | 26.792 | 0.938 | 0.913 | [Config](./src/configs/ILSVRC2012/SNGAN.json) | [Log](./logs/IMAGENET/SNGAN-train-2021_02_05_01_08_08.log) | [Link](https://drive.google.com/drive/folders/1Ek2wAMlxpajL_M8aub4DKQ9B313K8XhS?usp=sharing) |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | 256 | 17.930 | 48.513 | 0.828 | 0.803 | [Config](./src/configs/ILSVRC2012/SAGAN.json) | [Log](./logs/IMAGENET/SAGAN-train-2021_02_11_16_18_59.log) | [Link](https://drive.google.com/drive/folders/1tMaJteLHx3MaYBRhGWHNBH1ZLbtVKuhe?usp=sharing) |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | 256 | 28.633 | 24.684 | 0.941 | 0.921 | [Config](./src/configs/ILSVRC2012/BigGAN256.json) | [Log](./logs/IMAGENET/BigGAN256-train-2021_01_24_03_52_15.log) | [Link](https://drive.google.com/drive/folders/1DNX7-q6N0UgOKTqFG45KKZ1aY2o9pAx2?usp=sharing) |
