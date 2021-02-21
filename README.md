@@ -245,7 +245,8 @@ Precision measures how accurately the generator can learn the target distributio
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
 We report the best IS, FID, and F_beta values of various GANs.
-(P) and (C) refer to GANs using PD (Projection Discriminator) and CL (Contrastive Learning) as conditional models, respectively.
+
+[CR](https://arxiv.org/abs/1910.12027), [ICR](https://arxiv.org/abs/2002.04724), [DiffAug](https://arxiv.org/abs/2006.10738), [ADA](https://arxiv.org/abs/2006.06676), and [LO](https://arxiv.org/abs/1912.00953) refer to regularization or optimization techiniques: CR (Consistency Regularization), ICR (Improved Consistency Regularization), DiffAug (Differentiable Augmentation), ADA (Adaptive Discriminator Augmentation), and LO (Latent Optimization), respectively.
 
 ### CIFAR10 (3x32x32)
 
