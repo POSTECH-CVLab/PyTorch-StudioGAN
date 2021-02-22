@@ -219,6 +219,12 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -fa -std_stat --standing_step S
   <img width="60%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/diff_spectrum1.png" />
 </p>
 
+
+* TSNE Analysis
+CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -tsne -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+
+
+
 ##  Metrics
 
 ### Inception Score (IS)
