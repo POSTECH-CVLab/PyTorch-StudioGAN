@@ -75,12 +75,12 @@
 
 You can install the recommended environment as follows:
 
-```
+```console
 conda env create -f environment.yml -n studiogan
 ```
 
 With docker, you can use:
-```
+```console
 docker pull mgkang/studiogan:latest
 ```
 
@@ -100,19 +100,19 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DataParallel``
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DistributedDataParallel``
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 1 -nr 0 -c CONFIG_PATH
 ```
 Try ``python3 src/main.py`` to see available options.
 
 
 Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
-```
+```console
 ~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
 ```
 <p align="center">
@@ -151,7 +151,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 ## Supported Training Techniques
 
 * DistributedDataParallel
-  ```
+  ```console
   # export NCCL_DEBUG=INFO
   export NCCL_SOCKET_IFNAME=^docker0,lo
   export MASTER_ADDR=MASTER_IP
@@ -160,23 +160,23 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
   CUDA_VISIBLE_DEVICES=0,1,...,N python3 src/main.py -t -DDP -n TOTAL_NODES -nr CURRENT_NODE -c CONFIG_PATH
   ```
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
-  ```
+  ```console
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -mpc -c CONFIG_PATH
   ```
 * Standing Statistics ([Brock et al.](https://arxiv.org/abs/1809.11096))
-  ```
+  ```console
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
   ```
 * Synchronized BatchNorm
-  ```
+  ```console
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -sync_bn -c CONFIG_PATH
   ```
 * Load All Data in Main Memory
-  ```
+  ```console
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -l -c CONFIG_PATH
   ```
 * LARS
-  ```
+  ```console
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -l -c CONFIG_PATH -LARS
   ```
 
@@ -185,7 +185,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
 
 * Image Visualization
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 <p align="center">
@@ -194,7 +194,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -iv -std_stat --standing_step S
 
 
 * K-Nearest Neighbor Analysis (we have fixed K=7, the images in the first column are generated images.)
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 <p align="center">
@@ -203,7 +203,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -knn -std_stat --standing_step 
 
 
 * Linear Interpolation (applicable only to conditional Big ResNet models)
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 <p align="center">
@@ -212,7 +212,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -itp -std_stat --standing_step 
 
 
 * Frequency Analysis
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 <p align="center">
@@ -225,13 +225,13 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -fa -std_stat --standing_step S
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -s -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
 After that, execute TensorFlow official IS implementation. Note that we do not split a dataset into ten folds to calculate IS ten times. We use the entire dataset to compute IS only once, which is the evaluation strategy used in the [CompareGAN](https://github.com/google/compare_gan) repository.  
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/inception_tf13.py --run_name RUN_NAME --type "fake"
 ```
 Keep in mind that you need to have TensorFlow 1.3 or earlier version installed!
@@ -282,7 +282,7 @@ We report the best IS, FID, and F_beta values of various GANs. B. S. means batch
 ※ IS, FID, and F_beta values are computed using 10K test and 10K generated Images. 
 
 ※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
-```
+```console
 CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "test"
 ```
 
@@ -315,7 +315,7 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
 ※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
 ```
 
@@ -332,7 +332,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
 ※ When evaluating, the statistics of batch normalization layers are calculated in advance (moving average of the previous statistics).
-```
+```console
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -sync_bn -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
 ```
 
