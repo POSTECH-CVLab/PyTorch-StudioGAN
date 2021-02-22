@@ -151,7 +151,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 ## Supported Training Techniques
 
 * DistributedDataParallel
-  ```console
+  ```bash
   # export NCCL_DEBUG=INFO
   export NCCL_SOCKET_IFNAME=^docker0,lo
   export MASTER_ADDR=MASTER_IP
