@@ -123,8 +123,6 @@ def main():
 
     if train_config['distributed_data_parallel'] and world_size > 1:
         print("Train the models through DistributedDataParallel (DDP) mode.")
-        os.environ['MASTER_ADDR'] = 'localhost'
-        os.environ['MASTER_PORT'] = '2222'
         mp.spawn(prepare_train_eval, nprocs=gpus_per_node, args=(gpus_per_node, world_size, run_name,
                                                                  train_config, model_config, hdf5_path_train))
     else:

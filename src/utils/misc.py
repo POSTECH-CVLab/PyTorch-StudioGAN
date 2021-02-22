@@ -133,7 +133,10 @@ def setup(rank, world_size, backend="nccl"):
         )
     else:
         # initialize the process group
-        dist.init_process_group(backend, rank=rank, world_size=world_size)
+        dist.init_process_group(backend,
+                                init_method="tcp://%s:%s" % (os.environ['MASTER_ADDR'], os.environ['MASTER_PORT']),
+                                rank=rank,
+                                world_size=world_size)
 
 
 def cleanup():
