@@ -75,19 +75,19 @@
 
 You can install the recommended environment as follows:
 
-```console
+```bash
 conda env create -f environment.yml -n studiogan
 ```
 
 With docker, you can use:
-```console
+```bash
 docker pull mgkang/studiogan:latest
 ```
 
 This is my command to make a container named "studioGAN". 
 
 Also, you can use port number 6006 to connect the tensoreboard. 
-```console
+```bash
 docker run -it --gpus all --shm-size 128g -p 6006:6006 --name studioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
 ```
 
@@ -95,7 +95,7 @@ docker run -it --gpus all --shm-size 128g -p 6006:6006 --name studioGAN -v /home
 ## Quick Start
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
