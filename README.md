@@ -282,7 +282,7 @@ We report the best IS, FID, and F_beta values of various GANs. B. S. means batch
 ※ IS, FID, and F_beta values are computed using 10K test and 10K generated Images. 
 
 ※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "test"
 ```
 
@@ -315,7 +315,7 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
 ※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
 ```
 
@@ -332,7 +332,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH 
 ※ IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
 ※ When evaluating, the statistics of batch normalization layers are calculated in advance (moving average of the previous statistics).
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -sync_bn -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
 ```
 
