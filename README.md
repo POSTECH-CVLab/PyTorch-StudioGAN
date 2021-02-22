@@ -152,6 +152,11 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 
 * DistributedDataParallel
   ```
+  # export NCCL_DEBUG=INFO
+  export NCCL_SOCKET_IFNAME=^docker0,lo
+  export MASTER_ADDR=MASTER_IP
+  export MASTER_PORT=MASTER_PORT
+
   CUDA_VISIBLE_DEVICES=0,1,...,N python3 src/main.py -t -DDP -n TOTAL_NODES -nr CURRENT_NODE -c CONFIG_PATH
   ```
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
