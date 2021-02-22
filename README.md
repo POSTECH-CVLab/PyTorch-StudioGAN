@@ -100,19 +100,19 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DataParallel``
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DistributedDataParallel``
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 1 -nr 0 -c CONFIG_PATH
 ```
 Try ``python3 src/main.py`` to see available options.
 
 
 Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
-```console
+```bash
 ~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
 ```
 <p align="center">
@@ -160,23 +160,23 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
   CUDA_VISIBLE_DEVICES=0,1,...,N python3 src/main.py -t -DDP -n TOTAL_NODES -nr CURRENT_NODE -c CONFIG_PATH
   ```
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
-  ```console
+  ```bash
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -mpc -c CONFIG_PATH
   ```
 * Standing Statistics ([Brock et al.](https://arxiv.org/abs/1809.11096))
-  ```console
+  ```bash
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
   ```
 * Synchronized BatchNorm
-  ```console
+  ```bash
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -sync_bn -c CONFIG_PATH
   ```
 * Load All Data in Main Memory
-  ```console
+  ```bash
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -l -c CONFIG_PATH
   ```
 * LARS
-  ```console
+  ```bash
   CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -l -c CONFIG_PATH -LARS
   ```
 
@@ -185,7 +185,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
 
 * Image Visualization
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 <p align="center">
@@ -194,7 +194,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -iv -std_stat --standing_step S
 
 
 * K-Nearest Neighbor Analysis (we have fixed K=7, the images in the first column are generated images.)
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 <p align="center">
@@ -203,7 +203,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -knn -std_stat --standing_step 
 
 
 * Linear Interpolation (applicable only to conditional Big ResNet models)
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 <p align="center">
@@ -212,7 +212,7 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -itp -std_stat --standing_step 
 
 
 * Frequency Analysis
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 <p align="center">
@@ -225,13 +225,13 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -fa -std_stat --standing_step S
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -s -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
 After that, execute TensorFlow official IS implementation. Note that we do not split a dataset into ten folds to calculate IS ten times. We use the entire dataset to compute IS only once, which is the evaluation strategy used in the [CompareGAN](https://github.com/google/compare_gan) repository.  
-```console
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/inception_tf13.py --run_name RUN_NAME --type "fake"
 ```
 Keep in mind that you need to have TensorFlow 1.3 or earlier version installed!
