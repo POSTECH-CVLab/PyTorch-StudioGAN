@@ -221,8 +221,9 @@ CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -fa -std_stat --standing_step S
 
 
 * TSNE Analysis
+```bash
 CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -tsne -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
-
+```
 
 
 ##  Metrics
