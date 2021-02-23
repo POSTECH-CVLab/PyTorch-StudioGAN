@@ -418,7 +418,6 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
 
     df['tsne-2d-one'] = tsne_results[:,0]
     df['tsne-2d-two'] = tsne_results[:,1]
-    # x="tsne-2d-one", y="tsne-2d-two",
     plt.figure(figsize=(16,10))
     sns.scatterplot(
         x="tsne-2d-one", y="tsne-2d-two",
