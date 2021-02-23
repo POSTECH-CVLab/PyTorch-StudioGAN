@@ -95,10 +95,10 @@ def main():
             "StudioGAN dose not support the evalutation protocol that uses the test dataset on imagenet, tiny imagenet, and custom datasets"
 
     if train_config['distributed_data_parallel']:
-        msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, and frequency_analysis with DDP. " +\
+        msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, and tsne analysis with DDP. " +\
             "Please change DDP with a single GPU training or DataParallel instead."
-        assert train_config['image_visualization'] + train_config['k_nearest_neighbor'] + \
-            train_config['interpolation'] + train_config['frequency_analysis'] + train_config['tsne_analysis'] == 0, msg
+        assert train_config['image_visualization'] + train_config['k_nearest_neighbor'] + train_config['interpolation'] +\
+            train_config['frequency_analysis'] + train_config['tsne_analysis'] == 0, msg
 
     hdf5_path_train = make_hdf5(model_config['data_processing'], train_config, mode="train") \
         if train_config['load_all_data_in_memory'] else None

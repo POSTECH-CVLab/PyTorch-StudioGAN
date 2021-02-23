@@ -418,6 +418,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
 
     df['tsne-2d-one'] = tsne_results[:,0]
     df['tsne-2d-two'] = tsne_results[:,1]
+    # x="tsne-2d-one", y="tsne-2d-two",
     plt.figure(figsize=(16,10))
     sns.scatterplot(
         x="tsne-2d-one", y="tsne-2d-two",
@@ -425,8 +426,11 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
         palette=sns.color_palette("hls", 10),
         data=df,
         legend="full",
-        alpha=0.3
-    )
+        alpha=0.5
+    ).legend(fontsize = 15, loc ='upper right')
+    plt.title("TSNE result of {flag} images".format(flag=flag), fontsize=25)
+    plt.xlabel('', fontsize=7)
+    plt.ylabel('', fontsize=7)
     plt.savefig(save_path)
     logger.info("Save image to {}".format(save_path))
 
