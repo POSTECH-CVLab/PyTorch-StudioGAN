@@ -49,8 +49,8 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
     else:
         global_rank = local_rank
 
-    writer = SummaryWriter(log_dir=join('./logs', run_name)) if global_rank == 0 else None
-    if global_rank == 0:
+    writer = SummaryWriter(log_dir=join('./logs', run_name)) if local_rank == 0 else None
+    if local_rank == 0:
         logger = make_logger(run_name, None)
         logger.info('Run name : {run_name}'.format(run_name=run_name))
         logger.info(train_config)
@@ -59,19 +59,19 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
         logger = None
 
     ##### load dataset #####
-    if global_rank == 0: logger.info('Load train datasets...')
+    if local_rank == 0: logger.info('Load train datasets...')
     train_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=True, download=True, resize_size=cfgs.img_size,
                                 hdf5_path=hdf5_path_train, random_flip=cfgs.random_flip_preprocessing)
     if cfgs.reduce_train_dataset < 1.0:
         num_train = int(cfgs.reduce_train_dataset*len(train_dataset))
         train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
-    if global_rank == 0: logger.info('Train dataset size : {dataset_size}'.format(dataset_size=len(train_dataset)))
+    if local_rank == 0: logger.info('Train dataset size : {dataset_size}'.format(dataset_size=len(train_dataset)))
 
-    if global_rank == 0: logger.info('Load {mode} datasets...'.format(mode=cfgs.eval_type))
+    if local_rank == 0: logger.info('Load {mode} datasets...'.format(mode=cfgs.eval_type))
     eval_mode = True if cfgs.eval_type == 'train' else False
     eval_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=eval_mode, download=True, resize_size=cfgs.img_size,
                                hdf5_path=None, random_flip=False)
-    if global_rank == 0: logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
+    if local_rank == 0: logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     if cfgs.distributed_data_parallel:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -84,9 +84,9 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
     eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=False, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
 
     ##### build model #####
-    if global_rank == 0: logger.info('Build model...')
+    if local_rank == 0: logger.info('Build model...')
     module = __import__('models.{architecture}'.format(architecture=cfgs.architecture), fromlist=['something'])
-    if global_rank == 0: logger.info('Modules are located on models.{architecture}.'.format(architecture=cfgs.architecture))
+    if local_rank == 0: logger.info('Modules are located on models.{architecture}.'.format(architecture=cfgs.architecture))
     Gen = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
                            cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
                            cfgs.g_init, cfgs.G_depth, cfgs.mixed_precision).to(local_rank)
@@ -96,7 +96,7 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
                                cfgs.normalize_embed, cfgs.d_init, cfgs.D_depth, cfgs.mixed_precision).to(local_rank)
 
     if cfgs.ema:
-        if global_rank == 0: logger.info('Prepare EMA for G with decay of {}.'.format(cfgs.ema_decay))
+        if local_rank == 0: logger.info('Prepare EMA for G with decay of {}.'.format(cfgs.ema_decay))
         Gen_copy = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
                                     cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
                                     initialize=False, G_depth=cfgs.G_depth, mixed_precision=cfgs.mixed_precision).to(local_rank)
@@ -104,11 +104,11 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
     else:
         Gen_copy, Gen_ema = None, None
 
-    if global_rank == 0: logger.info(count_parameters(Gen))
-    if global_rank == 0: logger.info(Gen)
+    if local_rank == 0: logger.info(count_parameters(Gen))
+    if local_rank == 0: logger.info(Gen)
 
-    if global_rank == 0: logger.info(count_parameters(Dis))
-    if global_rank == 0: logger.info(Dis)
+    if local_rank == 0: logger.info(count_parameters(Dis))
+    if local_rank == 0: logger.info(Dis)
 
 
     ### define loss functions and optimizers
@@ -144,7 +144,7 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
         Gen, G_optimizer, trained_seed, run_name, step, prev_ada_p = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
         Dis, D_optimizer, trained_seed, run_name, step, prev_ada_p, best_step, best_fid, best_fid_checkpoint_path =\
             load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
-        if global_rank == 0: logger = make_logger(run_name, None)
+        if local_rank == 0: logger = make_logger(run_name, None)
         if cfgs.ema:
             g_ema_checkpoint_dir = glob.glob(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
             Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
@@ -154,8 +154,8 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
         if cfgs.train_configs['train']:
             assert cfgs.seed == trained_seed, "Seed for sampling random numbers should be same!"
 
-        if global_rank == 0: logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
-        if global_rank == 0: logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
+        if local_rank == 0: logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
+        if local_rank == 0: logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
         if cfgs.freeze_layers > -1 :
             prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
 
