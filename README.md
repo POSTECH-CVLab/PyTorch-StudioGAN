@@ -153,7 +153,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 * DistributedDataParallel
   ```bash
   # export NCCL_DEBUG=INFO
-  export NCCL_SOCKET_IFNAME=^docker0,lo
+  export NCCL_SOCKET_IFNAME=^docker0,lo,docker_gwbridge
   export MASTER_ADDR=MASTER_IP
   export MASTER_PORT=MASTER_PORT
 
