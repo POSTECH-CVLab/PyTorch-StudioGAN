@@ -150,7 +150,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 
 ## Supported Training Techniques
 
-* DistributedDataParallel (Please refer to [Link](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html))
+* DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html))
   ```bash
   # export NCCL_DEBUG=INFO
   export NCCL_SOCKET_IFNAME=^docker0,lo,docker_gwbridge
