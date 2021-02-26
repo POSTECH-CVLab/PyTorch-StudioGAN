@@ -47,18 +47,45 @@ class ema(object):
     with torch.no_grad():
       for key in self.source_dict:
         self.target_dict[key].data.copy_(self.source_dict[key].data)
-        # target_dict[key].data = source_dict[key].data # Doesn't work!
+        self.target_dict[key].requires_grad = False
+
 
   def update(self, itr=None):
     # If an iteration counter is provided and itr is less than the start itr,
     # peg the ema weights to the underlying weights.
-    if itr and itr < self.start_itr:
+    if itr >= 0 and itr < self.start_itr:
       decay = 0.0
     else:
       decay = self.decay
     with torch.no_grad():
       for key in self.source_dict:
         self.target_dict[key].data.copy_(self.target_dict[key].data * decay + self.source_dict[key].data * (1 - decay))
+
+
+class ema_DP_SyncBN(object):
+  def __init__(self, source, target, decay=0.9999, start_itr=0):
+    self.source = source
+    self.target = target
+    self.decay = decay
+    self.start_itr = start_itr
+    # Initialize target's params to be source's
+    print('Initializing EMA parameters to be source parameters...')
+    for key in self.source.state_dict():
+        self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)
+        self.target.state_dict()[key].requires_grad = False
+
+
+  def update(self, itr=None):
+    # If an iteration counter is provided and itr is less than the start itr,
+    # peg the ema weights to the underlying weights.
+    if itr >= 0 and itr < self.start_itr:
+      decay = 0.0
+    else:
+      decay = self.decay
+
+    for key in self.source.state_dict():
+        data = self.target.state_dict()[key].data*decay + self.source.state_dict()[key].detach().data*(1.-decay)
+        self.target.state_dict()[key].data.copy_(data)
 
 
 def ortho(model, strength=1e-4, blacklist=[]):

@@ -18,7 +18,7 @@ from utils.log import make_checkpoint_dir, make_logger
 from utils.losses import *
 from utils.load_checkpoint import load_checkpoint
 from utils.misc import *
-from utils.biggan_utils import ema
+from utils.biggan_utils import ema, ema_DP_SyncBN
 from sync_batchnorm.batchnorm import convert_model
 from worker import make_worker
 
@@ -100,7 +100,10 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
         Gen_copy = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
                                     cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
                                     initialize=False, G_depth=cfgs.G_depth, mixed_precision=cfgs.mixed_precision).to(local_rank)
-        Gen_ema = ema(Gen, Gen_copy, cfgs.ema_decay, cfgs.ema_start)
+        if cfgs.distributed_data_parallel and cfgs.synchronized_bn:
+            Gen_ema = ema_DP_SyncBN(Gen, Gen_copy, cfgs.ema_decay, cfgs.ema_start)
+        else:
+            Gen_ema = ema(Gen, Gen_copy, cfgs.ema_decay, cfgs.ema_start)
     else:
         Gen_copy, Gen_ema = None, None
 
