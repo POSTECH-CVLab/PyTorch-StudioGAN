@@ -152,12 +152,20 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 
 * DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html))
   ```bash
-  # export NCCL_DEBUG=INFO
-  export NCCL_SOCKET_IFNAME=^docker0,lo,docker_gwbridge
-  export MASTER_ADDR=MASTER_IP
-  export MASTER_PORT=MASTER_PORT
+  ### NODE_0, 4_GPUs, All ports are open to NODE_1
+  export NCCL_SOCKET_IFNAME=^docker0,lo
+  export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
+  export MASTER_PORT=AVAILABLE_PORT
 
-  CUDA_VISIBLE_DEVICES=0,1,...,N python3 src/main.py -t -DDP -n TOTAL_NODES -nr CURRENT_NODE -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 0 -c CONFIG_PATH
+  ```
+  ```bash
+  ### NODE_1, 4_GPUs, All ports are open to NODE_0
+  export NCCL_SOCKET_IFNAME=^docker0,lo
+  export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
+  export MASTER_PORT=AVAILABLE_PORT(Same with the above)
+
+  CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 1 -c CONFIG_PATH
   ```
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
   ```bash
@@ -265,6 +273,11 @@ We report the best IS, FID, and F_beta values of various GANs. B. S. means batch
 
 ### CIFAR10 (3x32x32)
 
+When training, we used the command below.
+```bash
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "test"
+```
+
 | Name | B. S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 64 | 6.638 | 49.030 | 0.833 | 0.795 | [Config](./src/configs/CIFAR10/DCGAN.json) | [Log](./logs/CIFAR10/DCGAN-train-2020_09_15_13_23_51.log) | [Link](https://drive.google.com/drive/folders/1_AAkKkwdSJaRjnNxg-FxiLfIU8nHgPLh?usp=sharing) |
@@ -298,6 +311,10 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 
 ### Tiny ImageNet (3x64x64)
 
+When training, we used the command below.
+```bash
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
+```
 | Name | B. S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | 256 | 5.640 | 91.625 | 0.606 | 0.391 | [Config](./src/configs/TINY_ILSVRC2012/DCGAN.json) | [Log](./logs/TINY_IMAGENET/DCGAN-train-2021_01_01_08_11_26.log) | [Link](https://drive.google.com/drive/folders/1unNCrGZarh5605yExX7L9nGaqSmZYoz3?usp=sharing) |
@@ -326,11 +343,15 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 
 ※ When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
 ```
 
 ### ImageNet (3x128x128)
 
+When training, we used the command below.
+```bash
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -sync_bn -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
+```
 | Name | B. S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | 256 | 32.247 | 26.792 | 0.938 | 0.913 | [Config](./src/configs/ILSVRC2012/SNGAN.json) | [Log](./logs/IMAGENET/SNGAN-train-2021_02_05_01_08_08.log) | [Link](https://drive.google.com/drive/folders/1Ek2wAMlxpajL_M8aub4DKQ9B313K8XhS?usp=sharing) |
