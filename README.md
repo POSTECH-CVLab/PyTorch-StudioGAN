@@ -155,21 +155,21 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
   ### NODE_0, 4_GPUs, All ports are open to NODE_1
   docker run -it --gpus all --shm-size 128g --name studioGAN --network=host -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
   
-  ~/code# export NCCL_SOCKET_IFNAME=^docker0,lo
-  ~/code# export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
-  ~/code# export MASTER_PORT=AVAILABLE_PORT
+  ~/code>>> export NCCL_SOCKET_IFNAME=^docker0,lo
+  ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
+  ~/code>>> export MASTER_PORT=AVAILABLE_PORT
 
-  ~/code/PyTorch-StudioGAN# CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 0 -c CONFIG_PATH
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 0 -c CONFIG_PATH
   ```
   ```bash
   ### NODE_1, 4_GPUs, All ports are open to NODE_0
   docker run -it --gpus all --shm-size 128g --name studioGAN --network=host -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
   
-  ~/code# export NCCL_SOCKET_IFNAME=^docker0,lo
-  ~/code# export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
-  ~/code# export MASTER_PORT=AVAILABLE_PORT (port number as above)
+  ~/code>>> export NCCL_SOCKET_IFNAME=^docker0,lo
+  ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
+  ~/code>>> export MASTER_PORT=AVAILABLE_PORT (port number as above)
 
-  ~/code/PyTorch-StudioGAN# CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 1 -c CONFIG_PATH
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 1 -c CONFIG_PATH
   ```
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
   ```bash
