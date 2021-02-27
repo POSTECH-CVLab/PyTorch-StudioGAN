@@ -104,10 +104,6 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -c CONFIG_PATH
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
 ```
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DistributedDataParallel``
-```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 1 -nr 0 -c CONFIG_PATH
-```
 Try ``python3 src/main.py`` to see available options.
 
 
@@ -189,7 +185,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
   ```
 * LARS
   ```bash
-  CUDA_VISIBLE_DEVICES=0,1,... python3 src/main.py -t -l -c CONFIG_PATH -LARS
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -l -c CONFIG_PATH -LARS
   ```
 
 ## To Visualize and Analyze Generated Images
