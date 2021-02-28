@@ -167,6 +167,9 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
 
   ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 1 -c CONFIG_PATH
   ```
+  
+※ StudioGAN does not support DDP training for ContraGAN. This is because conducting contrastive learning requires a 'gather' operation to calculate the exact conditional contrastive loss. 
+
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -c CONFIG_PATH
