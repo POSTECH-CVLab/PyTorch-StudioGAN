@@ -100,6 +100,9 @@ def main():
         assert train_config['image_visualization'] + train_config['k_nearest_neighbor'] + train_config['interpolation'] +\
             train_config['frequency_analysis'] + train_config['tsne_analysis'] == 0, msg
 
+    if model_config['train']['model']['conditional_strategy'] in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
+        assert not train_config['distributed_data_parallel'], "StudioGAN does not support DDP training for NT_Xent_GAN, Proxy_NCA_GAN, and ContraGAN"
+
     hdf5_path_train = make_hdf5(model_config['data_processing'], train_config, mode="train") \
         if train_config['load_all_data_in_memory'] else None
 
@@ -126,8 +129,7 @@ def main():
         mp.spawn(prepare_train_eval, nprocs=gpus_per_node, args=(gpus_per_node, world_size, run_name,
                                                                  train_config, model_config, hdf5_path_train))
     else:
-        prepare_train_eval(rank, gpus_per_node, world_size, run_name, train_config, model_config,
-                           hdf5_path_train=hdf5_path_train)
+        prepare_train_eval(rank, gpus_per_node, world_size, run_name, train_config, model_config, hdf5_path_train=hdf5_path_train)
 
 if __name__ == '__main__':
     main()
