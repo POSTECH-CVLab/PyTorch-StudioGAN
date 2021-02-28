@@ -153,7 +153,7 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
   
   ~/code>>> export NCCL_SOCKET_IFNAME=^docker0,lo
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
-  ~/code>>> export MASTER_PORT=AVAILABLE_PORT
+  ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
 
   ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 0 -c CONFIG_PATH
   ```
@@ -163,10 +163,13 @@ Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accur
   
   ~/code>>> export NCCL_SOCKET_IFNAME=^docker0,lo
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
-  ~/code>>> export MASTER_PORT=AVAILABLE_PORT (Port number as above)
+  ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
 
   ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 1 -c CONFIG_PATH
   ```
+  
+※ StudioGAN does not support DDP training for ContraGAN. This is because conducting contrastive learning requires a 'gather' operation to calculate the exact conditional contrastive loss. 
+
 * Mixed Precision Training ([Narang et al.](https://arxiv.org/abs/1710.03740))
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -c CONFIG_PATH
@@ -275,7 +278,7 @@ We report the best IS, FID, and F_beta values of various GANs. B. S. means batch
 
 When training, we used the command below.
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "test"
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --eval_type "test"
 ```
 
 | Name | B. S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
@@ -313,7 +316,7 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --chec
 
 When training, we used the command below.
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --eval_type "valid"
 ```
 | Name | B. S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -350,7 +353,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -l -stat_otf -c CONFIG_PATH 
 
 When training, we used the command below.
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -sync_bn -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -sync_bn -stat_otf -c CONFIG_PATH --eval_type "valid"
 ```
 | Name | B. S. | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Config | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
