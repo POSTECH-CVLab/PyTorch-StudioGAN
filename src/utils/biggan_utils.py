@@ -47,7 +47,6 @@ class ema(object):
     with torch.no_grad():
       for key in self.source_dict:
         self.target_dict[key].data.copy_(self.source_dict[key].data)
-        self.target_dict[key].requires_grad = False
 
 
   def update(self, itr=None):
@@ -72,7 +71,6 @@ class ema_DP_SyncBN(object):
     print('Initializing EMA parameters to be source parameters...')
     for key in self.source.state_dict():
         self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)
-        self.target.state_dict()[key].requires_grad = False
 
 
   def update(self, itr=None):
@@ -84,7 +82,7 @@ class ema_DP_SyncBN(object):
       decay = self.decay
 
     for key in self.source.state_dict():
-        data = self.target.state_dict()[key].data*decay + self.source.state_dict()[key].detach().data*(1.-decay)
+        data = self.target.state_dict()[key].data*decay + self.source.state_dict()[key].data*(1.-decay)
         self.target.state_dict()[key].data.copy_(data)
 
 
