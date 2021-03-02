@@ -158,46 +158,74 @@ def define_sampler(dataset_name, conditional_strategy):
     return sampler
 
 
-def check_flag_0(batch_size, n_gpus, freeze_layers, checkpoint_folder, architecture, img_size):
-    assert batch_size % n_gpus == 0, "Batch_size should be divided by the number of gpus."
-
-    if architecture == "dcgan":
-        assert img_size == 32, "Sry,\
+def check_flags(train_configs, model_configs, n_gpus):
+    if model_configs['train']['model']['architecture'] == "dcgan":
+        assert model_configs['data_processing']['img_size'] == 32, "Sry,\
             StudioGAN does not support dcgan models for generation of images larger than 32 resolution."
 
-    if freeze_layers > -1:
-        assert checkpoint_folder is not None, "Freezing discriminator needs a pre-trained model."
+    if train_configs['freeze_layers'] > -1:
+        assert train_configs['checkpoint_folder'] is not None,\
+            "Freezing discriminator needs a pre-trained model."
 
+    if train_configs['distributed_data_parallel']:
+        msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, and tsne analysis with DDP. " +\
+            "Please change DDP with a single GPU training or DataParallel instead."
+        assert train_configs['image_visualization'] + train_configs['k_nearest_neighbor'] + train_configs['interpolation'] +\
+            train_configs['frequency_analysis'] + train_configs['tsne_analysis'] == 0, msg
 
-def check_flag_1(tempering_type, pos_collected_numerator, conditional_strategy, diff_aug, ada, mixed_precision,
-                 gradient_penalty_for_dis, deep_regret_analysis_for_dis, cr, bcr, zcr,
-                 distributed_data_parallel, synchronized_bn):
-    assert int(diff_aug)*int(ada) == 0, \
-        "You can't simultaneously apply Differentiable Augmentation (DiffAug) and Adaptive Discriminator Augmentation (ADA)."
+    if model_configs['train']['model']['conditional_strategy'] in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
+        assert not train_configs['distributed_data_parallel'], \
+        "StudioGAN does not support DDP training for NT_Xent_GAN, Proxy_NCA_GAN, and ContraGAN"
 
-    assert int(mixed_precision)*int(gradient_penalty_for_dis) == 0, \
-        "You can't simultaneously apply mixed precision training (mpc) and Gradient Penalty for WGAN-GP."
+    if train_configs['train']*train_configs['standing_statistics']:
+        print("When training, StudioGAN does not apply standing_statistics for evaluation. " + \
+              "After training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model")
 
-    assert int(mixed_precision)*int(deep_regret_analysis_for_dis) == 0, \
-        "You can't simultaneously apply mixed precision training (mpc) and Deep Regret Analysis for DRAGAN."
-
-    assert int(cr)*int(bcr) == 0 and int(cr)*int(zcr) == 0, \
-        "You can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)."
-
-    assert int(gradient_penalty_for_dis)*int(deep_regret_analysis_for_dis) == 0, \
-        "You can't simultaneously apply Gradient Penalty (GP) and Deep Regret Analysis (DRA)."
-
-    if conditional_strategy == "ContraGAN":
-        assert tempering_type == "constant" or tempering_type == "continuous" or tempering_type == "discrete", \
+    if model_configs['train']['model']['conditional_strategy'] == "ContraGAN":
+        assert model_configs['train']['loss_function']['tempering_type'] == "constant" or \
+            model_configs['train']['loss_function']['tempering_type'] == "continuous" or \
+            model_configs['train']['loss_function']['tempering_type'] == "discrete", \
             "Tempering_type should be one of constant, continuous, or discrete."
 
-    if pos_collected_numerator:
-        assert conditional_strategy == "ContraGAN", "Pos_collected_numerator option is not appliable except for ContraGAN."
+    if model_configs['train']['model']['pos_collected_numerator']:
+        assert model_configs['train']['model']['conditional_strategy'] == "ContraGAN", \
+            "Pos_collected_numerator option is not appliable except for ContraGAN."
 
-    if distributed_data_parallel:
+    if train_configs['distributed_data_parallel']:
         msg = 'Evaluation results of the image generation with DDP are not exact. ' + \
             'Please use a single GPU training mode or DataParallel for exact evluation.'
         warnings.warn(msg)
+
+    if model_configs['data_processing']['dataset_name'] == 'cifar10':
+        assert train_configs['eval_type'] in ['train', 'test'], "Cifar10 does not contain dataset for validation."
+
+    elif model_configs['data_processing']['dataset_name'] in ['imagenet', 'tiny_imagenet', 'custom']:
+        assert train_configs['eval_type'] == 'train' or train_configs['eval_type'] == 'valid', \
+            "StudioGAN dose not support the evalutation protocol that uses the test dataset on imagenet, tiny imagenet, and custom datasets"
+
+    assert train_configs['bn_stat_OnTheFly']*train_configs['standing_statistics'] == 0, \
+        "You can't turn on train_statistics and standing_statistics simultaneously."
+
+    assert model_configs['train']['optimization']['batch_size'] % n_gpus == 0, \
+        "Batch_size should be divided by the number of gpus."
+
+    assert int(model_configs['train']['training_and_sampling_setting']['diff_aug']) * \
+        int(model_configs['train']['training_and_sampling_setting']['ada']) == 0, \
+        "You can't simultaneously apply Differentiable Augmentation (DiffAug) and Adaptive Discriminator Augmentation (ADA)."
+
+    assert int(train_configs['mixed_precision'])*int(model_configs['train']['loss_function']['gradient_penalty_for_dis']) == 0, \
+        "You can't simultaneously apply mixed precision training (mpc) and Gradient Penalty for WGAN-GP."
+
+    assert int(train_configs['mixed_precision'])*int(model_configs['train']['loss_function']['deep_regret_analysis_for_dis']) == 0, \
+        "You can't simultaneously apply mixed precision training (mpc) and Deep Regret Analysis for DRAGAN."
+
+    assert int(model_configs['train']['loss_function']['cr'])*int(model_configs['train']['loss_function']['bcr']) == 0 and \
+        int(model_configs['train']['loss_function']['cr'])*int(model_configs['train']['loss_function']['zcr']) == 0, \
+        "You can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)."
+
+    assert int(model_configs['train']['loss_function']['gradient_penalty_for_dis'])* \
+    int(model_configs['train']['loss_function']['deep_regret_analysis_for_dis']) == 0, \
+        "You can't simultaneously apply Gradient Penalty (GP) and Deep Regret Analysis (DRA)."
 
 
 # Convenience utility to switch off requires_grad

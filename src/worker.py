@@ -159,18 +159,12 @@ class make_worker(object):
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
         self.policy = "color,translation,cutout"
+        self.sampler = define_sampler(self.dataset_name, self.conditional_strategy)
         self.counter = 0
 
-        self.sampler = define_sampler(self.dataset_name, self.conditional_strategy)
-
         if self.distributed_data_parallel: self.group = dist.new_group([n for n in range(self.n_gpus)])
-
-        check_flag_1(self.tempering_type, self.pos_collected_numerator, self.conditional_strategy, self.diff_aug, self.ada,
-                     self.mixed_precision, self.gradient_penalty_for_dis, self.deep_regret_analysis_for_dis, self.cr, self.bcr,
-                     self.zcr, self.distributed_data_parallel, self.synchronized_bn)
-
-        if self.ada:
-            self.adtv_aug = Adaptive_Augment(self.prev_ada_p, self.ada_target, self.ada_length, self.batch_size, self.local_rank)
+        if self.mixed_precision: self.scaler = torch.cuda.amp.GradScaler()
+        if self.ada: self.adtv_aug = Adaptive_Augment(self.prev_ada_p, self.ada_target, self.ada_length, self.batch_size, self.local_rank)
 
         if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
             if isinstance(self.dis_model, DataParallel) or isinstance(self.dis_model, DistributedDataParallel):
@@ -186,9 +180,6 @@ class make_worker(object):
             self.NT_Xent_criterion = NT_Xent_loss(self.local_rank, self.batch_size)
         else:
             pass
-
-        if self.mixed_precision:
-            self.scaler = torch.cuda.amp.GradScaler()
 
         if self.dataset_name == "imagenet":
             self.num_eval = {'train':50000, 'valid':50000}

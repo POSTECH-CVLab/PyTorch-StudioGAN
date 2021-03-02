@@ -83,53 +83,35 @@ def main():
 
     if args.config_path is not None:
         with open(args.config_path) as f:
-            model_config = json.load(f)
-        train_config = vars(args)
+            model_configs = json.load(f)
+        train_configs = vars(args)
     else:
         raise NotImplementedError
 
-    if model_config['data_processing']['dataset_name'] == 'cifar10':
-        assert train_config['eval_type'] in ['train', 'test'], "Cifar10 does not contain dataset for validation."
-    elif model_config['data_processing']['dataset_name'] in ['imagenet', 'tiny_imagenet', 'custom']:
-        assert train_config['eval_type'] == 'train' or train_config['eval_type'] == 'valid', \
-            "StudioGAN dose not support the evalutation protocol that uses the test dataset on imagenet, tiny imagenet, and custom datasets"
+    hdf5_path_train = make_hdf5(model_configs['data_processing'], train_configs, mode="train") \
+        if train_configs['load_all_data_in_memory'] else None
 
-    if train_config['distributed_data_parallel']:
-        msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, and tsne analysis with DDP. " +\
-            "Please change DDP with a single GPU training or DataParallel instead."
-        assert train_config['image_visualization'] + train_config['k_nearest_neighbor'] + train_config['interpolation'] +\
-            train_config['frequency_analysis'] + train_config['tsne_analysis'] == 0, msg
-
-    if model_config['train']['model']['conditional_strategy'] in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-        assert not train_config['distributed_data_parallel'], "StudioGAN does not support DDP training for NT_Xent_GAN, Proxy_NCA_GAN, and ContraGAN"
-
-    hdf5_path_train = make_hdf5(model_config['data_processing'], train_config, mode="train") \
-        if train_config['load_all_data_in_memory'] else None
-
-    if train_config['seed'] == -1:
+    if train_configs['seed'] == -1:
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
-        fix_all_seed(train_config['seed'])
+        fix_all_seed(train_configs['seed'])
         cudnn.benchmark, cudnn.deterministic = False, True
 
     gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
-    world_size = gpus_per_node*train_config['nodes']
-
+    world_size = gpus_per_node*train_configs['nodes']
     if world_size == 1:
         warnings.warn('You have chosen a specific GPU. This will completely disable data parallelism.')
 
-    if train_config['disable_debugging_API']: torch.autograd.set_detect_anomaly(False)
-    check_flag_0(model_config['train']['optimization']['batch_size'], world_size, train_config['freeze_layers'], train_config['checkpoint_folder'],
-                 model_config['train']['model']['architecture'], model_config['data_processing']['img_size'])
+    run_name = make_run_name(RUN_NAME_FORMAT, framework=train_configs['config_path'].split('/')[-1][:-5], phase='train')
+    if train_configs['disable_debugging_API']: torch.autograd.set_detect_anomaly(False)
+    check_flags(train_configs, model_configs, world_size)
 
-    run_name = make_run_name(RUN_NAME_FORMAT, framework=train_config['config_path'].split('/')[-1][:-5], phase='train')
-
-    if train_config['distributed_data_parallel'] and world_size > 1:
+    if train_configs['distributed_data_parallel'] and world_size > 1:
         print("Train the models through DistributedDataParallel (DDP) mode.")
         mp.spawn(prepare_train_eval, nprocs=gpus_per_node, args=(gpus_per_node, world_size, run_name,
-                                                                 train_config, model_config, hdf5_path_train))
+                                                                 train_configs, model_configs, hdf5_path_train))
     else:
-        prepare_train_eval(rank, gpus_per_node, world_size, run_name, train_config, model_config, hdf5_path_train=hdf5_path_train)
+        prepare_train_eval(rank, gpus_per_node, world_size, run_name, train_configs, model_configs, hdf5_path_train=hdf5_path_train)
 
 if __name__ == '__main__':
     main()
