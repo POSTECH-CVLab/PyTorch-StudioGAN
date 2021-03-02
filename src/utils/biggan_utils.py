@@ -69,7 +69,8 @@ class ema_DP_SyncBN(object):
     self.start_itr = start_itr
     # Initialize target's params to be source's
     print('Initializing EMA parameters to be source parameters...')
-    for key in self.source.state_dict():
+    with torch.no_grad():
+      for key in self.source.state_dict():
         self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)
 
 
@@ -80,8 +81,8 @@ class ema_DP_SyncBN(object):
       decay = 0.0
     else:
       decay = self.decay
-
-    for key in self.source.state_dict():
+    with torch.no_grad():
+      for key in self.source.state_dict():
         data = self.target.state_dict()[key].data*decay + self.source.state_dict()[key].data*(1.-decay)
         self.target.state_dict()[key].data.copy_(data)
 
