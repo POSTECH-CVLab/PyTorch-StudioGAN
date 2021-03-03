@@ -383,7 +383,7 @@ def change_generator_mode(gen, gen_copy, bn_stat_OnTheFly, standing_statistics, 
     return gen_tmp
 
 
-def plot_img_canvas(images, save_path, logger, nrow, logging=True):
+def plot_img_canvas(images, save_path, nrow, logger, logging=True):
     directory = dirname(save_path)
 
     if not exists(abspath(directory)):
@@ -393,7 +393,7 @@ def plot_img_canvas(images, save_path, logger, nrow, logging=True):
     if logging: logger.info("Saved image to {}".format(save_path))
 
 
-def plot_pr_curve(precision, recall, run_name, logger, log=False):
+def plot_pr_curve(precision, recall, run_name, logger, logging=True):
     directory = join('./figures', run_name)
 
     if not exists(abspath(directory)):
@@ -409,12 +409,11 @@ def plot_pr_curve(precision, recall, run_name, logger, log=False):
     ax.set_ylabel('Precision (Higher is better)', fontsize=15)
     fig.tight_layout()
     fig.savefig(save_path)
-    if log:
-        logger.info("Save image to {}".format(save_path))
+    if logging: logger.info("Save image to {}".format(save_path))
     return fig
 
 
-def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, log=False):
+def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, logging=True):
     directory = join('./figures', run_name)
 
     if not exists(abspath(directory)):
@@ -426,17 +425,16 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, log=Fals
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
 
-    ax1.imshow(real_spectrum)
+    ax1.imshow(real_spectrum, cmap='viridis')
     ax1.set_title("Spectrum of real images")
 
-    ax2.imshow(fake_spectrum)
+    ax2.imshow(fake_spectrum, cmap='viridis')
     ax2.set_title("Spectrum of fake images")
     fig.savefig(save_path)
-    if log:
-        logger.info("Save image to {}".format(save_path))
+    if logging: logger.info("Save image to {}".format(save_path))
 
 
-def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
+def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger, logging=True):
     directory = join('./figures', run_name, flag)
 
     if not exists(abspath(directory)):
@@ -459,10 +457,10 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger):
     plt.xlabel('', fontsize=7)
     plt.ylabel('', fontsize=7)
     plt.savefig(save_path)
-    logger.info("Save image to {}".format(save_path))
+    if logging: logger.info("Save image to {}".format(save_path))
 
 
-def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger, log=False):
+def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger, logging=True):
     directory = join('./figures', run_name)
 
     if not exists(abspath(directory)):
@@ -489,8 +487,7 @@ def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger, log=False):
     ax.set_ylabel("")
 
     fig.savefig(save_path)
-    if log:
-        logger.info("Save image to {}".format(save_path))
+    if logging: logger.info("Save image to {}".format(save_path))
     return fig
 
 
