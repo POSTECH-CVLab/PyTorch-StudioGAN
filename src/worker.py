@@ -159,7 +159,7 @@ class make_worker(object):
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
         self.policy = "color,translation,cutout"
-        self.sampler = define_sampler(self.dataset_name, self.conditional_strategy)
+        self.sampler = define_sampler(self.dataset_name, self.conditional_strategy, self.batch_size, self.num_classes)
         self.counter = 0
 
         if self.distributed_data_parallel: self.group = dist.new_group([n for n in range(self.n_gpus)])

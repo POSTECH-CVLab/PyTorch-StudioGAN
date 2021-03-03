@@ -147,9 +147,9 @@ def count_parameters(module):
     return 'Number of parameters: {}'.format(sum([p.data.nelement() for p in module.parameters()]))
 
 
-def define_sampler(dataset_name, conditional_strategy):
+def define_sampler(dataset_name, conditional_strategy, batch_size, num_classes):
     if conditional_strategy != "no":
-        if dataset_name == "cifar10":
+        if dataset_name == "cifar10" or batch_size >= num_classes*8:
             sampler = "class_order_all"
         else:
             sampler = "class_order_some"
