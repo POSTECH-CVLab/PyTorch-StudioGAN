@@ -706,10 +706,11 @@ class make_worker(object):
                 fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
 
                 num_samples, target_sampler = target_class_sampler(self.train_dataset, c)
-                train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, sampler=target_sampler,
+                batch_size = self.batch_size if num_samples >= self.batch_size else num_samples
+                train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=batch_size, shuffle=False, sampler=target_sampler,
                                                                num_workers=self.num_workers, pin_memory=True)
                 train_iter = iter(train_dataloader)
-                for batch_idx in range(num_samples//self.batch_size):
+                for batch_idx in range(num_samples//batch_size):
                     real_images, real_labels = next(train_iter)
                     real_images = real_images.to(self.local_rank)
                     real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
