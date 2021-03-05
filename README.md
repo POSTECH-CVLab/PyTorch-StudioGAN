@@ -282,7 +282,7 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --e
 | **ProjGAN** | 64 |  7.539 | 33.830 | 0.952 | 0.855 | [Config](./src/configs/CIFAR10/ProjGAN.json) | [Log](./logs/CIFAR10/ProjGAN-train-2020_09_17_20_05_34.log) | [Link](https://drive.google.com/drive/folders/1JtMUFYkKahlfItvHKx87WIiRl89D9Dhr?usp=sharing) |
 | **SNGAN** | 64 |  8.677 | 13.248 | 0.983 | 0.978 | [Config](./src/configs/CIFAR10/SNGAN.json) | [Log](./logs/CIFAR10/SNGAN-train-2020_09_18_14_37_00.log) | [Link](https://drive.google.com/drive/folders/16s5Cr-V-NlfLyy_uyXEkoNxLBt-8wYSM?usp=sharing) |
 | **SAGAN** | 64 |  8.680 | 14.009 | 0.982 | 0.970 | [Config](./src/configs/CIFAR10/SAGAN.json) | [Log](./logs/CIFAR10/SAGAN-train-2020_09_18_23_34_49.log) | [Link](https://drive.google.com/drive/folders/1FA8hcz4MB8-hgTwLuDA0ZUfr8slud5P_?usp=sharing) |
-| **BigGAN**<sup>[[4]](#footnote_4)</sup> | 2048 | 9.22 | 14.73 | - | - | - | - | - |
+| **BigGAN**<sup>[[4]](#footnote_4)</sup> | 2048 | 9.22<sup>[[8]](#footnote_8)</sup> | 14.73 | - | - | - | - | - |
 | **BigGAN + CR**<sup>[[5]](#footnote_5)</sup> | 64 | - | 11.5 | - | - | - | - | - |
 | **BigGAN + ICR**<sup>[[6]](#footnote_6)</sup> | 64 | - | 9.2 | - | - | - | - | - |
 | **BigGAN + DiffAug**<sup>[[7]](#footnote_7)</sup> | 64 | 9.2<sup>[[8]](#footnote_8)</sup> | 8.7 | - | - | - | - | - |
