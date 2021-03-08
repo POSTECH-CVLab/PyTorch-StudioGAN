@@ -434,4 +434,4 @@ StudioGAN is established for the following research project. Please cite our wor
 
 <a name="footnote_8">[8]</a> IS is computed using Tensorflow official code.
 
-<a name="footnote_9">[9]</a> GANs with [TTUR](https://arxiv.org/abs/1706.08500) and train mode evaluation.
+<a name="footnote_9">[9]</a> GANs trained using [TTUR](https://arxiv.org/abs/1706.08500) and evaluated on train mode.
