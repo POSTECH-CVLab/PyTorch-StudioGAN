@@ -1,0 +1,18 @@
+[INFO] 2021-03-07 14:12:53 > Generator checkpoint is checkpoints/contra_imagenet/model=G-current-weights-step=250000.pth
+[INFO] 2021-03-07 14:12:53 > Discriminator checkpoint is checkpoints/contra_imagenet/model=D-current-weights-step=250000.pth
+[INFO] 2021-03-07 14:12:57 > Start Evaluation (250000 Step): contra_biggan_imagenet128_hinge_no-train-2020_08_08_18_45_52
+[INFO] 2021-03-07 14:12:57 > Calculating FID Score....
+[INFO] 2021-03-07 14:14:23 > Calculating Inception Score....
+[INFO] 2021-03-07 14:15:31 > Calculate F_beta Score....
+[INFO] 2021-03-07 14:18:29 > Save image to ./figures/contra_biggan_imagenet128_hinge_no-train-2020_08_08_18_45_52/pr_curve.png
+[INFO] 2021-03-07 14:18:29 > Save image to ./figures/contra_biggan_imagenet128_hinge_no-train-2020_08_08_18_45_52/sim_heatmap.png
+[INFO] 2021-03-07 14:18:31 > Calculate Accuracies....
+[INFO] 2021-03-07 14:20:19 > Calculate Accuracies....
+[INFO] 2021-03-07 14:21:27 > F_8 score (Step: 250000, Using valid images): 0.9278824184811575
+[INFO] 2021-03-07 14:21:27 > F_1/8 score (Step: 250000, Using valid images): 0.9514570102856253
+[INFO] 2021-03-07 14:21:27 > FID score (Step: 250000, Using valid moments): 19.693299879159838
+[INFO] 2021-03-07 14:21:27 > Inception score (Step: 250000, 50000 generated images): 31.101842880249023
+[INFO] 2021-03-07 14:21:27 > Best FID score (Step: 250000, Using valid moments): 19.693299879159838
+[INFO] 2021-03-07 14:33:59 > Generator checkpoint is checkpoints/contra_imagenet/model=G-current-weights-step=250000.pth
+[INFO] 2021-03-07 14:33:59 > Discriminator checkpoint is checkpoints/contra_imagenet/model=D-current-weights-step=250000.pth
+[INFO] 2021-03-07 14:34:03 > Start Evaluation (250000 Step): contra_biggan_imagenet128_hinge_no-train-2020_08_08_18_45_52
