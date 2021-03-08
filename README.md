@@ -27,8 +27,9 @@
 | [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR'18 |  ResNet | cBN | PD | Hinge | False |
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR'18 |  ResNet | cBN | PD | Hinge | False |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML'19 |  ResNet | cBN | PD | Hinge | False |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | - |  Big ResNet | cBN | PD | Hinge | True |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | - |  Big ResNet Deep | cBN | PD | Hinge | True |
 | **BigGAN-Mod**<sup>[[3]](#footnote_3)</sup> | - |  Big ResNet | cBN | PD | Hinge | True |
-| **BigGAN-Deep-Mod**<sup>[[3]](#footnote_3)</sup> | - |  Big ResNet Deep | cBN | PD | Hinge | True |
 | [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
 | [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv'19 |  Big ResNet | cBN | PD | Hinge | True |
