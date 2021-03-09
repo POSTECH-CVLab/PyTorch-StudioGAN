@@ -424,4 +424,4 @@ StudioGAN is established for the following research project. Please cite our wor
 
 <a name="footnote_3">[3]</a> Our re-implementation of [BigGAN/BigGAN-Deep (ICLR'18)](https://arxiv.org/abs/1809.11096) with slight modifications, which bring strong performance enhancement for the experiment using CIFAR10.
 
-<a name="footnote_8">[4]</a> IS is computed using Tensorflow official code.
+<a name="footnote_4">[4]</a> IS is computed using Tensorflow official code.
