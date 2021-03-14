@@ -622,6 +622,8 @@ class make_worker(object):
                 if self.train:
                     self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
 
+            self.run_image_visualization(nrow=self.cfgs.nrow, ncol=self.cfgs.ncol, standing_statistics=False, standing_step="N/A")
+
             self.dis_model.train()
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)

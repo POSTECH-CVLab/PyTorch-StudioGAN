@@ -249,7 +249,6 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
         worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
 
     if cfgs.interpolation:
-        assert cfgs.architecture in ["big_resnet", "biggan_deep"], "StudioGAN does not support interpolation analysis except for biggan and biggan_deep."
         worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False,
                                         standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
         worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True,

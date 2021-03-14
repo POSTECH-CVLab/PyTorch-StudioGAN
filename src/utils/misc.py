@@ -199,12 +199,19 @@ def check_flags(train_configs, model_configs, n_gpus):
     if model_configs['data_processing']['dataset_name'] == 'cifar10':
         assert train_configs['eval_type'] in ['train', 'test'], "Cifar10 does not contain dataset for validation."
 
+    if train_configs['interpolation']:
+        assert model_configs['train']['model']['architecture'] in ["big_resnet", "biggan_deep"],\
+            "StudioGAN does not support interpolation analysis except for biggan and biggan_deep."
+
     elif model_configs['data_processing']['dataset_name'] in ['imagenet', 'tiny_imagenet', 'custom']:
         assert train_configs['eval_type'] == 'train' or train_configs['eval_type'] == 'valid', \
             "StudioGAN dose not support the evalutation protocol that uses the test dataset on imagenet, tiny imagenet, and custom datasets"
 
     assert train_configs['bn_stat_OnTheFly']*train_configs['standing_statistics'] == 0, \
-        "You can't turn on train_statistics and standing_statistics simultaneously."
+        "You can't turn on train_statistics for bn layers and standing_statistics simultaneously."
+
+    assert train_configs['bn_stat_OnTheFly']*train_configs['synchronized_bn'] == 0, \
+        "You can't turn on train_statistics for bn layers and synchronized_bn simultaneously."
 
     assert model_configs['train']['optimization']['batch_size'] % n_gpus == 0, \
         "Batch_size should be divided by the number of gpus."
@@ -384,6 +391,7 @@ def change_generator_mode(gen, gen_copy, bn_stat_OnTheFly, standing_statistics, 
 
 
 def plot_img_canvas(images, save_path, nrow, logger, logging=True):
+    if logger is None: logging = False
     directory = dirname(save_path)
 
     if not exists(abspath(directory)):
@@ -394,6 +402,7 @@ def plot_img_canvas(images, save_path, nrow, logger, logging=True):
 
 
 def plot_pr_curve(precision, recall, run_name, logger, logging=True):
+    if logger is None: logging=False
     directory = join('./figures', run_name)
 
     if not exists(abspath(directory)):
@@ -414,6 +423,7 @@ def plot_pr_curve(precision, recall, run_name, logger, logging=True):
 
 
 def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, logging=True):
+    if logger is None: logging=False
     directory = join('./figures', run_name)
 
     if not exists(abspath(directory)):
@@ -435,6 +445,7 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, logging=
 
 
 def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger, logging=True):
+    if logger is None: logging=False
     directory = join('./figures', run_name, flag)
 
     if not exists(abspath(directory)):
@@ -461,6 +472,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger, logging=Tru
 
 
 def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger, logging=True):
+    if logger is None: logging=False
     directory = join('./figures', run_name)
 
     if not exists(abspath(directory)):
