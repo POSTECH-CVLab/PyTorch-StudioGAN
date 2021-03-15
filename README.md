@@ -51,9 +51,8 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 
 | Method | Venue | Architecture | GC | DC | Loss | EMA |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
-| [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | AdaIN | - | Vanilla | True |
+| [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | - | - | Vanilla | True |
 
-[AdaIN](https://arxiv.org/abs/1703.06868) : Adaptive Instance Normalization.
 
 
 # Requirements
