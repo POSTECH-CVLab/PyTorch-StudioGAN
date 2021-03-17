@@ -8,6 +8,7 @@
 import glob
 import os
 import random
+import json
 from os.path import dirname, abspath, exists, join
 from torchlars import LARS
 
@@ -46,8 +47,8 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
     if local_rank == 0:
         logger = make_logger(run_name, None)
         logger.info('Run name : {run_name}'.format(run_name=run_name))
-        logger.info(train_configs)
-        logger.info(model_configs)
+        logger.info(json.dumps(train_configs, indent=2))
+        logger.info(json.dumps(model_configs, indent=2))
     else:
         logger = None
 
