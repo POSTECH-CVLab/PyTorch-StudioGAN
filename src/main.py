@@ -8,6 +8,7 @@
 import json
 import os
 import sys
+import random
 import warnings
 from argparse import ArgumentParser
 
@@ -92,11 +93,12 @@ def main():
         if train_configs['load_all_data_in_memory'] else None
 
     if train_configs['seed'] == -1:
+        train_configs['seed'] = random.randint(1,4096)
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
-        fix_all_seed(train_configs['seed'])
         cudnn.benchmark, cudnn.deterministic = False, True
 
+    fix_all_seed(train_configs['seed'])
     gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
     world_size = gpus_per_node*train_configs['nodes']
     if world_size == 1:
