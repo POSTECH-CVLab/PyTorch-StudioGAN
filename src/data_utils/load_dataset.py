@@ -86,49 +86,23 @@ class LoadDataset(Dataset):
 
 
     def load_dataset(self):
+        if self.hdf5_path is not None:
+            print('Loading %s into memory...' % self.hdf5_path)
+            with h5.File(self.hdf5_path, 'r') as f:
+                self.data = f['imgs'][:]
+                self.labels = f['labels'][:]
+                return
+
         if self.dataset_name == 'cifar10':
-            if self.hdf5_path is not None:
-                print('Loading %s into memory...' % self.hdf5_path)
-                with h5.File(self.hdf5_path, 'r') as f:
-                    self.data = f['imgs'][:]
-                    self.labels = f['labels'][:]
-            else:
-                self.data = CIFAR10(root=os.path.join('data', self.dataset_name),
-                                    train=self.train,
-                                    download=self.download)
+            self.data = CIFAR10(root=self.data_path,
+                                train=self.train,
+                                download=self.download)
 
-        elif self.dataset_name == 'imagenet':
-            if self.hdf5_path is not None:
-                print('Loading %s into memory...' % self.hdf5_path)
-                with h5.File(self.hdf5_path, 'r') as f:
-                    self.data = f['imgs'][:]
-                    self.labels = f['labels'][:]
-            else:
-                mode = 'train' if self.train == True else 'valid'
-                root = os.path.join('data','ILSVRC2012', mode)
-                self.data = ImageFolder(root=root)
+        elif self.dataset_name in ['imagenet', 'tiny_imagenet', 'custom']:
+            mode = 'train' if self.train == True else 'valid'
+            root = os.path.join(self.data_path, mode)
+            self.data = ImageFolder(root=root)
 
-        elif self.dataset_name == "tiny_imagenet":
-            if self.hdf5_path is not None:
-                print('Loading %s into memory...' % self.hdf5_path)
-                with h5.File(self.hdf5_path, 'r') as f:
-                    self.data = f['imgs'][:]
-                    self.labels = f['labels'][:]
-            else:
-                mode = 'train' if self.train == True else 'valid'
-                root = os.path.join('data','TINY_ILSVRC2012', mode)
-                self.data = ImageFolder(root=root)
-
-        elif self.dataset_name == "custom":
-            if self.hdf5_path is not None:
-                print('Loading %s into memory...' % self.hdf5_path)
-                with h5.File(self.hdf5_path, 'r') as f:
-                    self.data = f['imgs'][:]
-                    self.labels = f['labels'][:]
-            else:
-                mode = 'train' if self.train == True else 'valid'
-                root = os.path.join('data','CUSTOM', mode)
-                self.data = ImageFolder(root=root)
         else:
             raise NotImplementedError
 
