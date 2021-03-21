@@ -44,6 +44,19 @@ def init_weights(modules, initialize):
             pass
 
 
+def get_activation_fn(activation_fn):
+    act_fn = {
+        "ReLU": nn.ReLU(inplace=True),
+        "Leaky_ReLU": nn.LeakyReLU(negative_slope=0.1, inplace=True),
+        "ELU": nn.ELU(alpha=1.0, inplace=True),
+        "GELU": nn.GELU()
+    }
+    try:
+        return act_fn[activation_fn]
+    except KeyError:
+        raise NotImplementedError
+
+
 def conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True):
     return nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
                      stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias)
