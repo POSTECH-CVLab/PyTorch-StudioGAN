@@ -95,7 +95,7 @@ class Generator(nn.Module):
         self.shared_dim = shared_dim
         self.num_classes = num_classes
         self.mixed_precision = mixed_precision
-        conditional_bn = True if conditional_strategy in ["ACGAN", "ProjGAN", "ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"] else False
+        conditional_bn = True if conditional_strategy in ["ACGAN", "SSGAN", "ProjGAN", "ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"] else False
 
         self.in_dims =  g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
@@ -366,6 +366,9 @@ class Discriminator(nn.Module):
                 self.embedding = sn_embedding(num_classes, self.out_dims[-1])
             elif self.conditional_strategy == 'ACGAN':
                 self.linear4 = snlinear(in_features=self.out_dims[-1], out_features=num_classes)
+            elif self.conditional_strategy == 'SSGAN':
+                self.embedding = sn_embedding(num_classes, self.out_dims[-1])
+                self.linear4 = snlinear(in_features=self.out_dims[-1], out_features=num_classes)
             else:
                 pass
         else:
@@ -378,6 +381,9 @@ class Discriminator(nn.Module):
             elif self.conditional_strategy == 'ProjGAN':
                 self.embedding = embedding(num_classes, self.out_dims[-1])
             elif self.conditional_strategy == 'ACGAN':
+                self.linear4 = linear(in_features=self.out_dims[-1], out_features=num_classes)
+            elif self.conditional_strategy == 'SSGAN':
+                self.embedding = embedding(num_classes, self.out_dims[-1])
                 self.linear4 = linear(in_features=self.out_dims[-1], out_features=num_classes)
             else:
                 pass
@@ -421,5 +427,14 @@ class Discriminator(nn.Module):
                 cls_output = self.linear4(h)
                 return cls_output, authen_output
 
+            elif self.conditional_strategy == 'SSGAN':
+                authen_output = torch.squeeze(self.linear1(h))
+                cls_output = self.linear4(h)
+                assert torch.argmax(cls_output, dim=1).shape == label.shape
+                mask = label == -1
+                label = label * (1 - mask) + torch.argmax(cls_output, dim=1) * mask
+                assert (label == -1).sum() == 0
+                proj = torch.sum(torch.mul(self.embedding(label.detach()), h), 1)
+                return cls_output, proj + authen_output
             else:
                 raise NotImplementedError

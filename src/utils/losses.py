@@ -262,7 +262,7 @@ def calc_derv4gp(netD, conditional_strategy, real_data, fake_data, real_labels, 
         _, _, disc_interpolates = netD(interpolates, real_labels)
     elif conditional_strategy in ['ProjGAN', 'no']:
             disc_interpolates = netD(interpolates, real_labels)
-    elif conditional_strategy == 'ACGAN':
+    elif conditional_strategy in ['ACGAN', 'SSGAN']:
         _, disc_interpolates = netD(interpolates, real_labels)
     else:
         raise NotImplementedError
@@ -292,7 +292,7 @@ def calc_derv4dra(netD, conditional_strategy, real_data, real_labels, device):
         _, _, disc_interpolates = netD(interpolates, real_labels)
     elif conditional_strategy in ['ProjGAN', 'no']:
             disc_interpolates = netD(interpolates, real_labels)
-    elif conditional_strategy == 'ACGAN':
+    elif conditional_strategy in ['ACGAN', 'SSGAN']:
         _, disc_interpolates = netD(interpolates, real_labels)
     else:
         raise NotImplementedError
@@ -314,7 +314,7 @@ def calc_derv(inputs, labels, netD, conditional_strategy, device, netG=None):
         _, _, dis_out_fake = netD(fake_images, labels)
     elif conditional_strategy in ['ProjGAN', 'no']:
         dis_out_fake = netD(fake_images, labels)
-    elif conditional_strategy == 'ACGAN':
+    elif conditional_strategy in ['ACGAN' 'SSGAN']:
         _, dis_out_fake = netD(fake_images, labels)
     else:
         raise NotImplementedError
