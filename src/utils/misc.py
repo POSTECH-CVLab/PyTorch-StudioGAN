@@ -210,9 +210,6 @@ def check_flags(train_configs, model_configs, n_gpus):
     assert train_configs['bn_stat_OnTheFly']*train_configs['standing_statistics'] == 0, \
         "You can't turn on train_statistics for bn layers and standing_statistics simultaneously."
 
-    assert train_configs['bn_stat_OnTheFly']*train_configs['synchronized_bn'] == 0, \
-        "You can't turn on train_statistics for bn layers and synchronized_bn simultaneously."
-
     assert model_configs['train']['optimization']['batch_size'] % n_gpus == 0, \
         "Batch_size should be divided by the number of gpus."
 
