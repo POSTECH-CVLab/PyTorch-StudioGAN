@@ -92,13 +92,17 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
         return only_real_acc, only_fake_acc
     else:
         for batch_id in tqdm(range(total_batch), disable=disable_tqdm):
-            real_images, real_labels = next(data_iter)
+            try:
+                real_images, real_labels = next(data_iter)
+            except StopIteration:
+                dataset_iter = iter(dataloader)
+                real_images, real_labels = next(dataset_iter)
             real_images, real_labels = real_images.to(device), real_labels.to(device)
 
             with torch.no_grad():
                 if conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
                     _, _, dis_out_real = discriminator(real_images, real_labels)
-                elif conditional_strategy == ["ACGAN", "SSGAN"]:
+                elif conditional_strategy in ["ACGAN", "SSGAN"]:
                     _, dis_out_real = discriminator(real_images, real_labels)
                 elif conditional_strategy == "ProjGAN" or conditional_strategy == "no":
                     dis_out_real = discriminator(real_images, real_labels)

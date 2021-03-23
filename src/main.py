@@ -104,7 +104,8 @@ def main():
     if world_size == 1:
         warnings.warn('You have chosen a specific GPU. This will completely disable data parallelism.')
 
-    run_name = make_run_name(RUN_NAME_FORMAT, framework=train_configs['config_path'].split('/')[-1][:-5], phase='train')
+    framework = '-'.join([train_configs['config_path'].split('/')[-2], train_configs['config_path'].split('/')[-1][:-5]])
+    run_name = make_run_name(RUN_NAME_FORMAT, framework=framework, phase='train')
     if train_configs['disable_debugging_API']: torch.autograd.set_detect_anomaly(False)
     check_flags(train_configs, model_configs, world_size)
 

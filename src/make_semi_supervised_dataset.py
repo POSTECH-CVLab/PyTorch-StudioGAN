@@ -28,7 +28,7 @@ import json
 from argparse import ArgumentParser
 from functools import partial
 
-from utils.make_hdf5 import make_hdf5
+from utils.make_hdf5 import make_hdf5, make_subset_hdf5
 
 
 def osss_subset(labels, ratio=0.2, subset_class=10):
@@ -52,7 +52,7 @@ def ss_subset(labels, ratio=0.2):
 
 def make_semi_supervised_dataset(hdf5_path, sub_f):
     with h5.File(hdf5_path, 'a') as f:
-        labels = f['labels']
+        labels = f['labels'][...]
         ss_labels = sub_f(labels)
         assert labels.shape == ss_labels.shape
         data = f['labels']
@@ -80,4 +80,8 @@ if __name__ == '__main__':
         sub_f = partial(osss_subset, ratio=args.ratio, subset_class=args.subset_class)
     else:
         sub_f = partial(ss_subset, ratio=args.ratio)
+
     make_semi_supervised_dataset(hdf5_path_train, sub_f)
+
+    if args.subset_class != -1:
+        _ = make_subset_hdf5(model_configs['data_processing'], train_configs, mode="eval", subset_class=args.subset_class)

@@ -431,9 +431,9 @@ class Discriminator(nn.Module):
                 authen_output = torch.squeeze(self.linear1(h))
                 cls_output = self.linear4(h)
                 assert torch.argmax(cls_output, dim=1).shape == label.shape
-                mask = label == -1
+                mask = (label == -1).int()
                 label = label * (1 - mask) + torch.argmax(cls_output, dim=1) * mask
-                assert (label == -1).sum() == 0
+                assert (label == -1).int().sum() == 0
                 proj = torch.sum(torch.mul(self.embedding(label.detach()), h), 1)
                 return cls_output, proj + authen_output
             else:

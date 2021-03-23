@@ -260,8 +260,8 @@ class make_worker(object):
                         if self.conditional_strategy == "ACGAN":
                             dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
                         elif self.conditional_strategy == "SSGAN":
-                            mask = real_laels != -1
-                            dis_acml_loss += (self.ce_loss(cls_out_real[mask], real_labels[mask]) + self.ce_loss(cls_out_fake, fake_labels))                            
+                            mask = real_labels != -1
+                            dis_acml_loss += (self.ce_loss(cls_out_real[mask], real_labels[mask]) + self.ce_loss(cls_out_fake, fake_labels))
                         elif self.conditional_strategy == "NT_Xent_GAN":
                             real_images_aug = CR_DiffAug(real_images)
                             _, cls_embed_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
@@ -392,7 +392,7 @@ class make_worker(object):
                         if self.ada:
                             fake_images, _ = augment(fake_images, self.ada_aug_p)
 
-                        if self.conditional_strategy == ["ACGAN", "SSGAN"]:
+                        if self.conditional_strategy in ["ACGAN", "SSGAN"]:
                             cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
                         elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
                             dis_out_fake = self.dis_model(fake_images, fake_labels)
@@ -412,7 +412,7 @@ class make_worker(object):
                             zcr_gen_loss = -1 * self.l2_loss(fake_images, fake_images_zaug)
                             gen_acml_loss += self.gen_lambda*zcr_gen_loss
 
-                        if self.conditional_strategy == ["ACGAN", "SSGAN"]:
+                        if self.conditional_strategy in ["ACGAN", "SSGAN"]:
                             gen_acml_loss += self.ce_loss(cls_out_fake, fake_labels)
                         elif self.conditional_strategy == "ContraGAN":
                             gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, self.margin)

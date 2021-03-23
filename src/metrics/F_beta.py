@@ -110,7 +110,11 @@ class precision_recall(object):
         dataset_iter = iter(dataloader)
         n_batches = int(math.ceil(float(num_generate) / float(batch_size)))
         for i in tqdm(range(n_batches), disable = self.disable_tqdm):
-            real_images, real_labels = next(dataset_iter)
+            try:
+                real_images, real_labels = next(dataset_iter)
+            except StopIteration:
+                dataset_iter = iter(dataloader)
+                real_images, real_labels = next(dataset_iter)
             real_images, real_labels = real_images.to(self.device), real_labels.to(self.device)
             fake_images = self.generate_images(gen, dis, truncated_factor, prior, latent_op, latent_op_step,
                                                latent_op_alpha, latent_op_beta, batch_size)

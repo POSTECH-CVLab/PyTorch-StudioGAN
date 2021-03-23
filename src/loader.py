@@ -64,8 +64,10 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
 
     if local_rank == 0: logger.info('Load {mode} datasets...'.format(mode=cfgs.eval_type))
     eval_mode = True if cfgs.eval_type == 'train' else False
+    hdf5_path_eval = hdf5_path_train.replace('train', 'eval') 
+    hdf5_path_eval = hdf5_path_eval if os.path.exists(hdf5_path_eval) else None
     eval_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=eval_mode, download=True, resize_size=cfgs.img_size,
-                               hdf5_path=None, random_flip=False)
+                               hdf5_path=hdf5_path_eval, random_flip=False)
     if local_rank == 0: logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
 
     if cfgs.distributed_data_parallel:
