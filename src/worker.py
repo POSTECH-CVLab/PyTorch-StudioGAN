@@ -677,7 +677,7 @@ class make_worker(object):
             if self.latent_op:
                 zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
                                         self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                        False, self.local_rank, sampler=self.sampler)
+                                        False, self.local_rank)
 
             generated_images = generator(zs, fake_labels, evaluation=True)
 
