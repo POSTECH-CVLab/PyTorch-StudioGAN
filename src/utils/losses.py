@@ -69,9 +69,11 @@ def latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy,
                 transport_cost = (delta_z.norm(2, dim=1)**2).mean()
             else:
                 transport_cost += (delta_z.norm(2, dim=1)**2).mean()
-            return zs, trans_cost
-        else:
-            return zs
+
+    if trans_cost:
+        return zs, trans_cost
+    else:
+        return zs
 
 
 def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):

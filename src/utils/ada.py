@@ -409,7 +409,7 @@ def random_apply_color(img, p, C=None):
     return img, C
 
 
-def augment(img, p, transform_matrix=(None, None)):
+def ADAugment(img, p, transform_matrix=(None, None)):
     img, G = random_apply_affine(img, p, transform_matrix[0])
     img, C = random_apply_color(img, p, transform_matrix[1])
 

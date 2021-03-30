@@ -18,7 +18,22 @@ from torch.nn import DataParallel
 
 
 
-def sample_latents(dist, batch_size, dim, truncated_factor=1, num_classes=None, perturb=None, device=torch.device("cpu"), sampler="default"):
+def truncated_normal(size, threshold=1):
+    values = truncnorm.rvs(-threshold, threshold, size=size)
+    return values
+
+
+def sample_normal(batch_size, dim, truncated_factor, device):
+    if truncated_factor == -1.0:
+        latents = torch.randn(batch_size, dim, device=device)
+    elif truncated_factor > 0:
+        latents = truncated_normal([batch_size, dim], truncated_factor).to(device)
+    else:
+        raise ValueError("truncated_factor must be positive.")
+    return latents
+
+
+def sample_latents(dist, batch_size, dim, truncated_factor=-1.0, num_classes=None, perturb=None, device=torch.device("cpu"), sampler="default"):
     if num_classes:
         if sampler == "default":
             y_fake = torch.randint(low=0, high=num_classes, size=(batch_size,), dtype=torch.long, device=device)
@@ -44,24 +59,21 @@ def sample_latents(dist, batch_size, dim, truncated_factor=1, num_classes=None, 
 
     if isinstance(perturb, float) and perturb > 0.0:
         if dist == "gaussian":
-            latents = torch.randn(batch_size, dim, device=device)/truncated_factor
-            eps = perturb*torch.randn(batch_size, dim, device=device)
-            latents_eps = latents + eps
+            latents = sample_normal(batch_size, dim, truncated_factor, device)
+            latents_eps = latents + perturb*sample_normal(batch_size, dim, -1.0, device)
         elif dist == "uniform":
             latents = torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
-            eps = perturb*torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
-            latents_eps = latents + eps
-        elif dist == "hyper_sphere":
-            latents, latents_eps = random_ball(batch_size, dim, perturb=perturb)
-            latents, latents_eps = torch.FloatTensor(latents).to(device), torch.FloatTensor(latents_eps).to(device)
+            latents_eps = latents + perturb*torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
+        else:
+            raise NotImplementedError
         return latents, y_fake, latents_eps
     else:
         if dist == "gaussian":
-            latents = torch.randn(batch_size, dim, device=device)/truncated_factor
+            latents = sample_normal(batch_size, dim, truncated_factor, device)
         elif dist == "uniform":
             latents = torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
-        elif dist == "hyper_sphere":
-            latents = random_ball(batch_size, dim, perturb=perturb).to(device)
+        else:
+            raise NotImplementedError
         return latents, y_fake
 
 
@@ -91,16 +103,20 @@ def sample_1hot(batch_size, num_classes, device='cuda'):
                          device=device, dtype=torch.int64, requires_grad=False)
 
 
-def make_mask(labels, n_cls, device):
+def make_mask(labels, n_cls, mask_negatives, device):
     labels = labels.detach().cpu().numpy()
     n_samples = labels.shape[0]
-    mask_multi = np.zeros([n_cls, n_samples])
+    if mask_negatives:
+        mask_multi, target = np.zeros([n_cls, n_samples]), 1.0
+    else:
+        mask_multi, target = np.ones([n_cls, n_samples]), 0.0
+
     for c in range(n_cls):
         c_indices = np.where(labels==c)
-        mask_multi[c, c_indices] =+1
+        mask_multi[c, c_indices] = target
 
-    mask_multi = torch.tensor(mask_multi).type(torch.long)
-    return mask_multi.to(device)
+    return torch.tensor(mask_multi).type(torch.long).to(device)
+
 
 
 def target_class_sampler(dataset, target_class):

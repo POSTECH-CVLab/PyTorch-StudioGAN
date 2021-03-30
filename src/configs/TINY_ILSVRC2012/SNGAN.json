@@ -15,6 +15,7 @@
       "conditional_strategy": "ProjGAN",
       "pos_collected_numerator": false,
       "hypersphere_dim": "N/A",
+      "bottleneck_dim": "N/A",
       "nonlinear_embed": false,
       "normalize_embed": false,
       "g_spectral_norm": false,
@@ -28,7 +29,11 @@
       "g_conv_dim": 64,
       "d_conv_dim": 64,
       "G_depth": "N/A",
-      "D_depth": "N/A"
+      "D_depth": "N/A",
+      "prior": "gaussian",
+      "ema": false,
+      "ema_decay": "N/A",
+      "ema_start": "N/A"
     },
 
     "optimization": {
@@ -37,6 +42,8 @@
       "accumulation_steps": 1,
       "d_lr": 0.0004,
       "g_lr": 0.0001,
+      "d_weight_decay": 0.0,
+      "g_weight_decay": 0.0,
       "momentum": "N/A",
       "nesterov": "N/A",
       "alpha": "N/A",
@@ -76,24 +83,7 @@
       "zcr": false,
       "gen_lambda": "N/A",
       "dis_lambda": "N/A",
-      "sigma_noise": "N/A"
-    },
-
-    "initialization":{
-      "g_init": "ortho",
-      "d_init": "ortho"
-    },
-
-    "training_and_sampling_setting":{
-      "random_flip_preprocessing": true,
-      "diff_aug": false,
-
-      "ada": false,
-      "ada_target": "N/A",
-      "ada_length": "N/A",
-
-      "prior": "gaussian",
-      "truncated_factor": 1,
+      "sigma_noise": "N/A",
 
       "latent_op": false,
       "latent_op_rate":"N/A",
@@ -101,11 +91,22 @@
       "latent_op_step4eval":"N/A",
       "latent_op_alpha":"N/A",
       "latent_op_beta":"N/A",
-      "latent_norm_reg_weight":"N/A",
+      "latent_norm_reg_weight":"N/A"
+    },
 
-      "ema": false,
-      "ema_decay": "N/A",
-      "ema_start": "N/A"
+    "initialization":{
+      "g_init": "ortho",
+      "d_init": "ortho"
+    },
+
+    "augmentation":{
+      "random_flip_preprocessing": true,
+
+      "diff_aug": false,
+
+      "ada": false,
+      "ada_target": "N/A",
+      "ada_length": "N/A"
     }
   }
 }

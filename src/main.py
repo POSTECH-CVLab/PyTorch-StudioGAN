@@ -49,6 +49,7 @@ def main():
     parser.add_argument('-rm_API', '--disable_debugging_API', action='store_true', help='whether disable pytorch autograd debugging mode')
 
     parser.add_argument('--reduce_train_dataset', type=float, default=1.0, help='control the number of train dataset')
+    parser.add_argument('--truncated_factor', type=float, default=-1.0, help='factor for truncation trick')
     parser.add_argument('-stat_otf', '--bn_stat_OnTheFly', action='store_true', help='when evaluating, use the statistics of a batch')
     parser.add_argument('-std_stat', '--standing_statistics', action='store_true')
     parser.add_argument('--standing_step', type=int, default=-1, help='# of steps for accumulation batchnorm')

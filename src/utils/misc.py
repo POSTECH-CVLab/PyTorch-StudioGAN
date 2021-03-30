@@ -139,6 +139,27 @@ def setup(rank, world_size, backend="nccl"):
                                 world_size=world_size)
 
 
+class GatherLayer(torch.autograd.Function):
+    """
+    This file is copied from
+    https://github.com/open-mmlab/OpenSelfSup/blob/master/openselfsup/models/utils/gather_layer.py
+    Gather tensors from all process, supporting backward propagation
+    """
+    @staticmethod
+    def forward(ctx, input):
+        ctx.save_for_backward(input)
+        output = [torch.zeros_like(input) for _ in range(dist.get_world_size())]
+        dist.all_gather(output, input)
+        return tuple(output)
+
+    @staticmethod
+    def backward(ctx, *grads):
+        input, = ctx.saved_tensors
+        grad_out = torch.zeros_like(input)
+        grad_out[:] = grads[dist.get_rank()]
+        return grad_out
+
+
 def cleanup():
     dist.destroy_process_group()
 
@@ -213,8 +234,8 @@ def check_flags(train_configs, model_configs, n_gpus):
     assert model_configs['train']['optimization']['batch_size'] % n_gpus == 0, \
         "Batch_size should be divided by the number of gpus."
 
-    assert int(model_configs['train']['training_and_sampling_setting']['diff_aug']) * \
-        int(model_configs['train']['training_and_sampling_setting']['ada']) == 0, \
+    assert int(model_configs['train']['augmentation']['diff_aug']) * \
+        int(model_configs['train']['augmentation']['ada']) == 0, \
         "You can't simultaneously apply Differentiable Augmentation (DiffAug) and Adaptive Discriminator Augmentation (ADA)."
 
     assert int(train_configs['mixed_precision'])*int(model_configs['train']['loss_function']['gradient_penalty_for_dis']) == 0, \
@@ -262,9 +283,11 @@ def set_bn_train(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.train()
 
+
 def untrack_bn_statistics(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.track_running_stats = False
+
 
 def track_bn_statistics(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
@@ -354,7 +377,7 @@ def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_cl
     generator.apply(reset_bn_stat)
     for i in range(acml_step):
         new_batch_size = random.randint(1, batch_size)
-        z, fake_labels = sample_latents(prior, new_batch_size, z_dim, 1, num_classes, None, device)
+        z, fake_labels = sample_latents(prior, new_batch_size, z_dim, -1.0, num_classes, None, device)
         generated_images = generator(z, fake_labels)
     generator.eval()
 

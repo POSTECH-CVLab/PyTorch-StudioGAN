@@ -1,29 +1,29 @@
 {
   "data_processing":{ 
-      "dataset_name": "tiny_imagenet",
-      "data_path": "./data/TINY_ILSVRC2012",
-      "img_size": 64,
-      "num_classes": 200,
-      "batch_size4prcsing": 256,
-      "chunk_size": 500,
-      "compression": false
-    },
+    "dataset_name": "cifar10",
+    "data_path": "./data/cifar10",
+    "img_size": 32,
+    "num_classes": 10,
+    "batch_size4prcsing": 256,
+    "chunk_size": 500,
+    "compression": false
+  },
 
   "train": {
     "model": {
       "architecture": "resnet",
-      "conditional_strategy": "ProjGAN",
+      "conditional_strategy": "ACGAN",
       "pos_collected_numerator": false,
       "hypersphere_dim": "N/A",
       "bottleneck_dim": "N/A",
       "nonlinear_embed": false,
       "normalize_embed": false,
-      "g_spectral_norm": true,
-      "d_spectral_norm": true,
+      "g_spectral_norm": false,
+      "d_spectral_norm": false,
       "activation_fn": "ReLU",
-      "attention": true,
-      "attention_after_nth_gen_block": 3,
-      "attention_after_nth_dis_block": 1,
+      "attention": false,
+      "attention_after_nth_gen_block": "N/A",
+      "attention_after_nth_dis_block": "N/A",
       "z_dim": 128,
       "shared_dim": "N/A",
       "g_conv_dim": 64,
@@ -38,19 +38,19 @@
 
     "optimization": {
       "optimizer": "Adam",
-      "batch_size": 256,
+      "batch_size": 64,
       "accumulation_steps": 1,
-      "d_lr": 0.0004,
-      "g_lr": 0.0001,
+      "d_lr": 0.0002,
+      "g_lr": 0.0002,
       "d_weight_decay": 0.0,
       "g_weight_decay": 0.0,
       "momentum": "N/A",
       "nesterov": "N/A",
       "alpha": "N/A",
-      "beta1": 0.0,
+      "beta1": 0.5,
       "beta2": 0.999,
       "g_steps_per_iter": 1,
-      "d_steps_per_iter": 1,
+      "d_steps_per_iter": 5,
       "total_step": 100000
     },
 

@@ -1,17 +1,18 @@
+
 {
   "data_processing":{ 
-      "dataset_name": "tiny_imagenet",
-      "data_path": "./data/TINY_ILSVRC2012",
-      "img_size": 64,
-      "num_classes": 200,
-      "batch_size4prcsing": 256,
-      "chunk_size": 500,
-      "compression": false
-    },
+    "dataset_name": "tiny_imagenet",
+    "data_path": "./data/TINY_ILSVRC2012",
+    "img_size": 64,
+    "num_classes": 200,
+    "batch_size4prcsing": 256,
+    "chunk_size": 500,
+    "compression": false
+  },
 
   "train": {
     "model": {
-      "architecture": "resnet",
+      "architecture": "big_resnet",
       "conditional_strategy": "ProjGAN",
       "pos_collected_numerator": false,
       "hypersphere_dim": "N/A",
@@ -24,21 +25,21 @@
       "attention": true,
       "attention_after_nth_gen_block": 3,
       "attention_after_nth_dis_block": 1,
-      "z_dim": 128,
-      "shared_dim": "N/A",
-      "g_conv_dim": 64,
-      "d_conv_dim": 64,
-      "G_depth": "N/A",
-      "D_depth": "N/A",
+      "z_dim": 100,
+      "shared_dim": 128,
+      "g_conv_dim": 80,
+      "d_conv_dim": 80,
+      "G_depth":"N/A",
+      "D_depth":"N/A",
       "prior": "gaussian",
-      "ema": false,
-      "ema_decay": "N/A",
-      "ema_start": "N/A"
+      "ema": true,
+      "ema_decay": 0.9999,
+      "ema_start": 20000
     },
 
     "optimization": {
       "optimizer": "Adam",
-      "batch_size": 256,
+      "batch_size": 1024,
       "accumulation_steps": 1,
       "d_lr": 0.0004,
       "g_lr": 0.0001,
@@ -51,13 +52,13 @@
       "beta2": 0.999,
       "g_steps_per_iter": 1,
       "d_steps_per_iter": 1,
-      "total_step": 100000
+      "total_step": 200000
     },
 
     "loss_function": {
-      "adv_loss": "hinge",
+      "adv_loss": "vanilla",
 
-      "contrastive_lambda": "N/A",
+      "contrastive_lambda":"N/A",
       "margin": "N/A", 
       "tempering_type": "N/A",
       "tempering_step": "N/A",
@@ -74,7 +75,7 @@
       "regret_penalty_lambda": "N/A",
 
       "cr": false,
-      "cr_lambda": "N/A",
+      "cr_lambda":"N/A",
 
       "bcr": false,
       "real_lambda": "N/A",
@@ -86,12 +87,12 @@
       "sigma_noise": "N/A",
 
       "latent_op": false,
-      "latent_op_rate":"N/A",
-      "latent_op_step":"N/A",
-      "latent_op_step4eval":"N/A",
-      "latent_op_alpha":"N/A",
-      "latent_op_beta":"N/A",
-      "latent_norm_reg_weight":"N/A"
+      "latent_op_rate": "N/A",
+      "latent_op_step": "N/A",
+      "latent_op_step4eval": "N/A",
+      "latent_op_alpha": "N/A",
+      "latent_op_beta": "N/A",
+      "latent_norm_reg_weight": "N/A"
     },
 
     "initialization":{
@@ -104,9 +105,9 @@
 
       "diff_aug": false,
 
-      "ada": false,
-      "ada_target": "N/A",
-      "ada_length": "N/A"
+      "ada": true,
+      "ada_target": 0.6,
+      "ada_length": 100000000
     }
   }
 }
