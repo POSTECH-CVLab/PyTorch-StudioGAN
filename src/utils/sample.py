@@ -9,6 +9,7 @@ import numpy as np
 import random
 from numpy import linalg
 from math import sin,cos,sqrt
+from scipy.stats import truncnorm
 
 from utils.losses import latent_optimise
 
