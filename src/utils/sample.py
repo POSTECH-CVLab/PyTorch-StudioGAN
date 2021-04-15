@@ -28,7 +28,7 @@ def sample_normal(batch_size, dim, truncated_factor, device):
     if truncated_factor == -1.0:
         latents = torch.randn(batch_size, dim, device=device)
     elif truncated_factor > 0:
-        latents = truncated_normal([batch_size, dim], truncated_factor).to(device)
+        latents = torch.FloatTensor(truncated_normal([batch_size, dim], truncated_factor)).to(device)
     else:
         raise ValueError("truncated_factor must be positive.")
     return latents
