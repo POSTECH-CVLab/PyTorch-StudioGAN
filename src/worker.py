@@ -54,9 +54,9 @@ LOG_FORMAT = (
 
 
 class make_worker(object):
-    def __init__(self, cfgs, train_configs, model_configs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model, 
+    def __init__(self, cfgs, train_configs, model_configs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model,
                  inception_model, Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, G_optimizer,
-                 D_optimizer, G_loss, D_loss, prev_ada_p, global_rank, local_rank, bn_stat_OnTheFly, checkpoint_dir, mu, sigma, 
+                 D_optimizer, G_loss, D_loss, prev_ada_p, global_rank, local_rank, bn_stat_OnTheFly, checkpoint_dir, mu, sigma,
                  best_fid, best_fid_checkpoint_path):
 
         self.cfgs = cfgs
@@ -190,11 +190,9 @@ class make_worker(object):
             self.num_eval = {'train':50000, 'valid':10000}
         elif self.dataset_name == "cifar10":
             self.num_eval = {'train':50000, 'test':10000}
-        elif self.dataset_name == "custom":
+        else:
             num_train_images, num_eval_images = len(self.train_dataset.data), len(self.eval_dataset.data)
             self.num_eval = {'train':num_train_images, 'valid':num_eval_images}
-        else:
-            raise NotImplementedError
 
 
     ################################################################################################################################
