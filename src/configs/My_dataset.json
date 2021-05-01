@@ -1,7 +1,7 @@
 {
   "data_processing":{
     "dataset_name": "CUB200",
-    "data_path": "/root/code/Margin_ContraGAN/data/CUB200/",
+    "data_path": "./data/CUB200/",
     "img_size": 128,
     "num_classes": 200,
     "batch_size4prcsing": 256,
