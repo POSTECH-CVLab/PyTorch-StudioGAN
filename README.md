@@ -9,7 +9,7 @@
 ※ Thank GeorgeBatch for your helpful [ipynb documentations](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/tree/master/colab) on how to use StudioGAN in Colab environment.
 
 #  Features
-- Extensive GAN implementations for PyTorch
+- Extensive GAN implementations using PyTorch
 - Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets
 - Better performance and lower memory consumption than original implementations
 - Providing pre-trained models that are fully compatible with up-to-date PyTorch environment
