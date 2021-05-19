@@ -224,10 +224,6 @@ def check_flags(train_configs, model_configs, n_gpus):
         assert model_configs['train']['model']['architecture'] in ["big_resnet", "biggan_deep"],\
             "StudioGAN does not support interpolation analysis except for biggan and biggan_deep."
 
-    elif model_configs['data_processing']['dataset_name'] in ['imagenet', 'tiny_imagenet', 'custom']:
-        assert train_configs['eval_type'] == 'train' or train_configs['eval_type'] == 'valid', \
-            "StudioGAN dose not support the evalutation protocol that uses the test dataset on imagenet, tiny imagenet, and custom datasets"
-
     assert train_configs['bn_stat_OnTheFly']*train_configs['standing_statistics'] == 0, \
         "You can't turn on train_statistics for bn layers and standing_statistics simultaneously."
 
