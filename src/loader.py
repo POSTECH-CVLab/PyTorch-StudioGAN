@@ -157,7 +157,7 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
         writer = SummaryWriter(log_dir=join('./logs', run_name)) if global_rank == 0 else None
         if cfgs.train_configs['train'] and cfgs.seed != trained_seed:
             cfgs.seed = trained_seed
-            fix_all_seed(cfgs.seed) 
+            fix_all_seed(cfgs.seed)
 
         if local_rank == 0: logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
         if local_rank == 0: logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))

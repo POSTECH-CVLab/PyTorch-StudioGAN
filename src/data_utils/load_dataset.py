@@ -53,12 +53,11 @@ class CenterCropLongEdge(object):
 
 
 class LoadDataset(Dataset):
-    def __init__(self, dataset_name, data_path, train, download, resize_size, hdf5_path=None, random_flip=False):
+    def __init__(self, dataset_name, data_path, train, resize_size, hdf5_path=None, random_flip=False):
         super(LoadDataset, self).__init__()
         self.dataset_name = dataset_name
         self.data_path = data_path
         self.train = train
-        self.download = download
         self.resize_size = resize_size
         self.hdf5_path = hdf5_path
         self.random_flip = random_flip
@@ -96,7 +95,7 @@ class LoadDataset(Dataset):
         if self.dataset_name == 'cifar10':
             self.data = CIFAR10(root=self.data_path,
                                 train=self.train,
-                                download=self.download)
+                                download=True)
 
         else:
             mode = 'train' if self.train == True else 'valid'

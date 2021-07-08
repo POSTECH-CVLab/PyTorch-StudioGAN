@@ -4,7 +4,6 @@
     "data_path": "./data/cifar10",
     "img_size": 32,
     "num_classes": 10,
-    "batch_size4prcsing": 256,
     "chunk_size": 500,
     "compression": false
   },
