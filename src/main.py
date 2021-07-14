@@ -20,6 +20,7 @@ from config import DefineConfigs
 from loader import prepare_train_eval
 from utils.hdf5 import make_hdf5
 from utils.log import make_run_name
+from utils.misc  import fix_all_seed
 
 
 RUN_NAME_FORMAT = (
@@ -87,35 +88,38 @@ def main():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    cfgs = DefineConfigs("logger")
+    cfgs = DefineConfigs(args.cfg_file)
     cfgs.update_cfgs(run_cfgs, super="RUN")
-    import pdb;pdb.set_trace()
+    run_name = make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
 
-    hdf5_path_train = make_hdf5(model_cfgs["data_processing"], train_cfgs, mode="train") \
-        if train_cfgs["load_all_data_in_memory"] else None
+    hdf5_path = make_hdf5(cfgs.DATA, cfgs.RUN) if cfgs.RUN.load_data_in_memory else None
 
-    if train_configs["seed"] == -1:
-        train_configs["seed"] = random.randint(1,4096)
+    if cfgs.RUN.seed == -1:
+        cfgs.RUN.seed = random.randint(1,4096)
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
         cudnn.benchmark, cudnn.deterministic = False, True
+    fix_all_seed(cfgs.RUN.seed)
 
-    fix_all_seed(train_configs["seed"])
     gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
-    world_size = gpus_per_node*train_configs["nodes"]
+    world_size = gpus_per_node*cfgs.RUN.total_nodes
     if world_size == 1:
         warnings.warn("You have chosen a specific GPU. This will completely disable data parallelism.")
 
-    run_name = make_run_name(RUN_NAME_FORMAT, framework=train_configs["config_path"].split("/")[-1][:-5], phase="train")
-    torch.autograd.set_detect_anomaly(False)
-    check_flags(train_configs, model_configs, world_size)
-
-    if train_configs["distributed_data_parallel"] and world_size > 1:
+    if cfgs.RUN.distributed_data_parallel and world_size > 1:
         print("Train the models through DistributedDataParallel (DDP) mode.")
-        mp.spawn(prepare_train_eval, nprocs=gpus_per_node, args=(gpus_per_node, world_size, run_name,
-                                                                 train_configs, model_configs, hdf5_path_train))
+        mp.spawn(prepare_train_eval, nprocs=gpus_per_node, args=(gpus_per_node,
+                                                                 world_size,
+                                                                 run_name,
+                                                                 cfgs,
+                                                                 hdf5_path))
     else:
-        prepare_train_eval(rank, gpus_per_node, world_size, run_name, train_configs, model_configs, hdf5_path_train=hdf5_path_train)
+        prepare_train_eval(local_rank=rank,
+                           gpus_per_node=gpus_per_node,
+                           world_size=world_size,
+                           run_name=run_name,
+                           cfgs=cfgs,
+                           hdf5_path=hdf5_path)
 
 if __name__ == "__main__":
     main()

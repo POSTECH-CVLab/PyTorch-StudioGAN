@@ -15,10 +15,10 @@ from yacs.config import CfgNode as CN
 
 
 class DefineConfigs(object):
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self, cfg_file):
+        self.cfg_file = cfg_file
         self.load_base_cfgs()
-        self._overwrite_cfgs("./configs/CIFAR10/ContraGAN.yaml")
+        self._overwrite_cfgs(self.cfg_file)
 
 
     def load_base_cfgs(self):

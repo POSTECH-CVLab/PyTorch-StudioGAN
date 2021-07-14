@@ -53,9 +53,9 @@ class CenterCropLongEdge(object):
 
 
 class LoadDataset(Dataset):
-    def __init__(self, dataset_name, data_path, train, resize_size, hdf5_path=None, random_flip=False):
+    def __init__(self, data_name, data_path, train, resize_size, hdf5_path=None, random_flip=False):
         super(LoadDataset, self).__init__()
-        self.dataset_name = dataset_name
+        self.data_name = data_name
         self.data_path = data_path
         self.train = train
         self.resize_size = resize_size
@@ -65,7 +65,7 @@ class LoadDataset(Dataset):
         self.norm_std = [0.5,0.5,0.5]
 
         if self.hdf5_path is None:
-            if self.dataset_name in ['cifar10', 'tiny_imagenet']:
+            if self.data_name in ['cifar10', 'tiny_imagenet']:
                 self.transforms = []
             else:
                 if train:
@@ -92,7 +92,7 @@ class LoadDataset(Dataset):
                 self.labels = f['labels'][:]
                 return
 
-        if self.dataset_name == 'cifar10':
+        if self.data_name == 'cifar10':
             self.data = CIFAR10(root=self.data_path,
                                 train=self.train,
                                 download=True)

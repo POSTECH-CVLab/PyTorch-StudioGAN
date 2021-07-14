@@ -107,8 +107,8 @@ def dict2clsattr(train_configs, model_configs):
     return cfg_container
 
 
-# fix python, numpy, torch seed
 def fix_all_seed(seed):
+    # fix python, numpy, torch seed
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
