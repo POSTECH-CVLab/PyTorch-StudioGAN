@@ -5,10 +5,10 @@
 # src/main.py
 
 
-import os
-import sys
 import json
+import os
 import random
+import sys
 import warnings
 from argparse import ArgumentParser
 
@@ -16,9 +16,9 @@ import torch
 import torch.multiprocessing as mp
 from torch.backends import cudnn
 
+from loader import prepare_train_eval
 from utils.hdf5 import make_hdf5
 from utils.log import make_run_name
-from loader import prepare_train_eval
 
 
 RUN_NAME_FORMAT = (
@@ -34,27 +34,25 @@ def main():
     parser.add_argument("-ckpt", "--ckpt_dir", type=str, default=None)
     parser.add_argument("-log", "--log_file", type=str, default=None)
     parser.add_argument("-best", "--load_best", action="store_true",
-                        help="whether you want to load the best performed checkpoint or not")
+                        help="whether to load the best performed checkpoint or not")
 
     parser.add_argument("-DDP", "--distributed_data_parallel", action="store_true")
     parser.add_argument("-tn", "--total_nodes", default=1, type=int, help="total number of nodes for training")
     parser.add_argument("-cn", "--current_node", default=0, type=int, help="rank of the current node")
 
     parser.add_argument("--seed", type=int, default=-1, help="seed for generating random numbers")
-    parser.add_argument("--num_workers", type=int, default=8, help="")
-    parser.add_argument("-sync_bn", "--synchronized_bn", action="store_true", help="whether turn on synchronized batchnorm")
-    parser.add_argument("-mpc", "--mixed_precision", action="store_true", help="whether turn on mixed precision training")
-    parser.add_argument("-LARS", "--LARS_optimizer", action="store_true", help="whether turn on LARS optimizer")
+    parser.add_argument("--num_workers", type=int, default=8)
+    parser.add_argument("-sync_bn", "--synchronized_bn", action="store_true", help="whether to turn on synchronized batchnorm")
+    parser.add_argument("-mpc", "--mixed_precision", action="store_true", help="whether to turn on mixed precision training")
+    parser.add_argument("-LARS", "--LARS_optimizer", action="store_true", help="whether to turn on LARS optimizer")
 
-    parser.add_argument("--reduce_dataset", type=float, default=0.0, help="reducing rate of the number of train dataset \
-                        (0.7 indicates dropping 70 percent of the train dataset.)")
     parser.add_argument("--truncation_th", type=float, default=-1.0, help="threshold value for truncation trick \
                         (-1.0 means not applying truncation trick)")
     parser.add_argument("-batch_stat", "--batch_statistics", action="store_true",
                         help="use the statistics of a batch when evaluating GAN \
                         (if false, use the moving average updated statistics)")
     parser.add_argument("-std_stat", "--standing_statistics", action="store_true",
-                        help="whether applying standing statistics for evaluation")
+                        help="whether to apply standing statistics for evaluation")
     parser.add_argument("-std_step", "--standing_step", type=int, default=-1, help="# of steps for standing statistics \
                         (-1.0 menas not applying standing statistics trick for evaluation)")
     parser.add_argument("--freezeD", type=int, default=-1,
@@ -64,16 +62,16 @@ def main():
     parser.add_argument("-t", "--train", action="store_true")
     parser.add_argument("-e", "--eval", action="store_true")
     parser.add_argument("-s", "--save_fake_imgs", action="store_true")
-    parser.add_argument("-v", "--vis_fake_imgs", action="store_true", help="whether visualize image canvas")
-    parser.add_argument("-knn", "--k_nearest_neighbor", action="store_true", help="whether conduct k-nearest neighbor analysis")
-    parser.add_argument("-itp", "--interpolation", action="store_true", help="whether conduct interpolation analysis")
-    parser.add_argument("-fa", "--frequency_analysis", action="store_true", help="whether conduct frequency analysis")
-    parser.add_argument("-tsne", "--tsne_analysis", action="store_true", help="whether conduct tsne analysis")
+    parser.add_argument("-v", "--vis_fake_imgs", action="store_true", help="whether to visualize image canvas")
+    parser.add_argument("-knn", "--k_nearest_neighbor", action="store_true", help="whether to conduct k-nearest neighbor analysis")
+    parser.add_argument("-itp", "--interpolation", action="store_true", help="whether to conduct interpolation analysis")
+    parser.add_argument("-fa", "--frequency_analysis", action="store_true", help="whether to conduct frequency analysis")
+    parser.add_argument("-tsne", "--tsne_analysis", action="store_true", help="whether to conduct tsne analysis")
 
-    parser.add_argument("--print_every", type=int, default=100, help="control logging interval")
-    parser.add_argument("--save_every", type=int, default=2000, help="control save interval")
-    parser.add_argument("--eval_every", type=int, default=2000, help="control evaluation interval")
-    parser.add_argument("-ref", "--ref_dataset", type=str, default="train", help="[train/valid/test]")
+    parser.add_argument("--print_every", type=int, default=100, help="logging interval")
+    parser.add_argument("--save_every", type=int, default=2000, help="save interval")
+    parser.add_argument("--eval_every", type=int, default=2000, help="evaluation interval")
+    parser.add_argument("-ref", "--ref_dataset", type=str, default="train", help="reference dataset for evaluation[train/valid/test]")
     args = parser.parse_args()
 
     if not args.train and \
