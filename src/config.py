@@ -10,21 +10,22 @@ import os
 import random
 import sys
 import warnings
+import yaml
+from yacs.config import CfgNode as CN
 
 
 class DefineConfigs(object):
     def __init__(self, logger):
         self.logger = logger
         self.load_base_cfgs()
-        self._overwrite_cfgs()
-        self._check_compatability()
-        self.print_cfgs()
+        self._overwrite_cfgs("./configs/CIFAR10/ContraGAN.yaml")
 
 
     def load_base_cfgs(self):
         # -----------------------------------------------------------------------------
         # Data settings
         # -----------------------------------------------------------------------------
+        self.DATA = lambda: None
         # dataset name \in ["CIFAR10", "Tiny_ImageNet", "CUB200", "ImageNet", "My_Dataset"]
         self.DATA.name = "CIFAR10"
         # dataset path for data loading
@@ -37,6 +38,7 @@ class DefineConfigs(object):
         # -----------------------------------------------------------------------------
         # Model settings
         # -----------------------------------------------------------------------------
+        self.MODEL = lambda: None
         # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet"]
         self.MODEL.backbone = "big_resnet"
         # conditioning method of the generator \in ["W/O", "cBN"]
@@ -90,6 +92,7 @@ class DefineConfigs(object):
         # -----------------------------------------------------------------------------
         # loss settings
         # -----------------------------------------------------------------------------
+        self.LOSS = lambda: None
         # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge"]
         self.LOSS.adv_loss = "hinge"
         # balancing hyperparameter for conditional image generation
@@ -140,6 +143,7 @@ class DefineConfigs(object):
         # -----------------------------------------------------------------------------
         # optimizer settings
         # -----------------------------------------------------------------------------
+        self.OPTIMIZER = lambda: None
         # type of the optimizer for GAN training \in ["SGD", RMSprop, "Adam"]
         self.OPTIMIZER.type_ = "Adam"
         # number of batch size for GAN training,
@@ -174,12 +178,14 @@ class DefineConfigs(object):
         # -----------------------------------------------------------------------------
         # preprocessing settings
         # -----------------------------------------------------------------------------
+        self.PRE = lambda: None
         # whether to apply random flip preprocessing before training
-        self.Pre.apply_Rflip = True
+        self.PRE.apply_Rflip = True
 
         # -----------------------------------------------------------------------------
         # differentiable augmentation settings
         # -----------------------------------------------------------------------------
+        self.AUG = lambda: None
         # whether to apply differentiable augmentation used in DiffAugmentGAN
         self.AUG.apply_diffaug = False
         # whether to apply adaptive discriminator augmentation
@@ -188,3 +194,33 @@ class DefineConfigs(object):
         self.AUG.ada_target = "N/A"
         # augmentation probability = augmentation probability +/- (ada_target/ada_length)
         self.AUG.ada_length = "N/A"
+
+        # -----------------------------------------------------------------------------
+        # run settings
+        # -----------------------------------------------------------------------------
+        self.RUN = lambda: None
+
+        # -----------------------------------------------------------------------------
+        # misc settings
+        # -----------------------------------------------------------------------------
+        self.MISC = lambda: None
+
+        self.super_cfgs = {"DATA": self.DATA,
+                           "MODEL": self.MODEL,
+                           "LOSS": self.LOSS,
+                           "OPTIMIZER": self.OPTIMIZER,
+                           "PRE": self.PRE,
+                           "AUG": self.AUG,
+                           "RUN": self.RUN,
+                           "MISC": self.MISC}
+
+    def update_cfgs(self, cfgs, super="MISC"):
+        for attr, value in cfgs.items():
+            setattr(self.super_cfgs[super], attr, value)
+
+    def _overwrite_cfgs(self, cfg_file):
+        with open(cfg_file, 'r') as f:
+            yaml_cfg = yaml.load(f, Loader=yaml.FullLoader)
+            for super_cfg_name, attr_value in yaml_cfg.items():
+                for attr, value in attr_value.items():
+                    setattr(self.super_cfgs[super_cfg_name], attr, value)

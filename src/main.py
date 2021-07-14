@@ -16,6 +16,7 @@ import torch
 import torch.multiprocessing as mp
 from torch.backends import cudnn
 
+from config import DefineConfigs
 from loader import prepare_train_eval
 from utils.hdf5 import make_hdf5
 from utils.log import make_run_name
@@ -30,7 +31,7 @@ RUN_NAME_FORMAT = (
 
 def main():
     parser = ArgumentParser(add_help=True)
-    parser.add_argument("-cfg", "--cfg_file", type=str, default="./src/configs/CIFAR10/ContraGAN.json")
+    parser.add_argument("-cfg", "--cfg_file", type=str, default="./src/configs/CIFAR10/ContraGAN.yaml")
     parser.add_argument("-ckpt", "--ckpt_dir", type=str, default=None)
     parser.add_argument("-log", "--log_file", type=str, default=None)
     parser.add_argument("-best", "--load_best", action="store_true",
@@ -73,6 +74,7 @@ def main():
     parser.add_argument("--eval_every", type=int, default=2000, help="evaluation interval")
     parser.add_argument("-ref", "--ref_dataset", type=str, default="train", help="reference dataset for evaluation[train/valid/test]")
     args = parser.parse_args()
+    run_cfgs = vars(args)
 
     if not args.train and \
             not args.eval and \
@@ -85,9 +87,9 @@ def main():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    with open(args.config_file) as f:
-        model_cfgs = json.load(f)
-    train_cfgs = vars(args)
+    cfgs = DefineConfigs("logger")
+    cfgs.update_cfgs(run_cfgs, super="RUN")
+    import pdb;pdb.set_trace()
 
     hdf5_path_train = make_hdf5(model_cfgs["data_processing"], train_cfgs, mode="train") \
         if train_cfgs["load_all_data_in_memory"] else None
