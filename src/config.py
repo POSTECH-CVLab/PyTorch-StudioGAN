@@ -11,7 +11,6 @@ import random
 import sys
 import warnings
 import yaml
-from yacs.config import CfgNode as CN
 
 
 class DefineConfigs(object):
