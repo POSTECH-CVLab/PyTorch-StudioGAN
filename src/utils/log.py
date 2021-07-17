@@ -12,14 +12,12 @@ from os.path import dirname, abspath, exists, join
 from datetime import datetime
 
 
-
 def make_run_name(format, framework, phase):
     return format.format(
         framework=framework,
         phase=phase,
         timestamp=datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     )
-
 
 def make_logger(run_name, log_output):
     if log_output is not None:
@@ -45,7 +43,6 @@ def make_logger(run_name, log_output):
         logger.addHandler(stream_handler)
         logger.setLevel(logging.INFO)
     return logger
-
 
 def make_checkpoint_dir(checkpoint_dir, run_name):
     checkpoint_dir = checkpoint_dir if checkpoint_dir is not None else join('checkpoints', run_name)

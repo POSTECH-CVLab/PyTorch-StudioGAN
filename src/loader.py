@@ -5,41 +5,40 @@
 # src/loader.py
 
 
-import json
-import glob
-import os
-import warnings
-import random
 from os.path import dirname, abspath, exists, join
+import glob
+import json
+import os
+import random
+import warnings
+
 from torchlars import LARS
-
-from data_utils.load_dataset import *
-from metrics.inception_network import InceptionV3
-from metrics.prepare_inception_moments import prepare_inception_moments
-from utils.log import make_checkpoint_dir, make_logger
-from utils.losses import *
-from utils.load_checkpoint import load_checkpoint
-from utils.misc import *
-from utils.biggan_utils import ema, ema_DP_SyncBN
-from sync_batchnorm.batchnorm import convert_model
-from worker import make_worker
-
-import torch
 from torch.utils.data import DataLoader
 from torch.nn import DataParallel
-from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
+from torch.nn.parallel import DistributedDataParallel as DDP
+import torch
+
+from data_util.load_dataset import LoadDataset
+from metrics.inception_net import InceptionV3
+from metrics.prepare_inception_moments import prepare_inception_moments
+from sync_batchnorm.batchnorm import convert_model
+
+import worker
+import utils.log as log
+import utils.loss as loss
+import utils.ema as ema
+import utils.ckpt as ckpt
+import utils.misc as misc
 
 
-
-def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_configs, model_configs, hdf5_path_train):
-    cfgs = dict2clsattr(train_configs, model_configs)
+def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, cfgs, hdf5_path):
     prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
 
-    if cfgs.distributed_data_parallel:
-        global_rank = cfgs.nr*(gpus_per_node) + local_rank
-        print("Use GPU: {} for training.".format(global_rank))
-        setup(global_rank, world_size)
+    if cfgs.RUN.distributed_data_parallel:
+        global_rank = cfgs.RUN.cn*(gpus_per_node) + local_rank
+        print("Use GPU: %s for training." % (global_rank))
+        misc.setup(global_rank, world_size)
         torch.cuda.set_device(local_rank)
     else:
         global_rank = local_rank
@@ -48,19 +47,15 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, train_co
     if local_rank == 0:
         logger = make_logger(run_name, None)
         logger.info('Run name : {run_name}'.format(run_name=run_name))
-        logger.info(json.dumps(train_configs, indent=2))
-        logger.info(json.dumps(model_configs, indent=2))
+        for k, v in cfgs.super_cfgs.items():
+            logger.info(k)
+            logger.info(json.dumps(vars(v), indent=2))
     else:
         logger = None
 
-    ##### load dataset #####
     if local_rank == 0: logger.info('Load train datasets...')
     train_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=True, download=True, resize_size=cfgs.img_size,
                                 hdf5_path=hdf5_path_train, random_flip=cfgs.random_flip_preprocessing)
-    if cfgs.reduce_train_dataset < 1.0:
-        num_train = int(cfgs.reduce_train_dataset*len(train_dataset))
-        train_dataset, _ = torch.utils.data.random_split(train_dataset, [num_train, len(train_dataset) - num_train])
-    if local_rank == 0: logger.info('Train dataset size : {dataset_size}'.format(dataset_size=len(train_dataset)))
 
     if local_rank == 0: logger.info('Load {mode} datasets...'.format(mode=cfgs.eval_type))
     eval_mode = True if cfgs.eval_type == 'train' else False

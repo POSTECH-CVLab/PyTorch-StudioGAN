@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/config.py
+# src/define_config.py
 
 
 import json
@@ -13,12 +13,11 @@ import warnings
 import yaml
 
 
-class DefineConfigs(object):
+class Configurations(object):
     def __init__(self, cfg_file):
         self.cfg_file = cfg_file
         self.load_base_cfgs()
         self._overwrite_cfgs(self.cfg_file)
-
 
     def load_base_cfgs(self):
         # -----------------------------------------------------------------------------
