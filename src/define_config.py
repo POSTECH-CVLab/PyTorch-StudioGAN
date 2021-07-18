@@ -18,6 +18,7 @@ class Configurations(object):
         self.cfg_file = cfg_file
         self.load_base_cfgs()
         self._overwrite_cfgs(self.cfg_file)
+        self._check_compatability()
 
     def load_base_cfgs(self):
         # -----------------------------------------------------------------------------
@@ -222,3 +223,66 @@ class Configurations(object):
             for super_cfg_name, attr_value in yaml_cfg.items():
                 for attr, value in attr_value.items():
                     setattr(self.super_cfgs[super_cfg_name], attr, value)
+
+    def _check_compatability(self):
+        if self.load_data_in_memory:
+            assert self.load_train_hdf5, "load_data_in_memory option is only appliable with the load_train_hdf5 option."
+
+        if self.MODEL.backbone == "deep_conv":
+            assert self.DATA.img_size == 32, "StudioGAN does not support the deep_conv backbone for the dataset whose spatial resolution is not 32."
+
+        if self.RUN.freezeD > -1:
+            assert self.RUN.ckpt_dir is not None, "Freezing discriminator needs a pre-trained model.\
+                Please specify the checkpoint directory for loading a pre-trained discriminator."
+
+        if self.RUN.distributed_data_parallel:
+            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, and tsne analysis with DDP. \
+                Please change DDP with a single GPU training or DataParallel instead."
+            assert self.RUN.vis_fake_imgs + \
+                self.RUN.k_nearest_neighbor + \
+                self.RUN.interpolation + \
+                self.RUN.frequency_analysis + \
+                self.RUN.tsne_analysis == 0, \
+            msg
+
+        if self.MODEL.d_cond_mtd in ["ContraGAN", "ReACGAN"]:
+            assert not self.RUN.distributed_data_parallel, \
+            "StudioGAN does not support DDP training for ContraGAN and ReACGAN."
+
+        if self.RUN.train*self.RUN.standing_statistics:
+            print("StudioGAN does not support standing_statistics during training. \
+                  After training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model using the accumulated satistics.")
+
+        if self.RUN.distributed_data_parallel:
+            msg = "Turning on DDP might cause inexact evaluation results. \
+                Please use a single GPU or DataParallel for the exact evluation."
+            warnings.warn(msg)
+
+        if self.DATA.name == "CIFAR10":
+            assert self.RUN.ref_dataset in ["train", "test"], "There is no data for validation."
+
+        if self.RUN.interpolation:
+            assert self.RUN.backbone in ["big_resnet", "deep_big_resnet"], \
+                "StudioGAN does not support interpolation analysis except for biggan and deep_big_resnet."
+
+        assert self.RUN.batch_statistics*self.RUN.standing_statistics == 0, \
+            "You can't turn on batch_statistics and standing_statistics simultaneously."
+
+        assert self.OPTIMIZER.batch_size % self.world_size == 0, \
+            "Batch_size should be divided by the number of gpus."
+
+        assert int(self.AUG.apply_diff_aug)*int(self.AUG.apply_ada) == 0, \
+            "You can't apply Differentiable Augmentation and Adaptive Discriminator Augmentation simultaneously."
+
+        assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_gp) == 0, \
+            "You can't apply mixed precision training and gradient penalty regularization simultaneously."
+
+        assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_dra) == 0, \
+            "You can't simultaneously apply mixed precision training and deep regret analysis for training DRAGAN."
+
+        assert int(self.LOSS.apply_cr)*int(self.LOSS.apply_bcr) == 0 and \
+            int(self.LOSS.apply_cr)*int(self.LOSS.apply_zcr) == 0, \
+            "You can't simultaneously turn on consistency reg. and improved consistency reg.."
+
+        assert int(self.LOSS.apply_gp)*int(self.LOSS.apply_dra) == 0, \
+            "You can't simultaneously apply gradient penalty regularization and deep regret analysis for training DRAGAN."

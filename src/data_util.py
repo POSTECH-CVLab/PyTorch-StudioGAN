@@ -62,8 +62,6 @@ class LoadDataset(Dataset):
         self.hdf5_path = hdf5_path
         self.load_data_in_memory = load_data_in_memory
         self.trsf_list = []
-        # should make assert caution
-        # print("load_data_in_memory option can not be appliable without -hdf5 option")
 
         if self.hdf5_path is not None:
             if self.random_flip:
@@ -90,8 +88,8 @@ class LoadDataset(Dataset):
             with h5.File(self.hdf5_path, 'r') as f:
                 self.data = np.transpose(f["imgs"], (0, 2, 3, 1))
                 self.labels = f["labels"]
-                print("Loading %s into memory..." % self.hdf5_path)
                 if self.load_data_in_memory:
+                    print("Loading %s into memory..." % self.hdf5_path)
                     self.data, self.labels = self.data[:], self.labels[:]
                 return
 

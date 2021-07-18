@@ -60,8 +60,11 @@ def main():
     parser.add_argument("--freezeD", type=int, default=-1,
                         help="# of freezed blocks in the discriminator for transfer learning")
 
-    parser.add_argument("-l", "--load_data_in_memory", action="store_true")
     parser.add_argument("-t", "--train", action="store_true")
+    parser.add_argument("-hdf5", "--load_train_hdf5", action="store_true",
+                        help="load a train dataset from a hdf5 file for fast I/O")
+    parser.add_argument("-l", "--load_data_in_memory", action="store_true",
+                        help="put the whole train dataset on the main memory for fast I/O")
     parser.add_argument("-e", "--eval", action="store_true")
     parser.add_argument("-s", "--save_fake_imgs", action="store_true")
     parser.add_argument("-v", "--vis_fake_imgs", action="store_true", help="whether to visualize image canvas")
@@ -92,7 +95,9 @@ def main():
     cfgs.update_cfgs(run_cfgs, super="RUN")
     run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
 
-    hdf5_path = hdf5.make_hdf5(cfgs.DATA, cfgs.RUN) if cfgs.RUN.load_data_in_memory else None
+    crop_long_edge = True if cfgs.DATA in ["CUB200", "ImageNet"] else False
+    resize_size = None if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else cfgs.DATA.img_size
+    hdf5_path = hdf5.make_hdf5(cfgs.DATA, cfgs.RUN, crop_long_edge, resize_size) if cfgs.RUN.load_data_in_memory else None
 
     if cfgs.RUN.seed == -1:
         cfgs.RUN.seed = random.randint(1,4096)
@@ -103,6 +108,7 @@ def main():
 
     gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
     world_size = gpus_per_node*cfgs.RUN.total_nodes
+    cfgs.OPTIMIZER.world_size = world_size
     if world_size == 1:
         warnings.warn("You have chosen a specific GPU. This will completely disable data parallelism.")
 

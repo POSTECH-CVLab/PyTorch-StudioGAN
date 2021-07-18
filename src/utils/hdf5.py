@@ -31,7 +31,7 @@ from torch.utils.data import DataLoader
 from data_utils.load_dataset import LoadDataset
 
 
-def make_hdf5(DATA, RUN):
+def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
     file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=DATA.name,
                                                               size=DATA.img_size)
     file_path = os.path.join(DATA.path, file_name)
@@ -42,10 +42,12 @@ def make_hdf5(DATA, RUN):
     else:
         dataset = LoadDataset(data_name=DATA.name,
                               data_path=DATA.path,
-                              resize_size=DATA.img_size,
                               train=True,
+                              crop_long_edge=crop_long_edge,
+                              resize_size=resize_size,
+                              random_flip=False,
                               hdf5_path=None,
-                              random_flip=False)
+                              load_data_in_memory=False)
 
         dataloader = DataLoader(dataset,
                                 batch_size=500,
