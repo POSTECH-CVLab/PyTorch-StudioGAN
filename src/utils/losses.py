@@ -2,58 +2,47 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/utils/losses.py
+# src/utils/loss.py
 
 
-import numpy as np
-
-from utils.model_ops import snlinear, linear
-
+from torch.nn import DataParallel
+from torch import autograd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import DataParallel
-from torch import autograd
+import numpy as np
+
+import utils.ops as ops
 
 
+def d_vanilla(d_logit_real, d_logit_fake):
+    device = d_logit_real.get_device()
+    ones = torch.ones_like(d_logit_real, device=device, requires_grad=False)
+    d_loss = -torch.mean(nn.LogSigmoid()(d_logit_real) + nn.LogSigmoid()(ones - d_logit_fake))
+    return d_loss
 
-# DCGAN loss
-def loss_dcgan_dis(dis_out_real, dis_out_fake):
-    device = dis_out_real.get_device()
-    ones = torch.ones_like(dis_out_real, device=device, requires_grad=False)
-    dis_loss = -torch.mean(nn.LogSigmoid()(dis_out_real) + nn.LogSigmoid()(ones - dis_out_fake))
-    return dis_loss
+def g_vanilla(g_logit_fake):
+    return -torch.mean(nn.LogSigmoid()(g_logit_fake))
 
+def d_ls(d_logit_real, d_logit_fake):
+    d_loss = 0.5*(d_logit_real - torch.ones_like(d_logit_real))**2 + 0.5*(d_logit_fake)**2
+    return d_loss.mean()
 
-def loss_dcgan_gen(gen_out_fake):
-    return -torch.mean(nn.LogSigmoid()(gen_out_fake))
-
-
-def loss_lsgan_dis(dis_out_real, dis_out_fake):
-    dis_loss = 0.5*(dis_out_real - torch.ones_like(dis_out_real))**2 + 0.5*(dis_out_fake)**2
-    return dis_loss.mean()
-
-
-def loss_lsgan_gen(dis_out_fake):
-    gen_loss = 0.5*(dis_out_fake - torch.ones_like(dis_out_fake))**2
+def g_ls(d_logit_fake):
+    gen_loss = 0.5*(d_logit_fake - torch.ones_like(d_logit_fake))**2
     return gen_loss.mean()
 
+def d_hinge(d_logit_real, d_logit_fake):
+    return torch.mean(F.relu(1. - d_logit_real)) + torch.mean(F.relu(1. + d_logit_fake))
 
-def loss_hinge_dis(dis_out_real, dis_out_fake):
-    return torch.mean(F.relu(1. - dis_out_real)) + torch.mean(F.relu(1. + dis_out_fake))
+def g_hinge(g_logit_fake):
+    return -torch.mean(g_logit_fake)
 
+def d_wasserstein(d_logit_real, d_logit_fake):
+    return torch.mean(d_logit_fake - d_logit_real)
 
-def loss_hinge_gen(gen_out_fake):
-    return -torch.mean(gen_out_fake)
-
-
-def loss_wgan_dis(dis_out_real, dis_out_fake):
-    return torch.mean(dis_out_fake - dis_out_real)
-
-
-def loss_wgan_gen(gen_out_fake):
-    return -torch.mean(gen_out_fake)
-
+def g_wasserstein(g_logit_fake):
+    return -torch.mean(g_logit_fake)
 
 def latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, latent_op_rate,
                     latent_op_alpha, latent_op_beta, trans_cost, default_device):

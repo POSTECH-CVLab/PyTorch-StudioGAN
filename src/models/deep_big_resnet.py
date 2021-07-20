@@ -2,16 +2,15 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# models/big_resnet_deep.py
+# models/deep_big_resnet.py
 
-
-from utils.model_ops import *
-from utils.misc import *
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import utils.ops as ops
+import utils.misc as misc
 
 
 class GenBlock(nn.Module):

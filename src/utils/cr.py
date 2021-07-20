@@ -2,14 +2,13 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/utils/cr_diff_aug.py
+# src/utils/cr.py
 
 
 import random
 
 import torch
 import torch.nn.functional as F
-
 
 
 def CR_DiffAug(x, flip=True, translation=True):

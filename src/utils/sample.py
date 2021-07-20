@@ -5,18 +5,15 @@
 # src/utils/sample.py
 
 
-import numpy as np
 import random
+
+from torch.nn import DataParallel
 from numpy import linalg
 from math import sin,cos,sqrt
 from scipy.stats import truncnorm
-
-from utils.losses import latent_optimise
-
 import torch
 import torch.nn.functional as F
-from torch.nn import DataParallel
-
+import numpy as np
 
 
 def truncated_normal(size, threshold=1):

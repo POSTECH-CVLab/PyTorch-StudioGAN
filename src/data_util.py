@@ -5,18 +5,19 @@
 # src/data_util.py
 
 
-from scipy import io
-from PIL import ImageOps, Image
-import h5py as h5
-import numpy as np
 import os
 import random
 
 from torch.utils.data import Dataset
 from torchvision.datasets import CIFAR10, STL10
 from torchvision.datasets import ImageFolder
+from scipy import io
+from PIL import ImageOps, Image
+
 import torch
 import torchvision.transforms as transforms
+import h5py as h5
+import numpy as np
 
 
 class RandomCropLongEdge(object):
@@ -51,10 +52,10 @@ class CenterCropLongEdge(object):
         return self.__class__.__name__
 
 
-class LoadDataset(Dataset):
+class Dataset_(Dataset):
     def __init__(self, data_name, data_path, train, crop_long_edge=False, resize_size=None, random_flip=False,
                  hdf5_path=None, load_data_in_memory=False):
-        super(LoadDataset, self).__init__()
+        super(Dataset_, self).__init__()
         self.data_name = data_name
         self.data_path = data_path
         self.train = train

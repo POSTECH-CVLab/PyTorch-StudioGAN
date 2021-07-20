@@ -2,18 +2,17 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/metrics/IS.py
+# src/metrics/ins.py
+
 
 import math
-from tqdm import tqdm
 
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
-
-import torch
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
+from tqdm import tqdm
+import torch
 
+import utils.sample as sample
 
 
 class evaluator(object):

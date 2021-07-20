@@ -1,11 +1,13 @@
 ''' Tensorflow inception score code
 Derived from https://github.com/openai/improved-gan
 Code derived from tensorflow/tensorflow/models/image/imagenet/classify_image.py
-THIS CODE REQUIRES TENSORFLOW 1.3 or EARLIER to run in PARALLEL BATCH MODE 
-To use this code, run sample.py on your model with --sample_npz, and then 
+THIS CODE REQUIRES TENSORFLOW 1.3 or EARLIER to run in PARALLEL BATCH MODE
+To use this code, run sample.py on your model with --sample_npz, and then
 pass the experiment name in the --experiment_name.
 This code also saves pool3 stats to an npz file for FID calculation
 '''
+
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -14,12 +16,13 @@ import os.path
 import sys
 import tarfile
 import math
-from tqdm import tqdm, trange
 from argparse import ArgumentParser
 
-import numpy as np
 from six.moves import urllib
+from tqdm import tqdm, trange
 import tensorflow as tf
+import numpy as np
+
 
 MODEL_DIR = './inception_model'
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
@@ -42,7 +45,7 @@ def prepare_parser():
 
 def run(config):
   # Inception with TF1.3 or earlier.
-  # Call this function with list of images. Each of elements should be a 
+  # Call this function with list of images. Each of elements should be a
   # numpy array with values ranging from 0 to 255.
   def get_inception_score(images, splits=10):
     assert(type(images) == list)

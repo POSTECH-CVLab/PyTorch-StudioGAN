@@ -17,118 +17,117 @@ from torch.utils.data import DataLoader
 from torch.nn import DataParallel
 from torch.utils.tensorboard import SummaryWriter
 from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data.distributed import DistributedSampler
 import torch
 
-from data_util.load_dataset import LoadDataset
+from data_util import Dataset_
 from metrics.inception_net import InceptionV3
-from metrics.prepare_inception_moments import prepare_inception_moments
 from sync_batchnorm.batchnorm import convert_model
-
 import worker
 import utils.log as log
-import utils.loss as loss
-import utils.ema as ema
+import utils.losses as losses
 import utils.ckpt as ckpt
 import utils.misc as misc
+import models.model as model
+import metrics.preparation as pp
 
 
-def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, cfgs, hdf5_path):
-    prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path, mu, sigma, inception_model = None, 0, 0, None, None, None, None, None
-
+def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
+    # -----------------------------------------------------------------------------
+    # initialize all processes and identify the local rank.
+    # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
         global_rank = cfgs.RUN.cn*(gpus_per_node) + local_rank
-        print("Use GPU: %s for training." % (global_rank))
-        misc.setup(global_rank, world_size)
+        print("Use GPU: {global_rank} for training.".format(global_rank))
+        misc.setup(global_rank, cfgs.OPTIMIZER.world_size)
         torch.cuda.set_device(local_rank)
     else:
         global_rank = local_rank
 
-    writer = SummaryWriter(log_dir=join('./logs', run_name)) if local_rank == 0 else None
+    # -----------------------------------------------------------------------------
+    # define tensorflow writer and python logger.
+    # -----------------------------------------------------------------------------
+    writer = SummaryWriter(log_dir=join("./logs", run_name)) if local_rank == 0 else None
     if local_rank == 0:
-        logger = make_logger(run_name, None)
-        logger.info('Run name : {run_name}'.format(run_name=run_name))
+        logger = log.make_logger(run_name, None)
+        logger.info("Run name : {run_name}".format(run_name=run_name))
         for k, v in cfgs.super_cfgs.items():
-            logger.info(k)
+            logger.info(k + " configurations = ")
             logger.info(json.dumps(vars(v), indent=2))
     else:
         logger = None
 
-    if local_rank == 0: logger.info('Load train datasets...')
-    train_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=True, download=True, resize_size=cfgs.img_size,
-                                hdf5_path=hdf5_path_train, random_flip=cfgs.random_flip_preprocessing)
+    # -----------------------------------------------------------------------------
+    # load train and evaluation dataset.
+    # -----------------------------------------------------------------------------
+    if cfgs.RUN.train:
+        if local_rank == 0: logger.info("Load {name} train dataset".format(name=cfgs.DATA.name))
+        train_dataset = Dataset_(data_name=cfgs.DATA.name,
+                                data_path=cfgs.DATA.path,
+                                train=True,
+                                crop_long_edge=cfgs.PRE.crop_long_edge,
+                                resize_size=cfgs.PRE.resize_size,
+                                random_flip=cfgs.PRE.apply_rflip,
+                                hdf5_path=hdf5_path,
+                                load_data_in_memory=cfgs.RUN.load_data_in_memory)
+        if local_rank == 0: logger.info("Train dataset size: {dataset_size}".format(dataset_size=len(train_dataset)))
+    else:
+        train_dataset = None
 
-    if local_rank == 0: logger.info('Load {mode} datasets...'.format(mode=cfgs.eval_type))
-    eval_mode = True if cfgs.eval_type == 'train' else False
-    eval_dataset = LoadDataset(cfgs.dataset_name, cfgs.data_path, train=eval_mode, download=True, resize_size=cfgs.img_size,
-                               hdf5_path=None, random_flip=False)
-    if local_rank == 0: logger.info('Eval dataset size : {dataset_size}'.format(dataset_size=len(eval_dataset)))
+    if cfgs.RUN.eval:
+        if local_rank == 0: logger.info("Load {name} {mode} datasets".format(name=cfgs.DATA.name, mode=cfgs.RUN.ref_dataset))
+        eval_dataset = Dataset_(data_name=cfgs.DATA.name,
+                                data_path=cfgs.DATA.path,
+                                train=True if cfgs.RUN.ref_dataset=="train" else False,
+                                crop_long_edge=True if cfgs.DATA in ["CUB200", "ImageNet"] else False,
+                                resize_size=None if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else cfgs.DATA.img_size,
+                                random_flip=False,
+                                hdf5_path=None,
+                                load_data_in_memory=False)
+        if local_rank == 0: logger.info("Eval dataset size: {dataset_size}".format(dataset_size=len(eval_dataset)))
+    else:
+        eval_dataset = None
 
-    if cfgs.distributed_data_parallel:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        cfgs.batch_size = cfgs.batch_size//world_size
+    # -----------------------------------------------------------------------------
+    # define a distributed sampler for DDP training.
+    # define dataloaders for train and evaluation.
+    # -----------------------------------------------------------------------------
+    cfgs.OPTIMIZER.basket_size = cfgs.OPTIMIZER.batch_size*cfgs.OPTIMIZER.accm_step*cfgs.OPTIMIZER.d_steps_per_iter
+    if cfgs.RUN.distributed_data_parallel:
+        train_sampler = DistributedSampler(train_dataset)
+        cfgs.OPTIMIZER.basket_size = cfgs.OPTIMIZER.basket_size//cfgs.OPTIMIZER.world_size
     else:
         train_sampler = None
 
-    train_dataloader = DataLoader(train_dataset, batch_size=cfgs.batch_size, shuffle=(train_sampler is None), pin_memory=True,
-                                  num_workers=cfgs.num_workers, sampler=train_sampler, drop_last=True)
-    eval_dataloader = DataLoader(eval_dataset, batch_size=cfgs.batch_size, shuffle=False, pin_memory=True, num_workers=cfgs.num_workers, drop_last=False)
+    train_dataloader = DataLoader(dataset=train_dataset,
+                                  batch_size=cfgs.OPTIMIZER.basket_size,
+                                  shuffle=(train_sampler is None),
+                                  pin_memory=True,
+                                  num_workers=cfgs.RUN.num_workers,
+                                  sampler=train_sampler,
+                                  drop_last=True)
 
-    ##### build model #####
-    if local_rank == 0: logger.info('Build model...')
-    module = __import__('models.{architecture}'.format(architecture=cfgs.architecture), fromlist=['something'])
-    if local_rank == 0: logger.info('Modules are located on models.{architecture}.'.format(architecture=cfgs.architecture))
-    Gen = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
-                           cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
-                           cfgs.g_init, cfgs.G_depth, cfgs.mixed_precision).to(local_rank)
+    eval_dataloader = DataLoader(dataset=eval_dataset,
+                                 batch_size=cfgs.OPTIMIZER.batch_size,
+                                 shuffle=False,
+                                 pin_memory=True,
+                                 num_workers=cfgs.RUN.num_workers,
+                                 drop_last=False)
 
-    Dis = module.Discriminator(cfgs.img_size, cfgs.d_conv_dim, cfgs.d_spectral_norm, cfgs.attention, cfgs.attention_after_nth_dis_block,
-                               cfgs.activation_fn, cfgs.conditional_strategy, cfgs.hypersphere_dim, cfgs.num_classes, cfgs.nonlinear_embed,
-                               cfgs.normalize_embed, cfgs.d_init, cfgs.D_depth, cfgs.mixed_precision).to(local_rank)
+    # -----------------------------------------------------------------------------
+    # load a generator and a discriminator
+    # if cfgs.MODEL.apply_ema is True, load an exponential moving average generator (Gen_copy).
+    # -----------------------------------------------------------------------------
+    Gen, Dis, Gen_copy, Gen_ema = model.load_generator_discriminator(MODEL=cfgs.MODEL,
+                                                                     RUN=cfgs.RUN,
+                                                                     DATA=cfgs.DATA,
+                                                                     local_rank=local_rank,
+                                                                     logger=logger)
 
-    if cfgs.ema:
-        if local_rank == 0: logger.info('Prepare EMA for G with decay of {}.'.format(cfgs.ema_decay))
-        Gen_copy = module.Generator(cfgs.z_dim, cfgs.shared_dim, cfgs.img_size, cfgs.g_conv_dim, cfgs.g_spectral_norm, cfgs.attention,
-                                    cfgs.attention_after_nth_gen_block, cfgs.activation_fn, cfgs.conditional_strategy, cfgs.num_classes,
-                                    initialize=False, G_depth=cfgs.G_depth, mixed_precision=cfgs.mixed_precision).to(local_rank)
-        if not cfgs.distributed_data_parallel and world_size > 1 and cfgs.synchronized_bn:
-            Gen_ema = ema_DP_SyncBN(Gen, Gen_copy, cfgs.ema_decay, cfgs.ema_start)
-        else:
-            Gen_ema = ema(Gen, Gen_copy, cfgs.ema_decay, cfgs.ema_start)
-    else:
-        Gen_copy, Gen_ema = None, None
-
-    if local_rank == 0: logger.info(count_parameters(Gen))
-    if local_rank == 0: logger.info(Gen)
-
-    if local_rank == 0: logger.info(count_parameters(Dis))
-    if local_rank == 0: logger.info(Dis)
-
-
-    ### define loss functions and optimizers
-    G_loss = {'vanilla': loss_dcgan_gen, 'least_square': loss_lsgan_gen, 'hinge': loss_hinge_gen, 'wasserstein': loss_wgan_gen}
-    D_loss = {'vanilla': loss_dcgan_dis, 'least_square': loss_lsgan_dis, 'hinge': loss_hinge_dis, 'wasserstein': loss_wgan_dis}
-
-    if cfgs.optimizer == "SGD":
-        G_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Gen.parameters()), cfgs.g_lr,
-                                      weight_decay=cfgs.g_weight_decay, momentum=cfgs.momentum, nesterov=cfgs.nesterov)
-        D_optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, Dis.parameters()), cfgs.d_lr,
-                                      weight_decay=cfgs.d_weight_decay, momentum=cfgs.momentum, nesterov=cfgs.nesterov)
-    elif cfgs.optimizer == "RMSprop":
-        G_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Gen.parameters()), cfgs.g_lr,
-                                          weight_decay=cfgs.g_weight_decay, momentum=cfgs.momentum, alpha=cfgs.alpha)
-        D_optimizer = torch.optim.RMSprop(filter(lambda p: p.requires_grad, Dis.parameters()), cfgs.d_lr,
-                                          weight_decay=cfgs.d_weight_decay, momentum=cfgs.momentum, alpha=cfgs.alpha)
-    elif cfgs.optimizer == "Adam":
-        G_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Gen.parameters()), cfgs.g_lr, [cfgs.beta1, cfgs.beta2],
-                                       weight_decay=cfgs.g_weight_decay, eps=1e-6)
-        D_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, Dis.parameters()), cfgs.d_lr, [cfgs.beta1, cfgs.beta2],
-                                       weight_decay=cfgs.d_weight_decay, eps=1e-6)
-    else:
-        raise NotImplementedError
-
-    if cfgs.LARS_optimizer:
-        G_optimizer = LARS(optimizer=G_optimizer, eps=1e-8, trust_coef=0.001)
-        D_optimizer = LARS(optimizer=D_optimizer, eps=1e-8, trust_coef=0.001)
+    # -----------------------------------------------------------------------------
+    # load modules for training
+    # -----------------------------------------------------------------------------
+    train_modules = cfgs.define_modules(Gen, Dis)
 
     ##### load checkpoints if needed #####
     if cfgs.checkpoint_folder is None:
@@ -159,35 +158,21 @@ def prepare_train_eval(local_rank, gpus_per_node, world_size, run_name, cfgs, hd
         if cfgs.freeze_layers > -1 :
             prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
 
+    # -----------------------------------------------------------------------------
+    # prepare parallel training
+    # -----------------------------------------------------------------------------
+    Gen, Dis, Gen_copy = model.prepare_parallel_training(OPTIMIZER=cfgs.OPTIMIZER,
+                                                         RUN=cfgs.RUN,
+                                                         MODEL=cfgs.MODEL,
+                                                         Gen=Gen,
+                                                         Dis=Dis,
+                                                         Gen_copy=Gen_copy,
+                                                         local_rank=local_rank)
 
-    ##### wrap models with DP and convert BN to Sync BN #####
-    if world_size > 1:
-        if cfgs.distributed_data_parallel:
-            if cfgs.synchronized_bn:
-                process_group = torch.distributed.new_group([w for w in range(world_size)])
-                Gen = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen, process_group)
-                Dis = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Dis, process_group)
-                if cfgs.ema:
-                    Gen_copy = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen_copy, process_group)
-
-            Gen = DDP(Gen, device_ids=[local_rank])
-            Dis = DDP(Dis, device_ids=[local_rank])
-            if cfgs.ema:
-                Gen_copy = DDP(Gen_copy, device_ids=[local_rank])
-        else:
-            Gen = DataParallel(Gen, output_device=local_rank)
-            Dis = DataParallel(Dis, output_device=local_rank)
-            if cfgs.ema:
-                Gen_copy = DataParallel(Gen_copy, output_device=local_rank)
-
-            if cfgs.synchronized_bn:
-                Gen = convert_model(Gen).to(local_rank)
-                Dis = convert_model(Dis).to(local_rank)
-                if cfgs.ema:
-                    Gen_copy = convert_model(Gen_copy).to(local_rank)
-
-    ##### load the inception network and prepare first/secend moments for calculating FID #####
-    if cfgs.eval:
+    # -----------------------------------------------------------------------------
+    # load a pre-trained network (InceptionV3 or ResNet50 trained using SwAV)
+    # -----------------------------------------------------------------------------
+    if cfgs.RUN.eval:
         inception_model = InceptionV3().to(local_rank)
         if world_size > 1 and cfgs.distributed_data_parallel:
             toggle_grad(inception_model, on=True)

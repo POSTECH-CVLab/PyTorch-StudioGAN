@@ -15,22 +15,20 @@ limitations under the License.
 """
 
 
-import numpy as np
+from os.path import dirname, abspath, exists, join
 import math
 import os
 import shutil
-from os.path import dirname, abspath, exists, join
-from scipy import linalg
-from tqdm import tqdm
 
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
-
-import torch
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from torchvision.utils import save_image
+from scipy import linalg
+from tqdm import tqdm
+import torch
+import numpy as np
 
+import utils.sample as sample
 
 
 def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):

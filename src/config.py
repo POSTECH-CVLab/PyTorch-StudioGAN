@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/define_config.py
+# src/config.py
 
 
 import json
@@ -12,13 +12,17 @@ import sys
 import warnings
 import yaml
 
+from torchlars import LARS
+import torch
+
+import utils.losses as losses
+
 
 class Configurations(object):
     def __init__(self, cfg_file):
         self.cfg_file = cfg_file
         self.load_base_cfgs()
         self._overwrite_cfgs(self.cfg_file)
-        self._check_compatability()
 
     def load_base_cfgs(self):
         # -----------------------------------------------------------------------------
@@ -155,9 +159,9 @@ class Configurations(object):
         # learning rate for discriminator update
         self.OPTIMIZER.d_lr = 0.0002
         # weight decay strength for the generator update
-        self.OPTIMIZER.g_decay_lambda = 0.0
+        self.OPTIMIZER.g_weight_decay = 0.0
         # weight decay strength for the discriminator update
-        self.OPTIMIZER.d_decay_lambda = 0.0
+        self.OPTIMIZER.d_weight_decay = 0.0
         # momentum value for SGD and RMSprop optimizers
         self.OPTIMIZER.momentum = "N/A"
         # nesterov value for SGD optimizer
@@ -179,7 +183,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.PRE = lambda: None
         # whether to apply random flip preprocessing before training
-        self.PRE.apply_Rflip = True
+        self.PRE.apply_rflip = True
 
         # -----------------------------------------------------------------------------
         # differentiable augmentation settings
@@ -199,10 +203,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.RUN = lambda: None
 
-        # -----------------------------------------------------------------------------
-        # misc settings
-        # -----------------------------------------------------------------------------
-        self.MISC = lambda: None
+        self.MODULES = lambda: None
 
         self.super_cfgs = {"DATA": self.DATA,
                            "MODEL": self.MODEL,
@@ -211,9 +212,9 @@ class Configurations(object):
                            "PRE": self.PRE,
                            "AUG": self.AUG,
                            "RUN": self.RUN,
-                           "MISC": self.MISC}
+                           }
 
-    def update_cfgs(self, cfgs, super="MISC"):
+    def update_cfgs(self, cfgs, super="RUN"):
         for attr, value in cfgs.items():
             setattr(self.super_cfgs[super], attr, value)
 
@@ -224,9 +225,64 @@ class Configurations(object):
                 for attr, value in attr_value.items():
                     setattr(self.super_cfgs[super_cfg_name], attr, value)
 
-    def _check_compatability(self):
-        if self.load_data_in_memory:
-            assert self.load_train_hdf5, "load_data_in_memory option is only appliable with the load_train_hdf5 option."
+    def define_modules(self, Gen, Dis):
+        g_losses = {"vanilla": losses.g_vanilla, "least_square": losses.g_ls,
+                    "hinge": losses.g_hinge, "wasserstein": losses.g_wasserstein}
+
+        d_losses = {"vanilla": losses.d_vanilla, "least_square": losses.d_ls,
+                    "hinge": losses.d_hinge, "wasserstein": losses.d_wasserstein}
+
+        self.MODULES.g_loss = g_losses[self.LOSS.adv_loss]
+        self.MODULES.d_loss = d_losses[self.LOSS.adv_loss]
+
+        if self.OPTIMIZER.type_ == "SGD":
+            self.MODULES.g_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                       lr=self.OPTIMIZER.g_lr,
+                                                       weight_decay=self.OPTIMIZER.g_weight_decay,
+                                                       momentum=self.OPTIMIZER.momentum,
+                                                       nesterov=self.OPTIMIZER.nesterov)
+
+            self.MODULES.d_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                       lr=self.OPTIMIZER.d_lr,
+                                                       weight_decay=self.OPTIMIZER.d_weight_decay,
+                                                       momentum=self.OPTIMIZER.momentum,
+                                                       nesterov=self.OPTIMIZER.nesterov)
+        elif self.OPTIMIZER.type_ == "RMSprop":
+            self.MODULES.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                           lr=self.OPTIMIZER.g_lr,
+                                                           weight_decay=self.OPTIMIZER.g_weight_decay,
+                                                           momentum=self.OPTIMIZER.momentum,
+                                                           alpha=self.OPTIMIZER.alpha)
+
+            self.MODULES.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                           lr=self.OPTIMIZER.d_lr,
+                                                           weight_decay=self.OPTIMIZER.d_weight_decay,
+                                                           momentum=self.OPTIMIZER.momentum,
+                                                           alpha=self.OPTIMIZER.alpha)
+        elif self.OPTIMIZER.type_ == "Adam":
+            self.MODULES.g_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                        lr=self.OPTIMIZER.g_lr,
+                                                        betas=[self.OPTIMIZER.beta1, self.OPTIMIZER.beta2],
+                                                        weight_decay=self.OPTIMIZER.g_weight_decay,
+                                                        eps=1e-6)
+
+            self.MODULES.d_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                        lr=self.OPTIMIZER.d_lr,
+                                                        betas=[self.OPTIMIZER.beta1, self.OPTIMIZER.beta2],
+                                                        weight_decay=self.OPTIMIZER.d_weight_decay,
+                                                        eps=1e-6)
+        else:
+            raise NotImplementedError
+
+        if self.RUN.LARS_optimizer:
+            self.MODULES.g_optimizer = LARS(optimizer=self.MODULES.g_optimizer, eps=1e-8, trust_coef=0.001)
+            self.MODULES.d_optimizer = LARS(optimizer=self.MODULES.d_optimizer, eps=1e-8, trust_coef=0.001)
+        return self.MODULES
+
+
+    def check_compatability(self):
+        if self.RUN.load_data_in_memory:
+            assert self.RUN.load_train_hdf5, "load_data_in_memory option is only appliable with the load_train_hdf5 option."
 
         if self.MODEL.backbone == "deep_conv":
             assert self.DATA.img_size == 32, "StudioGAN does not support the deep_conv backbone for the dataset whose spatial resolution is not 32."
@@ -268,10 +324,10 @@ class Configurations(object):
         assert self.RUN.batch_statistics*self.RUN.standing_statistics == 0, \
             "You can't turn on batch_statistics and standing_statistics simultaneously."
 
-        assert self.OPTIMIZER.batch_size % self.world_size == 0, \
+        assert self.OPTIMIZER.batch_size % self.OPTIMIZER.world_size == 0, \
             "Batch_size should be divided by the number of gpus."
 
-        assert int(self.AUG.apply_diff_aug)*int(self.AUG.apply_ada) == 0, \
+        assert int(self.AUG.apply_diffaug)*int(self.AUG.apply_ada) == 0, \
             "You can't apply Differentiable Augmentation and Adaptive Discriminator Augmentation simultaneously."
 
         assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_gp) == 0, \

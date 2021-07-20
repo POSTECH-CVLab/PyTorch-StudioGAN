@@ -2,21 +2,19 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/metrics/Accuracy.py
+# src/metrics/acc.py
 
 
-import numpy as np
 import math
-from scipy import linalg
-from tqdm import tqdm
 
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
-
-import torch
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
+from scipy import linalg
+from tqdm import tqdm
+import torch
+import numpy as np
 
+import utils.sample as sample
 
 
 def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluate, truncated_factor, prior, latent_op,
@@ -47,9 +45,9 @@ def calculate_accuracy(dataloader, generator, discriminator, D_loss, num_evaluat
 
     if eval_generated_sample:
         for batch_id in tqdm(range(total_batch), disable=disable_tqdm):
-            zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
+            zs, fake_labels = sample.sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
             if latent_op:
-                zs = latent_optimise(zs, fake_labels, generator, discriminator, conditional_strategy, latent_op_step,
+                zs = sample.latent_optimise(zs, fake_labels, generator, discriminator, conditional_strategy, latent_op_step,
                                      1.0, latent_op_alpha, latent_op_beta, False, device)
 
             real_images, real_labels = next(data_iter)

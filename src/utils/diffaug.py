@@ -29,7 +29,6 @@ import torch
 import torch.nn.functional as F
 
 
-
 ### Differentiable Augmentation for Data-Efficient GAN Training (https://arxiv.org/abs/2006.10738)
 ### Shengyu Zhao, Zhijian Liu, Ji Lin, Jun-Yan Zhu, and Song Han
 ### https://github.com/mit-han-lab/data-efficient-gans

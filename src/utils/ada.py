@@ -20,13 +20,12 @@ SOFTWARE.
 
 
 import math
+
+from torch.nn import functional as F
+import torch
 import numpy as np
 
 from utils.ada_op import upfirdn2d
-
-import torch
-from torch.nn import functional as F
-
 
 
 SYM6 = (

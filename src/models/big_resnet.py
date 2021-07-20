@@ -5,13 +5,12 @@
 # models/big_resnet.py
 
 
-from utils.model_ops import *
-from utils.misc import *
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import utils.ops as ops
+import utils.misc as misc
 
 
 class GenBlock(nn.Module):
@@ -75,8 +74,8 @@ class GenBlock(nn.Module):
 
 class Generator(nn.Module):
     """Generator."""
-    def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                 conditional_strategy, num_classes, initialize, G_depth, mixed_precision):
+    def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, apply_g_sn, apply_attn, attn_g_loc, g_act_fn, g_cond_mtd,
+                 num_classes, g_init, g_depth, mixed_precision):
         super(Generator, self).__init__()
         g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
                                 "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
@@ -295,8 +294,8 @@ class DiscBlock(nn.Module):
 
 class Discriminator(nn.Module):
     """Discriminator."""
-    def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
-                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, initialize, D_depth, mixed_precision):
+    def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_act_fn, d_cond_mtd, d_embed_dim, num_classes,
+                 normalize_d_embed, d_init, d_depth, mixed_precision):
         super(Discriminator, self).__init__()
         d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
                                 "64": [3] + [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8],

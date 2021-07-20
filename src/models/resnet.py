@@ -5,13 +5,12 @@
 # models/resnet.py
 
 
-from utils.model_ops import *
-from utils.misc import *
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import utils.ops as ops
+import utils.misc as misc
 
 
 class GenBlock(nn.Module):

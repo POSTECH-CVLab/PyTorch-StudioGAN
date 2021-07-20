@@ -5,34 +5,33 @@
 # src/utils/misc.py
 
 
-import numpy as np
+from os.path import dirname, abspath, exists, join
+from datetime import datetime
+from collections import defaultdict
 import random
 import math
 import os
 import sys
-import shutil
 import warnings
-import seaborn as sns
-import matplotlib.pyplot as plt
-from os.path import dirname, abspath, exists, join
-from scipy import linalg
-from datetime import datetime
-from tqdm import tqdm
+
+from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
+from torchvision.utils import save_image
 from itertools import chain
-from collections import defaultdict
-
-from metrics.FID import generate_images
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
-
+from tqdm import tqdm
+from scipy import linalg
 import torch
 import torch.nn.functional as F
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from torch.nn import DataParallel
-from torch.nn.parallel import DistributedDataParallel
-from torchvision.utils import save_image
+import shutil
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
+from metrics.fid import generate_images
+import utils.sample as sample
+import utils.losses as losses
 
 
 class dummy_context_mgr():

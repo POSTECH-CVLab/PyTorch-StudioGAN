@@ -16,7 +16,7 @@ from torch.backends import cudnn
 import torch
 import torch.multiprocessing as mp
 
-import define_config
+import config
 import loader
 import utils.hdf5 as hdf5
 import utils.log as log
@@ -91,41 +91,49 @@ def main():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    cfgs = define_config.Configurations(args.cfg_file)
+    gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
+
+    cfgs = config.Configurations(args.cfg_file)
     cfgs.update_cfgs(run_cfgs, super="RUN")
+    cfgs.OPTIMIZER.world_size = gpus_per_node*cfgs.RUN.total_nodes
+    cfgs.check_compatability()
+
     run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
 
     crop_long_edge = True if cfgs.DATA in ["CUB200", "ImageNet"] else False
     resize_size = None if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else cfgs.DATA.img_size
-    hdf5_path = hdf5.make_hdf5(cfgs.DATA, cfgs.RUN, crop_long_edge, resize_size) if cfgs.RUN.load_data_in_memory else None
+    if cfgs.RUN.load_train_hdf5:
+        hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(DATA=cfgs.DATA,
+                                                                RUN=cfgs.RUN,
+                                                                crop_long_edge=crop_long_edge,
+                                                                resize_size=resize_size)
+    else:
+        hdf5_path = None
+    cfgs.PRE.crop_long_edge, cfgs.PRE.resize_size = crop_long_edge, resize_size
 
     if cfgs.RUN.seed == -1:
-        cfgs.RUN.seed = random.randint(1,4096)
+        cfgs.RUN.seed = random.randint(1, 4096)
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
         cudnn.benchmark, cudnn.deterministic = False, True
     misc.fix_all_seed(cfgs.RUN.seed)
 
-    gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
-    world_size = gpus_per_node*cfgs.RUN.total_nodes
-    cfgs.OPTIMIZER.world_size = world_size
-    if world_size == 1:
+    if cfgs.OPTIMIZER.world_size == 1:
         warnings.warn("You have chosen a specific GPU. This will completely disable data parallelism.")
 
-    if cfgs.RUN.distributed_data_parallel and world_size > 1:
+    if cfgs.RUN.distributed_data_parallel and cfgs.RUN.world_size > 1:
         print("Train the models through DistributedDataParallel (DDP) mode.")
-        mp.spawn(loader.prepare_train_eval, nprocs=gpus_per_node, args=(gpus_per_node,
-                                                                        world_size,
-                                                                        run_name,
-                                                                        cfgs,
-                                                                        hdf5_path))
+        mp.spawn(loader.load_worker, nprocs=gpus_per_node, args=(cfgs,
+                                                                 gpus_per_node,
+                                                                 run_name,
+                                                                 hdf5_path))
     else:
-        loader.prepare_train_eval(local_rank=rank,
-                                  gpus_per_node=gpus_per_node,
-                                  world_size=world_size,
-                                  run_name=run_name,
-                                  cfgs=cfgs,
-                                  hdf5_path=hdf5_path)
+        loader.load_worker(local_rank=rank,
+                           cfgs=cfgs,
+                           gpus_per_node=gpus_per_node,
+                           run_name=run_name,
+                           hdf5_path=hdf5_path)
+
 
 if __name__ == "__main__":
     main()

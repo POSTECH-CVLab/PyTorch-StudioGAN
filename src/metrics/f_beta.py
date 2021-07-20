@@ -23,17 +23,15 @@
 
 
 import math
-import numpy as np
-from sklearn.cluster import MiniBatchKMeans
-from tqdm import tqdm
 
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
-
-import torch
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
+from sklearn.cluster import MiniBatchKMeans
+from tqdm import tqdm
+import torch
+import numpy as np
 
+import utils.sample as sample
 
 
 class precision_recall(object):

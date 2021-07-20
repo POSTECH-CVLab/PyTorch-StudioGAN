@@ -5,39 +5,36 @@
 # src/worker.py
 
 
-import numpy as np
+from os.path import join
 import sys
 import glob
 import random
-from scipy import ndimage
-from sklearn.manifold import TSNE
-from os.path import join
+
+from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
+from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
+from scipy import ndimage
+from sklearn.manifold import TSNE
 from datetime import datetime
-
-from metrics.IS import calculate_incep_score
-from metrics.FID import calculate_fid_score
-from metrics.F_beta import calculate_f_beta_score
-from metrics.Accuracy import calculate_accuracy
-from utils.ada import ADAugment
-from utils.biggan_utils import interp
-from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
-from utils.misc import *
-from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise, set_temperature
-from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
-from utils.diff_aug import DiffAugment
-from utils.cr_diff_aug import CR_DiffAug
-
 import torch
-import torch.nn as nn
-from torch.nn import DataParallel
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel
-import torch.nn.functional as F
 import torchvision
-from torchvision import transforms
+import torch.nn as nn
+import torch.distributed as dist
+import torch.nn.functional as F
+import numpy as np
 
+import metrics.ins as ins
+import metrics.fid as fid
+import metrics.f_beta as f_beta
+import metrics.acc as acc
+import utils.ada as ada
+import utils.sample as sample
+import utils.misc as misc
+import utils.losses as losses
+import utils.diffaug as diffaug
+import utils.cr as cr
 
 
 SAVE_FORMAT = 'step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth'

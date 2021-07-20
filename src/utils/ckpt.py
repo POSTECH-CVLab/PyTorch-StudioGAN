@@ -2,13 +2,12 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/utils/load_checkpoint.py
+# src/utils/ckpt.py
 
 
 import os
 
 import torch
-
 
 
 def load_checkpoint(model, optimizer, filename, metric=False, ema=False):

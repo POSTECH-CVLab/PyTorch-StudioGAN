@@ -22,13 +22,13 @@ SOFTWARE.
 """
 
 
-from tqdm import tqdm
-import h5py as h5
 import os
 
 from torch.utils.data import DataLoader
+from tqdm import tqdm
+import h5py as h5
 
-from data_utils.load_dataset import LoadDataset
+from data_util import Dataset_
 
 
 def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
@@ -40,14 +40,14 @@ def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
         print("{file_name} exist!\nThe file are located in the {file_path}".format(file_name=file_name,
                                                                                    file_path=file_path))
     else:
-        dataset = LoadDataset(data_name=DATA.name,
-                              data_path=DATA.path,
-                              train=True,
-                              crop_long_edge=crop_long_edge,
-                              resize_size=resize_size,
-                              random_flip=False,
-                              hdf5_path=None,
-                              load_data_in_memory=False)
+        dataset = Dataset_(data_name=DATA.name,
+                           data_path=DATA.path,
+                           train=True,
+                           crop_long_edge=crop_long_edge,
+                           resize_size=resize_size,
+                           random_flip=False,
+                           hdf5_path=None,
+                           load_data_in_memory=False)
 
         dataloader = DataLoader(dataset,
                                 batch_size=500,
@@ -82,4 +82,4 @@ def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
                   f["imgs"][-x.shape[0]:] = x
                   f["labels"].resize(f["labels"].shape[0] + y.shape[0], axis=0)
                   f["labels"][-y.shape[0]:] = y
-    return file_path
+    return file_path, False, None

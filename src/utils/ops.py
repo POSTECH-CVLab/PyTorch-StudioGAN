@@ -2,14 +2,13 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/utils/model_ops.py
+# src/utils/op.py
 
 
-import torch
-import torch.nn as nn
 from torch.nn.utils import spectral_norm
 from torch.nn import init
-
+import torch
+import torch.nn as nn
 
 
 def init_weights(modules, initialize):

@@ -4,12 +4,11 @@
 
 # src/utils/log.py
 
-
+from os.path import dirname, abspath, exists, join
+from datetime import datetime
 import json
 import os
 import logging
-from os.path import dirname, abspath, exists, join
-from datetime import datetime
 
 
 def make_run_name(format, framework, phase):
