@@ -38,7 +38,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
         global_rank = cfgs.RUN.cn*(gpus_per_node) + local_rank
-        print("Use GPU: {global_rank} for training.".format(global_rank))
+        print("Use GPU: {global_rank} for training.".format(global_rank=global_rank))
         misc.setup(global_rank, cfgs.OPTIMIZER.world_size)
         torch.cuda.set_device(local_rank)
     else:
@@ -63,23 +63,23 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.train:
         if local_rank == 0: logger.info("Load {name} train dataset".format(name=cfgs.DATA.name))
         train_dataset = Dataset_(data_name=cfgs.DATA.name,
-                                data_path=cfgs.DATA.path,
-                                train=True,
-                                crop_long_edge=cfgs.PRE.crop_long_edge,
-                                resize_size=cfgs.PRE.resize_size,
-                                random_flip=cfgs.PRE.apply_rflip,
-                                hdf5_path=hdf5_path,
-                                load_data_in_memory=cfgs.RUN.load_data_in_memory)
+                                 data_path=cfgs.DATA.path,
+                                 train=True,
+                                 crop_long_edge=cfgs.PRE.crop_long_edge,
+                                 resize_size=cfgs.PRE.resize_size,
+                                 random_flip=cfgs.PRE.apply_rflip,
+                                 hdf5_path=hdf5_path,
+                                 load_data_in_memory=cfgs.RUN.load_data_in_memory)
         if local_rank == 0: logger.info("Train dataset size: {dataset_size}".format(dataset_size=len(train_dataset)))
     else:
         train_dataset = None
 
     if cfgs.RUN.eval:
-        if local_rank == 0: logger.info("Load {name} {mode} datasets".format(name=cfgs.DATA.name, mode=cfgs.RUN.ref_dataset))
+        if local_rank == 0: logger.info("Load {name} {ref} datasets".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
                                 data_path=cfgs.DATA.path,
-                                train=True if cfgs.RUN.ref_dataset=="train" else False,
-                                crop_long_edge=True if cfgs.DATA in ["CUB200", "ImageNet"] else False,
+                                train=True if cfgs.RUN.ref_dataset == "train" else False,
+                                crop_long_edge=False if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else True,
                                 resize_size=None if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else cfgs.DATA.img_size,
                                 random_flip=False,
                                 hdf5_path=None,
@@ -92,12 +92,12 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define a distributed sampler for DDP training.
     # define dataloaders for train and evaluation.
     # -----------------------------------------------------------------------------
-    cfgs.OPTIMIZER.basket_size = cfgs.OPTIMIZER.batch_size*cfgs.OPTIMIZER.accm_step*cfgs.OPTIMIZER.d_steps_per_iter
     if cfgs.RUN.distributed_data_parallel:
+        cfgs.OPTIMIZER.batch_size = cfgs.OPTIMIZER.batch_size//cfgs.OPTIMIZER.world_size
         train_sampler = DistributedSampler(train_dataset)
-        cfgs.OPTIMIZER.basket_size = cfgs.OPTIMIZER.basket_size//cfgs.OPTIMIZER.world_size
     else:
         train_sampler = None
+    cfgs.OPTIMIZER.basket_size = cfgs.OPTIMIZER.batch_size*cfgs.OPTIMIZER.accm_step*cfgs.OPTIMIZER.d_steps_per_iter
 
     train_dataloader = DataLoader(dataset=train_dataset,
                                   batch_size=cfgs.OPTIMIZER.basket_size,
@@ -118,20 +118,22 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # load a generator and a discriminator
     # if cfgs.MODEL.apply_ema is True, load an exponential moving average generator (Gen_copy).
     # -----------------------------------------------------------------------------
-    Gen, Dis, Gen_copy, Gen_ema = model.load_generator_discriminator(MODEL=cfgs.MODEL,
-                                                                     RUN=cfgs.RUN,
-                                                                     DATA=cfgs.DATA,
-                                                                     local_rank=local_rank,
-                                                                     logger=logger)
+    Gen, Dis, Gen_ema, ema = model.load_generator_discriminator(MODEL=cfgs.MODEL,
+                                                                RUN=cfgs.RUN,
+                                                                DATA=cfgs.DATA,
+                                                                local_rank=local_rank,
+                                                                logger=logger)
 
     # -----------------------------------------------------------------------------
     # load modules for training
     # -----------------------------------------------------------------------------
     train_modules = cfgs.define_modules(Gen, Dis)
 
-    ##### load checkpoints if needed #####
+    # -----------------------------------------------------------------------------
+    # load the generator and discriminator from a checkpoint if possible
+    # -----------------------------------------------------------------------------
     if cfgs.checkpoint_folder is None:
-        checkpoint_dir = make_checkpoint_dir(cfgs.checkpoint_folder, run_name)
+        checkpoint_dir = ckpt.make_checkpoint_dir(cfgs.RUN.ckpt_dir, run_name)
     else:
         when = "current" if cfgs.load_current is True else "best"
         if not exists(abspath(cfgs.checkpoint_folder)):
@@ -161,35 +163,30 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # prepare parallel training
     # -----------------------------------------------------------------------------
-    Gen, Dis, Gen_copy = model.prepare_parallel_training(OPTIMIZER=cfgs.OPTIMIZER,
-                                                         RUN=cfgs.RUN,
-                                                         MODEL=cfgs.MODEL,
-                                                         Gen=Gen,
-                                                         Dis=Dis,
-                                                         Gen_copy=Gen_copy,
-                                                         local_rank=local_rank)
+    Gen, Dis, Gen_ema = model.prepare_parallel_training(Gen=Gen,
+                                                        Dis=Dis,
+                                                        Gen_ema=Gen_ema,
+                                                        world_size=cfgs.OPTIMIZER.world_size,
+                                                        distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
+                                                        synchronized_bn=cfgs.RUN.synchronized_bn,
+                                                        ema=cfgs.MODEL.ema,
+                                                        local_rank=local_rank)
 
     # -----------------------------------------------------------------------------
     # load a pre-trained network (InceptionV3 or ResNet50 trained using SwAV)
     # -----------------------------------------------------------------------------
     if cfgs.RUN.eval:
-        inception_model = InceptionV3().to(local_rank)
-        if world_size > 1 and cfgs.distributed_data_parallel:
-            toggle_grad(inception_model, on=True)
-            inception_model = DDP(inception_model, device_ids=[local_rank], broadcast_buffers=False, find_unused_parameters=True)
-        elif world_size > 1 and cfgs.distributed_data_parallel is False:
-            inception_model = DataParallel(inception_model, output_device=local_rank)
-        else:
-            pass
+        eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
+                                      world_size=cfgs.OPTIMIZER.world_size,
+                                      distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
+                                      local_rank=local_rank)
 
-        mu, sigma = prepare_inception_moments(dataloader=eval_dataloader,
-                                              generator=Gen,
-                                              eval_mode=cfgs.eval_type,
-                                              inception_model=inception_model,
-                                              splits=1,
-                                              run_name=run_name,
-                                              logger=logger,
-                                              device=local_rank)
+        mu, sigma = pp.prepare_moments_calculate_ins(dataloader=eval_dataloader,
+                                                     eval_model=eval_model,
+                                                     splits=1,
+                                                     cfgs=cfgs,
+                                                     logger=logger,
+                                                     local_rank=local_rank)
 
     worker = make_worker(
         cfgs=cfgs,

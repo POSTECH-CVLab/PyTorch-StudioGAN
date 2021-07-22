@@ -10,6 +10,12 @@ import os
 import torch
 
 
+def make_ckpt_dir(ckpt_dir, run_name):
+    ckpt_dir = ckpt_dir if ckpt_dir is not None else os.path.join("checkpoints", run_name)
+    if not os.path.exists(os.path.abspath(ckpt_dir)):
+        os.makedirs(ckpt_dir)
+    return ckpt_dir
+
 def load_checkpoint(model, optimizer, filename, metric=False, ema=False):
     start_step = 0
     if ema:

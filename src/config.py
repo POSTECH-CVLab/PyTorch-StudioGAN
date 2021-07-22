@@ -12,7 +12,6 @@ import sys
 import warnings
 import yaml
 
-from torchlars import LARS
 import torch
 
 import utils.losses as losses
@@ -67,7 +66,7 @@ class Configurations(object):
         self.MODEL.attn_g_loc = 2
         # location of the self-attention layer in the discriminator
         self.MODEL.attn_d_loc = 1
-        # prior distribution for noise sampling \in ["gaussian", "uniform", "unit_spherical_shell"]
+        # prior distribution for noise sampling \in ["gaussian", "uniform"]
         self.MODEL.z_prior = "guassian"
         # dimension of noise vectors
         self.MODEL.z_dim = 80
@@ -273,28 +272,24 @@ class Configurations(object):
                                                         eps=1e-6)
         else:
             raise NotImplementedError
-
-        if self.RUN.LARS_optimizer:
-            self.MODULES.g_optimizer = LARS(optimizer=self.MODULES.g_optimizer, eps=1e-8, trust_coef=0.001)
-            self.MODULES.d_optimizer = LARS(optimizer=self.MODULES.d_optimizer, eps=1e-8, trust_coef=0.001)
         return self.MODULES
 
 
     def check_compatability(self):
         if self.RUN.load_data_in_memory:
-            assert self.RUN.load_train_hdf5, "load_data_in_memory option is only appliable with the load_train_hdf5 option."
+            assert self.RUN.load_train_hdf5, "load_data_in_memory option is appliable with the load_train_hdf5 (-hdf5) option."
 
         if self.MODEL.backbone == "deep_conv":
             assert self.DATA.img_size == 32, "StudioGAN does not support the deep_conv backbone for the dataset whose spatial resolution is not 32."
 
         if self.RUN.freezeD > -1:
             assert self.RUN.ckpt_dir is not None, "Freezing discriminator needs a pre-trained model.\
-                Please specify the checkpoint directory for loading a pre-trained discriminator."
+                Please specify the checkpoint directory (using -ckpt) for loading a pre-trained discriminator."
 
         if self.RUN.distributed_data_parallel:
             msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, and tsne analysis with DDP. \
                 Please change DDP with a single GPU training or DataParallel instead."
-            assert self.RUN.vis_fake_imgs + \
+            assert self.RUN.vis_fake_images + \
                 self.RUN.k_nearest_neighbor + \
                 self.RUN.interpolation + \
                 self.RUN.frequency_analysis + \
@@ -328,7 +323,7 @@ class Configurations(object):
             "Batch_size should be divided by the number of gpus."
 
         assert int(self.AUG.apply_diffaug)*int(self.AUG.apply_ada) == 0, \
-            "You can't apply Differentiable Augmentation and Adaptive Discriminator Augmentation simultaneously."
+            "You can't apply differentiable augmentation and adaptive discriminator augmentation simultaneously."
 
         assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_gp) == 0, \
             "You can't apply mixed precision training and gradient penalty regularization simultaneously."
@@ -338,7 +333,7 @@ class Configurations(object):
 
         assert int(self.LOSS.apply_cr)*int(self.LOSS.apply_bcr) == 0 and \
             int(self.LOSS.apply_cr)*int(self.LOSS.apply_zcr) == 0, \
-            "You can't simultaneously turn on consistency reg. and improved consistency reg.."
+            "You can't simultaneously turn on consistency reg. and improved consistency reg."
 
         assert int(self.LOSS.apply_gp)*int(self.LOSS.apply_dra) == 0, \
-            "You can't simultaneously apply gradient penalty regularization and deep regret analysis for training DRAGAN."
+            "You can't simultaneously apply gradient penalty regularization and deep regret analysis."

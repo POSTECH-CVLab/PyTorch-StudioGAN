@@ -29,7 +29,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from metrics.fid import generate_images
 import utils.sample as sample
 import utils.losses as losses
 
@@ -39,6 +38,18 @@ class dummy_context_mgr():
         return None
     def __exit__(self, exc_type, exc_value, traceback):
         return False
+
+
+class SaveOutput:
+    def __init__(self):
+        self.outputs = []
+
+    def __call__(self, module, module_input):
+    # def __call__(self, module, module_in, module_out):
+        self.outputs.append(module_input)
+
+    def clear(self):
+        self.outputs = []
 
 
 class Adaptive_Augment(object):

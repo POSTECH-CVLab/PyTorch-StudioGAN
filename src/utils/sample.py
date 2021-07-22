@@ -16,90 +16,100 @@ import torch.nn.functional as F
 import numpy as np
 
 
-def truncated_normal(size, threshold=1):
+def truncated_normal(size, threshold=1.):
     values = truncnorm.rvs(-threshold, threshold, size=size)
     return values
 
-
-def sample_normal(batch_size, dim, truncated_factor, device):
-    if truncated_factor == -1.0:
-        latents = torch.randn(batch_size, dim, device=device)
-    elif truncated_factor > 0:
-        latents = torch.FloatTensor(truncated_normal([batch_size, dim], truncated_factor)).to(device)
+def sample_normal(batch_size, z_dim, truncation_th, local_rank):
+    if truncation_th == -1.0:
+        latents = torch.randn(batch_size, z_dim).to(local_rank)
+    elif truncation_th > 0:
+        latents = torch.FloatTensor(truncated_normal([batch_size, z_dim], truncation_th)).to(local_rank)
     else:
         raise ValueError("truncated_factor must be positive.")
     return latents
 
+def sample_y(y_sampler, batch_size, num_classes, local_rank):
+    if y_sampler == "totally_random":
+        y_fake = torch.randint(low=0,
+                               high=num_classes,
+                               size=(batch_size,),
+                               dtype=torch.long,
+                               device=local_rank)
 
-def sample_latents(dist, batch_size, dim, truncated_factor=-1.0, num_classes=None, perturb=None, device=torch.device("cpu"), sampler="default"):
-    if num_classes:
-        if sampler == "default":
-            y_fake = torch.randint(low=0, high=num_classes, size=(batch_size,), dtype=torch.long, device=device)
-        elif sampler == "class_order_some":
-            assert batch_size % 8 == 0, "The size of the batches should be a multiple of 8."
-            num_classes_plot = batch_size//8
-            indices = np.random.permutation(num_classes)[:num_classes_plot]
-        elif sampler == "class_order_all":
-            batch_size = num_classes*8
-            indices = [c for c in range(num_classes)]
-        elif isinstance(sampler, int):
-            y_fake = torch.tensor([sampler]*batch_size, dtype=torch.long).to(device)
-        else:
-            raise NotImplementedError
+    elif y_sampler == "acending_some":
+        assert batch_size % 8 == 0, "The size of batches should be a multiple of 8."
+        num_classes_plot = batch_size//8
+        indices = np.random.permutation(num_classes)[:num_classes_plot]
 
-        if sampler in ["class_order_some", "class_order_all"]:
-            y_fake = []
-            for idx in indices:
-                y_fake += [idx]*8
-            y_fake = torch.tensor(y_fake, dtype=torch.long).to(device)
+    elif y_sampler == "acending_all":
+        batch_size = num_classes*8
+        indices = [c for c in range(num_classes)]
+
+    elif isinstance(y_sampler, int):
+        y_fake = torch.tensor([y_sampler]*batch_size, dtype=torch.long).to(local_rank)
     else:
         y_fake = None
 
-    if isinstance(perturb, float) and perturb > 0.0:
-        if dist == "gaussian":
-            latents = sample_normal(batch_size, dim, truncated_factor, device)
-            latents_eps = latents + perturb*sample_normal(batch_size, dim, -1.0, device)
-        elif dist == "uniform":
-            latents = torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
-            latents_eps = latents + perturb*torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
-        else:
-            raise NotImplementedError
-        return latents, y_fake, latents_eps
+    if y_sampler in ["acending_some", "acending_all"]:
+        y_fake = []
+        for idx in indices:
+            y_fake += [idx]*8
+        y_fake = torch.tensor(y_fake, dtype=torch.long).to(local_rank)
+    return y_fake
+
+def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_th, y_sampler, radius, local_rank):
+    if z_prior == "gaussian":
+        zs = sample_normal(batch_size=batch_size,
+                           z_dim=z_dim,
+                           truncation_th=truncation_th,
+                           local_rank=local_rank)
+    elif z_prior == "uniform":
+        zs = torch.FloatTensor(batch_size, z_dim).uniform_(-1.0, 1.0).to(local_rank)
     else:
-        if dist == "gaussian":
-            latents = sample_normal(batch_size, dim, truncated_factor, device)
-        elif dist == "uniform":
-            latents = torch.FloatTensor(batch_size, dim).uniform_(-1.0, 1.0).to(device)
-        else:
-            raise NotImplementedError
-        return latents, y_fake
+        raise NotImplementedError
 
+    fake_labels = sample_y(y_sampler=y_sampler,
+                           batch_size=batch_size,
+                           num_classes=num_classes,
+                           local_rank=local_rank)
 
-def random_ball(batch_size, z_dim, perturb=False):
-    if perturb:
-        normal = np.random.normal(size=(z_dim, batch_size))
-        random_directions = normal/linalg.norm(normal, axis=0)
-        random_radii = random.random(batch_size) ** (1/z_dim)
-        zs = 1.0 * (random_directions * random_radii).T
-
-        normal_perturb = normal + 0.05*np.random.normal(size=(z_dim, batch_size))
-        perturb_random_directions = normal_perturb/linalg.norm(normal_perturb, axis=0)
-        perturb_random_radii = random.random(batch_size) ** (1/z_dim)
-        zs_perturb = 1.0 * (perturb_random_directions * perturb_random_radii).T
-        return zs, zs_perturb
+    if isinstance(radius, float) and radius > 0.0:
+        if z_prior == "gaussian":
+            zs_eps = zs + radius*sample_normal(batch_size, z_dim, -1.0, local_rank)
+        elif z_prior == "uniform":
+            zs_eps = zs + radius*torch.FloatTensor(batch_size, z_dim).uniform_(-1.0, 1.0).to(local_rank)
     else:
-        normal = np.random.normal(size=(z_dim, batch_size))
-        random_directions = normal/linalg.norm(normal, axis=0)
-        random_radii = random.random(batch_size) ** (1/z_dim)
-        zs = 1.0 * (random_directions * random_radii).T
-        return zs
+        zs_eps = None
+    return zs, fake_labels, zs_eps
 
+def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler, radius,
+                    Gen, is_train, LOSS, local_rank):
+    if is_train:
+        truncation_th = -1.0
+        lo_step = LOSS.lo_step4train
+    else:
+        lo_step = LOSS.lo_step4eval
 
-# Convenience function to sample an index, not actually a 1-hot
+    zs, fake_labels, zs_eps = sample_zy(z_prior=z_prior,
+                                        batch_size=batch_size,
+                                        z_dim=z_dim,
+                                        num_classes=num_classes,
+                                        truncation_th=truncation_th,
+                                        y_sampler=y_sampler,
+                                        radius=radius,
+                                        local_rank=local_rank)
+    """
+    if LOSS.latent_op:
+        zs = latent_optimise(zs, fake_labels, Gen, Dis, MODEL.d_cond_mtd, lo_step, 1.0, LOSS.lo_alpha,
+                            LOSS.lo_beta, False, local_rank)
+    """
+    fake_images = Gen(zs, fake_labels, evaluation=not is_train)
+    return fake_images, fake_labels
+
 def sample_1hot(batch_size, num_classes, device='cuda'):
     return torch.randint(low=0, high=num_classes, size=(batch_size,),
                          device=device, dtype=torch.int64, requires_grad=False)
-
 
 def make_mask(labels, n_cls, mask_negatives, device):
     labels = labels.detach().cpu().numpy()
@@ -114,8 +124,6 @@ def make_mask(labels, n_cls, mask_negatives, device):
         mask_multi[c, c_indices] = target
 
     return torch.tensor(mask_multi).type(torch.long).to(device)
-
-
 
 def target_class_sampler(dataset, target_class):
     try:

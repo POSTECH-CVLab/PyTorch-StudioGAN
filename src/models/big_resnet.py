@@ -74,7 +74,7 @@ class GenBlock(nn.Module):
 
 class Generator(nn.Module):
     """Generator."""
-    def __init__(self, z_dim, shared_dim, img_size, g_conv_dim, apply_g_sn, apply_attn, attn_g_loc, g_act_fn, g_cond_mtd,
+    def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_g_sn, apply_attn, attn_g_loc, g_act_fn, g_cond_mtd,
                  num_classes, g_init, g_depth, mixed_precision):
         super(Generator, self).__init__()
         g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],

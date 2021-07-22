@@ -46,7 +46,6 @@ def main():
     parser.add_argument("--num_workers", type=int, default=8)
     parser.add_argument("-sync_bn", "--synchronized_bn", action="store_true", help="whether to turn on synchronized batchnorm")
     parser.add_argument("-mpc", "--mixed_precision", action="store_true", help="whether to turn on mixed precision training")
-    parser.add_argument("-LARS", "--LARS_optimizer", action="store_true", help="whether to turn on LARS optimizer")
 
     parser.add_argument("--truncation_th", type=float, default=-1.0, help="threshold value for truncation trick \
                         (-1.0 means not applying truncation trick)")
@@ -62,28 +61,28 @@ def main():
 
     parser.add_argument("-t", "--train", action="store_true")
     parser.add_argument("-hdf5", "--load_train_hdf5", action="store_true",
-                        help="load a train dataset from a hdf5 file for fast I/O")
+                        help="load train images from a hdf5 file for fast I/O")
     parser.add_argument("-l", "--load_data_in_memory", action="store_true",
                         help="put the whole train dataset on the main memory for fast I/O")
     parser.add_argument("-e", "--eval", action="store_true")
-    parser.add_argument("-s", "--save_fake_imgs", action="store_true")
-    parser.add_argument("-v", "--vis_fake_imgs", action="store_true", help="whether to visualize image canvas")
+    parser.add_argument("-s", "--save_fake_images", action="store_true")
+    parser.add_argument("-v", "--vis_fake_images", action="store_true", help="whether to visualize image canvas")
     parser.add_argument("-knn", "--k_nearest_neighbor", action="store_true", help="whether to conduct k-nearest neighbor analysis")
     parser.add_argument("-itp", "--interpolation", action="store_true", help="whether to conduct interpolation analysis")
     parser.add_argument("-fa", "--frequency_analysis", action="store_true", help="whether to conduct frequency analysis")
     parser.add_argument("-tsne", "--tsne_analysis", action="store_true", help="whether to conduct tsne analysis")
 
     parser.add_argument("--print_every", type=int, default=100, help="logging interval")
-    parser.add_argument("--save_every", type=int, default=2000, help="save interval")
-    parser.add_argument("--eval_every", type=int, default=2000, help="evaluation interval")
+    parser.add_argument("--eval_save_every", type=int, default=2000, help="evaluation and save interval")
+    parser.add_argument('--eval_backbone', type=str, default='Inception_V3', help='[SwAV, Inception_V3]')
     parser.add_argument("-ref", "--ref_dataset", type=str, default="train", help="reference dataset for evaluation[train/valid/test]")
     args = parser.parse_args()
     run_cfgs = vars(args)
 
     if not args.train and \
             not args.eval and \
-            not args.save_fake_imgs and \
-            not args.vis_fake_imgs and \
+            not args.save_fake_images and \
+            not args.vis_fake_images and \
             not args.k_nearest_neighbor and \
             not args.interpolation and \
             not args.frequency_analysis and \
@@ -100,7 +99,7 @@ def main():
 
     run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
 
-    crop_long_edge = True if cfgs.DATA in ["CUB200", "ImageNet"] else False
+    crop_long_edge = False if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else True
     resize_size = None if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else cfgs.DATA.img_size
     if cfgs.RUN.load_train_hdf5:
         hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(DATA=cfgs.DATA,

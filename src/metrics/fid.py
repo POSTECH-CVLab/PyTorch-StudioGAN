@@ -31,25 +31,7 @@ import numpy as np
 import utils.sample as sample
 
 
-def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
-    """Numpy implementation of the Frechet Distance.
-    The Frechet distance between two multivariate Gaussians X_1 ~ N(mu_1, C_1)
-    and X_2 ~ N(mu_2, C_2) is
-            d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2)).
-    Stable version by Dougal J. Sutherland.
-    Params:
-    -- mu1   : Numpy array containing the activations of a layer of the
-               inception net (like returned by the function 'get_predictions')
-               for generated samples.
-    -- mu2   : The sample mean over activations, precalculated on an
-               representative data set.
-    -- sigma1: The covariance matrix over activations for generated samples.
-    -- sigma2: The covariance matrix over activations, precalculated on an
-               representative data set.
-    Returns:
-    --   : The Frechet Distance.
-    """
-
+def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     mu1 = np.atleast_1d(mu1)
     mu2 = np.atleast_1d(mu2)
 
@@ -57,9 +39,9 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     sigma2 = np.atleast_2d(sigma2)
 
     assert mu1.shape == mu2.shape, \
-        'Training and test mean vectors have different lengths'
+        "Training and test mean vectors have different lengths"
     assert sigma1.shape == sigma2.shape, \
-        'Training and test covariances have different dimensions'
+        "Training and test covariances have different dimensions"
 
     diff = mu1 - mu2
 
@@ -79,115 +61,87 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     tr_covmean = np.trace(covmean)
     return (diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * tr_covmean)
 
-def generate_images(batch_size, gen, dis, truncated_factor, prior, latent_op, latent_op_step,
-                    latent_op_alpha, latent_op_beta, device):
-    if isinstance(gen, DataParallel) or isinstance(gen, DistributedDataParallel):
-        z_dim = gen.module.z_dim
-        num_classes = gen.module.num_classes
-        conditional_strategy = dis.module.conditional_strategy
+def calculate_moments(data_loader, Gen, eval_model, is_generate, num_generate, y_sampler, batch_size, z_prior,
+                      truncation_th, z_dim, num_classes, LOSS, local_rank, disable_tqdm=False):
+    if is_generate:
+        total_instance = num_generate
     else:
-        z_dim = gen.z_dim
-        num_classes = gen.num_classes
-        conditional_strategy = dis.conditional_strategy
-
-    zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device)
-
-    if latent_op:
-        zs = latent_optimise(zs, fake_labels, gen, dis, conditional_strategy, latent_op_step, 1.0, latent_op_alpha,
-                            latent_op_beta, False, device)
-
-    with torch.no_grad():
-        batch_images = gen(zs, fake_labels, evaluation=True)
-
-    return batch_images, fake_labels
-
-
-def get_activations(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior, is_generate,
-                    latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable=False, run_name=None):
-    """Calculates the activations of the pool_3 layer for all images.
-    Params:
-    -- data_loader      : data_loader of training images
-    -- generator        : instance of GANs' generator
-    -- inception_model  : Instance of inception model
-
-    Returns:
-    -- A numpy array of dimension (num images, dims) that contains the
-       activations of the given tensor when feeding inception with the
-       query tensor.
-    """
-    if is_generate is True:
-        batch_size = data_loader.batch_size
-        total_instance = n_generate
-        n_batches = math.ceil(float(total_instance) / float(batch_size))
-    else:
-        batch_size = data_loader.batch_size
         total_instance = len(data_loader.dataset)
-        n_batches = math.ceil(float(total_instance) / float(batch_size))
         data_iter = iter(data_loader)
+    num_batches = math.ceil(float(total_instance) / float(batch_size))
 
-    num_classes = generator.module.num_classes if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.num_classes
-    pred_arr = np.empty((total_instance, 2048))
-
-    for i in tqdm(range(0, n_batches), disable=tqdm_disable):
+    acts = np.empty((total_instance, 2048))
+    for i in tqdm(range(0, num_batches), disable=disable_tqdm):
         start = i*batch_size
         end = start + batch_size
-        if is_generate is True:
-            images, labels = generate_images(batch_size, generator, discriminator, truncated_factor, prior, latent_op,
-                                             latent_op_step, latent_op_alpha, latent_op_beta, device)
-            images = images.to(device)
-
-            with torch.no_grad():
-                embeddings, logits = inception_model(images)
-
-            if total_instance >= batch_size:
-                pred_arr[start:end] = embeddings.cpu().data.numpy().reshape(batch_size, -1)
-            else:
-                pred_arr[start:] = embeddings[:total_instance].cpu().data.numpy().reshape(total_instance, -1)
-
-            total_instance -= images.shape[0]
+        if is_generate:
+            images, labels = sample.generate_images(z_prior=z_prior,
+                                                    truncation_th=truncation_th,
+                                                    batch_size=batch_size,
+                                                    z_dim=z_dim,
+                                                    num_classe=num_classes,
+                                                    y_sampler=y_sampler,
+                                                    radius="N/A",
+                                                    Gen=Gen,
+                                                    is_train=False,
+                                                    LOSS=LOSS,
+                                                    local_rank=local_rank)
+            images = images.to(local_rank)
         else:
             try:
                 feed_list = next(data_iter)
-                images = feed_list[0]
-                images = images.to(device)
-                with torch.no_grad():
-                    embeddings, logits = inception_model(images)
-
-                if total_instance >= batch_size:
-                    pred_arr[start:end] = embeddings.cpu().data.numpy().reshape(batch_size, -1)
-                else:
-                    pred_arr[start:] = embeddings[:total_instance].cpu().data.numpy().reshape(total_instance, -1)
-                total_instance -= images.shape[0]
-
+                images = feed_list[0].to(local_rank)
             except StopIteration:
                 break
-    return pred_arr
 
+        with torch.no_grad():
+            embeddings, logits = eval_model(images)
 
-def calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                                    is_generate, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable, run_name=None):
-    act = get_activations(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                          is_generate, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable, run_name)
-    mu = np.mean(act, axis=0)
-    sigma = np.cov(act, rowvar=False)
+        if total_instance >= batch_size:
+            acts[start:end] = embeddings.cpu().data.numpy().reshape(batch_size, -1)
+        else:
+            acts[start:] = embeddings[:total_instance].cpu().data.numpy().reshape(total_instance, -1)
+        total_instance -= images.shape[0]
+
+    mu = np.mean(acts, axis=0)
+    sigma = np.cov(acts, rowvar=False)
     return mu, sigma
 
+def calculate_fid(data_loader, Gen, eval_model, num_generate, y_sampler, cfgs, local_rank, logger,
+                  pre_cal_mean=None, pre_cal_std=None):
+    disable_tqdm = local_rank != 0
+    eval_model.eval()
 
-def calculate_fid_score(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                        latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, logger, pre_cal_mean=None, pre_cal_std=None, run_name=None):
-    disable_tqdm = device != 0
-    inception_model.eval()
-
-    if device == 0: logger.info("Calculating FID Score....")
+    if local_rank == 0: logger.info("Calculating FID score....")
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std
     else:
-        m1, s1 = calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor,
-                                                 prior, False, False, 0, latent_op_alpha, latent_op_beta, device, tqdm_disable=disable_tqdm)
+        m1, s1 = calculate_moments(data_loader=data_loader,
+                                   Gen="N/A",
+                                   eval_model=eval_model,
+                                   is_generate=False,
+                                   num_generate=False,
+                                   y_sampler=y_sampler,
+                                   DATA=cfgs.DATA,
+                                   MODEL=cfgs.MODEL,
+                                   LOSS=cfgs.LOSS,
+                                   OPTIMIZER=cfgs.OPTIMIZER,
+                                   RUN=cfgs.RUN,
+                                   local_rank=local_rank,
+                                   disable_tqdm=disable_tqdm)
 
-    m2, s2 = calculate_activation_statistics(data_loader, generator, discriminator, inception_model, n_generate, truncated_factor, prior,
-                                             True, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device, tqdm_disable=disable_tqdm, run_name=run_name)
+    m2, s2 = calculate_moments(data_loader="N/A",
+                               Gen=Gen,
+                               eval_model=eval_model,
+                               is_generate=True,
+                               num_generate=num_generate,
+                               DATA=cfgs.DATA,
+                               MODEL=cfgs.MODEL,
+                               LOSS=cfgs.LOSS,
+                               OPTIMIZER=cfgs.OPTIMIZER,
+                               RUN=cfgs.RUN,
+                               local_rank=local_rank,
+                               disable_tqdm=disable_tqdm)
 
-    fid_value = calculate_frechet_distance(m1, s1, m2, s2)
-
+    fid_value = frechet_inception_distance(m1, s1, m2, s2)
     return fid_value, m1, s1
