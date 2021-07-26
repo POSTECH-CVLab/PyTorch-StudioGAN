@@ -1,5 +1,5 @@
 DATA:
   name: "CIFAR10"
 MODEL:
-  backbone: "resnet"
+  backbone: "big_resnet"
   d_cond_mtd: "PD"

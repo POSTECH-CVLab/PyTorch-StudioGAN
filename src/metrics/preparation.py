@@ -24,9 +24,9 @@ class LoadEvalModel(object):
         self.eval_backbone = eval_backbone
         self.save_output = misc.SaveOutput()
 
-        if self.model_name == "Inception_V3":
+        if self.eval_backbone == "Inception_V3":
             self.model = InceptionV3().to(local_rank)
-        elif self.model_name == "SwAV":
+        elif self.eval_backbone == "SwAV":
             self.model = torch.hub.load('facebookresearch/swav', 'resnet50').to(local_rank)
             hook_handles = []
             for name, layer in self.model.named_children():
@@ -52,7 +52,7 @@ class LoadEvalModel(object):
         self.model.eval()
 
     def get_outputs(self, x):
-        if self.model_name == "Inception_V3":
+        if self.eval_backbone == "Inception_V3":
             repres, logits = self.model(x)
         else:
             logits = self.model(x)

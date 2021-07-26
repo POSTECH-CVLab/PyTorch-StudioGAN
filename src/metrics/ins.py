@@ -17,7 +17,7 @@ import utils.sample as sample
 
 def inception_softmax(eval_model, images):
     with torch.no_grad():
-        embeddings, logits = eval_model(images)
+        embeddings, logits = eval_model.get_outputs(images)
         ps = torch.nn.functional.softmax(logits, dim=1)
     return ps
 
@@ -56,7 +56,7 @@ def eval_generator(Gen, eval_model, num_generate, y_sampler, split, batch_size,z
                                              is_train=False,
                                              LOSS=LOSS,
                                              loca_rank=local_rank)
-        ps = eval_model(fake_images)
+        ps = eval_model.get_outputs(fake_images)
         ps_holder.append(ps)
 
     with torch.no_grad():
@@ -75,7 +75,7 @@ def eval_dataset(data_loader, eval_model, splits, batch_size, local_rank, logger
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         real_images, real_labels = next(dataset_iter)
         real_images = real_images.to(local_rank)
-        ps = eval_model(real_images)
+        ps = eval_model.get_outputs(real_images)
         ps_holder.append(ps)
 
     with torch.no_grad():

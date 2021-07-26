@@ -95,7 +95,7 @@ def calculate_moments(data_loader, Gen, eval_model, is_generate, num_generate, y
                 break
 
         with torch.no_grad():
-            embeddings, logits = eval_model(images)
+            embeddings, logits = eval_model.get_outputs(images)
 
         if total_instance >= batch_size:
             acts[start:end] = embeddings.cpu().data.numpy().reshape(batch_size, -1)

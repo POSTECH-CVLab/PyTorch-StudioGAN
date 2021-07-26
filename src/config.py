@@ -13,8 +13,10 @@ import warnings
 import yaml
 
 import torch
+import torch.nn as nn
 
 import utils.losses as losses
+import utils.ops as ops
 
 
 class Configurations(object):
@@ -22,6 +24,7 @@ class Configurations(object):
         self.cfg_file = cfg_file
         self.load_base_cfgs()
         self._overwrite_cfgs(self.cfg_file)
+        self.define_modules()
 
     def load_base_cfgs(self):
         # -----------------------------------------------------------------------------
@@ -78,12 +81,12 @@ class Configurations(object):
         self.MODEL.d_conv_dim = 96
         # generator's depth for deep_big_resnet
         self.MODEL.g_depth = "N/A"
-        # discriminator's depth for deep_big_resnet
+        # discriminator's depth for deep_big_resnet self.MODEL.d_depth = "N/A"
         self.MODEL.d_depth = "N/A"
         # whether to apply moving average update for the generator
         self.MODEL.apply_g_ema = True
         # decay rate for the ema generator
-        self.MODEL.g_ema_deacy = 0.9999
+        self.MODEL.g_ema_decay = 0.9999
         # starting step for g_ema update
         self.MODEL.g_ema_start = 1000
         # weight initialization method for the generator \in ["ortho", "N02", "glorot", "xavier"]
@@ -202,7 +205,15 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.RUN = lambda: None
 
+        # -----------------------------------------------------------------------------
+        # StyleGAN_v2 settings
+        # -----------------------------------------------------------------------------
+        self.STYLE = lambda: None
+
+
         self.MODULES = lambda: None
+
+        self.TRAINER = lambda: None
 
         self.super_cfgs = {"DATA": self.DATA,
                            "MODEL": self.MODEL,
@@ -224,7 +235,7 @@ class Configurations(object):
                 for attr, value in attr_value.items():
                     setattr(self.super_cfgs[super_cfg_name], attr, value)
 
-    def define_modules(self, Gen, Dis):
+    def define_modules(self):
         g_losses = {"vanilla": losses.g_vanilla, "least_square": losses.g_ls,
                     "hinge": losses.g_hinge, "wasserstein": losses.g_wasserstein}
 
@@ -234,46 +245,102 @@ class Configurations(object):
         self.MODULES.g_loss = g_losses[self.LOSS.adv_loss]
         self.MODULES.d_loss = d_losses[self.LOSS.adv_loss]
 
-        if self.OPTIMIZER.type_ == "SGD":
-            self.MODULES.g_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Gen.parameters()),
-                                                       lr=self.OPTIMIZER.g_lr,
-                                                       weight_decay=self.OPTIMIZER.g_weight_decay,
-                                                       momentum=self.OPTIMIZER.momentum,
-                                                       nesterov=self.OPTIMIZER.nesterov)
+        if self.MODEL.apply_g_sn:
+            self.MODULES.g_conv2d = ops.snconv2d
+            self.MODULES.g_deconv2d = ops.sndeconv2d
+            self.MODULES.g_linear = ops.snlinear
+            self.MODULES.g_embedding = ops.sn_embedding
+        else:
+            self.MODULES.g_conv2d = ops.conv2d
+            self.MODULES.g_deconv2d = ops.deconv2d
+            self.MODULES.g_linear = ops.linear
+            self.MODULES.g_embedding = ops.embedding
 
-            self.MODULES.d_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Dis.parameters()),
-                                                       lr=self.OPTIMIZER.d_lr,
-                                                       weight_decay=self.OPTIMIZER.d_weight_decay,
-                                                       momentum=self.OPTIMIZER.momentum,
-                                                       nesterov=self.OPTIMIZER.nesterov)
-        elif self.OPTIMIZER.type_ == "RMSprop":
-            self.MODULES.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Gen.parameters()),
-                                                           lr=self.OPTIMIZER.g_lr,
-                                                           weight_decay=self.OPTIMIZER.g_weight_decay,
-                                                           momentum=self.OPTIMIZER.momentum,
-                                                           alpha=self.OPTIMIZER.alpha)
+        if self.MODEL.apply_d_sn:
+            self.MODULES.d_conv2d = ops.snconv2d
+            self.MODULES.d_deconv2d = ops.sndeconv2d
+            self.MODULES.d_linear = ops.snlinear
+            self.MODULES.d_embedding = ops.sn_embedding
+        else:
+            self.MODULES.d_conv2d = ops.conv2d
+            self.MODULES.d_deconv2d = ops.deconv2d
+            self.MODULES.d_linear = ops.linear
+            self.MODULES.d_embedding = ops.embedding
 
-            self.MODULES.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Dis.parameters()),
-                                                           lr=self.OPTIMIZER.d_lr,
-                                                           weight_decay=self.OPTIMIZER.d_weight_decay,
-                                                           momentum=self.OPTIMIZER.momentum,
-                                                           alpha=self.OPTIMIZER.alpha)
-        elif self.OPTIMIZER.type_ == "Adam":
-            self.MODULES.g_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Gen.parameters()),
-                                                        lr=self.OPTIMIZER.g_lr,
-                                                        betas=[self.OPTIMIZER.beta1, self.OPTIMIZER.beta2],
-                                                        weight_decay=self.OPTIMIZER.g_weight_decay,
-                                                        eps=1e-6)
+        if self.MODEL.g_cond_mtd == "cBN" and self.MODEL.backbone in ["big_resnet", "deep_big_resnet"]:
+            self.MODULES.g_bn = ops.ConditionalBatchNorm2d_BigGAN
+        elif self.MODEL.g_cond_mtd == "cBN":
+            self.MODULES.g_bn = ops.ConditionalBatchNorm2d
+        elif self.MODEL.g_cond_mtd == "W/O":
+            self.MODULES.g_bn = ops.batchnorm_2d
+        else:
+            raise NotImplementedError
 
-            self.MODULES.d_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Dis.parameters()),
-                                                        lr=self.OPTIMIZER.d_lr,
-                                                        betas=[self.OPTIMIZER.beta1, self.OPTIMIZER.beta2],
-                                                        weight_decay=self.OPTIMIZER.d_weight_decay,
-                                                        eps=1e-6)
+        if not self.MODEL.apply_d_sn:
+            self.MODULES.d_bn = ops.batchnorm_2d
+
+        if self.MODEL.g_act_fn == "ReLU":
+            self.MODULES.g_act_fn = nn.ReLU(inplace=True)
+        elif self.MODEL.g_act_fn == "Leaky_ReLU":
+            self.MODULES.g_act_fn = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif self.MODEL.g_act_fn == "ELU":
+            self.MODULES.g_act_fn = nn.ELU(alpha=1.0, inplace=True)
+        elif self.MODLE.g_act_fn == "GELU":
+            self.MODULES.g_act_fn = nn.GELU()
+        else:
+            raise NotImplementedError
+
+        if self.MODEL.d_act_fn == "ReLU":
+            self.MODULES.d_act_fn = nn.ReLU(inplace=True)
+        elif self.MODEL.d_act_fn == "Leaky_ReLU":
+            self.MODULES.d_act_fn = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        elif self.MODEL.d_act_fn == "ELU":
+            self.MODULES.d_act_fn = nn.ELU(alpha=1.0, inplace=True)
+        elif self.MODLE.d_act_fn == "GELU":
+            self.MODULES.d_act_fn = nn.GELU()
         else:
             raise NotImplementedError
         return self.MODULES
 
+    def define_optimizer(self, Gen, Dis):
+        if self.OPTIMIZER.type_ == "SGD":
+            self.OPTIMIZER.g_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                         lr=self.OPTIMIZER.g_lr,
+                                                         weight_decay=self.OPTIMIZER.g_weight_decay,
+                                                         momentum=self.OPTIMIZER.momentum,
+                                                         nesterov=self.OPTIMIZER.nesterov)
+
+            self.OPTIMIZER.d_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                         lr=self.OPTIMIZER.d_lr,
+                                                         weight_decay=self.OPTIMIZER.d_weight_decay,
+                                                         momentum=self.OPTIMIZER.momentum,
+                                                         nesterov=self.OPTIMIZER.nesterov)
+        elif self.OPTIMIZER.type_ == "RMSprop":
+            self.OPTIMIZER.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                             lr=self.OPTIMIZER.g_lr,
+                                                             weight_decay=self.OPTIMIZER.g_weight_decay,
+                                                             momentum=self.OPTIMIZER.momentum,
+                                                             alpha=self.OPTIMIZER.alpha)
+
+            self.OPTIMIZER.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                             lr=self.OPTIMIZER.d_lr,
+                                                             weight_decay=self.OPTIMIZER.d_weight_decay,
+                                                             momentum=self.OPTIMIZER.momentum,
+                                                             alpha=self.OPTIMIZER.alpha)
+        elif self.OPTIMIZER.type_ == "Adam":
+            self.OPTIMIZER.g_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                          lr=self.OPTIMIZER.g_lr,
+                                                          betas=[self.OPTIMIZER.beta1, self.OPTIMIZER.beta2],
+                                                          weight_decay=self.OPTIMIZER.g_weight_decay,
+                                                          eps=1e-6)
+
+            self.OPTIMIZER.d_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                          lr=self.OPTIMIZER.d_lr,
+                                                          betas=[self.OPTIMIZER.beta1, self.OPTIMIZER.beta2],
+                                                          weight_decay=self.OPTIMIZER.d_weight_decay,
+                                                          eps=1e-6)
+        else:
+            raise NotImplementedError
 
     def check_compatability(self):
         if self.RUN.load_data_in_memory:

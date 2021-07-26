@@ -31,11 +31,11 @@ import torch
 
 
 class Ema(object):
-    def __init__(self, source, target, decay=0.9999, start_itr=0):
+    def __init__(self, source, target, decay=0.9999, start_iter=0):
         self.source = source
         self.target = target
         self.decay = decay
-        self.start_itr = start_itr
+        self.start_iter = start_iter
         self.source_dict = self.source.state_dict()
         self.target_dict = self.target.state_dict()
         print('Initializing EMA parameters to be source parameters...')
@@ -43,8 +43,8 @@ class Ema(object):
             for key in self.source_dict:
                 self.target_dict[key].data.copy_(self.source_dict[key].data)
 
-    def update(self, itr=None):
-        if itr >= 0 and itr < self.start_itr:
+    def update(self, iter=None):
+        if iter >= 0 and iter < self.start_iter:
             decay = 0.0
         else:
             decay = self.decay
@@ -56,18 +56,18 @@ class Ema(object):
 
 
 class EmaDpSyncBN(object):
-    def __init__(self, source, target, decay=0.9999, start_itr=0):
+    def __init__(self, source, target, decay=0.9999, start_iter=0):
         self.source = source
         self.target = target
         self.decay = decay
-        self.start_itr = start_itr
+        self.start_iter = start_iter
         print('Initializing EMA parameters to be source parameters...')
         with torch.no_grad():
             for key in self.source.state_dict():
                 self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)
 
-    def update(self, itr=None):
-        if itr >= 0 and itr < self.start_itr:
+    def update(self, iter=None):
+        if iter >= 0 and iter < self.start_iter:
             decay = 0.0
         else:
             decay = self.decay

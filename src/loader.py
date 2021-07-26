@@ -34,6 +34,12 @@ import metrics.preparation as pp
 
 def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
+    # define default variables for loading ckpts or evaluating the trained GAN model.
+    # -----------------------------------------------------------------------------
+    prev_ada_p, step, best_step, best_fid, best_ckpt_path  = None, 0, 0, None, None
+    mu, sigma, eval_model = None, None, None
+
+    # -----------------------------------------------------------------------------
     # initialize all processes and identify the local rank.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
@@ -116,49 +122,42 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
     # -----------------------------------------------------------------------------
     # load a generator and a discriminator
-    # if cfgs.MODEL.apply_ema is True, load an exponential moving average generator (Gen_copy).
+    # if cfgs.MODEL.apply_g_ema is True, load an exponential moving average generator (Gen_copy).
     # -----------------------------------------------------------------------------
-    Gen, Dis, Gen_ema, ema = model.load_generator_discriminator(MODEL=cfgs.MODEL,
+    Gen, Dis, Gen_ema, ema = model.load_generator_discriminator(DATA=cfgs.DATA,
+                                                                OPTIMIZER=cfgs.OPTIMIZER,
+                                                                MODEL=cfgs.MODEL,
+                                                                MODULES=cfgs.MODULES,
                                                                 RUN=cfgs.RUN,
-                                                                DATA=cfgs.DATA,
                                                                 local_rank=local_rank,
                                                                 logger=logger)
 
     # -----------------------------------------------------------------------------
-    # load modules for training
+    # define optimizers for adversarial training
     # -----------------------------------------------------------------------------
-    train_modules = cfgs.define_modules(Gen, Dis)
+    cfgs.define_optimizer(Gen, Dis)
 
     # -----------------------------------------------------------------------------
-    # load the generator and discriminator from a checkpoint if possible
+    # load the generator and the discriminator from a checkpoint if possible
     # -----------------------------------------------------------------------------
-    if cfgs.checkpoint_folder is None:
-        checkpoint_dir = ckpt.make_checkpoint_dir(cfgs.RUN.ckpt_dir, run_name)
+    if cfgs.RUN.ckpt_dir is None:
+        cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(cfgs.RUN.ckpt_dir, run_name)
     else:
-        when = "current" if cfgs.load_current is True else "best"
-        if not exists(abspath(cfgs.checkpoint_folder)):
-            raise NotADirectoryError
-        checkpoint_dir = make_checkpoint_dir(cfgs.checkpoint_folder, run_name)
-        g_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0]
-        d_checkpoint_dir = glob.glob(join(checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0]
-        Gen, G_optimizer, trained_seed, run_name, step, prev_ada_p = load_checkpoint(Gen, G_optimizer, g_checkpoint_dir)
-        Dis, D_optimizer, trained_seed, run_name, step, prev_ada_p, best_step, best_fid, best_fid_checkpoint_path =\
-            load_checkpoint(Dis, D_optimizer, d_checkpoint_dir, metric=True)
-        if local_rank == 0: logger = make_logger(run_name, None)
-        if cfgs.ema:
-            g_ema_checkpoint_dir = glob.glob(join(checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
-            Gen_copy = load_checkpoint(Gen_copy, None, g_ema_checkpoint_dir, ema=True)
-            Gen_ema.source, Gen_ema.target = Gen, Gen_copy
-
-        writer = SummaryWriter(log_dir=join('./logs', run_name)) if global_rank == 0 else None
-        if cfgs.train_configs['train'] and cfgs.seed != trained_seed:
-            cfgs.seed = trained_seed
-            fix_all_seed(cfgs.seed)
-
-        if local_rank == 0: logger.info('Generator checkpoint is {}'.format(g_checkpoint_dir))
-        if local_rank == 0: logger.info('Discriminator checkpoint is {}'.format(d_checkpoint_dir))
-        if cfgs.freeze_layers > -1 :
-            prev_ada_p, step, best_step, best_fid, best_fid_checkpoint_path = None, 0, 0, None, None
+        ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
+                                  load_best=cfgs.RUN.load_best,
+                                  Gen=Gen,
+                                  Dis=Dis,
+                                  g_optimizer=cfgs.trainer.g_optimizer,
+                                  d_optimizer=cfgs.trainer.d_optimizer,
+                                  run_name=run_name,
+                                  apply_g_ema=cfgs.MODEL.apply_g_ema,
+                                  Gen_ema=Gen_ema,
+                                  ema=ema,
+                                  is_train=cfgs.RUN.train,
+                                  RUN=cfgs.RUN,
+                                  logger=logger,
+                                  glbal_rank=global_rank,
+                                  local_rank=local_rank)
 
     # -----------------------------------------------------------------------------
     # prepare parallel training
@@ -169,7 +168,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                                         world_size=cfgs.OPTIMIZER.world_size,
                                                         distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                                         synchronized_bn=cfgs.RUN.synchronized_bn,
-                                                        ema=cfgs.MODEL.ema,
+                                                        apply_g_ema=cfgs.MODEL.apply_g_ema,
                                                         local_rank=local_rank)
 
     # -----------------------------------------------------------------------------
@@ -181,12 +180,13 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                       local_rank=local_rank)
 
-        mu, sigma = pp.prepare_moments_calculate_ins(dataloader=eval_dataloader,
+        mu, sigma = pp.prepare_moments_calculate_ins(data_loader=eval_dataloader,
                                                      eval_model=eval_model,
                                                      splits=1,
                                                      cfgs=cfgs,
                                                      logger=logger,
                                                      local_rank=local_rank)
+    import pdb;pdb.set_trace()
 
     worker = make_worker(
         cfgs=cfgs,
