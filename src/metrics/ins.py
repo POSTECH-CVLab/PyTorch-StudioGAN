@@ -42,7 +42,7 @@ def eval_generator(Gen, eval_model, num_generate, y_sampler, split, batch_size,z
     eval_model.eval()
     ps_holder = []
 
-    if local_rank == 0: logger.info("Calculating inception score....")
+    if local_rank == 0: logger.info("Calculate inception score of generated images.")
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         fake_images = sample.generate_images(z_prior=z_prior,
@@ -56,7 +56,7 @@ def eval_generator(Gen, eval_model, num_generate, y_sampler, split, batch_size,z
                                              is_train=False,
                                              LOSS=LOSS,
                                              loca_rank=local_rank)
-        ps = eval_model.get_outputs(fake_images)
+        ps = inception_softmax(eval_model, fake_images)
         ps_holder.append(ps)
 
     with torch.no_grad():
@@ -64,18 +64,17 @@ def eval_generator(Gen, eval_model, num_generate, y_sampler, split, batch_size,z
         m_scores, m_std = kullback_leibler_divergence(ps_holder[:num_generate], splits=split)
     return m_scores, m_std
 
-def eval_dataset(data_loader, eval_model, splits, batch_size, local_rank, logger, disable_tqdm=False):
+def eval_dataset(data_loader, eval_model, splits, batch_size, local_rank, disable_tqdm=False):
     eval_model.eval()
     num_samples = len(data_loader.dataset)
     num_batches = int(math.ceil(float(num_samples)/float(batch_size)))
     dataset_iter = iter(data_loader)
     ps_holder = []
 
-    if local_rank == 0: logger.info("Calculating inception score of the training dataset...")
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         real_images, real_labels = next(dataset_iter)
         real_images = real_images.to(local_rank)
-        ps = eval_model.get_outputs(real_images)
+        ps = inception_softmax(eval_model, real_images)
         ps_holder.append(ps)
 
     with torch.no_grad():

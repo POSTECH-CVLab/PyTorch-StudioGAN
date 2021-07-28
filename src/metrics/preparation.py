@@ -70,7 +70,7 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
         mu = np.load(save_path)["mu"]
         sigma = np.load(save_path)["sigma"]
     else:
-        if local_rank == 0: logger.info("Calculate moments of {ref} dataset".format(ref=cfgs.RUN.ref_dataset))
+        if local_rank == 0: logger.info("Calculate moments of {ref} dataset.".format(ref=cfgs.RUN.ref_dataset))
         mu, sigma = fid.calculate_moments(data_loader=data_loader,
                                           Gen="N/A",
                                           eval_model=eval_model,
@@ -86,19 +86,18 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
                                           local_rank=local_rank,
                                           disable_tqdm=False)
 
-        if local_rank == 0: logger.info("Save calculated means and covariances to disk...")
+        if local_rank == 0: logger.info("Save calculated means and covariances to disk.")
         np.savez(save_path, **{"mu": mu, "sigma": sigma})
 
     if is_file:
         pass
     else:
-        if local_rank == 0: logger.info("calculate inception score of the {ref} dataset.".format(ref=cfgs.RUN.ref_dataset))
+        if local_rank == 0: logger.info("Calculate inception score of the {ref} dataset.".format(ref=cfgs.RUN.ref_dataset))
         is_score, is_std = ins.eval_dataset(data_loader=data_loader,
                                             eval_model=eval_model,
                                             splits=splits,
                                             batch_size=cfgs.OPTIMIZER.batch_size,
                                             local_rank=local_rank,
-                                            logger=logger,
                                             disable_tqdm=False)
         if local_rank == 0: logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))
     return mu, sigma

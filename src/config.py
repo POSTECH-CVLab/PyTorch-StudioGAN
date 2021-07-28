@@ -102,8 +102,10 @@ class Configurations(object):
         self.LOSS.adv_loss = "hinge"
         # balancing hyperparameter for conditional image generation
         self.LOSS.cond_lambda = 1.0
-        # margin hyperparameter for [AMSoftmax, DadaSoftmax]
+        # margin hyperparameter for [AMSoftmax, D2DCE]
         self.LOSS.margin = "N/A"
+        # temperature scalar for [AMsoftmax, 2C, D2DCE]
+        self.LOSS.temperature = 1.0
         # whether to apply weight clipping regularization to let the discriminator satisfy Lipschitzness
         self.LOSS.apply_wc = False
         # clipping bound for weight clippling regularization
@@ -173,12 +175,12 @@ class Configurations(object):
         # beta values for Adam optimizer
         self.OPTIMIZER.beta1 = 0.5
         self.OPTIMIZER.beta2 = 0.999
-        # the number of generator update steps per iteration
-        self.OPTIMIZER.g_steps_per_iter = 1
-        # the number of discriminator update steps per iteration
-        self.OPTIMIZER.d_steps_per_iter = 5
-        # the total number of iterations for GAN training
-        self.OPTIMIZER.total_iters = 100000
+        # the number of generator updates per step
+        self.OPTIMIZER.g_updates_per_step = 1
+        # the number of discriminator updates per step
+        self.OPTIMIZER.d_updates_per_step = 5
+        # the total number of steps for GAN training
+        self.OPTIMIZER.total_steps = 100000
 
         # -----------------------------------------------------------------------------
         # preprocessing settings

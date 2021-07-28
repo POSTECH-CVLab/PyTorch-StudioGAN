@@ -23,7 +23,7 @@ import torch
 from data_util import Dataset_
 from metrics.inception_net import InceptionV3
 from sync_batchnorm.batchnorm import convert_model
-import worker
+from worker import WORKER
 import utils.log as log
 import utils.losses as losses
 import utils.ckpt as ckpt
@@ -36,7 +36,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # define default variables for loading ckpts or evaluating the trained GAN model.
     # -----------------------------------------------------------------------------
-    prev_ada_p, step, best_step, best_fid, best_ckpt_path  = None, 0, 0, None, None
+    ada_p, step, best_step, best_fid, best_ckpt_path  = None, 0, 0, None, None
     mu, sigma, eval_model = None, None, None
 
     # -----------------------------------------------------------------------------
@@ -58,7 +58,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         logger = log.make_logger(run_name, None)
         logger.info("Run name : {run_name}".format(run_name=run_name))
         for k, v in cfgs.super_cfgs.items():
-            logger.info(k + " configurations = ")
+            logger.info("cfgs." + k + " =")
             logger.info(json.dumps(vars(v), indent=2))
     else:
         logger = None
@@ -67,7 +67,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # load train and evaluation dataset.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
-        if local_rank == 0: logger.info("Load {name} train dataset".format(name=cfgs.DATA.name))
+        if local_rank == 0: logger.info("Load {name} train dataset.".format(name=cfgs.DATA.name))
         train_dataset = Dataset_(data_name=cfgs.DATA.name,
                                  data_path=cfgs.DATA.path,
                                  train=True,
@@ -81,7 +81,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         train_dataset = None
 
     if cfgs.RUN.eval:
-        if local_rank == 0: logger.info("Load {name} {ref} datasets".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
+        if local_rank == 0: logger.info("Load {name} {ref} datasets.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
                                 data_path=cfgs.DATA.path,
                                 train=True if cfgs.RUN.ref_dataset == "train" else False,
@@ -105,20 +105,27 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         train_sampler = None
     cfgs.OPTIMIZER.basket_size = cfgs.OPTIMIZER.batch_size*cfgs.OPTIMIZER.accm_step*cfgs.OPTIMIZER.d_steps_per_iter
 
-    train_dataloader = DataLoader(dataset=train_dataset,
-                                  batch_size=cfgs.OPTIMIZER.basket_size,
-                                  shuffle=(train_sampler is None),
-                                  pin_memory=True,
-                                  num_workers=cfgs.RUN.num_workers,
-                                  sampler=train_sampler,
-                                  drop_last=True)
 
-    eval_dataloader = DataLoader(dataset=eval_dataset,
-                                 batch_size=cfgs.OPTIMIZER.batch_size,
-                                 shuffle=False,
-                                 pin_memory=True,
-                                 num_workers=cfgs.RUN.num_workers,
-                                 drop_last=False)
+    if cfgs.RUN.train:
+        train_dataloader = DataLoader(dataset=train_dataset,
+                                      batch_size=cfgs.OPTIMIZER.basket_size,
+                                      shuffle=(train_sampler is None),
+                                      pin_memory=True,
+                                      num_workers=cfgs.RUN.num_workers,
+                                      sampler=train_sampler,
+                                      drop_last=True)
+    else:
+        train_dataloader = None
+
+    if cfgs.RUN.eval:
+        eval_dataloader = DataLoader(dataset=eval_dataset,
+                                    batch_size=cfgs.OPTIMIZER.batch_size,
+                                    shuffle=False,
+                                    pin_memory=True,
+                                    num_workers=cfgs.RUN.num_workers,
+                                    drop_last=False)
+    else:
+        eval_dataloader = None
 
     # -----------------------------------------------------------------------------
     # load a generator and a discriminator
@@ -143,21 +150,22 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.ckpt_dir is None:
         cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(cfgs.RUN.ckpt_dir, run_name)
     else:
-        ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
-                                  load_best=cfgs.RUN.load_best,
-                                  Gen=Gen,
-                                  Dis=Dis,
-                                  g_optimizer=cfgs.trainer.g_optimizer,
-                                  d_optimizer=cfgs.trainer.d_optimizer,
-                                  run_name=run_name,
-                                  apply_g_ema=cfgs.MODEL.apply_g_ema,
-                                  Gen_ema=Gen_ema,
-                                  ema=ema,
-                                  is_train=cfgs.RUN.train,
-                                  RUN=cfgs.RUN,
-                                  logger=logger,
-                                  glbal_rank=global_rank,
-                                  local_rank=local_rank)
+        step, ada_p, best_step, best_fid, best_ckpt_path, writer =\
+            ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
+                                      load_best=cfgs.RUN.load_best,
+                                      Gen=Gen,
+                                      Dis=Dis,
+                                      g_optimizer=cfgs.trainer.g_optimizer,
+                                      d_optimizer=cfgs.trainer.d_optimizer,
+                                      run_name=run_name,
+                                      apply_g_ema=cfgs.MODEL.apply_g_ema,
+                                      Gen_ema=Gen_ema,
+                                      ema=ema,
+                                      is_train=cfgs.RUN.train,
+                                      RUN=cfgs.RUN,
+                                      logger=logger,
+                                      glbal_rank=global_rank,
+                                      local_rank=local_rank)
 
     # -----------------------------------------------------------------------------
     # prepare parallel training
@@ -186,66 +194,57 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                                      cfgs=cfgs,
                                                      logger=logger,
                                                      local_rank=local_rank)
-    import pdb;pdb.set_trace()
 
-    worker = make_worker(
+    # -----------------------------------------------------------------------------
+    # initialize WORKER for training and evaluating GAN
+    # -----------------------------------------------------------------------------
+    worker = WORKER(
         cfgs=cfgs,
-        train_configs=train_configs,
-        model_configs=model_configs,
         run_name=run_name,
-        best_step=best_step,
-        logger=logger,
-        writer=writer,
-        n_gpus=world_size,
-        gen_model=Gen,
-        dis_model=Dis,
-        inception_model=inception_model,
-        Gen_copy=Gen_copy,
+        Gen=Gen,
+        Dis=Dis,
         Gen_ema=Gen_ema,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        ema=ema,
+        eval_model=eval_model,
         train_dataloader=train_dataloader,
         eval_dataloader=eval_dataloader,
-        G_optimizer=G_optimizer,
-        D_optimizer=D_optimizer,
-        G_loss=G_loss[cfgs.adv_loss],
-        D_loss=D_loss[cfgs.adv_loss],
-        prev_ada_p=prev_ada_p,
         global_rank=global_rank,
         local_rank=local_rank,
-        bn_stat_OnTheFly=cfgs.bn_stat_OnTheFly,
-        checkpoint_dir=checkpoint_dir,
         mu=mu,
         sigma=sigma,
+        logger=logger,
+        writer=writer,
+        ada_p=ada_p,
+        best_step=best_step,
         best_fid=best_fid,
-        best_fid_checkpoint_path=best_fid_checkpoint_path,
+        best_ckpt_path=best_ckpt_path,
     )
 
-    if cfgs.train_configs['train']:
-        step = worker.train(current_step=step, total_step=cfgs.total_step)
+    if cfgs.RUN.train and step == 0 and global_rank == 0: logger.info("Start training!")
 
-    if cfgs.eval:
-        is_save = worker.evaluation(step=step, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+    while step <= cfgs.OPTIMIZER.total_steps:
+        misc.change_mode(Gen, Dis, Gen_ema)
 
-    if cfgs.save_images:
-        worker.save_images(is_generate=True, png=True, npz=True, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+        step = worker.train(current_step=step)
 
-    if cfgs.image_visualization:
-        worker.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+        if cfgs.RUN.eval:
+            is_save = worker.evaluation(step=step)
 
-    if cfgs.k_nearest_neighbor:
-        worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol, standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+        if cfgs.RUN.save_fake_images:
+            worker.save_images(is_generate=True, png=True, npz=True)
 
-    if cfgs.interpolation:
-        worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False,
-                                        standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
-        worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True,
-                                        standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+        if cfgs.RUN.vis_fake_images:
+            worker.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol)
 
-    if cfgs.frequency_analysis:
-        worker.run_frequency_analysis(num_images=len(train_dataset),
-                                      standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+        if cfgs.RUN.k_nearest_neighbor:
+            worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol)
 
-    if cfgs.tsne_analysis:
-        worker.run_tsne(dataloader=eval_dataloader,
-                        standing_statistics=cfgs.standing_statistics, standing_step=cfgs.standing_step)
+        if cfgs.RUN.interpolation:
+            worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False)
+            worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True)
+
+        if cfgs.RUN.frequency_analysis:
+            worker.run_frequency_analysis(num_images=len(train_dataset))
+
+        if cfgs.RUN.tsne_analysis:
+            worker.run_tsne(dataloader=eval_dataloader)

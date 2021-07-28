@@ -105,7 +105,10 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
                             LOSS.lo_beta, False, local_rank)
     """
     fake_images = Gen(zs, fake_labels, evaluation=not is_train)
-    return fake_images, fake_labels
+
+    if zs_eps is not None:
+        fake_images = Gen(zs_eps, fake_labels, evaluation=False)
+    return fake_images, fake_labels,
 
 def sample_1hot(batch_size, num_classes, device='cuda'):
     return torch.randint(low=0, high=num_classes, size=(batch_size,),

@@ -94,20 +94,15 @@ class Cross_Entropy_loss(torch.nn.Module):
         logits = self.layer(embeds)
         return self.ce_loss(logits, labels)
 
-
-class Conditional_Contrastive_loss(torch.nn.Module):
-    def __init__(self, device, batch_size, pos_collected_numerator):
-        super(Conditional_Contrastive_loss, self).__init__()
+class ConditionalContrastive(torch.nn.Module):
+    def __init__(self, device):
+        super(ConditionalContrastive, self).__init__()
         self.device = device
-        self.batch_size = batch_size
-        self.pos_collected_numerator = pos_collected_numerator
         self.calculate_similarity_matrix = self._calculate_similarity_matrix()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
 
-
     def _calculate_similarity_matrix(self):
         return self._cosine_simililarity_matrix
-
 
     def remove_diag(self, M):
         h, w = M.shape
@@ -117,125 +112,22 @@ class Conditional_Contrastive_loss(torch.nn.Module):
         mask = (mask).type(torch.bool).to(self.device)
         return M[mask].view(h, -1)
 
-
     def _cosine_simililarity_matrix(self, x, y):
         v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
         return v
 
+    def forward(self, embed, proxy, mask, labels, temperature):
+        sim_matrix = self.calculate_similarity_matrix(embed, embed)
+        sim_matrix = torch.exp(self.remove_diag(sim_matrix)/temperature)
+        neg_removal_mask = self.remove_diag(mask[labels])
+        sim_btw_pos = neg_removal_mask*sim_matrix
 
-    def forward(self, inst_embed, proxy, negative_mask, labels, temperature, margin):
-        similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
-        instance_zone = torch.exp((self.remove_diag(similarity_matrix) - margin)/temperature)
+        emb2proxy = torch.exp(self.cosine_similarity(embed, proxy)/temperature)
 
-        inst2proxy_positive = torch.exp((self.cosine_similarity(inst_embed, proxy) - margin)/temperature)
-        if self.pos_collected_numerator:
-            mask_4_remove_negatives = negative_mask[labels]
-            mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
-            inst2inst_positives = instance_zone*mask_4_remove_negatives
-
-            numerator = inst2proxy_positive + inst2inst_positives.sum(dim=1)
-        else:
-            numerator = inst2proxy_positive
-
-        denomerator = torch.cat([torch.unsqueeze(inst2proxy_positive, dim=1), instance_zone], dim=1).sum(dim=1)
-        criterion = -torch.log(temperature*(numerator/denomerator)).mean()
-        return criterion
-
-
-class Proxy_NCA_loss(torch.nn.Module):
-    def __init__(self, device, embedding_layer, num_classes, batch_size):
-        super(Proxy_NCA_loss, self).__init__()
-        self.device = device
-        self.embedding_layer = embedding_layer
-        self.num_classes = num_classes
-        self.batch_size = batch_size
-        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
-
-
-    def _get_positive_proxy_mask(self, labels):
-        labels = labels.detach().cpu().numpy()
-        rvs_one_hot_target = np.ones([self.num_classes, self.num_classes]) - np.eye(self.num_classes)
-        rvs_one_hot_target = rvs_one_hot_target[labels]
-        mask = torch.from_numpy((rvs_one_hot_target)).type(torch.bool)
-        return mask.to(self.device)
-
-
-    def forward(self, inst_embed, proxy, labels):
-        all_labels = torch.tensor([c for c in range(self.num_classes)]).type(torch.long).to(self.device)
-        positive_proxy_mask = self._get_positive_proxy_mask(labels)
-        negative_proxies = torch.exp(torch.mm(inst_embed, self.embedding_layer(all_labels).T))*positive_proxy_mask
-
-        inst2proxy_positive = torch.exp(self.cosine_similarity(inst_embed, proxy))
-        numerator = inst2proxy_positive
-        denomerator = negative_proxies.sum(dim=1)
-        criterion = -torch.log(numerator/denomerator).mean()
-        return criterion
-
-
-class NT_Xent_loss(torch.nn.Module):
-    def __init__(self, device, batch_size, use_cosine_similarity=True):
-        super(NT_Xent_loss, self).__init__()
-        self.device = device
-        self.batch_size = batch_size
-        self.softmax = torch.nn.Softmax(dim=-1)
-        self.mask_samples_from_same_repr = self._get_correlated_mask().type(torch.bool)
-        self.similarity_function = self._get_similarity_function(use_cosine_similarity)
-        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
-
-
-    def _get_similarity_function(self, use_cosine_similarity):
-        if use_cosine_similarity:
-            self._cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
-            return self._cosine_simililarity
-        else:
-            return self._dot_simililarity
-
-
-    def _get_correlated_mask(self):
-        diag = np.eye(2 * self.batch_size)
-        l1 = np.eye((2 * self.batch_size), 2 * self.batch_size, k=-self.batch_size)
-        l2 = np.eye((2 * self.batch_size), 2 * self.batch_size, k=self.batch_size)
-        mask = torch.from_numpy((diag + l1 + l2))
-        mask = (1 - mask).type(torch.bool)
-        return mask.to(self.device)
-
-
-    @staticmethod
-    def _dot_simililarity(x, y):
-        v = torch.tensordot(x.unsqueeze(1), y.T.unsqueeze(0), dims=2)
-        # x shape: (N, 1, C)
-        # y shape: (1, C, 2N)
-        # v shape: (N, 2N)
-        return v
-
-
-    def _cosine_simililarity(self, x, y):
-        # x shape: (N, 1, C)
-        # y shape: (1, 2N, C)
-        # v shape: (N, 2N)
-        v = self._cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
-        return v
-
-
-    def forward(self, zis, zjs, temperature):
-        representations = torch.cat([zjs, zis], dim=0)
-
-        similarity_matrix = self.similarity_function(representations, representations)
-
-        # filter out the scores from the positive samples
-        l_pos = torch.diag(similarity_matrix, self.batch_size)
-        r_pos = torch.diag(similarity_matrix, -self.batch_size)
-        positives = torch.cat([l_pos, r_pos]).view(2 * self.batch_size, 1)
-
-        negatives = similarity_matrix[self.mask_samples_from_same_repr].view(2 * self.batch_size, -1)
-
-        logits = torch.cat((positives, negatives), dim=1)
-        logits /= temperature
-
-        labels = torch.zeros(2 * self.batch_size).to(self.device).long()
-        loss = self.criterion(logits, labels)
-        return loss / (2 * self.batch_size)
-
+        numerator = emb2proxy + sim_btw_pos.sum(dim=1)
+        denomerator = torch.cat([torch.unsqueeze(emb2proxy, dim=1), sim_matrix], dim=1).sum(dim=1)
+        criterion = -torch.log(numerator/denomerator)
+        return criterion.mean()
 
 def calc_derv4gp(netD, conditional_strategy, real_data, fake_data, real_labels, device):
     batch_size, c, h, w = real_data.shape

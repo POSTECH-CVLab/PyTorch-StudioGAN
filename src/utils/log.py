@@ -23,7 +23,7 @@ def make_logger(run_name, log_output):
         run_name = log_output.split('/')[-1].split('.')[0]
     logger = logging.getLogger(run_name)
     logger.propagate = False
-    log_filepath = log_output if log_output is not None else join('logs', f'{run_name}.log')
+    log_filepath = log_output if log_output is not None else join("logs", f"{run_name}.log")
 
     log_dir = dirname(abspath(log_filepath))
     if not exists(log_dir):
@@ -33,7 +33,7 @@ def make_logger(run_name, log_output):
         file_handler = logging.FileHandler(log_filepath, 'a', 'utf-8')
         stream_handler = logging.StreamHandler(os.sys.stdout)
 
-        formatter = logging.Formatter('[%(levelname)s] %(asctime)s > %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        formatter = logging.Formatter('[%(levelname)s] %(asctime)s > %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
 
         file_handler.setFormatter(formatter)
         stream_handler.setFormatter(formatter)
@@ -42,9 +42,3 @@ def make_logger(run_name, log_output):
         logger.addHandler(stream_handler)
         logger.setLevel(logging.INFO)
     return logger
-
-def make_checkpoint_dir(checkpoint_dir, run_name):
-    checkpoint_dir = checkpoint_dir if checkpoint_dir is not None else join('checkpoints', run_name)
-    if not exists(abspath(checkpoint_dir)):
-        os.makedirs(checkpoint_dir)
-    return checkpoint_dir

@@ -38,7 +38,7 @@ class Ema(object):
         self.start_iter = start_iter
         self.source_dict = self.source.state_dict()
         self.target_dict = self.target.state_dict()
-        print('Initializing EMA parameters to be source parameters...')
+        print("Initialize the copied generator's parameters to be source parameters.")
         with torch.no_grad():
             for key in self.source_dict:
                 self.target_dict[key].data.copy_(self.source_dict[key].data)
@@ -61,7 +61,7 @@ class EmaDpSyncBN(object):
         self.target = target
         self.decay = decay
         self.start_iter = start_iter
-        print('Initializing EMA parameters to be source parameters...')
+        print("Initialize the copied generator's parameters to be source parameters.")
         with torch.no_grad():
             for key in self.source.state_dict():
                 self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)

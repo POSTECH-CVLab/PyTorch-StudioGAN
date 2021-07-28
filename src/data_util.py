@@ -90,7 +90,7 @@ class Dataset_(Dataset):
                 self.data = np.transpose(f["imgs"], (0, 2, 3, 1))
                 self.labels = f["labels"]
                 if self.load_data_in_memory:
-                    print("Loading %s into memory..." % self.hdf5_path)
+                    print("Load {path} into memory.".format(path=self.hdf5_path))
                     self.data, self.labels = self.data[:], self.labels[:]
                 return
 

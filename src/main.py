@@ -115,7 +115,7 @@ def main():
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
         cudnn.benchmark, cudnn.deterministic = False, True
-    misc.fix_all_seed(cfgs.RUN.seed)
+    misc.fix_seed(cfgs.RUN.seed)
 
     if cfgs.OPTIMIZER.world_size == 1:
         warnings.warn("You have chosen a specific GPU. This will completely disable data parallelism.")

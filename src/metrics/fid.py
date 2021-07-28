@@ -39,9 +39,9 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     sigma2 = np.atleast_2d(sigma2)
 
     assert mu1.shape == mu2.shape, \
-        "Training and test mean vectors have different lengths"
+        "Training and test mean vectors have different lengths."
     assert sigma1.shape == sigma2.shape, \
-        "Training and test covariances have different dimensions"
+        "Training and test covariances have different dimensions."
 
     diff = mu1 - mu2
 
@@ -55,7 +55,7 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     if np.iscomplexobj(covmean):
         if not np.allclose(np.diagonal(covmean).imag, 0, atol=1e-3):
             m = np.max(np.abs(covmean.imag))
-            raise ValueError('Imaginary component {}'.format(m))
+            raise ValueError("Imaginary component {}".format(m))
         covmean = covmean.real
 
     tr_covmean = np.trace(covmean)
@@ -112,7 +112,7 @@ def calculate_fid(data_loader, Gen, eval_model, num_generate, y_sampler, cfgs, l
     disable_tqdm = local_rank != 0
     eval_model.eval()
 
-    if local_rank == 0: logger.info("Calculating FID score....")
+    if local_rank == 0: logger.info("Calculate FID score of generated images.")
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std
     else:
