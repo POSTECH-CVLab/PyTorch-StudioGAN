@@ -76,17 +76,3 @@ class EmaDpSyncBN(object):
             for key in self.source.state_dict():
                 data = self.target.state_dict()[key].data*decay + self.source.state_dict()[key].data*(1. - decay)
                 self.target.state_dict()[key].data.copy_(data)
-
-
-def orthogonalize_model(model, strength=1e-4, blacklist=[]):
-    with torch.no_grad():
-        for param in model.parameters():
-            if len(param.shape) < 2 or any([param is item for item in blacklist]):
-                continue
-            w = param.view(param.shape[0], -1)
-            grad = (2*torch.mm(torch.mm(w, w.t())*(1. - torch.eye(w.shape[0], device=w.device)), w))
-            param.grad.data += strength*grad.view(param.shape)
-
-def interpolate(x0, x1, num_midpoints):
-    lerp = torch.linspace(0, 1.0, num_midpoints + 2, device='cuda').to(x0.dtype)
-    return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))

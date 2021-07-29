@@ -21,7 +21,7 @@ def inception_softmax(eval_model, images):
         ps = torch.nn.functional.softmax(logits, dim=1)
     return ps
 
-def kullback_leibler_divergence(ps, splits):
+def calculate_kl_div(ps, splits):
     scores = []
     num_samples = ps.shape[0]
     with torch.no_grad():
@@ -61,7 +61,7 @@ def eval_generator(Gen, eval_model, num_generate, y_sampler, split, batch_size,z
 
     with torch.no_grad():
         ps_holder = torch.cat(ps_holder, 0)
-        m_scores, m_std = kullback_leibler_divergence(ps_holder[:num_generate], splits=split)
+        m_scores, m_std = calculate_kl_div(ps_holder[:num_generate], splits=split)
     return m_scores, m_std
 
 def eval_dataset(data_loader, eval_model, splits, batch_size, local_rank, disable_tqdm=False):
@@ -79,5 +79,5 @@ def eval_dataset(data_loader, eval_model, splits, batch_size, local_rank, disabl
 
     with torch.no_grad():
         ps_holder = torch.cat(ps_holder, 0)
-        m_scores, m_std = kullback_leibler_divergence(ps_holder, splits=splits)
+        m_scores, m_std = calculate_kl_div(ps_holder, splits=splits)
     return m_scores, m_std

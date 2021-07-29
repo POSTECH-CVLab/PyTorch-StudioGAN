@@ -94,7 +94,7 @@ def main():
 
     cfgs = config.Configurations(args.cfg_file)
     cfgs.update_cfgs(run_cfgs, super="RUN")
-    cfgs.OPTIMIZER.world_size = gpus_per_node*cfgs.RUN.total_nodes
+    cfgs.OPTIMIZATION.world_size = gpus_per_node*cfgs.RUN.total_nodes
     cfgs.check_compatability()
 
     run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
@@ -117,7 +117,7 @@ def main():
         cudnn.benchmark, cudnn.deterministic = False, True
     misc.fix_seed(cfgs.RUN.seed)
 
-    if cfgs.OPTIMIZER.world_size == 1:
+    if cfgs.OPTIMIZATION.world_size == 1:
         warnings.warn("You have chosen a specific GPU. This will completely disable data parallelism.")
 
     if cfgs.RUN.distributed_data_parallel and cfgs.RUN.world_size > 1:

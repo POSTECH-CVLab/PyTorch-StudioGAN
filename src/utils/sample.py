@@ -15,6 +15,8 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
+import utils.ops as ops
+
 
 def truncated_normal(size, threshold=1.):
     values = truncnorm.rvs(-threshold, threshold, size=size)
@@ -84,12 +86,12 @@ def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_th, y_sampler,
     return zs, fake_labels, zs_eps
 
 def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler, radius,
-                    Gen, is_train, LOSS, local_rank):
+                    generator, discriminator, is_train, LOSS, local_rank, cal_trsf_cost=False):
     if is_train:
         truncation_th = -1.0
-        lo_step = LOSS.lo_step4train
+        lo_steps = LOSS.lo_step4train
     else:
-        lo_step = LOSS.lo_step4eval
+        lo_steps = LOSS.lo_step4eval
 
     zs, fake_labels, zs_eps = sample_zy(z_prior=z_prior,
                                         batch_size=batch_size,
@@ -99,36 +101,45 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
                                         y_sampler=y_sampler,
                                         radius=radius,
                                         local_rank=local_rank)
-    """
     if LOSS.latent_op:
-        zs = latent_optimise(zs, fake_labels, Gen, Dis, MODEL.d_cond_mtd, lo_step, 1.0, LOSS.lo_alpha,
-                            LOSS.lo_beta, False, local_rank)
-    """
-    fake_images = Gen(zs, fake_labels, evaluation=not is_train)
+        zs, trsf_cost = ops.latent_optimise(zs=zs,
+                                            fake_labels=fake_labels,
+                                            generator=generator,
+                                            discriminator=discriminator,
+                                            batch_size=batch_size,
+                                            lo_rate=LOSS.lo_rate,
+                                            lo_steps=lo_steps,
+                                            lo_alpha=LOSS.lo_alpha,
+                                            lo_beta=LOSS.lo_beta,
+                                            cal_trsf_cost=cal_trsf_cost,
+                                            device=local_rank)
+
+    fake_images = generator(zs, fake_labels, evaluation=not is_train)
 
     if zs_eps is not None:
-        fake_images = Gen(zs_eps, fake_labels, evaluation=False)
-    return fake_images, fake_labels,
+        fake_images_eps = generator(zs_eps, fake_labels, evaluation=not is_train)
+    else:
+        fake_images_eps = None
+    return fake_images, fake_labels, fake_images_eps, trsf_cost
 
-def sample_1hot(batch_size, num_classes, device='cuda'):
+def sample_1hot(batch_size, num_classes, device="cuda"):
     return torch.randint(low=0, high=num_classes, size=(batch_size,),
                          device=device, dtype=torch.int64, requires_grad=False)
 
-def make_mask(labels, n_cls, mask_negatives, device):
+def make_mask(labels, num_classes, mask_negatives, device):
     labels = labels.detach().cpu().numpy()
     n_samples = labels.shape[0]
     if mask_negatives:
-        mask_multi, target = np.zeros([n_cls, n_samples]), 1.0
+        mask_multi, target = np.zeros([num_classes, n_samples]), 1.0
     else:
-        mask_multi, target = np.ones([n_cls, n_samples]), 0.0
+        mask_multi, target = np.ones([num_classes, n_samples]), 0.0
 
-    for c in range(n_cls):
+    for c in range(num_classes):
         c_indices = np.where(labels==c)
         mask_multi[c, c_indices] = target
-
     return torch.tensor(mask_multi).type(torch.long).to(device)
 
-def target_class_sampler(dataset, target_class):
+def sample_target_class(dataset, target_class):
     try:
         targets = dataset.data.targets
     except:

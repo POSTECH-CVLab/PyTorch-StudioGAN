@@ -32,13 +32,12 @@ from data_util import Dataset_
 
 
 def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
-    file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=DATA.name,
-                                                              size=DATA.img_size)
+    file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=DATA.name, size=DATA.img_size)
     file_path = os.path.join(DATA.path, file_name)
 
     if os.path.isfile(file_path):
         print("{file_name} exist!\nThe file are located in the {file_path}.".format(file_name=file_name,
-                                                                                   file_path=file_path))
+                                                                                    file_path=file_path))
     else:
         dataset = Dataset_(data_name=DATA.name,
                            data_path=DATA.path,
@@ -75,7 +74,6 @@ def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
                                                     chunks=(500,), compression=False)
                     print("Label chunks chosen as {chunk}".format(chunk=str(labels_dset.chunks)))
                     labels_dset[...] = y
-
             else:
                 with h5.File(file_path, "a") as f:
                   f["imgs"].resize(f["imgs"].shape[0] + x.shape[0], axis=0)

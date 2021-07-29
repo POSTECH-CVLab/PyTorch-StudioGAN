@@ -474,11 +474,15 @@ def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, trunca
 
     return batch_images, list(fake_labels.detach().cpu().numpy())
 
-def calculate_ortho_reg(m, rank):
-    with torch.enable_grad():
-        reg = 1e-6
-        param_flat = m.view(m.shape[0], -1)
-        sym = torch.mm(param_flat, torch.t(param_flat))
-        sym -= torch.eye(param_flat.shape[0]).to(rank)
-        ortho_loss = reg * sym.abs().sum()
-    return ortho_loss
+def orthogonalize_model(model, strength=1e-4, blacklist=[]):
+    with torch.no_grad():
+        for param in model.parameters():
+            if len(param.shape) < 2 or any([param is item for item in blacklist]):
+                continue
+            w = param.view(param.shape[0], -1)
+            grad = (2*torch.mm(torch.mm(w, w.t())*(1. - torch.eye(w.shape[0], device=w.device)), w))
+            param.grad.data += strength*grad.view(param.shape)
+
+def interpolate(x0, x1, num_midpoints):
+    lerp = torch.linspace(0, 1.0, num_midpoints + 2, device="cuda").to(x0.dtype)
+    return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))

@@ -45,7 +45,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.distributed_data_parallel:
         global_rank = cfgs.RUN.cn*(gpus_per_node) + local_rank
         print("Use GPU: {global_rank} for training.".format(global_rank=global_rank))
-        misc.setup(global_rank, cfgs.OPTIMIZER.world_size)
+        misc.setup(global_rank, cfgs.OPTIMIZATION.world_size)
         torch.cuda.set_device(local_rank)
     else:
         global_rank = local_rank
@@ -99,16 +99,15 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define dataloaders for train and evaluation.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
-        cfgs.OPTIMIZER.batch_size = cfgs.OPTIMIZER.batch_size//cfgs.OPTIMIZER.world_size
+        cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size//cfgs.OPTIMIZATION.world_size
         train_sampler = DistributedSampler(train_dataset)
     else:
         train_sampler = None
-    cfgs.OPTIMIZER.basket_size = cfgs.OPTIMIZER.batch_size*cfgs.OPTIMIZER.accm_step*cfgs.OPTIMIZER.d_steps_per_iter
-
+    cfgs.OPTIMIZATION.basket_size = cfgs.OPTIMIZATION.batch_size*cfgs.OPTIMIZATION.accm_step*cfgs.OPTIMIZATION.d_updates_per_step
 
     if cfgs.RUN.train:
         train_dataloader = DataLoader(dataset=train_dataset,
-                                      batch_size=cfgs.OPTIMIZER.basket_size,
+                                      batch_size=cfgs.OPTIMIZATION.basket_size,
                                       shuffle=(train_sampler is None),
                                       pin_memory=True,
                                       num_workers=cfgs.RUN.num_workers,
@@ -119,7 +118,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
     if cfgs.RUN.eval:
         eval_dataloader = DataLoader(dataset=eval_dataset,
-                                    batch_size=cfgs.OPTIMIZER.batch_size,
+                                    batch_size=cfgs.OPTIMIZATION.batch_size,
                                     shuffle=False,
                                     pin_memory=True,
                                     num_workers=cfgs.RUN.num_workers,
@@ -132,7 +131,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # if cfgs.MODEL.apply_g_ema is True, load an exponential moving average generator (Gen_copy).
     # -----------------------------------------------------------------------------
     Gen, Dis, Gen_ema, ema = model.load_generator_discriminator(DATA=cfgs.DATA,
-                                                                OPTIMIZER=cfgs.OPTIMIZER,
+                                                                OPTIMIZATION=cfgs.OPTIMIZATION,
                                                                 MODEL=cfgs.MODEL,
                                                                 MODULES=cfgs.MODULES,
                                                                 RUN=cfgs.RUN,
@@ -173,7 +172,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     Gen, Dis, Gen_ema = model.prepare_parallel_training(Gen=Gen,
                                                         Dis=Dis,
                                                         Gen_ema=Gen_ema,
-                                                        world_size=cfgs.OPTIMIZER.world_size,
+                                                        world_size=cfgs.OPTIMIZATION.world_size,
                                                         distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                                         synchronized_bn=cfgs.RUN.synchronized_bn,
                                                         apply_g_ema=cfgs.MODEL.apply_g_ema,
@@ -184,7 +183,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if cfgs.RUN.eval:
         eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
-                                      world_size=cfgs.OPTIMIZER.world_size,
+                                      world_size=cfgs.OPTIMIZATION.world_size,
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                       local_rank=local_rank)
 
@@ -222,7 +221,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
     if cfgs.RUN.train and step == 0 and global_rank == 0: logger.info("Start training!")
 
-    while step <= cfgs.OPTIMIZER.total_steps:
+    while step <= cfgs.OPTIMIZATION.total_steps:
         misc.change_mode(Gen, Dis, Gen_ema)
 
         step = worker.train(current_step=step)

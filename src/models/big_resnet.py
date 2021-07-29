@@ -71,6 +71,7 @@ class GenBlock(nn.Module):
         out = x + x0
         return out
 
+
 class Generator(nn.Module):
     def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_attn, attn_g_loc, g_cond_mtd,
                  num_classes, g_init, g_depth, mixed_precision, MODULES):
@@ -161,6 +162,7 @@ class Generator(nn.Module):
             act = self.conv2d5(act)
             out = self.tanh(act)
         return out
+
 
 class DiscOptBlock(nn.Module):
     def __init__(self, in_channels, out_channels, apply_d_sn, MODULES):

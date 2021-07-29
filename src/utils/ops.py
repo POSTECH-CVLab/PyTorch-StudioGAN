@@ -11,6 +11,89 @@ import torch
 import torch.nn as nn
 
 
+class ConditionalBatchNorm2d(nn.Module):
+    # https://github.com/voletiv/self-attention-GAN-pytorch
+    def __init__(self, num_classes, num_features, MODULES):
+        super().__init__()
+        self.num_features = num_features
+        self.bn = batchnorm_2d(in_features=num_features, eps=1e-4, momentum=0.1, affine=False)
+
+        self.embed0 = MODULES.g_embedding(num_embeddings=num_classes,
+                                          embedding_dim=num_features)
+        self.embed1 = MODULES.g_embedding(num_embeddings=num_classes,
+                                          embedding_dim=num_features)
+
+    def forward(self, x, y):
+        gain = (1 + self.embed0(y)).view(-1, self.num_features, 1, 1)
+        bias = self.embed1(y).view(-1, self.num_features, 1, 1)
+        out = self.bn(x)
+        return out*gain + bias
+
+
+class BigGANConditionalBatchNorm2d(nn.Module):
+    # https://github.com/voletiv/self-attention-GAN-pytorch
+    def __init__(self, in_features, out_features, MODULES):
+        super().__init__()
+        self.in_features = in_features
+        self.bn = batchnorm_2d(in_features, eps=1e-4, momentum=0.1, affine=False)
+
+        self.gain = MODULES.g_linear(in_features=in_features,
+                                     out_features=out_features,
+                                     bias=False)
+        self.bias = MODULES.g_linear(in_features=in_features,
+                                     out_features=out_features,
+                                     bias=False)
+
+    def forward(self, x, y):
+        gain = (1 + self.gain(y)).view(y.size(0), -1, 1, 1)
+        bias = self.bias(y).view(y.size(0), -1, 1, 1)
+        out = self.bn(x)
+        return out*gain + bias
+
+
+class SelfAttention(nn.Module):
+    # https://github.com/voletiv/self-attention-GAN-pytorch
+    def __init__(self, in_channels, is_generator, MODULES):
+        super(SelfAttention, self).__init__()
+        self.in_channels = in_channels
+
+        if is_generator:
+            self.conv1x1_theta = MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels//8, kernel_size=1, stride=1, padding=0, bias=False)
+            self.conv1x1_phi = MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels//8, kernel_size=1, stride=1, padding=0, bias=False)
+            self.conv1x1_g =  MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels//2, kernel_size=1, stride=1, padding=0, bias=False)
+            self.conv1x1_attn =  MODULES.g_conv2d(in_channels=in_channels//2, out_channels=in_channels, kernel_size=1, stride=1, padding=0, bias=False)
+        else:
+            self.conv1x1_theta = MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels//8, kernel_size=1, stride=1, padding=0, bias=False)
+            self.conv1x1_phi =  MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels//8, kernel_size=1, stride=1, padding=0, bias=False)
+            self.conv1x1_g =  MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels//2, kernel_size=1, stride=1, padding=0, bias=False)
+            self.conv1x1_attn = MODULES.d_conv2d(in_channels=in_channels//2, out_channels=in_channels, kernel_size=1, stride=1, padding=0, bias=False)
+
+        self.maxpool = nn.MaxPool2d(2, stride=2, padding=0)
+        self.softmax  = nn.Softmax(dim=-1)
+        self.sigma = nn.Parameter(torch.zeros(1))
+
+    def forward(self, x):
+        _, ch, h, w = x.size()
+        # Theta path
+        theta = self.conv1x1_theta(x)
+        theta = theta.view(-1, ch//8, h*w)
+        # Phi path
+        phi = self.conv1x1_phi(x)
+        phi = self.maxpool(phi)
+        phi = phi.view(-1, ch//8, h*w//4)
+        # Attn map
+        attn = torch.bmm(theta.permute(0, 2, 1), phi)
+        attn = self.softmax(attn)
+        # g path
+        g = self.conv1x1_g(x)
+        g = self.maxpool(g)
+        g = g.view(-1, ch//2, h*w//4)
+        # Attn_g
+        attn_g = torch.bmm(g, attn.permute(0, 2, 1))
+        attn_g = attn_g.view(-1, ch//2, h, w)
+        attn_g = self.conv1x1_attn(attn_g)
+        return x + self.sigma*attn_g
+
 def init_weights(modules, initialize):
     for module in modules():
         if (isinstance(module, nn.Conv2d)
@@ -72,91 +155,3 @@ def sn_embedding(num_embeddings, embedding_dim):
 
 def batchnorm_2d(in_features, eps=1e-4, momentum=0.1, affine=True):
     return nn.BatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine, track_running_stats=True)
-
-class ConditionalBatchNorm2d(nn.Module):
-    # https://github.com/voletiv/self-attention-GAN-pytorch
-    def __init__(self, num_classes, num_features, MODULES):
-        super().__init__()
-        self.num_features = num_features
-        self.bn = batchnorm_2d(in_features=num_features, eps=1e-4, momentum=0.1, affine=False)
-
-        self.embed0 = MODULES.g_embedding(num_embeddings=num_classes,
-                                          embedding_dim=num_features)
-        self.embed1 = MODULES.g_embedding(num_embeddings=num_classes,
-                                          embedding_dim=num_features)
-
-    def forward(self, x, y):
-        gain = (1 + self.embed0(y)).view(-1, self.num_features, 1, 1)
-        bias = self.embed1(y).view(-1, self.num_features, 1, 1)
-        out = self.bn(x)
-        return out*gain + bias
-
-class ConditionalBatchNorm2d_BigGAN(nn.Module):
-    # https://github.com/voletiv/self-attention-GAN-pytorch
-    def __init__(self, in_features, out_features, MODULES):
-        super().__init__()
-        self.in_features = in_features
-        self.bn = batchnorm_2d(in_features, eps=1e-4, momentum=0.1, affine=False)
-
-        self.gain = MODULES.g_linear(in_features=in_features,
-                                     out_features=out_features,
-                                     bias=False)
-        self.bias = MODULES.g_linear(in_features=in_features,
-                                     out_features=out_features,
-                                     bias=False)
-
-    def forward(self, x, y):
-        gain = (1 + self.gain(y)).view(y.size(0), -1, 1, 1)
-        bias = self.bias(y).view(y.size(0), -1, 1, 1)
-        out = self.bn(x)
-        return out*gain + bias
-
-class SelfAttention(nn.Module):
-    # https://github.com/voletiv/self-attention-GAN-pytorch
-    def __init__(self, in_channels, is_generator, MODULES):
-        super(SelfAttention, self).__init__()
-        self.in_channels = in_channels
-
-        if is_generator:
-            self.conv1x1_theta = MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels//8, kernel_size=1, stride=1, padding=0, bias=False)
-            self.conv1x1_phi = MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels//8, kernel_size=1, stride=1, padding=0, bias=False)
-            self.conv1x1_g =  MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels//2, kernel_size=1, stride=1, padding=0, bias=False)
-            self.conv1x1_attn =  MODULES.g_conv2d(in_channels=in_channels//2, out_channels=in_channels, kernel_size=1, stride=1, padding=0, bias=False)
-        else:
-            self.conv1x1_theta = MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels//8, kernel_size=1, stride=1, padding=0, bias=False)
-            self.conv1x1_phi =  MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels//8, kernel_size=1, stride=1, padding=0, bias=False)
-            self.conv1x1_g =  MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels//2, kernel_size=1, stride=1, padding=0, bias=False)
-            self.conv1x1_attn = MODULES.d_conv2d(in_channels=in_channels//2, out_channels=in_channels, kernel_size=1, stride=1, padding=0, bias=False)
-
-        self.maxpool = nn.MaxPool2d(2, stride=2, padding=0)
-        self.softmax  = nn.Softmax(dim=-1)
-        self.sigma = nn.Parameter(torch.zeros(1))
-
-    def forward(self, x):
-        """
-            inputs :
-                x : input feature maps(B X C X H X W)
-            returns :
-                out : self attention value + input feature
-                attention: B X N X N (N is Width*Height)
-        """
-        _, ch, h, w = x.size()
-        # Theta path
-        theta = self.conv1x1_theta(x)
-        theta = theta.view(-1, ch//8, h*w)
-        # Phi path
-        phi = self.conv1x1_phi(x)
-        phi = self.maxpool(phi)
-        phi = phi.view(-1, ch//8, h*w//4)
-        # Attn map
-        attn = torch.bmm(theta.permute(0, 2, 1), phi)
-        attn = self.softmax(attn)
-        # g path
-        g = self.conv1x1_g(x)
-        g = self.maxpool(g)
-        g = g.view(-1, ch//2, h*w//4)
-        # Attn_g
-        attn_g = torch.bmm(g, attn.permute(0, 2, 1))
-        attn_g = attn_g.view(-1, ch//2, h, w)
-        attn_g = self.conv1x1_attn(attn_g)
-        return x + self.sigma*attn_g

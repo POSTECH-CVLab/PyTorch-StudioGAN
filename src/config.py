@@ -141,8 +141,8 @@ class Configurations(object):
         # hyperparameters for latent optimization regularization
         # please refer to the original paper: https://arxiv.org/abs/1707.05776 for more details
         self.LOSS.lo_rate = "N/A"
-        self.LOSS.lo_step4train = "N/A"
-        self.LOSS.lo_step4eval = "N/A"
+        self.LOSS.lo_steps4train = "N/A"
+        self.LOSS.lo_steps4eval = "N/A"
         self.LOSS.lo_alpha = "N/A"
         self.LOSS.lo_beta = "N/A"
         self.LOSS.lo_lambda = "N/A"
@@ -150,37 +150,37 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # optimizer settings
         # -----------------------------------------------------------------------------
-        self.OPTIMIZER = lambda: None
+        self.OPTIMIZATION = lambda: None
         # type of the optimizer for GAN training \in ["SGD", RMSprop, "Adam"]
-        self.OPTIMIZER.type_ = "Adam"
+        self.OPTIMIZATION.type_ = "Adam"
         # number of batch size for GAN training,
         # typically {CIFAR10: 64, Tiny_ImageNet: 1024, "CUB200": 256, ImageNet: 512(batch_size) * 4(accm_step)"}
-        self.OPTIMIZER.batch_size = 64
+        self.OPTIMIZATION.batch_size = 64
         # acuumulation step for large batch training (batch_size = batch_size*accm_step)
-        self.OPTIMIZER.accm_step = 1
+        self.OPTIMIZATION.accm_step = 1
         # learning rate for generator update
-        self.OPTIMIZER.g_lr = 0.0002
+        self.OPTIMIZATION.g_lr = 0.0002
         # learning rate for discriminator update
-        self.OPTIMIZER.d_lr = 0.0002
+        self.OPTIMIZATION.d_lr = 0.0002
         # weight decay strength for the generator update
-        self.OPTIMIZER.g_weight_decay = 0.0
+        self.OPTIMIZATION.g_weight_decay = 0.0
         # weight decay strength for the discriminator update
-        self.OPTIMIZER.d_weight_decay = 0.0
+        self.OPTIMIZATION.d_weight_decay = 0.0
         # momentum value for SGD and RMSprop optimizers
-        self.OPTIMIZER.momentum = "N/A"
+        self.OPTIMIZATION.momentum = "N/A"
         # nesterov value for SGD optimizer
-        self.OPTIMIZER.nesterov = "N/A"
+        self.OPTIMIZATION.nesterov = "N/A"
         # alpha value for RMSprop optimizer
-        self.OPTIMIZER.alpha = "N/A"
+        self.OPTIMIZATION.alpha = "N/A"
         # beta values for Adam optimizer
-        self.OPTIMIZER.beta1 = 0.5
-        self.OPTIMIZER.beta2 = 0.999
+        self.OPTIMIZATION.beta1 = 0.5
+        self.OPTIMIZATION.beta2 = 0.999
         # the number of generator updates per step
-        self.OPTIMIZER.g_updates_per_step = 1
+        self.OPTIMIZATION.g_updates_per_step = 1
         # the number of discriminator updates per step
-        self.OPTIMIZER.d_updates_per_step = 5
+        self.OPTIMIZATION.d_updates_per_step = 5
         # the total number of steps for GAN training
-        self.OPTIMIZER.total_steps = 100000
+        self.OPTIMIZATION.total_steps = 100000
 
         # -----------------------------------------------------------------------------
         # preprocessing settings
@@ -189,8 +189,7 @@ class Configurations(object):
         # whether to apply random flip preprocessing before training
         self.PRE.apply_rflip = True
 
-        # -----------------------------------------------------------------------------
-        # differentiable augmentation settings
+        # ----------------------------------------------------------------------------- differentiable augmentation settings
         # -----------------------------------------------------------------------------
         self.AUG = lambda: None
         # whether to apply differentiable augmentation used in DiffAugmentGAN
@@ -220,7 +219,7 @@ class Configurations(object):
         self.super_cfgs = {"DATA": self.DATA,
                            "MODEL": self.MODEL,
                            "LOSS": self.LOSS,
-                           "OPTIMIZER": self.OPTIMIZER,
+                           "OPTIMIZATION": self.OPTIMIZATION,
                            "PRE": self.PRE,
                            "AUG": self.AUG,
                            "RUN": self.RUN,
@@ -270,7 +269,7 @@ class Configurations(object):
             self.MODULES.d_embedding = ops.embedding
 
         if self.MODEL.g_cond_mtd == "cBN" and self.MODEL.backbone in ["big_resnet", "deep_big_resnet"]:
-            self.MODULES.g_bn = ops.ConditionalBatchNorm2d_BigGAN
+            self.MODULES.g_bn = ops.BigGANConditionalBatchNorm2d
         elif self.MODEL.g_cond_mtd == "cBN":
             self.MODULES.g_bn = ops.ConditionalBatchNorm2d
         elif self.MODEL.g_cond_mtd == "W/O":
@@ -305,42 +304,39 @@ class Configurations(object):
         return self.MODULES
 
     def define_optimizer(self, Gen, Dis):
-        if self.OPTIMIZER.type_ == "SGD":
-            self.OPTIMIZER.g_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Gen.parameters()),
-                                                         lr=self.OPTIMIZER.g_lr,
-                                                         weight_decay=self.OPTIMIZER.g_weight_decay,
-                                                         momentum=self.OPTIMIZER.momentum,
-                                                         nesterov=self.OPTIMIZER.nesterov)
-
-            self.OPTIMIZER.d_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Dis.parameters()),
-                                                         lr=self.OPTIMIZER.d_lr,
-                                                         weight_decay=self.OPTIMIZER.d_weight_decay,
-                                                         momentum=self.OPTIMIZER.momentum,
-                                                         nesterov=self.OPTIMIZER.nesterov)
-        elif self.OPTIMIZER.type_ == "RMSprop":
-            self.OPTIMIZER.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Gen.parameters()),
-                                                             lr=self.OPTIMIZER.g_lr,
-                                                             weight_decay=self.OPTIMIZER.g_weight_decay,
-                                                             momentum=self.OPTIMIZER.momentum,
-                                                             alpha=self.OPTIMIZER.alpha)
-
-            self.OPTIMIZER.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Dis.parameters()),
-                                                             lr=self.OPTIMIZER.d_lr,
-                                                             weight_decay=self.OPTIMIZER.d_weight_decay,
-                                                             momentum=self.OPTIMIZER.momentum,
-                                                             alpha=self.OPTIMIZER.alpha)
-        elif self.OPTIMIZER.type_ == "Adam":
-            self.OPTIMIZER.g_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Gen.parameters()),
-                                                          lr=self.OPTIMIZER.g_lr,
-                                                          betas=[self.OPTIMIZER.beta1, self.OPTIMIZER.beta2],
-                                                          weight_decay=self.OPTIMIZER.g_weight_decay,
-                                                          eps=1e-6)
-
-            self.OPTIMIZER.d_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Dis.parameters()),
-                                                          lr=self.OPTIMIZER.d_lr,
-                                                          betas=[self.OPTIMIZER.beta1, self.OPTIMIZER.beta2],
-                                                          weight_decay=self.OPTIMIZER.d_weight_decay,
-                                                          eps=1e-6)
+        if self.OPTIMIZATION.type_ == "SGD":
+            self.OPTIMIZATION.g_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                            lr=self.OPTIMIZATION.g_lr,
+                                                            weight_decay=self.OPTIMIZATION.g_weight_decay,
+                                                            momentum=self.OPTIMIZATION.momentum,
+                                                            nesterov=self.OPTIMIZATION.nesterov)
+            self.OPTIMIZATION.d_optimizer = torch.optim.SGD(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                            lr=self.OPTIMIZATION.d_lr,
+                                                            weight_decay=self.OPTIMIZATION.d_weight_decay,
+                                                            momentum=self.OPTIMIZATION.momentum,
+                                                            nesterov=self.OPTIMIZATION.nesterov)
+        elif self.OPTIMIZATION.type_ == "RMSprop":
+            self.OPTIMIZATION.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                                lr=self.OPTIMIZATION.g_lr,
+                                                                weight_decay=self.OPTIMIZATION.g_weight_decay,
+                                                                momentum=self.OPTIMIZATION.momentum,
+                                                                alpha=self.OPTIMIZATION.alpha)
+            self.OPTIMIZATION.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                                lr=self.OPTIMIZATION.d_lr,
+                                                                weight_decay=self.OPTIMIZATION.d_weight_decay,
+                                                                momentum=self.OPTIMIZATION.momentum,
+                                                                alpha=self.OPTIMIZATION.alpha)
+        elif self.OPTIMIZATION.type_ == "Adam":
+            self.OPTIMIZATION.g_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+                                                             lr=self.OPTIMIZATION.g_lr,
+                                                             betas=[self.OPTIMIZATION.beta1, self.OPTIMIZATION.beta2],
+                                                             weight_decay=self.OPTIMIZATION.g_weight_decay,
+                                                             eps=1e-6)
+            self.OPTIMIZATION.d_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+                                                             lr=self.OPTIMIZATION.d_lr,
+                                                             betas=[self.OPTIMIZATION.beta1, self.OPTIMIZATION.beta2],
+                                                             weight_decay=self.OPTIMIZATION.d_weight_decay,
+                                                             eps=1e-6)
         else:
             raise NotImplementedError
 
@@ -388,7 +384,7 @@ class Configurations(object):
         assert self.RUN.batch_statistics*self.RUN.standing_statistics == 0, \
             "You can't turn on batch_statistics and standing_statistics simultaneously."
 
-        assert self.OPTIMIZER.batch_size % self.OPTIMIZER.world_size == 0, \
+        assert self.OPTIMIZATION.batch_size % self.OPTIMIZATION.world_size == 0, \
             "Batch_size should be divided by the number of gpus."
 
         assert int(self.AUG.apply_diffaug)*int(self.AUG.apply_ada) == 0, \

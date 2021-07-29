@@ -16,7 +16,7 @@ from utils.ema import EmaDpSyncBN
 import utils.misc as misc
 
 
-def load_generator_discriminator(DATA, OPTIMIZER, MODEL, MODULES, RUN, local_rank, logger):
+def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, local_rank, logger):
     if local_rank == 0: logger.info("Build a Generative Adversarial Network.")
     module = __import__("models.{backbone}".format(backbone=MODEL.backbone), fromlist=['something'])
     if local_rank == 0: logger.info("Modules are located on './src/models.{backbone}'.".format(backbone=MODEL.backbone))
@@ -66,7 +66,7 @@ def load_generator_discriminator(DATA, OPTIMIZER, MODEL, MODULES, RUN, local_ran
                                    MODULES=MODULES
                                    ).to(local_rank)
 
-        if not RUN.distributed_data_parallel and OPTIMIZER.world_size > 1 and RUN.synchronized_bn:
+        if not RUN.distributed_data_parallel and OPTIMIZATION.world_size > 1 and RUN.synchronized_bn:
             ema = EmaDpSyncBN(source=Gen,
                               target=Gen_ema,
                               decay=MODEL.g_ema_decay,
