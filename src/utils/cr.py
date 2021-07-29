@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 
 
-def CR_DiffAug(x, flip=True, translation=True):
+def apply_diffaug4cr(x, flip=True, translation=True):
     if flip:
         x = random_flip(x, 0.5)
     if translation:
@@ -19,7 +19,6 @@ def CR_DiffAug(x, flip=True, translation=True):
     if flip or translation:
         x = x.contiguous()
     return x
-
 
 def random_flip(x, p):
     x_out = x.clone()
@@ -29,7 +28,6 @@ def random_flip(x, p):
     flip_mask = flip_mask.type(torch.bool).view(n, 1, 1, 1).repeat(1, c, h, w).to(x.device)
     x_out[flip_mask] = torch.flip(x[flip_mask].view(-1, c, h, w), [3]).view(-1)
     return x_out
-
 
 def random_translation(x, ratio):
     max_t_x, max_t_y = int(x.shape[2]*ratio), int(x.shape[3]*ratio)
