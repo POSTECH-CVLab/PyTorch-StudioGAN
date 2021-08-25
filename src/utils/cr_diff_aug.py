@@ -25,9 +25,9 @@ def CR_DiffAug(x, flip=True, translation=True):
 def random_flip(x, p):
     x_out = x.clone()
     n, c, h, w = x.shape[0], x.shape[1], x.shape[2], x.shape[3]
-    flip_prob = torch.FloatTensor(n, 1).uniform_(0.0, 1.0)
+    flip_prob = torch.FloatTensor(n, 1).uniform_(0.0, 1.0).to(x.device)
     flip_mask = flip_prob < p
-    flip_mask = flip_mask.type(torch.bool).view(n, 1, 1, 1).repeat(1, c, h, w).to(x.device)
+    flip_mask = flip_mask.type(torch.bool).view(n, 1, 1, 1).repeat(1, c, h, w)
     x_out[flip_mask] = torch.flip(x[flip_mask].view(-1, c, h, w), [3]).view(-1)
     return x_out
 
