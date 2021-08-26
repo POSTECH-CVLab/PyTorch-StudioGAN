@@ -43,7 +43,6 @@ LOG_FORMAT = (
     "Progress: {progress:<.1%} "
     "Elapsed: {elapsed} "
     "Temperature: {temperature:<.4} "
-    "ADA_p: {ada_p:<.4} "
     "Dis_loss: {dis_loss:<.4} "
     "Gen_loss: {gen_loss:<.4} "
     "Cls_loss: {cls_loss:<.4} "
@@ -254,9 +253,9 @@ class WORKER(object):
                     p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
 
         # calculate the spectrum norms of all weights in the discriminator for monitoring purpose
-        if current_step+1 % self.RUN.print_every==0 and self.MODEL.apply_d_sn:
+        if (current_step + 1) % self.RUN.print_every == 0 and self.MODEL.apply_d_sn:
             if self.global_rank == 0:
-                dis_sigmas = misc.calculate_all_sn(self.dis_model)
+                dis_sigmas = misc.calculate_all_sn(self.Dis)
                 self.writer.add_scalars("SN_of_dis", dis_sigmas, current_step+1)
 
 
@@ -326,7 +325,7 @@ class WORKER(object):
                 self.ema.update(current_step)
 
         # logging
-        if current_step+1 % self.RUN.print_every==0 and self.global_rank==0:
+        if (current_step + 1) % self.RUN.print_every == 0 and self.global_rank == 0:
             log_message = LOG_FORMAT.format(step=current_step+1,
                                             progress=(current_step+1)/self.OPTIMIZATION.total_steps,
                                             elapsed=misc.elapsed_time(self.start_time),
@@ -347,7 +346,7 @@ class WORKER(object):
                 self.writer.add_scalars("SN_of_gen", gen_sigmas, current_step+1)
 
         # evaluating and saving GANs
-        if current_step+1 % self.RUN.eval_save_every==0 or current_step+1 == self.OPTIMIZATION.total_steps:
+        if (current_step + 1) % self.RUN.eval_save_every == 0 or (current_step + 1) == self.OPTIMIZATION.total_steps:
             if self.RUN.eval:
                 is_best = self.evaluation(current_step+1, False, "N/A")
                 if self.global_rank == 0: self.save(current_step+1, is_best)

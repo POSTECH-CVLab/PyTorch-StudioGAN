@@ -219,7 +219,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         best_ckpt_path=best_ckpt_path,
     )
 
-    if cfgs.RUN.train and step == 0 and global_rank == 0: logger.info("Start training!")
+    if global_rank == 0 and cfgs.RUN.train: logger.info("Start training!")
 
     while step <= cfgs.OPTIMIZATION.total_steps:
         step = worker.train(current_step=step)

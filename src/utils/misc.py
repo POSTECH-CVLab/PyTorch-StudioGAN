@@ -182,7 +182,6 @@ def reshape_weight_to_matrix(weight):
 
 def calculate_all_sn(model):
     sigmas = {}
-    import pdb;pdb.set_trace()
     with torch.no_grad():
         for name, param in model.named_parameters():
             if "weight" in name and "bn" not in name and "shared" not in name and "deconv" not in name:
