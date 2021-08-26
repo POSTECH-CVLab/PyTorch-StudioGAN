@@ -2,4 +2,6 @@ DATA:
   name: "CIFAR10"
 MODEL:
   backbone: "big_resnet"
-  d_cond_mtd: "PD"
+  d_cond_mtd: "2C"
+AUG:
+  apply_diffaug: True

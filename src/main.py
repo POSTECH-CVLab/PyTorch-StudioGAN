@@ -99,8 +99,8 @@ def main():
 
     run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
 
-    crop_long_edge = False if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else True
-    resize_size = None if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else cfgs.DATA.img_size
+    crop_long_edge = False if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else True
+    resize_size = None if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else cfgs.DATA.img_size
     if cfgs.RUN.load_train_hdf5:
         hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(DATA=cfgs.DATA,
                                                                 RUN=cfgs.RUN,

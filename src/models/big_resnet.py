@@ -326,21 +326,26 @@ class Discriminator(nn.Module):
 
         self.activation = MODULES.d_act_fn
 
-        self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
-                                        out_features=1,
-                                        bias=True)
+        if self.d_cond_mtd == "MH":
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
+                                            out_features=1+num_classes,
+                                            bias=True)
+        else:
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
+                                            out_features=1,
+                                            bias=True)
 
-        if self.d_cond_mtd == "2C":
+        if self.d_cond_mtd == "AC":
+            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
+                                            out_features=num_classes,
+                                            bias=False)
+        elif self.d_cond_mtd == "PD":
+            self.embedding = MODULES.d_embedding(num_classes, self.out_dims[-1])
+        elif self.d_cond_mtd == "2C":
             self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
                                             out_features=d_embed_dim,
                                             bias=True)
             self.embedding = MODULES.d_embedding(num_classes, d_embed_dim)
-        elif self.d_cond_mtd == "PD":
-            self.embedding = MODULES.d_embedding(num_classes, self.out_dims[-1])
-        elif self.d_cond_mtd == "AC":
-            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
-                                            out_features=num_classes,
-                                            bias=True)
         else:
             pass
 
@@ -349,7 +354,7 @@ class Discriminator(nn.Module):
 
     def forward(self, x, label, eval=False):
         with torch.cuda.amp.autocast() if self.mixed_precision is True and eval is False else misc.dummy_context_mgr() as mp:
-            embed, proxy, cls_output = None
+            embed, proxy, cls_output = None, None, None
             h = x
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
@@ -358,16 +363,20 @@ class Discriminator(nn.Module):
             h = torch.sum(h, dim=[2,3])
 
             adv_output = torch.squeeze(self.linear1(h))
-            if self.d_cond_mtd == "2C":
-                embed = self.linear2(h)
-                proxy = self.embedding(label)
-                if self.MODEL.normalize_d_embed:
-                    embed = F.normalize(embed, dim=1)
-                    proxy = F.normalize(proxy, dim=1)
+            if self.d_cond_mtd == "AC":
+                if self.normalize_d_embed:
+                    for W in self.linear2.parameters():
+                        W = F.normalize(W, dim=1)
+                    h = F.normalize(h, dim=1)
+                cls_output = self.linear2(h)
             elif self.d_cond_mtd == "PD":
                 adv_output = adv_output + torch.sum(torch.mul(self.embedding(label), h), 1)
-            elif self.d_cond_mtd == "AC":
-                cls_output = self.linear2(h)
+            elif self.d_cond_mtd == "2C":
+                embed = self.linear2(h)
+                proxy = self.embedding(label)
+                if self.normalize_d_embed:
+                    embed = F.normalize(embed, dim=1)
+                    proxy = F.normalize(proxy, dim=1)
             else:
                 raise NotImplementedError
-            return {"adv_output": adv_output, "embed": embed, "proxy": proxy, "cls_output": cls_output}
+            return {"adv_output": adv_output, "embed": embed, "proxy": proxy, "cls_output": cls_output, "label": label}

@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 
 
-def apply_diffaug4cr(x, flip=True, translation=True):
+def apply_cr_aug(x, flip=True, translation=True):
     if flip:
         x = random_flip(x, 0.5)
     if translation:

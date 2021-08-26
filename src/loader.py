@@ -34,9 +34,9 @@ import metrics.preparation as pp
 
 def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
-    # define default variables for loading ckpts or evaluating the trained GAN model.
+    # define default variables for loading ckpt or evaluating the trained GAN model.
     # -----------------------------------------------------------------------------
-    ada_p, step, best_step, best_fid, best_ckpt_path  = None, 0, 0, None, None
+    ada_p, step, best_step, best_fid, best_ckpt_path = None, 0, 0, None, None
     mu, sigma, eval_model = None, None, None
 
     # -----------------------------------------------------------------------------
@@ -53,15 +53,15 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # define tensorflow writer and python logger.
     # -----------------------------------------------------------------------------
-    writer = SummaryWriter(log_dir=join("./logs", run_name)) if local_rank == 0 else None
     if local_rank == 0:
+        writer = SummaryWriter(log_dir=join("./logs", run_name))
         logger = log.make_logger(run_name, None)
         logger.info("Run name : {run_name}".format(run_name=run_name))
         for k, v in cfgs.super_cfgs.items():
             logger.info("cfgs." + k + " =")
             logger.info(json.dumps(vars(v), indent=2))
     else:
-        logger = None
+        writer, logger = None, None
 
     # -----------------------------------------------------------------------------
     # load train and evaluation dataset.
@@ -85,8 +85,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
                                 data_path=cfgs.DATA.path,
                                 train=True if cfgs.RUN.ref_dataset == "train" else False,
-                                crop_long_edge=False if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else True,
-                                resize_size=None if cfgs.DATA in ["CIFAR10", "Tiny_ImageNet"] else cfgs.DATA.img_size,
+                                crop_long_edge=False if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else True,
+                                resize_size=None if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else cfgs.DATA.img_size,
                                 random_flip=False,
                                 hdf5_path=None,
                                 load_data_in_memory=False)
@@ -99,11 +99,11 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define dataloaders for train and evaluation.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
-        cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size//cfgs.OPTIMIZATION.world_size
         train_sampler = DistributedSampler(train_dataset)
+        cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size//cfgs.OPTIMIZATION.world_size
     else:
         train_sampler = None
-    cfgs.OPTIMIZATION.basket_size = cfgs.OPTIMIZATION.batch_size*cfgs.OPTIMIZATION.accm_step*cfgs.OPTIMIZATION.d_updates_per_step
+    cfgs.OPTIMIZATION.basket_size = cfgs.OPTIMIZATION.batch_size*cfgs.OPTIMIZATION.acml_steps*cfgs.OPTIMIZATION.d_updates_per_step
 
     if cfgs.RUN.train:
         train_dataloader = DataLoader(dataset=train_dataset,
@@ -118,11 +118,11 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
     if cfgs.RUN.eval:
         eval_dataloader = DataLoader(dataset=eval_dataset,
-                                    batch_size=cfgs.OPTIMIZATION.batch_size,
-                                    shuffle=False,
-                                    pin_memory=True,
-                                    num_workers=cfgs.RUN.num_workers,
-                                    drop_last=False)
+                                     batch_size=cfgs.OPTIMIZATION.batch_size,
+                                     shuffle=False,
+                                     pin_memory=True,
+                                     num_workers=cfgs.RUN.num_workers,
+                                     drop_last=False)
     else:
         eval_dataloader = None
 
@@ -154,8 +154,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       load_best=cfgs.RUN.load_best,
                                       Gen=Gen,
                                       Dis=Dis,
-                                      g_optimizer=cfgs.trainer.g_optimizer,
-                                      d_optimizer=cfgs.trainer.d_optimizer,
+                                      g_optimizer=cfgs.OPTIMIZATION.g_optimizer,
+                                      d_optimizer=cfgs.OPTIMIZATION.d_optimizer,
                                       run_name=run_name,
                                       apply_g_ema=cfgs.MODEL.apply_g_ema,
                                       Gen_ema=Gen_ema,
@@ -163,7 +163,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       is_train=cfgs.RUN.train,
                                       RUN=cfgs.RUN,
                                       logger=logger,
-                                      glbal_rank=global_rank,
+                                      gobal_rank=global_rank,
                                       local_rank=local_rank)
 
     # -----------------------------------------------------------------------------
@@ -222,28 +222,26 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.train and step == 0 and global_rank == 0: logger.info("Start training!")
 
     while step <= cfgs.OPTIMIZATION.total_steps:
-        misc.change_mode(Gen, Dis, Gen_ema)
-
         step = worker.train(current_step=step)
 
-        if cfgs.RUN.eval:
-            is_save = worker.evaluation(step=step)
+    if cfgs.RUN.eval:
+        is_save = worker.evaluation(step=step)
 
-        if cfgs.RUN.save_fake_images:
-            worker.save_images(is_generate=True, png=True, npz=True)
+    if cfgs.RUN.save_fake_images:
+        worker.save_images(is_generate=True, png=True, npz=True)
 
-        if cfgs.RUN.vis_fake_images:
-            worker.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol)
+    if cfgs.RUN.vis_fake_images:
+        worker.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol)
 
-        if cfgs.RUN.k_nearest_neighbor:
-            worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol)
+    if cfgs.RUN.k_nearest_neighbor:
+        worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol)
 
-        if cfgs.RUN.interpolation:
-            worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False)
-            worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True)
+    if cfgs.RUN.interpolation:
+        worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False)
+        worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True)
 
-        if cfgs.RUN.frequency_analysis:
-            worker.run_frequency_analysis(num_images=len(train_dataset))
+    if cfgs.RUN.frequency_analysis:
+        worker.run_frequency_analysis(num_images=len(train_dataset))
 
-        if cfgs.RUN.tsne_analysis:
-            worker.run_tsne(dataloader=eval_dataloader)
+    if cfgs.RUN.tsne_analysis:
+        worker.run_tsne(dataloader=eval_dataloader)

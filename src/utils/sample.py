@@ -86,12 +86,12 @@ def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_th, y_sampler,
     return zs, fake_labels, zs_eps
 
 def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler, radius,
-                    generator, discriminator, is_train, LOSS, local_rank, cal_trsf_cost=False):
+                    generator, discriminator, is_train, LOSS, local_rank, cal_trsp_cost=False):
     if is_train:
         truncation_th = -1.0
-        lo_steps = LOSS.lo_step4train
+        lo_steps = LOSS.lo_steps4train
     else:
-        lo_steps = LOSS.lo_step4eval
+        lo_steps = LOSS.lo_steps4eval
 
     zs, fake_labels, zs_eps = sample_zy(z_prior=z_prior,
                                         batch_size=batch_size,
@@ -101,8 +101,8 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
                                         y_sampler=y_sampler,
                                         radius=radius,
                                         local_rank=local_rank)
-    if LOSS.latent_op:
-        zs, trsf_cost = ops.latent_optimise(zs=zs,
+    if LOSS.apply_lo:
+        zs, trsp_cost = ops.latent_optimise(zs=zs,
                                             fake_labels=fake_labels,
                                             generator=generator,
                                             discriminator=discriminator,
@@ -111,16 +111,18 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
                                             lo_steps=lo_steps,
                                             lo_alpha=LOSS.lo_alpha,
                                             lo_beta=LOSS.lo_beta,
-                                            cal_trsf_cost=cal_trsf_cost,
+                                            cal_trsp_cost=cal_trsp_cost,
                                             device=local_rank)
+    else:
+        trsp_cost = None
 
-    fake_images = generator(zs, fake_labels, evaluation=not is_train)
+    fake_images = generator(zs, fake_labels, eval=not is_train)
 
     if zs_eps is not None:
-        fake_images_eps = generator(zs_eps, fake_labels, evaluation=not is_train)
+        fake_images_eps = generator(zs_eps, fake_labels, eval=not is_train)
     else:
         fake_images_eps = None
-    return fake_images, fake_labels, fake_images_eps, trsf_cost
+    return fake_images, fake_labels, fake_images_eps, trsp_cost
 
 def sample_1hot(batch_size, num_classes, device="cuda"):
     return torch.randint(low=0, high=num_classes, size=(batch_size,),

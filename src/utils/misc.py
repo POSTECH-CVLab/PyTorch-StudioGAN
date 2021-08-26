@@ -108,27 +108,30 @@ def cleanup():
 def count_parameters(module):
     return "Number of parameters: {num}".format(num=sum([p.data.nelement() for p in module.parameters()]))
 
-def toggle_grad(model, on, freeze_layers=-1):
-    import pdb;pdb.set_trace()
+def toggle_grad(model, on, freezeD=-1):
+    # import pdb;pdb.set_trace()
     ### for styleGAN, we need to modify this function
     ### specifically block = "blocks".{layer}.format(layer=layer)
     if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
         model = model.module
 
     num_blocks = len(model.in_dims)
-    assert freeze_layers < num_blocks,\
-        "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freeze_layers, nb=num_blocks)
+    assert freezeD < num_blocks,\
+        "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freezeD, nb=num_blocks)
 
-    if freeze_layers == -1:
+    if freezeD == -1:
         for name, param in model.named_parameters():
             param.requires_grad = on
     else:
         for name, param in model.named_parameters():
             param.requires_grad = on
-            for layer in range(freeze_layers):
+            for layer in range(freezeD):
                 block = "blocks.{layer}".format(layer=layer)
                 if block in name:
                     param.requires_grad = False
+
+def identity(x):
+    return x
 
 def set_models_trainable(model_list):
     for model in model_list:

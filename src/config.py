@@ -15,8 +15,12 @@ import yaml
 import torch
 import torch.nn as nn
 
+import utils.misc as misc
 import utils.losses as losses
 import utils.ops as ops
+import utils.diffaug as diffaug
+import utils.simclr_aug as simclr_aug
+import utils.cr as cr
 
 
 class Configurations(object):
@@ -31,7 +35,7 @@ class Configurations(object):
         # Data settings
         # -----------------------------------------------------------------------------
         self.DATA = lambda: None
-        # dataset name \in ["CIFAR10", "Tiny_ImageNet", "CUB200", "ImageNet", "My_Dataset"]
+        # dataset name \in ["CIFAR10", "CIFAR100", "Tiny_ImageNet", "CUB200", "ImageNet", "MY_DATASET"]
         self.DATA.name = "CIFAR10"
         # dataset path for data loading
         self.DATA.path = "./data/CIFAR10"
@@ -70,7 +74,7 @@ class Configurations(object):
         # location of the self-attention layer in the discriminator
         self.MODEL.attn_d_loc = 1
         # prior distribution for noise sampling \in ["gaussian", "uniform"]
-        self.MODEL.z_prior = "guassian"
+        self.MODEL.z_prior = "gaussian"
         # dimension of noise vectors
         self.MODEL.z_dim = 80
         # dimension of a shared latent embedding
@@ -133,9 +137,9 @@ class Configurations(object):
         # radius of ball to generate an fake image G(z + radius)
         self.LOSS.radius = "N/A"
         # attaction stength between logits of fake images (G(z), G(z + radius))
-        self.LOSS.g_lambda = "N/A"
-        # repulsion stength between fake images (G(z), G(z + radius))
         self.LOSS.d_lambda = "N/A"
+        # repulsion stength between fake images (G(z), G(z + radius))
+        self.LOSS.g_lambda = "N/A"
         # whether to apply latent optimization for stable training
         self.LOSS.apply_lo = False
         # hyperparameters for latent optimization regularization
@@ -154,10 +158,10 @@ class Configurations(object):
         # type of the optimizer for GAN training \in ["SGD", RMSprop, "Adam"]
         self.OPTIMIZATION.type_ = "Adam"
         # number of batch size for GAN training,
-        # typically {CIFAR10: 64, Tiny_ImageNet: 1024, "CUB200": 256, ImageNet: 512(batch_size) * 4(accm_step)"}
+        # typically {CIFAR10: 64, CIFAR100: 64, Tiny_ImageNet: 1024, "CUB200": 256, ImageNet: 512(batch_size) * 4(accm_step)"}
         self.OPTIMIZATION.batch_size = 64
-        # acuumulation step for large batch training (batch_size = batch_size*accm_step)
-        self.OPTIMIZATION.accm_step = 1
+        # acuumulation steps for large batch training (batch_size = batch_size*accm_step)
+        self.OPTIMIZATION.acml_steps = 1
         # learning rate for generator update
         self.OPTIMIZATION.g_lr = 0.0002
         # learning rate for discriminator update
@@ -211,10 +215,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.STYLE = lambda: None
 
-
         self.MODULES = lambda: None
-
-        self.TRAINER = lambda: None
 
         self.super_cfgs = {"DATA": self.DATA,
                            "MODEL": self.MODEL,
@@ -236,16 +237,17 @@ class Configurations(object):
                 for attr, value in attr_value.items():
                     setattr(self.super_cfgs[super_cfg_name], attr, value)
 
-    def define_modules(self):
+    def define_losses(self):
         g_losses = {"vanilla": losses.g_vanilla, "least_square": losses.g_ls,
                     "hinge": losses.g_hinge, "wasserstein": losses.g_wasserstein}
 
         d_losses = {"vanilla": losses.d_vanilla, "least_square": losses.d_ls,
                     "hinge": losses.d_hinge, "wasserstein": losses.d_wasserstein}
 
-        self.MODULES.g_loss = g_losses[self.LOSS.adv_loss]
-        self.MODULES.d_loss = d_losses[self.LOSS.adv_loss]
+        self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
+        self.LOSS.d_loss = d_losses[self.LOSS.adv_loss]
 
+    def define_modules(self):
         if self.MODEL.apply_g_sn:
             self.MODULES.g_conv2d = ops.snconv2d
             self.MODULES.g_deconv2d = ops.sndeconv2d
@@ -340,6 +342,15 @@ class Configurations(object):
         else:
             raise NotImplementedError
 
+    def define_augments(self):
+        if self.AUG.apply_diffaug:
+            self.AUG.series_augment = diffaug.apply_diffaug
+        else:
+            self.AUG.series_augment = misc.identity
+
+        if self.LOSS.apply_cr or self.LOSS.apply_bcr:
+            self.AUG.parallel_augment = cr.apply_cr_aug
+
     def check_compatability(self):
         if self.RUN.load_data_in_memory:
             assert self.RUN.load_train_hdf5, "load_data_in_memory option is appliable with the load_train_hdf5 (-hdf5) option."
@@ -374,7 +385,7 @@ class Configurations(object):
                 Please use a single GPU or DataParallel for the exact evluation."
             warnings.warn(msg)
 
-        if self.DATA.name == "CIFAR10":
+        if self.DATA.name in ["CIFAR10", "CIFAR100"]:
             assert self.RUN.ref_dataset in ["train", "test"], "There is no data for validation."
 
         if self.RUN.interpolation:

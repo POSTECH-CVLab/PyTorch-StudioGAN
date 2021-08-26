@@ -366,7 +366,7 @@ def random_apply_color(img, p, C=None):
     img = apply_color(img, C.to(img))
     return img, C
 
-def apply_ADA(img, p, transform_matrix=(None, None)):
+def apply_ada(img, p, transform_matrix=(None, None)):
     img, G = random_apply_affine(img, p, transform_matrix[0])
     img, C = random_apply_color(img, p, transform_matrix[1])
-    return img, (G, C)
+    return img

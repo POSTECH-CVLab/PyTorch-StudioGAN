@@ -47,7 +47,7 @@ def load_ckpt(model, optimizer, ckpt_path, metric=False, load_ema=False):
             return seed, run_name, step, ada_p, best_step, best_fid, best_ckpt_path
     return seed, run_name, step, ada_p
 
-def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer, run_name, apply_ema,
+def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer, run_name, apply_g_ema,
                          Gen_ema, ema, is_train, RUN, logger, global_rank, local_rank):
     when = "best" if load_best is True else "current"
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-{when}-weights-step*.pth".format(when=when)))[0]
@@ -64,7 +64,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
 
     if local_rank == 0: logger = log.make_logger(run_name, None)
 
-    if apply_ema:
+    if apply_g_ema:
         Gen_ema_ckpt_path = glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
         Gen_ema = load_ckpt(model=Gen_ema,
                             optimizer=None,

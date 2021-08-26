@@ -75,17 +75,17 @@ def calculate_moments(data_loader, Gen, eval_model, is_generate, num_generate, y
         start = i*batch_size
         end = start + batch_size
         if is_generate:
-            images, labels = sample.generate_images(z_prior=z_prior,
-                                                    truncation_th=truncation_th,
-                                                    batch_size=batch_size,
-                                                    z_dim=z_dim,
-                                                    num_classe=num_classes,
-                                                    y_sampler=y_sampler,
-                                                    radius="N/A",
-                                                    Gen=Gen,
-                                                    is_train=False,
-                                                    LOSS=LOSS,
-                                                    local_rank=local_rank)
+            images, labels, _, _ = sample.generate_images(z_prior=z_prior,
+                                                          truncation_th=truncation_th,
+                                                          batch_size=batch_size,
+                                                          z_dim=z_dim,
+                                                          num_classe=num_classes,
+                                                          y_sampler=y_sampler,
+                                                          radius="N/A",
+                                                          Gen=Gen,
+                                                          is_train=False,
+                                                          LOSS=LOSS,
+                                                          local_rank=local_rank)
             images = images.to(local_rank)
         else:
             try:

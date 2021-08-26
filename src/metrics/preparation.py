@@ -63,21 +63,22 @@ class LoadEvalModel(object):
 def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger, local_rank):
     eval_model.eval()
     save_path = os.path.abspath(os.path.join("./data", cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
-                                             "inception_moments.npz"))
+                                             cfgs.RUN.eval_backbone + "_moments.npz"))
     is_file = os.path.isfile(save_path)
 
     if is_file:
         mu = np.load(save_path)["mu"]
         sigma = np.load(save_path)["sigma"]
     else:
-        if local_rank == 0: logger.info("Calculate moments of {ref} dataset.".format(ref=cfgs.RUN.ref_dataset))
+        if local_rank == 0: logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
+                                        format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         mu, sigma = fid.calculate_moments(data_loader=data_loader,
                                           Gen="N/A",
                                           eval_model=eval_model,
                                           is_generate=False,
                                           num_generate="N/A",
                                           y_sampler="N/A",
-                                          batch_size=cfgs.OPTIMIZER.batch_size,
+                                          batch_size=cfgs.OPTIMIZATION.batch_size,
                                           z_prior="N/A",
                                           truncation_th="N/A",
                                           z_dim="N/A",
@@ -92,11 +93,12 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
     if is_file:
         pass
     else:
-        if local_rank == 0: logger.info("Calculate inception score of the {ref} dataset.".format(ref=cfgs.RUN.ref_dataset))
+        if local_rank == 0: logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
+                                        format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         is_score, is_std = ins.eval_dataset(data_loader=data_loader,
                                             eval_model=eval_model,
                                             splits=splits,
-                                            batch_size=cfgs.OPTIMIZER.batch_size,
+                                            batch_size=cfgs.OPTIMIZATION.batch_size,
                                             local_rank=local_rank,
                                             disable_tqdm=False)
         if local_rank == 0: logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))

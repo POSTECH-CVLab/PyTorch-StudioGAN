@@ -35,7 +35,7 @@ class BigGANConditionalBatchNorm2d(nn.Module):
     def __init__(self, in_features, out_features, MODULES):
         super().__init__()
         self.in_features = in_features
-        self.bn = batchnorm_2d(in_features, eps=1e-4, momentum=0.1, affine=False)
+        self.bn = batchnorm_2d(out_features, eps=1e-4, momentum=0.1, affine=False)
 
         self.gain = MODULES.g_linear(in_features=in_features,
                                      out_features=out_features,

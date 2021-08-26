@@ -9,7 +9,7 @@ import os
 import random
 
 from torch.utils.data import Dataset
-from torchvision.datasets import CIFAR10, STL10
+from torchvision.datasets import CIFAR10, CIFAR100
 from torchvision.datasets import ImageFolder
 from scipy import io
 from PIL import ImageOps, Image
@@ -53,8 +53,8 @@ class CenterCropLongEdge(object):
 
 
 class Dataset_(Dataset):
-    def __init__(self, data_name, data_path, train, crop_long_edge=False, resize_size=None, random_flip=False,
-                 hdf5_path=None, load_data_in_memory=False):
+    def __init__(self, data_name, data_path, train, crop_long_edge=False, resize_size=None,
+                 random_flip=False, hdf5_path=None, load_data_in_memory=False):
         super(Dataset_, self).__init__()
         self.data_name = data_name
         self.data_path = data_path
@@ -99,6 +99,10 @@ class Dataset_(Dataset):
                                 train=self.train,
                                 download=True)
 
+        elif self.data_name == "CIFAR100":
+            self.data = CIFAR100(root=self.data_path,
+                                 train=self.train,
+                                 download=True)
         else:
             mode = "train" if self.train == True else "valid"
             root = os.path.join(self.data_path, mode)

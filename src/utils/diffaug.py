@@ -25,22 +25,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 
-import torch
-import torch.nn.functional as F
-
-
 ### Differentiable Augmentation for Data-Efficient GAN Training (https://arxiv.org/abs/2006.10738)
 ### Shengyu Zhao, Zhijian Liu, Ji Lin, Jun-Yan Zhu, and Song Han
 ### https://github.com/mit-han-lab/data-efficient-gans
 
 
-AUGMENT_FNS = {
-    'color': [rand_brightness, rand_saturation, rand_contrast],
-    'translation': [rand_translation],
-    'cutout': [rand_cutout],
-}
+import torch
+import torch.nn.functional as F
 
-def apply_diffaug(x, policy='', channels_first=True):
+
+def apply_diffaug(x, policy="color,translation,cutout", channels_first=True):
     if policy:
         if not channels_first:
             x = x.permute(0, 3, 1, 2)
@@ -96,3 +90,9 @@ def rand_cutout(x, ratio=0.5):
     mask[grid_batch, grid_x, grid_y] = 0
     x = x * mask.unsqueeze(1)
     return x
+
+AUGMENT_FNS = {
+    'color': [rand_brightness, rand_saturation, rand_contrast],
+    'translation': [rand_translation],
+    'cutout': [rand_cutout],
+}
