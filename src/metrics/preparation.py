@@ -19,15 +19,15 @@ import utils.misc as misc
 
 
 class LoadEvalModel(object):
-    def __init__(self, eval_backbone, world_size, distributed_data_parallel, local_rank):
+    def __init__(self, eval_backbone, world_size, distributed_data_parallel, device):
         super(LoadEvalModel, self).__init__()
         self.eval_backbone = eval_backbone
         self.save_output = misc.SaveOutput()
 
         if self.eval_backbone == "Inception_V3":
-            self.model = InceptionV3().to(local_rank)
+            self.model = InceptionV3().to(device)
         elif self.eval_backbone == "SwAV":
-            self.model = torch.hub.load('facebookresearch/swav', 'resnet50').to(local_rank)
+            self.model = torch.hub.load('facebookresearch/swav', 'resnet50').to(device)
             hook_handles = []
             for name, layer in self.model.named_children():
                 if name == "fc":
@@ -39,12 +39,12 @@ class LoadEvalModel(object):
         if world_size > 1 and distributed_data_parallel:
             misc.toggle_grad(self.model, on=True)
             self.model = DDP(self.model,
-                             device_ids=[local_rank],
+                             device_ids=[device],
                              broadcast_buffers=False,
                              find_unused_parameters=True)
         elif world_size > 1 and distributed_data_parallel is False:
             self.model = DataParallel(self.model,
-                                      output_device=local_rank)
+                                      output_device=device)
         else:
             pass
 
@@ -60,7 +60,8 @@ class LoadEvalModel(object):
             self.save_output.clear()
         return repres, logits
 
-def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger, local_rank):
+def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger, device):
+    disable_tqdm = device != 0
     eval_model.eval()
     save_path = os.path.abspath(os.path.join("./data", cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
                                              cfgs.RUN.eval_backbone + "_moments.npz"))
@@ -70,10 +71,11 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
         mu = np.load(save_path)["mu"]
         sigma = np.load(save_path)["sigma"]
     else:
-        if local_rank == 0: logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
+        if device == 0: logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
                                         format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         mu, sigma = fid.calculate_moments(data_loader=data_loader,
-                                          Gen="N/A",
+                                          generator="N/A",
+                                          discriminator="N/A",
                                           eval_model=eval_model,
                                           is_generate=False,
                                           num_generate="N/A",
@@ -84,22 +86,22 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
                                           z_dim="N/A",
                                           num_classes=cfgs.DATA.num_classes,
                                           LOSS="N/A",
-                                          local_rank=local_rank,
-                                          disable_tqdm=False)
+                                          device=device,
+                                          disable_tqdm=disable_tqdm)
 
-        if local_rank == 0: logger.info("Save calculated means and covariances to disk.")
+        if device == 0: logger.info("Save calculated means and covariances to disk.")
         np.savez(save_path, **{"mu": mu, "sigma": sigma})
 
     if is_file:
         pass
     else:
-        if local_rank == 0: logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
+        if device == 0: logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
                                         format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         is_score, is_std = ins.eval_dataset(data_loader=data_loader,
                                             eval_model=eval_model,
                                             splits=splits,
                                             batch_size=cfgs.OPTIMIZATION.batch_size,
-                                            local_rank=local_rank,
-                                            disable_tqdm=False)
-        if local_rank == 0: logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))
+                                            device=device,
+                                            disable_tqdm=disable_tqdm)
+        if device == 0: logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))
     return mu, sigma

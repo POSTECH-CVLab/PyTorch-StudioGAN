@@ -16,10 +16,10 @@ from utils.ema import EmaDpSyncBN
 import utils.misc as misc
 
 
-def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, local_rank, logger):
-    if local_rank == 0: logger.info("Build a Generative Adversarial Network.")
+def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, device, logger):
+    if device == 0: logger.info("Build a Generative Adversarial Network.")
     module = __import__("models.{backbone}".format(backbone=MODEL.backbone), fromlist=['something'])
-    if local_rank == 0: logger.info("Modules are located on './src/models.{backbone}'.".format(backbone=MODEL.backbone))
+    if device == 0: logger.info("Modules are located on './src/models.{backbone}'.".format(backbone=MODEL.backbone))
 
     Gen = module.Generator(z_dim=MODEL.z_dim,
                            g_shared_dim=MODEL.g_shared_dim,
@@ -33,7 +33,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, local_
                            g_depth=MODEL.g_depth,
                            mixed_precision=RUN.mixed_precision,
                            MODULES=MODULES
-                           ).to(local_rank)
+                           ).to(device)
 
     Dis = module.Discriminator(img_size=DATA.img_size,
                                d_conv_dim=MODEL.d_conv_dim,
@@ -48,9 +48,9 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, local_
                                d_depth=MODEL.d_depth,
                                mixed_precision=RUN.mixed_precision,
                                MODULES=MODULES
-                               ).to(local_rank)
+                               ).to(device)
     if MODEL.apply_g_ema:
-        if local_rank == 0: logger.info("Prepare exponential moving average generator with decay rate of {decay}."\
+        if device == 0: logger.info("Prepare exponential moving average generator with decay rate of {decay}."\
                                         .format(decay=MODEL.g_ema_decay))
         Gen_ema = module.Generator(z_dim=MODEL.z_dim,
                                    g_shared_dim=MODEL.g_shared_dim,
@@ -64,7 +64,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, local_
                                    g_depth=MODEL.g_depth,
                                    mixed_precision=RUN.mixed_precision,
                                    MODULES=MODULES
-                                   ).to(local_rank)
+                                   ).to(device)
 
         if not RUN.distributed_data_parallel and OPTIMIZATION.world_size > 1 and RUN.synchronized_bn:
             ema = EmaDpSyncBN(source=Gen,
@@ -79,14 +79,14 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, local_
     else:
         Gen_ema, ema = None, None
 
-    if local_rank == 0: logger.info(misc.count_parameters(Gen))
-    if local_rank == 0: logger.info(Gen)
+    if device == 0: logger.info(misc.count_parameters(Gen))
+    if device == 0: logger.info(Gen)
 
-    if local_rank == 0: logger.info(misc.count_parameters(Dis))
-    if local_rank == 0: logger.info(Dis)
+    if device == 0: logger.info(misc.count_parameters(Dis))
+    if device == 0: logger.info(Dis)
     return Gen, Dis, Gen_ema, ema
 
-def prepare_parallel_training(Gen, Dis, Gen_ema, world_size, distributed_data_parallel, synchronized_bn, apply_g_ema, local_rank):
+def prepare_parallel_training(Gen, Dis, Gen_ema, world_size, distributed_data_parallel, synchronized_bn, apply_g_ema, device):
     if world_size > 1:
         if distributed_data_parallel:
             if synchronized_bn:
@@ -96,19 +96,19 @@ def prepare_parallel_training(Gen, Dis, Gen_ema, world_size, distributed_data_pa
                 if apply_g_ema:
                     Gen_ema = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen_ema, process_group)
 
-            Gen = DDP(Gen, device_ids=[local_rank])
-            Dis = DDP(Dis, device_ids=[local_rank])
+            Gen = DDP(Gen, device_ids=[device])
+            Dis = DDP(Dis, device_ids=[device])
             if apply_g_ema:
-                Gen_ema = DDP(Gen_ema, device_ids=[local_rank])
+                Gen_ema = DDP(Gen_ema, device_ids=[device])
         else:
-            Gen = DataParallel(Gen, output_device=local_rank)
-            Dis = DataParallel(Dis, output_device=local_rank)
+            Gen = DataParallel(Gen, output_device=device)
+            Dis = DataParallel(Dis, output_device=device)
             if apply_g_ema:
-                Gen_ema = DataParallel(Gen_ema, output_device=local_rank)
+                Gen_ema = DataParallel(Gen_ema, output_device=device)
 
             if synchronized_bn:
-                Gen = convert_model(Gen).to(local_rank)
-                Dis = convert_model(Dis).to(local_rank)
+                Gen = convert_model(Gen).to(device)
+                Dis = convert_model(Dis).to(device)
                 if apply_g_ema:
-                    Gen_ema = convert_model(Gen_ema).to(local_rank)
+                    Gen_ema = convert_model(Gen_ema).to(device)
     return Gen, Dis, Gen_ema

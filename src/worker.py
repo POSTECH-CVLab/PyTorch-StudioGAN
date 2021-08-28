@@ -36,16 +36,15 @@ import utils.diffaug as diffaug
 import utils.cr as cr
 
 
-SAVE_FORMAT = 'step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth'
+SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
 
 LOG_FORMAT = (
-    "Step: {step:>7} "
+    "Step: {step:>6} "
     "Progress: {progress:<.1%} "
     "Elapsed: {elapsed} "
     "Temperature: {temperature:<.4} "
     "Dis_loss: {dis_loss:<.4} "
     "Gen_loss: {gen_loss:<.4} "
-    "Cls_loss: {cls_loss:<.4} "
 )
 
 
@@ -82,7 +81,10 @@ class WORKER(object):
         self.AUG = cfgs.AUG
         self.RUN = cfgs.RUN
 
+        self.standing_statistics = False
+        self.standing_step = "N/A"
         self.std_stat_counter = 0
+
         self.train_iter = iter(self.train_dataloader)
 
         self.l2_loss = torch.nn.MSELoss()
@@ -131,95 +133,92 @@ class WORKER(object):
         # Train Discriminator
         # -----------------------------------------------------------------------------
         # toggle gradients of the generator and discriminator
-        misc.toggle_grad(self.Gen, on=False, freezeD=-1)
-        misc.toggle_grad(self.Dis, on=True, freezeD=self.RUN.freezeD)
-        # sample real images and labels from the true data distribution
-        real_image_basket, real_label_basket = self.sample_data_basket()
+        misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1)
+        misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD)
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
             self.OPTIMIZATION.d_optimizer.zero_grad()
             with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
+                # sample real images and labels from the true data distribution
+                real_image_basket, real_label_basket = self.sample_data_basket()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     # sample fake images and labels from p(G(z), y)
-                    fake_images_, fake_labels, fake_images_eps, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                                           truncation_th=-1.0,
-                                                                                           batch_size=self.OPTIMIZATION.batch_size,
-                                                                                           z_dim=self.MODEL.z_dim,
-                                                                                           num_classes=self.DATA.num_classes,
-                                                                                           y_sampler="totally_random",
-                                                                                           radius=self.LOSS.radius,
-                                                                                           generator=self.Gen,
-                                                                                           discriminator=self.Dis,
-                                                                                           is_train=True,
-                                                                                           LOSS=self.LOSS,
-                                                                                           local_rank=self.local_rank,
-                                                                                           cal_trsp_cost=False)
+                    fake_images, fake_labels, fake_images_eps, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                                          truncation_th=-1.0,
+                                                                                          batch_size=self.OPTIMIZATION.batch_size,
+                                                                                          z_dim=self.MODEL.z_dim,
+                                                                                          num_classes=self.DATA.num_classes,
+                                                                                          y_sampler="totally_random",
+                                                                                          radius=self.LOSS.radius,
+                                                                                          generator=self.Gen,
+                                                                                          discriminator=self.Dis,
+                                                                                          is_train=True,
+                                                                                          LOSS=self.LOSS,
+                                                                                          device=self.local_rank,
+                                                                                          cal_trsp_cost=False)
 
-                    # apply differentiable augmentations if 'apply_diffaug' or 'apply_ada' is True
+                    # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images = self.AUG.series_augment(real_image_basket[batch_counter])
-                    fake_images = self.AUG.series_augment(fake_images_)
+                    fake_images_ = self.AUG.series_augment(fake_images)
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     real_dict = self.Dis(real_images, real_label_basket[batch_counter])
-                    fake_dict = self.Dis(fake_images, fake_labels)
+                    fake_dict = self.Dis(fake_images_, fake_labels)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     dis_acml_loss = self.LOSS.d_loss(real_dict["adv_output"], fake_dict["adv_output"])
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
-                        cls_cond_loss = self.cond_loss(**real_dict)
-                        dis_acml_loss += self.LOSS.cond_lambda*cls_cond_loss
-                        real_cond_loss = cls_cond_loss.item()
-                    else:
-                        real_cond_loss = "N/A"
+                        real_cond_loss = self.cond_loss(**real_dict)
+                        dis_acml_loss += self.LOSS.cond_lambda*real_cond_loss
 
                     # if LOSS.apply_cr is True, force the adv. and cls. logits to be the same
                     if self.LOSS.apply_cr:
                         real_prl_images = self.AUG.parallel_augment(real_image_basket[batch_counter])
                         real_prl_dict = self.Dis(real_prl_images, real_label_basket[batch_counter])
-                        consist_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
+                        real_consist_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
                         if self.MODEL.d_cond_mtd == "AC":
-                            consist_loss += self.l2_loss(real_dict["cls_output"], real_prl_dict["cls_output"])
+                            real_consist_loss += self.l2_loss(real_dict["cls_output"], real_prl_dict["cls_output"])
                         elif self.MODEL.d_cond_mtd in ["2C", "D2DCE"]:
-                            consist_loss += self.l2_loss(real_dict["embed"], real_prl_dict["embed"])
+                            real_consist_loss += self.l2_loss(real_dict["embed"], real_prl_dict["embed"])
                         else:
                             pass
-                        dis_acml_loss += self.LOSS.cr_lambda*consist_loss
+                        dis_acml_loss += self.LOSS.cr_lambda*real_consist_loss
 
                     # if LOSS.apply_bcr is True, apply balanced consistency regularization proposed in ICRGAN
                     if self.LOSS.apply_bcr:
                         real_prl_images = self.AUG.parallel_augment(real_image_basket[batch_counter])
-                        fake_prl_images = self.AUG.parallel_augment(fake_images_)
+                        fake_prl_images = self.AUG.parallel_augment(fake_images)
                         real_prl_dict = self.Dis(real_prl_images, real_label_basket[batch_counter])
                         fake_prl_dict = self.Dis(fake_prl_images, fake_labels)
-                        bcr_real_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
-                        bcr_fake_loss = self.l2_loss(fake_dict["adv_output"], fake_prl_dict["adv_output"])
+                        real_bcr_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
+                        fake_bcr_loss = self.l2_loss(fake_dict["adv_output"], fake_prl_dict["adv_output"])
                         if self.MODEL.d_cond_mtd == "AC":
-                            bcr_real_loss += self.l2_loss(real_dict["cls_output"], real_prl_dict["cls_output"])
-                            bcr_fake_loss += self.l2_loss(fake_dict["cls_output"], fake_prl_dict["cls_output"])
+                            real_bcr_loss += self.l2_loss(real_dict["cls_output"], real_prl_dict["cls_output"])
+                            fake_bcr_loss += self.l2_loss(fake_dict["cls_output"], fake_prl_dict["cls_output"])
                         elif self.MODEL.d_cond_mtd in ["2C", "D2DCE"]:
-                            bcr_real_loss += self.l2_loss(real_dict["embed"], real_prl_dict["embed"])
-                            bcr_fake_loss += self.l2_loss(fake_dict["embed"], fake_prl_dict["embed"])
+                            real_bcr_loss += self.l2_loss(real_dict["embed"], real_prl_dict["embed"])
+                            fake_bcr_loss += self.l2_loss(fake_dict["embed"], fake_prl_dict["embed"])
                         else:
                             pass
-                        dis_acml_loss += self.LOSS.real_lambda*bcr_real_loss + self.LOSS.fake_lambda*bcr_fake_loss
+                        dis_acml_loss += self.LOSS.real_lambda*real_bcr_loss + self.LOSS.fake_lambda*fake_bcr_loss
 
                     # if LOSS.apply_zcr is True, apply latent consistency regularization proposed in ICRGAN
                     if self.LOSS.apply_zcr:
                         fake_eps_dict = self.Dis(fake_images_eps, fake_labels)
-                        zcr_loss = self.l2_loss(fake_dict["adv_output"], fake_eps_dict["adv_output"])
+                        fake_zcr_loss = self.l2_loss(fake_dict["adv_output"], fake_eps_dict["adv_output"])
                         if self.MODEL.d_cond_mtd == "AC":
-                            zcr_loss += self.l2_loss(fake_dict["cls_output"], fake_eps_dict["cls_output"])
+                            fake_zcr_loss += self.l2_loss(fake_dict["cls_output"], fake_eps_dict["cls_output"])
                         elif self.MODEL.d_cond_mtd in ["2C", "D2DCE"]:
-                            zcr_loss += self.l2_loss(fake_dict["embed"], fake_eps_dict["embed"])
+                            fake_zcr_loss += self.l2_loss(fake_dict["embed"], fake_eps_dict["embed"])
                         else:
                             pass
-                        dis_acml_loss += self.LOSS.d_lambda*zcr_loss
+                        dis_acml_loss += self.LOSS.d_lambda*fake_zcr_loss
 
                     # apply gradient penalty regularization to train wasserstein GAN
                     if self.LOSS.apply_gp:
                         gp_loss = losses.calc_derv4gp(real_images=real_image_basket[batch_counter],
                                                       real_labels=real_label_basket[batch_counter],
-                                                      fake_images=fake_images_,
+                                                      fake_images=fake_images,
                                                       discriminator=self.Dis,
                                                       device=self.local_rank)
                         dis_acml_loss += self.LOSS.gp_lambda*gp_loss
@@ -236,23 +235,25 @@ class WORKER(object):
                     dis_acml_loss = dis_acml_loss/self.OPTIMIZATION.acml_steps
                     batch_counter += 1
 
+                # accumulate gradients of the discriminator
                 if self.RUN.mixed_precision:
                     self.scaler.scale(dis_acml_loss).backward()
                 else:
                     dis_acml_loss.backward()
 
+            # update the discriminator using the pre-defined optimizer
             if self.RUN.mixed_precision:
                 self.scaler.step(self.OPTIMIZATION.d_optimizer)
                 self.scaler.update()
             else:
                 self.OPTIMIZATION.d_optimizer.step()
 
-            # clip weights in the discriminator for satisfying 1-Lipschitz constraint
+            # clip weights to restrict the discriminator to satisfy 1-Lipschitz constraint
             if self.LOSS.apply_wc:
                 for p in self.Dis.parameters():
                     p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
 
-        # calculate the spectrum norms of all weights in the discriminator for monitoring purpose
+        # calculate the spectral norms of all weights in the discriminator for monitoring purpose
         if (current_step + 1) % self.RUN.print_every == 0 and self.MODEL.apply_d_sn:
             if self.global_rank == 0:
                 dis_sigmas = misc.calculate_all_sn(self.Dis)
@@ -263,39 +264,39 @@ class WORKER(object):
         # Train Generator
         # -----------------------------------------------------------------------------
         # toggle gradients of the generator and discriminator
-        misc.toggle_grad(self.Dis, False, freezeD=-1)
-        misc.toggle_grad(self.Gen, True, freezeD=-1)
+        misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1)
+        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
             for acml_step in range(self.OPTIMIZATION.acml_steps):
                 with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
                     # sample fake images and labels from p(G(z), y)
-                    fake_images_, fake_labels, fake_images_eps, trsp_cost = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                                                   truncation_th=-1.0,
-                                                                                                   batch_size=self.OPTIMIZATION.batch_size,
-                                                                                                   z_dim=self.MODEL.z_dim,
-                                                                                                   num_classes=self.DATA.num_classes,
-                                                                                                   y_sampler="totally_random",
-                                                                                                   radius=self.LOSS.radius,
-                                                                                                   generator=self.Gen,
-                                                                                                   discriminator=self.Dis,
-                                                                                                   is_train=True,
-                                                                                                   LOSS=self.LOSS,
-                                                                                                   local_rank=self.local_rank,
-                                                                                                   cal_trsp_cost=True)
+                    fake_images, fake_labels, fake_images_eps, trsp_cost = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                                                  truncation_th=-1.0,
+                                                                                                  batch_size=self.OPTIMIZATION.batch_size,
+                                                                                                  z_dim=self.MODEL.z_dim,
+                                                                                                  num_classes=self.DATA.num_classes,
+                                                                                                  y_sampler="totally_random",
+                                                                                                  radius=self.LOSS.radius,
+                                                                                                  generator=self.Gen,
+                                                                                                  discriminator=self.Dis,
+                                                                                                  is_train=True,
+                                                                                                  LOSS=self.LOSS,
+                                                                                                  device=self.local_rank,
+                                                                                                  cal_trsp_cost=True)
 
-                    # apply differentiable augmentations if 'apply_diffaug' or 'apply_ada' is True
-                    fake_images = self.AUG.series_augment(fake_images_)
+                    # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
+                    fake_images_ = self.AUG.series_augment(fake_images)
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
-                    fake_dict = self.Dis(fake_images, fake_labels)
+                    fake_dict = self.Dis(fake_images_, fake_labels)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"])
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
-                        cls_cond_loss = self.cond_loss(**fake_dict)
-                        gen_acml_loss += self.LOSS.cond_lambda*cls_cond_loss
+                        fake_cond_loss = self.cond_loss(**fake_dict)
+                        gen_acml_loss += self.LOSS.cond_lambda*fake_cond_loss
 
                     # add transport cost for latent optimization training
                     if self.LOSS.apply_lo:
@@ -303,24 +304,26 @@ class WORKER(object):
 
                     # apply latent consistency regularization for generating diverse images
                     if self.LOSS.apply_zcr:
-                        zcr_loss = -1*self.l2_loss(fake_images_, fake_images_eps)
-                        gen_acml_loss += self.LOSS.g_lambda*zcr_loss
+                        fake_zcr_loss = -1*self.l2_loss(fake_images, fake_images_eps)
+                        gen_acml_loss += self.LOSS.g_lambda*fake_zcr_loss
 
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss/self.OPTIMIZATION.acml_steps
 
+                # accumulate gradients of the generator
                 if self.RUN.mixed_precision:
                     self.scaler.scale(gen_acml_loss).backward()
                 else:
                     gen_acml_loss.backward()
 
+            # update the generator using the pre-defined optimizer
             if self.RUN.mixed_precision:
                 self.scaler.step(self.OPTIMIZATION.g_optimizer)
                 self.scaler.update()
             else:
                 self.OPTIMIZATION.g_optimizer.step()
 
-            # if ema is True: we update parameters of the Gen_copy in adaptive way.
+            # if ema is True: update parameters of the Gen_ema in adaptive way
             if self.MODEL.apply_g_ema:
                 self.ema.update(current_step)
 
@@ -332,7 +335,6 @@ class WORKER(object):
                                             temperature=self.LOSS.temperature,
                                             dis_loss=dis_acml_loss.item(),
                                             gen_loss=gen_acml_loss.item(),
-                                            cls_loss=real_cond_loss,
                                             )
             self.logger.info(log_message)
 
@@ -340,26 +342,12 @@ class WORKER(object):
                                                "generator": gen_acml_loss.item()},
                                     current_step+1)
 
-            # calculate the spectrum norms of all weights in the generator for monitoring purpose
+            # calculate the spectral norms of all weights in the generator for monitoring purpose
             if self.MODEL.apply_g_sn:
                 gen_sigmas = misc.calculate_all_sn(self.Gen)
                 self.writer.add_scalars("SN_of_gen", gen_sigmas, current_step+1)
-
-        # evaluating and saving GANs
-        if (current_step + 1) % self.RUN.eval_save_every == 0 or (current_step + 1) == self.OPTIMIZATION.total_steps:
-            if self.RUN.eval:
-                is_best = self.evaluation(current_step+1, False, "N/A")
-                if self.global_rank == 0: self.save(current_step+1, is_best)
-            else:
-                if self.global_rank == 0: self.save(current_step+1, False)
-
-        if self.RUN.distributed_data_parallel:
-            dist.barrier(self.group)
         return current_step+1
-    ################################################################################################################################
 
-
-    ################################################################################################################################
     def save(self, step, is_best):
         when = "best" if is_best is True else "current"
         self.dis_model.eval()
@@ -376,12 +364,12 @@ class WORKER(object):
             if self.Gen_copy is not None:
                 gen_copy = self.Gen_copy
 
-        g_states = {'seed': self.seed, 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
-                    'state_dict': gen.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
+        g_states = {"seed": self.seed, "run_name": self.run_name, "step": step, "best_step": self.best_step,
+                    "state_dict": gen.state_dict(), "optimizer": self.G_optimizer.state_dict(), "ada_p": self.ada_aug_p}
 
-        d_states = {'seed': self.seed, 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
-                    'state_dict': dis.state_dict(), 'optimizer': self.D_optimizer.state_dict(), 'ada_p': self.ada_aug_p,
-                    'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
+        d_states = {"seed": self.seed, "run_name": self.run_name, "step": step, "best_step": self.best_step,
+                    "state_dict": dis.state_dict(), "optimizer": self.D_optimizer.state_dict(), "ada_p": self.ada_aug_p,
+                    "best_fid": self.best_fid, "best_fid_checkpoint_path": self.checkpoint_dir}
 
         if len(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))) >= 1:
             find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0])
@@ -405,7 +393,7 @@ class WORKER(object):
             torch.save(d_states, d_checkpoint_output_path_)
 
         if self.Gen_copy is not None:
-            g_ema_states = {'state_dict': gen_copy.state_dict()}
+            g_ema_states = {"state_dict": gen_copy.state_dict()}
             if len(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))) >= 1:
                 find_and_remove(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0])
 
@@ -428,68 +416,94 @@ class WORKER(object):
         self.gen_model.train()
         if self.Gen_copy is not None:
             self.Gen_copy.train()
-    ################################################################################################################################
 
+    def evaluate(self, step):
+        if self.global_rank == 0: self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
+        if self.standing_statistics: self.std_stat_counter += 1
+        is_best, num_split, num_runs4PR, num_clusters4PR, beta4PR = False, 1, 10, 20, 8
+        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+            self.Dis.eval()
+            generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
+                                               batch_statistics=self.RUN.batch_statistics,
+                                               standing_statistics=self.RUN.standing_statistics,
+                                               DATA=self.DATA,
+                                               MODEL=self.MODEL,
+                                               LOSS=self.LOSS,
+                                               OPTIMIZATION=self.OPTIMIZATION,
+                                               RUN=self.RUN,
+                                               device=self.local_rank,
+                                               logger=self.logger,
+                                               counter=self.std_stat_counter)
 
-    ################################################################################################################################
-    def evaluation(self, step, standing_statistics, standing_step):
-        if standing_statistics: self.counter += 1
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            if self.global_rank == 0: self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
-            is_best = False
-            num_split, num_run4PR, num_cluster4PR, beta4PR = 1, 10, 20, 8
+            fid_score, self.m1, self.s1 = fid.calculate_fid(data_loader=self.eval_dataloader,
+                                                            generator=generator,
+                                                            discriminator=self.Dis,
+                                                            eval_model=self.eval_model,
+                                                            num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                            y_sampler="totally_random",
+                                                            cfgs=self.cfgs,
+                                                            device=self.local_rank,
+                                                            logger=self.logger,
+                                                            pre_cal_mean=self.mu,
+                                                            pre_cal_std=self.sigma)
 
-            self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
+            kl_score, kl_std = ins.eval_generator(generator=generator,
+                                                  discriminator=self.Dis,
+                                                  eval_model=self.eval_model,
+                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                  y_sampler="totally_random",
+                                                  split=num_split,
+                                                  batch_size=self.OPTIMIZATION.batch_size,
+                                                  z_prior=self.MODEL.z_prior,
+                                                  truncation_th=self.RUN.truncation_th,
+                                                  z_dim=self.MODEL.z_dim,
+                                                  num_classes=self.DATA.num_classes,
+                                                  LOSS=self.LOSS,
+                                                  device=self.local_rank,
+                                                  logger=self.logger,
+                                                  disable_tqdm=self.local_rank!=0)
 
-            fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
-                                                              self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                              self.latent_op_beta, self.local_rank, self.logger, self.mu, self.sigma, self.run_name)
+            precisions, recalls, precision, recall = f_beta.calculate_f_beta(eval_model=self.eval_model,
+                                                                             data_loader=self.eval_dataloader,
+                                                                             num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                                             cfgs=self.cfgs,
+                                                                             generator=generator,
+                                                                             discriminator=self.Dis,
+                                                                             num_runs=num_runs4PR,
+                                                                             num_clusters=num_clusters4PR,
+                                                                             beta=beta4PR,
+                                                                             device=self.local_rank,
+                                                                             logger=self.logger)
 
-            kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
-                                                     self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                     self.latent_op_beta, num_split, self.local_rank, self.logger)
+            pr_curve = misc.plot_pr_curve(precisions, recalls, self.run_name, self.logger, logging=True)
+            # self.run_image_visualization(nrow=self.cfgs.nrow, ncol=self.cfgs.ncol)
 
-            precision, recall, f_beta, f_beta_inv = calculate_f_beta_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
-                                                                           num_run4PR, num_cluster4PR, beta4PR, self.truncated_factor, self.prior, self.latent_op,
-                                                                           self.latent_op_step4eval, self.latent_op_alpha, self.latent_op_beta, self.local_rank, self.logger)
-            PR_Curve = plot_pr_curve(precision, recall, self.run_name, self.logger, logging=True)
-
-            if self.best_fid is None:
-                self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best = fid_score, step, True, f_beta, f_beta_inv
-            else:
-                if fid_score <= self.best_fid:
-                    self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best = fid_score, step, True, f_beta, f_beta_inv
+            if self.best_fid is None or fid_score <= self.best_fid:
+                self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best =\
+                    fid_score, step, True, recall, precision
 
             if self.global_rank == 0:
-                self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.eval_type):fid_score}, step)
-                self.writer.add_scalars('F_beta score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta}, step)
-                self.writer.add_scalars('F_beta_inv score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta_inv}, step)
-                self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):kl_score}, step)
-                self.writer.add_figure('PR_Curve', PR_Curve, global_step=step)
-                if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
-                    self.writer.add_figure('Similarity_heatmap', sim_heatmap, global_step=step)
-                self.logger.info('F_{beta} score (Step: {step}, Using {type} images): {F_beta}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta=f_beta))
-                self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
-                self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))
-                self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_type]), IS=kl_score))
+                self.writer.add_scalars("FID score", {"using {type} moments".format(type=self.RUN.ref_dataset): fid_score}, step)
+                self.writer.add_scalars("F_beta score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): recall}, step)
+                self.writer.add_scalars("F_beta_inv score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): precision}, step)
+                self.writer.add_scalars("IS score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): kl_score}, step)
+                self.writer.add_figure("PR_Curve", pr_curve, global_step=step)
+
+                self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=recall))
+                self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=precision))
+                self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(step=step, type=self.RUN.ref_dataset, FID=fid_score))
+                self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
                 if self.train:
-                    self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
+                    self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
-            self.run_image_visualization(nrow=self.cfgs.nrow, ncol=self.cfgs.ncol, standing_statistics=False, standing_step="N/A")
-
-            self.dis_model.train()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
-
+            self.Gen.train(), self.Gen_ema.train(), self.Dis.train()
         return is_best
     ################################################################################################################################
 
 
     ################################################################################################################################
-    def save_images(self, is_generate, standing_statistics, standing_step, png=True, npz=True):
-        if self.global_rank == 0: self.logger.info('Start save images....')
+    def save_fake_images(self, is_generate, standing_statistics, standing_step, png=True, npz=True):
+        if self.global_rank == 0: self.logger.info("Start save images....")
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             self.dis_model.eval()
@@ -497,11 +511,11 @@ class WORKER(object):
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
 
             if png:
-                save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
+                save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.ref_dataset], self.num_classes, generator,
                                 self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
                                 self.latent_op_alpha, self.latent_op_beta, self.local_rank)
             if npz:
-                save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
+                save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.ref_dataset], self.num_classes, generator,
                                 self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
                                 self.latent_op_alpha, self.latent_op_beta, self.local_rank)
 
@@ -511,8 +525,8 @@ class WORKER(object):
 
 
     ################################################################################################################################
-    def run_image_visualization(self, nrow, ncol, standing_statistics, standing_step):
-        if self.global_rank == 0: self.logger.info('Start visualize images....')
+    def visualize_fake_images(self, nrow, ncol, standing_statistics, standing_step):
+        if self.global_rank == 0: self.logger.info("Start visualize images....")
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
@@ -542,15 +556,15 @@ class WORKER(object):
 
 
     ################################################################################################################################
-    def run_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_step):
-        if self.global_rank == 0: self.logger.info('Start nearest neighbor analysis....')
+    def run_k_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_step):
+        if self.global_rank == 0: self.logger.info("Start nearest neighbor analysis....")
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
 
-            resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
+            resnet50_model = torch.hub.load("pytorch/vision:v0.6.0", "resnet50", pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.local_rank)
             if self.n_gpus > 1:
                 resnet50_conv = DataParallel(resnet50_conv, output_device=self.local_rank)
@@ -597,7 +611,7 @@ class WORKER(object):
 
     ################################################################################################################################
     def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step, num_images=100):
-        if self.global_rank == 0: self.logger.info('Start linear interpolation analysis....')
+        if self.global_rank == 0: self.logger.info("Start linear interpolation analysis....")
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
@@ -638,7 +652,7 @@ class WORKER(object):
 
     ################################################################################################################################
     def run_frequency_analysis(self, num_images, standing_statistics, standing_step):
-        if self.global_rank == 0: self.logger.info('Start frequency analysis....')
+        if self.global_rank == 0: self.logger.info("Start frequency analysis....")
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
@@ -700,7 +714,7 @@ class WORKER(object):
 
     ################################################################################################################################
     def run_tsne(self, dataloader, standing_statistics, standing_step):
-        if self.global_rank == 0: self.logger.info('Start tsne analysis....')
+        if self.global_rank == 0: self.logger.info("Start tsne analysis....")
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
             generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,

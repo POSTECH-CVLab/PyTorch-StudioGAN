@@ -40,7 +40,6 @@ class dummy_context_mgr():
     def __exit__(self, exc_type, exc_value, traceback):
         return False
 
-
 class SaveOutput:
     def __init__(self):
         self.outputs = []
@@ -50,7 +49,6 @@ class SaveOutput:
 
     def clear(self):
         self.outputs = []
-
 
 class GatherLayer(torch.autograd.Function):
     """
@@ -71,7 +69,6 @@ class GatherLayer(torch.autograd.Function):
         grad_out = torch.zeros_like(input)
         grad_out[:] = grads[dist.get_rank()]
         return grad_out
-
 
 def fix_seed(seed):
     random.seed(seed)
@@ -108,26 +105,25 @@ def cleanup():
 def count_parameters(module):
     return "Number of parameters: {num}".format(num=sum([p.data.nelement() for p in module.parameters()]))
 
-def toggle_grad(model, on, freezeD=-1):
-    # import pdb;pdb.set_trace()
-    ### for styleGAN, we need to modify this function
-    ### specifically block = "blocks".{layer}.format(layer=layer)
+def toggle_grad(model, grad, num_freeze_layers=-1):
     if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
         model = model.module
 
     num_blocks = len(model.in_dims)
-    assert freezeD < num_blocks,\
-        "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freezeD, nb=num_blocks)
+    assert num_freeze_layers < num_blocks,\
+        "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
+                                                                      nb=num_blocks)
 
-    if freezeD == -1:
+    if num_freeze_layers == -1:
         for name, param in model.named_parameters():
-            param.requires_grad = on
+            param.requires_grad = grad
     else:
+        assert grad, "cannot freeze the model when grad is False"
         for name, param in model.named_parameters():
-            param.requires_grad = on
-            for layer in range(freezeD):
-                block = "blocks.{layer}".format(layer=layer)
-                if block in name:
+            param.requires_grad = True
+            for layer in range(num_freeze_layers):
+                block_name = "blocks.{layer}".format(layer=layer)
+                if block_name in name:
                     param.requires_grad = False
 
 def identity(x):
@@ -184,30 +180,14 @@ def calculate_all_sn(model):
     sigmas = {}
     with torch.no_grad():
         for name, param in model.named_parameters():
-            if "weight" in name and "bn" not in name and "shared" not in name and "deconv" not in name:
-                if "blocks" in name:
-                    splited_name = name.split('.')
-                    idx = find_string(splited_name, 'blocks')
-                    block_idx = int(splited_name[int(idx+1)])
-                    module_idx = int(splited_name[int(idx+2)])
-                    operation_name = splited_name[idx+3]
-                    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
-                        operations = model.module.blocks[block_idx][module_idx]
-                    else:
-                        operations = model.blocks[block_idx][module_idx]
-                    operation = getattr(operations, operation_name)
-                else:
-                    splited_name = name.split('.')
-                    idx = find_string(splited_name, 'module') if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel) else -1
-                    operation_name = splited_name[idx+1]
-                    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
-                        operation = getattr(model.module, operation_name)
-                    else:
-                        operation = getattr(model, operation_name)
-
-                weight_orig = reshape_weight_to_matrix(operation.weight_orig)
-                weight_u = operation.weight_u
-                weight_v = operation.weight_v
+            operations = model
+            if "weight_orig" in name:
+                splited_name = name.split('.')
+                for name_element in splited_name[:-1]:
+                    operations = getattr(operations, name_element)
+                weight_orig = reshape_weight_to_matrix(operations.weight_orig)
+                weight_u = operations.weight_u
+                weight_v = operations.weight_v
                 sigmas[name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
     return sigmas
 
@@ -216,7 +196,11 @@ def apply_standing_statistics(generator, DATA, MODEL, LOSS, OPTIMIZATION, RUN, d
     generator.apply(reset_bn_statistics)
     logger.info("Acuumulate statistics of batchnorm layers for improved generation performance.")
     for i in tqdm(range(RUN.standing_step)):
-        rand_batch_size = random.randint(1, OPTIMIZATION.batch_size)
+        if RUN.distributed_data_parallel:
+            rand_batch_size = random.randint(1, OPTIMIZATION.batch_size)
+        else:
+            batch_size_per_gpu = OPTIMIZATION.batch_size//OPTIMIZATION.world_size
+            rand_batch_size = random.randint(1, batch_size_per_gpu)*OPTIMIZATION.world_size
         fake_images, fake_labels, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
                                                                 truncation_th=-1,
                                                                 batch_size=rand_batch_size,
@@ -229,13 +213,11 @@ def apply_standing_statistics(generator, DATA, MODEL, LOSS, OPTIMIZATION, RUN, d
                                                                 is_train=True,
                                                                 LOSS=LOSS,
                                                                 local_rank=device,
-                                                                cal_trsf_cost=False)
+                                                                cal_trsp_cost=False)
     generator.eval()
 
-
-
-def prepare_generator(generator, batch_statistics, standing_statistics, standing_steps, is_train, DATA, MODEL,
-                      LOSS, OPTIMIZATION, RUN, device, logger, counter):
+def prepare_generator(generator, batch_statistics, standing_statistics, DATA, MODEL, LOSS,
+                      OPTIMIZATION, RUN, device, logger, counter):
     if standing_statistics:
         if counter > 1:
             generator.eval()
@@ -279,6 +261,25 @@ def plot_img_canvas(images, save_path, nrow, logger, logging=True):
     save_image(images, save_path, padding=0, nrow=nrow)
     if logging: logger.info("Saved image to {}".format(save_path))
 
+def plot_pr_curve(precision, recall, run_name, logger, logging=True):
+    if logger is None: logging = False
+    directory = join('./figures', run_name)
+
+    if not exists(abspath(directory)):
+        os.makedirs(directory)
+    save_path = join(directory, "pr_curve.png")
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1], linestyle='--')
+    ax.plot(recall, precision)
+    ax.grid(True)
+    ax.set_xlabel('Recall (Higher is better)', fontsize=15)
+    ax.set_ylabel('Precision (Higher is better)', fontsize=15)
+    fig.tight_layout()
+    fig.savefig(save_path)
+    if logging: logger.info("Save image to {}".format(save_path))
+    return fig
+
 def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, logging=True):
     if logger is None: logging=False
     directory = join("./figures", run_name)
@@ -318,8 +319,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger, logging=Tru
         palette=sns.color_palette("hls", 10),
         data=df,
         legend="full",
-        alpha=0.5
-    ).legend(fontsize = 15, loc ="upper right")
+        alpha=0.5).legend(fontsize = 15, loc ="upper right")
     plt.title("TSNE result of {flag} images".format(flag=flag), fontsize=25)
     plt.xlabel('', fontsize=7)
     plt.ylabel('', fontsize=7)
@@ -359,7 +359,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
                                                         is_train=False,
                                                         LOSS=LOSS,
                                                         local_rank=device,
-                                                        cal_trsf_cost=False)
+                                                        cal_trsp_cost=False)
             else:
                 try:
                     images, labels = next(data_iter)
@@ -410,7 +410,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                         is_train=False,
                                                         LOSS=LOSS,
                                                         local_rank=device,
-                                                        cal_trsf_cost=False)
+                                                        cal_trsp_cost=False)
             else:
                 try:
                     images, labels = next(data_iter)
@@ -420,31 +420,30 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
             for idx, img in enumerate(images.detach()):
                 if batch_size*i + idx < num_images:
                     save_image((img + 1)/2,
-                               join(directory, str(labels[idx].item()), "{idx}.png".format(idx=batch_size*i + idx)))
+                               join(directory,
+                                    str(labels[idx].item()),
+                                    "{idx}.png".format(idx=batch_size*i + idx)))
                 else:
                     pass
     print("Save png to ./generated_images/{run_name}".format(run_name=run_name))
 
-def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
-    if isinstance(gen_model, DataParallel) or isinstance(gen_model, DistributedDataParallel):
-        z_dim = gen_model.module.z_dim
-        num_classes = gen_model.module.num_classes
-        conditional_strategy = dis_model.module.conditional_strategy
-    else:
-        z_dim = gen_model.z_dim
-        num_classes = gen_model.num_classes
-        conditional_strategy = dis_model.conditional_strategy
-
-    zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
-
-    if latent_op:
-        zs = latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, 1.0,
-                            latent_op_alpha, latent_op_beta, False, device)
-
+def generate_images_for_KNN(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler,
+                            generator, discriminator, LOSS, device):
     with torch.no_grad():
-        batch_images = gen_model(zs, fake_labels, evaluation=True)
-
-    return batch_images, list(fake_labels.detach().cpu().numpy())
+        fake_images, fake_labels, _, _ = sample.generate_images(z_prior=z_prior,
+                                                                truncation_th=truncation_th,
+                                                                batch_size=batch_size,
+                                                                z_dim=z_dim,
+                                                                num_classes=num_classes,
+                                                                y_sampler=y_sampler,
+                                                                radius="N/A",
+                                                                generator=generator,
+                                                                discriminator=discriminator,
+                                                                is_train=False,
+                                                                LOSS=LOSS,
+                                                                local_rank=device,
+                                                                cal_trsp_cost=False)
+    return fake_images, list(fake_labels.detach().cpu().numpy())
 
 def orthogonalize_model(model, strength=1e-4, blacklist=[]):
     with torch.no_grad():

@@ -36,13 +36,14 @@ def calculate_kl_div(ps, splits):
         m_std = torch.std(scores).detach().cpu().numpy()
     return m_scores, m_std
 
-def eval_generator(Gen, eval_model, num_generate, y_sampler, split, batch_size,z_prior, truncation_th, z_dim,
-                   num_classes, LOSS, local_rank, logger, disable_tqdm=False):
-    Gen.eval()
+def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size, z_prior,
+                   truncation_th, z_dim, num_classes, LOSS, device, logger, disable_tqdm=False):
+    generator.eval()
+    discriminator.eval()
     eval_model.eval()
     ps_holder = []
 
-    if local_rank == 0: logger.info("Calculate inception score of generated images.")
+    if device == 0: logger.info("Calculate inception score of generated images.")
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         fake_images, fake_labels, _, _ = sample.generate_images(z_prior=z_prior,
@@ -52,10 +53,11 @@ def eval_generator(Gen, eval_model, num_generate, y_sampler, split, batch_size,z
                                                                 num_classes=num_classes,
                                                                 y_sampler=y_sampler,
                                                                 radius="N/A",
-                                                                Gen=Gen,
+                                                                generator=generator,
+                                                                discriminator=discriminator,
                                                                 is_train=False,
                                                                 LOSS=LOSS,
-                                                                loca_rank=local_rank)
+                                                                device=device)
         ps = inception_softmax(eval_model, fake_images)
         ps_holder.append(ps)
 
@@ -64,7 +66,7 @@ def eval_generator(Gen, eval_model, num_generate, y_sampler, split, batch_size,z
         m_scores, m_std = calculate_kl_div(ps_holder[:num_generate], splits=split)
     return m_scores, m_std
 
-def eval_dataset(data_loader, eval_model, splits, batch_size, local_rank, disable_tqdm=False):
+def eval_dataset(data_loader, eval_model, splits, batch_size, device, disable_tqdm=False):
     eval_model.eval()
     num_samples = len(data_loader.dataset)
     num_batches = int(math.ceil(float(num_samples)/float(batch_size)))
@@ -73,7 +75,7 @@ def eval_dataset(data_loader, eval_model, splits, batch_size, local_rank, disabl
 
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         real_images, real_labels = next(dataset_iter)
-        real_images = real_images.to(local_rank)
+        real_images = real_images.to(device)
         ps = inception_softmax(eval_model, real_images)
         ps_holder.append(ps)
 

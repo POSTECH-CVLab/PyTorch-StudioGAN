@@ -213,7 +213,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings
         # -----------------------------------------------------------------------------
-        self.STYLE = lambda: None
+        self.STYLEGAN2 = lambda: None
 
         self.MODULES = lambda: None
 

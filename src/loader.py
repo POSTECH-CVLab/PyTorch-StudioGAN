@@ -19,6 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 import torch
+import torch.distributed as dist
 
 from data_util import Dataset_
 from metrics.inception_net import InceptionV3
@@ -135,7 +136,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                                                 MODEL=cfgs.MODEL,
                                                                 MODULES=cfgs.MODULES,
                                                                 RUN=cfgs.RUN,
-                                                                local_rank=local_rank,
+                                                                device=local_rank,
                                                                 logger=logger)
 
     # -----------------------------------------------------------------------------
@@ -164,7 +165,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       RUN=cfgs.RUN,
                                       logger=logger,
                                       gobal_rank=global_rank,
-                                      local_rank=local_rank)
+                                      device=local_rank)
 
     # -----------------------------------------------------------------------------
     # prepare parallel training
@@ -176,7 +177,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                                         distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                                         synchronized_bn=cfgs.RUN.synchronized_bn,
                                                         apply_g_ema=cfgs.MODEL.apply_g_ema,
-                                                        local_rank=local_rank)
+                                                        device=local_rank)
 
     # -----------------------------------------------------------------------------
     # load a pre-trained network (InceptionV3 or ResNet50 trained using SwAV)
@@ -185,14 +186,14 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
                                       world_size=cfgs.OPTIMIZATION.world_size,
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
-                                      local_rank=local_rank)
+                                      device=local_rank)
 
         mu, sigma = pp.prepare_moments_calculate_ins(data_loader=eval_dataloader,
                                                      eval_model=eval_model,
                                                      splits=1,
                                                      cfgs=cfgs,
                                                      logger=logger,
-                                                     local_rank=local_rank)
+                                                     device=local_rank)
 
     # -----------------------------------------------------------------------------
     # initialize WORKER for training and evaluating GAN
@@ -220,25 +221,46 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     )
 
     if global_rank == 0 and cfgs.RUN.train: logger.info("Start training!")
+    if cfgs.RUN.train:
+        while step <= cfgs.OPTIMIZATION.total_steps:
+            step = worker.train(current_step=step)
 
-    while step <= cfgs.OPTIMIZATION.total_steps:
-        step = worker.train(current_step=step)
+            is_best = False
+            if cfgs.RUN.eval and step % cfgs.RUN.eval_save_every == 0:
+                is_best = worker.evaluate(step=step)
+
+            if step % cfgs.RUN.eval_save_every == 0:
+                if global_rank == 0:
+                    worker.save(step=step, is_best=is_best)
+
+                if cfgs.RUN.distributed_data_parallel:
+                    dist.barrier(worker.group)
+
+    worker.standing_statistics = cfgs.RUN.standing_statistics
+    worker.standing_step = cfgs.RUN.standing_step
 
     if cfgs.RUN.eval:
-        is_save = worker.evaluation(step=step)
+        _ = worker.evaluate(step=step)
 
     if cfgs.RUN.save_fake_images:
-        worker.save_images(is_generate=True, png=True, npz=True)
+        worker.save_fake_images(is_generate=True, png=True, npz=True)
 
     if cfgs.RUN.vis_fake_images:
-        worker.run_image_visualization(nrow=cfgs.nrow, ncol=cfgs.ncol)
+        worker.visualize_fake_images(nrow=cfgs.nrow, ncol=cfgs.ncol)
 
     if cfgs.RUN.k_nearest_neighbor:
-        worker.run_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol)
+        worker.run_k_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol)
 
     if cfgs.RUN.interpolation:
-        worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=True, fix_y=False)
-        worker.run_linear_interpolation(nrow=cfgs.nrow, ncol=cfgs.ncol, fix_z=False, fix_y=True)
+        worker.run_linear_interpolation(nrow=cfgs.nrow,
+                                        ncol=cfgs.ncol,
+                                        fix_z=True,
+                                        fix_y=False)
+
+        worker.run_linear_interpolation(nrow=cfgs.nrow,
+                                        ncol=cfgs.ncol,
+                                        fix_z=False,
+                                        fix_y=True)
 
     if cfgs.RUN.frequency_analysis:
         worker.run_frequency_analysis(num_images=len(train_dataset))

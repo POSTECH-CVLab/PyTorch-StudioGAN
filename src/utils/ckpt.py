@@ -48,7 +48,7 @@ def load_ckpt(model, optimizer, ckpt_path, metric=False, load_ema=False):
     return seed, run_name, step, ada_p
 
 def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer, run_name, apply_g_ema,
-                         Gen_ema, ema, is_train, RUN, logger, global_rank, local_rank):
+                         Gen_ema, ema, is_train, RUN, logger, global_rank, device):
     when = "best" if load_best is True else "current"
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-{when}-weights-step*.pth".format(when=when)))[0]
     Dis_ckpt_path = glob.glob(join(ckpt_dir, "model=D-{when}-weights-step*.pth".format(when=when)))[0]
@@ -62,7 +62,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
                                                                        ckpt_path=Dis_ckpt_path,
                                                                        metric=True)
 
-    if local_rank == 0: logger = log.make_logger(run_name, None)
+    if device == 0: logger = log.make_logger(run_name, None)
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
@@ -79,8 +79,8 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
         RUN.seed = trained_seed
         misc.fix_all_seed(RUN.seed)
 
-    if local_rank == 0: logger.info("Generator checkpoint is {}".format(Gen_ckpt_path))
-    if local_rank == 0: logger.info('Discriminator checkpoint is {}'.format(Dis_ckpt_path))
+    if device == 0: logger.info("Generator checkpoint is {}".format(Gen_ckpt_path))
+    if device == 0: logger.info('Discriminator checkpoint is {}'.format(Dis_ckpt_path))
 
     if RUN.freezeD > -1 :
         step, ada_p, best_step, best_fid, best_ckpt_path = 0, None, 0, None, None
