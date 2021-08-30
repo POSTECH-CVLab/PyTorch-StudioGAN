@@ -276,7 +276,7 @@ def save_model(model, when, step, ckpt_dir, states):
     if len(model_ckpt_list) > 0:
         find_and_remove(model_ckpt_list[0])
 
-    torch.save(states, model_tpl.format(model=model, when=when, step=step))
+    torch.save(states, join(ckpt_dir, model_tpl.format(model=model, when=when, step=step)))
 
 def find_string(list_, string):
     for i, s in enumerate(list_):
