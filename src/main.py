@@ -54,6 +54,8 @@ def main():
                         (if false, use the moving average updated statistics)")
     parser.add_argument("-std_stat", "--standing_statistics", action="store_true",
                         help="whether to apply standing statistics for evaluation")
+    parser.add_argument("-std_max", "--standing_max_batch", type=int, default=-1, help="maximum batch_size for calculating standing statistics \
+                        (-1.0 menas not applying standing statistics trick for evaluation)")
     parser.add_argument("-std_step", "--standing_step", type=int, default=-1, help="# of steps for standing statistics \
                         (-1.0 menas not applying standing statistics trick for evaluation)")
     parser.add_argument("--freezeD", type=int, default=-1,

@@ -4,4 +4,4 @@ MODEL:
   backbone: "big_resnet"
   d_cond_mtd: "2C"
 AUG:
-  apply_diffaug: True
+  apply_diffaug: False

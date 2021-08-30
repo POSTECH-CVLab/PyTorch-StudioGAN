@@ -12,6 +12,7 @@ import random
 import math
 import os
 import sys
+import glob
 import warnings
 
 from torch.nn import DataParallel
@@ -129,14 +130,6 @@ def toggle_grad(model, grad, num_freeze_layers=-1):
 def identity(x):
     return x
 
-def set_models_trainable(model_list):
-    for model in model_list:
-        if model is None:
-            pass
-        else:
-            model.train()
-            model.apply(track_bn_statistics)
-
 def set_bn_trainable(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.train()
@@ -194,12 +187,12 @@ def calculate_all_sn(model):
 def apply_standing_statistics(generator, DATA, MODEL, LOSS, OPTIMIZATION, RUN, device, logger):
     generator.train()
     generator.apply(reset_bn_statistics)
-    logger.info("Acuumulate statistics of batchnorm layers for improved generation performance.")
+    logger.info("Acuumulate statistics of batchnorm layers to improve generation performance.")
     for i in tqdm(range(RUN.standing_step)):
+        batch_size_per_gpu = OPTIMIZATION.standing_max_batch//OPTIMIZATION.world_size
         if RUN.distributed_data_parallel:
-            rand_batch_size = random.randint(1, OPTIMIZATION.batch_size)
+            rand_batch_size = random.randint(1, batch_size_per_gpu)
         else:
-            batch_size_per_gpu = OPTIMIZATION.batch_size//OPTIMIZATION.world_size
             rand_batch_size = random.randint(1, batch_size_per_gpu)*OPTIMIZATION.world_size
         fake_images, fake_labels, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
                                                                 truncation_th=-1,
@@ -212,7 +205,7 @@ def apply_standing_statistics(generator, DATA, MODEL, LOSS, OPTIMIZATION, RUN, d
                                                                 discriminator=None,
                                                                 is_train=True,
                                                                 LOSS=LOSS,
-                                                                local_rank=device,
+                                                                device=device,
                                                                 cal_trsp_cost=False)
     generator.eval()
 
@@ -241,6 +234,46 @@ def prepare_generator(generator, batch_statistics, standing_statistics, DATA, MO
             generator.apply(untrack_bn_statistics)
         generator.apply(set_deterministic_op_trainable)
     return generator
+
+def make_GAN_trainable(Gen, Gen_ema, Dis):
+    Gen.train()
+    Gen.apply(track_bn_statistics)
+    if Gen_ema is not None:
+        Gen_ema.train()
+        Gen_ema.apply(track_bn_statistics)
+
+    Dis.train()
+    Dis.apply(track_bn_statistics)
+
+def make_GAN_untrainable(Gen, Gen_ema, Dis):
+    Gen.eval()
+    if Gen_ema is not None:
+        Gen_ema.eval()
+
+    Dis.eval()
+
+def peel_module(Gen, Gen_ema, Dis):
+    if isinstance(Gen, DataParallel) or isinstance(Gen, DistributedDataParallel):
+        gen, dis = Gen.module, Dis.module
+        if Gen_ema is not None:
+            gen_ema = Gen_ema.module
+        else:
+            gen_ema = None
+    else:
+        gen, dis = Gen, Dis
+        if Gen_ema is not None:
+            gen_ema = Gen_ema
+        else:
+            gen_ema = None
+    return gen, gen_ema, dis
+
+def save_model(model, when, step, ckpt_dir, states):
+    model_tpl = "model={model}-{when}-weights-step={step}.pth"
+    model_ckpt_list = glob.glob(join(ckpt_dir, model_tpl.format(model=model, when=when, step="*")))
+    if len(model_ckpt_list) > 0:
+        find_and_remove(model_ckpt_list[0])
+
+    torch.save(states, model_tpl.format(model=model, when=when, step=step))
 
 def find_string(list_, string):
     for i, s in enumerate(list_):
@@ -358,7 +391,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
                                                         discriminator=discriminator,
                                                         is_train=False,
                                                         LOSS=LOSS,
-                                                        local_rank=device,
+                                                        device=device,
                                                         cal_trsp_cost=False)
             else:
                 try:
@@ -409,7 +442,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                         discriminator=discriminator,
                                                         is_train=False,
                                                         LOSS=LOSS,
-                                                        local_rank=device,
+                                                        device=device,
                                                         cal_trsp_cost=False)
             else:
                 try:
@@ -441,7 +474,7 @@ def generate_images_for_KNN(z_prior, truncation_th, batch_size, z_dim, num_class
                                                                 discriminator=discriminator,
                                                                 is_train=False,
                                                                 LOSS=LOSS,
-                                                                local_rank=device,
+                                                                device=device,
                                                                 cal_trsp_cost=False)
     return fake_images, list(fake_labels.detach().cpu().numpy())
 

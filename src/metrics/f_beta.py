@@ -125,7 +125,7 @@ def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, dis
     eval_model.eval()
     PR = precision_recall(eval_model, device=device)
 
-    if device == 0: logger.info("Calculate F_beta Score....")
+    if device == 0: logger.info("Calculate F_beta score of generated images.")
     precisions, recalls = PR.compute_precision_recall(data_loader=data_loader,
                                                       num_generate=num_generate,
                                                       batch_size=cfgs.OPTIMIZATION.batch_size,

@@ -38,8 +38,6 @@ def calculate_kl_div(ps, splits):
 
 def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size, z_prior,
                    truncation_th, z_dim, num_classes, LOSS, device, logger, disable_tqdm=False):
-    generator.eval()
-    discriminator.eval()
     eval_model.eval()
     ps_holder = []
 

@@ -4,6 +4,8 @@
 
 # src/metrics/preparation.py
 
+
+from os.path import abspath, exists
 import os
 
 from torch.nn import DataParallel
@@ -63,10 +65,11 @@ class LoadEvalModel(object):
 def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger, device):
     disable_tqdm = device != 0
     eval_model.eval()
-    save_path = os.path.abspath(os.path.join("./data", cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
+
+    if not exists(abspath("./moments")): os.makedirs("./moments")
+    save_path = os.path.abspath(os.path.join("./moments", cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
                                              cfgs.RUN.eval_backbone + "_moments.npz"))
     is_file = os.path.isfile(save_path)
-
     if is_file:
         mu = np.load(save_path)["mu"]
         sigma = np.load(save_path)["sigma"]

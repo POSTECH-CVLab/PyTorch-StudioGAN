@@ -9,6 +9,7 @@ from os.path import join
 import sys
 import glob
 import random
+import string
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
@@ -82,10 +83,12 @@ class WORKER(object):
         self.RUN = cfgs.RUN
 
         self.standing_statistics = False
+        self.standing_max_batch = "N/A"
         self.standing_step = "N/A"
         self.std_stat_counter = 0
 
-        self.train_iter = iter(self.train_dataloader)
+        if self.RUN.train:
+            self.train_iter = iter(self.train_dataloader)
 
         self.l2_loss = torch.nn.MSELoss()
         if self.MODEL.d_cond_mtd == "AC":
@@ -124,22 +127,20 @@ class WORKER(object):
         return real_image_basket, real_label_basket
 
     def train(self, current_step):
-        batch_counter = 0
-        self.Gen.train()
-        self.Dis.train()
-        if self.Gen_ema is not None: self.Gen_ema.train()
-
         # -----------------------------------------------------------------------------
         # Train Discriminator
         # -----------------------------------------------------------------------------
+        batch_counter = 0
+        # make GAN be trainable before starting training
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
         misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1)
         misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD)
+        # sample real images and labels from the true data distribution
+        real_image_basket, real_label_basket = self.sample_data_basket()
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
             self.OPTIMIZATION.d_optimizer.zero_grad()
             with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
-                # sample real images and labels from the true data distribution
-                real_image_basket, real_label_basket = self.sample_data_basket()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     # sample fake images and labels from p(G(z), y)
                     fake_images, fake_labels, fake_images_eps, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
@@ -259,7 +260,6 @@ class WORKER(object):
                 dis_sigmas = misc.calculate_all_sn(self.Dis)
                 self.writer.add_scalars("SN_of_dis", dis_sigmas, current_step+1)
 
-
         # -----------------------------------------------------------------------------
         # Train Generator
         # -----------------------------------------------------------------------------
@@ -350,79 +350,39 @@ class WORKER(object):
 
     def save(self, step, is_best):
         when = "best" if is_best is True else "current"
-        self.dis_model.eval()
-        self.gen_model.eval()
-        if self.Gen_copy is not None:
-            self.Gen_copy.eval()
+        misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+        Gen, Gen_ema, Dis = misc.peel_module(self.Gen, self.Gen_ema, self.Dis)
 
-        if isinstance(self.gen_model, DataParallel) or isinstance(self.gen_model, DistributedDataParallel):
-            gen, dis = self.gen_model.module, self.dis_model.module
-            if self.Gen_copy is not None:
-                gen_copy = self.Gen_copy.module
-        else:
-            gen, dis = self.gen_model, self.dis_model
-            if self.Gen_copy is not None:
-                gen_copy = self.Gen_copy
+        g_states = {"state_dict": Gen.state_dict(), "optimizer": self.OPTIMIZATION.g_optimizer.state_dict()}
 
-        g_states = {"seed": self.seed, "run_name": self.run_name, "step": step, "best_step": self.best_step,
-                    "state_dict": gen.state_dict(), "optimizer": self.G_optimizer.state_dict(), "ada_p": self.ada_aug_p}
+        d_states = {"state_dict": Dis.state_dict(), "optimizer": self.OPTIMIZATION.d_optimizer.state_dict(),
+                    "seed": self.RUN.seed, "run_name": self.run_name, "step": step, "ada_p": self.ada_p,
+                    "best_step": self.best_step, "best_fid": self.best_fid, "best_fid_ckpt": self.RUN.ckpt_dir}
 
-        d_states = {"seed": self.seed, "run_name": self.run_name, "step": step, "best_step": self.best_step,
-                    "state_dict": dis.state_dict(), "optimizer": self.D_optimizer.state_dict(), "ada_p": self.ada_aug_p,
-                    "best_fid": self.best_fid, "best_fid_checkpoint_path": self.checkpoint_dir}
+        if self.Gen_ema is not None:
+            g_ema_states = {"state_dict": Gen_ema.state_dict()}
 
-        if len(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))) >= 1:
-            find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0])
-            find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0])
-
-        g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
-        d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
-
-        torch.save(g_states, g_checkpoint_output_path)
-        torch.save(d_states, d_checkpoint_output_path)
+        misc.save_model(model="G", when=when, step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_states)
+        misc.save_model(model="D", when=when, step=step, ckpt_dir=self.RUN.ckpt_dir, states=d_states)
+        if self.Gen_ema is not None:
+            misc.save_model(model="G_ema", when=when, step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_ema_states)
 
         if when == "best":
-            if len(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth"))) >= 1:
-                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth"))[0])
-                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-current-weights-step*.pth"))[0])
+            misc.save_model(model="G", when="current", step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_states)
+            misc.save_model(model="D", when="current", step=step, ckpt_dir=self.RUN.ckpt_dir, states=d_states)
+            if self.Gen_ema is not None:
+                misc.save_model(model="G_ema", when="current", step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_ema_states)
 
-            g_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G-current-weights-step={step}.pth".format(step=str(step)))
-            d_checkpoint_output_path_ = join(self.checkpoint_dir, "model=D-current-weights-step={step}.pth".format(step=str(step)))
+        if self.global_rank == 0 and self.logger: self.logger.info("Save model to {}".format(self.RUN.ckpt_dir))
 
-            torch.save(g_states, g_checkpoint_output_path_)
-            torch.save(d_states, d_checkpoint_output_path_)
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
-        if self.Gen_copy is not None:
-            g_ema_states = {"state_dict": gen_copy.state_dict()}
-            if len(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))) >= 1:
-                find_and_remove(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0])
-
-            g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
-
-            torch.save(g_ema_states, g_ema_checkpoint_output_path)
-
-            if when == "best":
-                if len(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))) >= 1:
-                    find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))[0])
-
-                g_ema_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G_ema-current-weights-step={step}.pth".format(when=when, step=str(step)))
-
-                torch.save(g_ema_states, g_ema_checkpoint_output_path_)
-
-        if self.logger:
-            if self.global_rank == 0: self.logger.info("Save model to {}".format(self.checkpoint_dir))
-
-        self.dis_model.train()
-        self.gen_model.train()
-        if self.Gen_copy is not None:
-            self.Gen_copy.train()
-
-    def evaluate(self, step):
+    def evaluate(self, step, writing=True):
         if self.global_rank == 0: self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
         if self.standing_statistics: self.std_stat_counter += 1
         is_best, num_split, num_runs4PR, num_clusters4PR, beta4PR = False, 1, 10, 20, 8
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
-            self.Dis.eval()
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                batch_statistics=self.RUN.batch_statistics,
                                                standing_statistics=self.RUN.standing_statistics,
@@ -434,18 +394,6 @@ class WORKER(object):
                                                device=self.local_rank,
                                                logger=self.logger,
                                                counter=self.std_stat_counter)
-
-            fid_score, self.m1, self.s1 = fid.calculate_fid(data_loader=self.eval_dataloader,
-                                                            generator=generator,
-                                                            discriminator=self.Dis,
-                                                            eval_model=self.eval_model,
-                                                            num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                            y_sampler="totally_random",
-                                                            cfgs=self.cfgs,
-                                                            device=self.local_rank,
-                                                            logger=self.logger,
-                                                            pre_cal_mean=self.mu,
-                                                            pre_cal_std=self.sigma)
 
             kl_score, kl_std = ins.eval_generator(generator=generator,
                                                   discriminator=self.Dis,
@@ -463,6 +411,18 @@ class WORKER(object):
                                                   logger=self.logger,
                                                   disable_tqdm=self.local_rank!=0)
 
+            fid_score, self.m1, self.s1 = fid.calculate_fid(data_loader=self.eval_dataloader,
+                                                            generator=generator,
+                                                            discriminator=self.Dis,
+                                                            eval_model=self.eval_model,
+                                                            num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                            y_sampler="totally_random",
+                                                            cfgs=self.cfgs,
+                                                            device=self.local_rank,
+                                                            logger=self.logger,
+                                                            pre_cal_mean=self.mu,
+                                                            pre_cal_std=self.sigma)
+
             precisions, recalls, precision, recall = f_beta.calculate_f_beta(eval_model=self.eval_model,
                                                                              data_loader=self.eval_dataloader,
                                                                              num_generate=self.num_eval[self.RUN.ref_dataset],
@@ -476,27 +436,27 @@ class WORKER(object):
                                                                              logger=self.logger)
 
             pr_curve = misc.plot_pr_curve(precisions, recalls, self.run_name, self.logger, logging=True)
-            # self.run_image_visualization(nrow=self.cfgs.nrow, ncol=self.cfgs.ncol)
 
             if self.best_fid is None or fid_score <= self.best_fid:
                 self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best =\
                     fid_score, step, True, recall, precision
 
-            if self.global_rank == 0:
-                self.writer.add_scalars("FID score", {"using {type} moments".format(type=self.RUN.ref_dataset): fid_score}, step)
-                self.writer.add_scalars("F_beta score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): recall}, step)
-                self.writer.add_scalars("F_beta_inv score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): precision}, step)
+            if self.global_rank == 0 and writing:
                 self.writer.add_scalars("IS score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): kl_score}, step)
+                self.writer.add_scalars("FID score", {"using {type} moments".format(type=self.RUN.ref_dataset): fid_score}, step)
+                self.writer.add_scalars("F_beta_inv score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): precision}, step)
+                self.writer.add_scalars("F_beta score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): recall}, step)
                 self.writer.add_figure("PR_Curve", pr_curve, global_step=step)
 
-                self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=recall))
-                self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=precision))
-                self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(step=step, type=self.RUN.ref_dataset, FID=fid_score))
+            if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
+                self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(step=step, type=self.RUN.ref_dataset, FID=fid_score))
+                self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=precision))
+                self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=recall))
                 if self.train:
                     self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
-            self.Gen.train(), self.Gen_ema.train(), self.Dis.train()
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         return is_best
     ################################################################################################################################
 
@@ -506,20 +466,20 @@ class WORKER(object):
         if self.global_rank == 0: self.logger.info("Start save images....")
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            self.Dis.eval()
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
 
             if png:
                 save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.ref_dataset], self.num_classes, generator,
-                                self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
+                                self.Dis, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
                                 self.latent_op_alpha, self.latent_op_beta, self.local_rank)
             if npz:
                 save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.ref_dataset], self.num_classes, generator,
-                                self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
+                                self.Dis, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
                                 self.latent_op_alpha, self.latent_op_beta, self.local_rank)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -530,7 +490,7 @@ class WORKER(object):
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
 
             if self.zcr:
@@ -541,7 +501,7 @@ class WORKER(object):
                                                  self.local_rank, sampler=self.sampler)
 
             if self.latent_op:
-                zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                zs = latent_optimise(zs, fake_labels, self.Gen, self.Dis, self.conditional_strategy,
                                         self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
                                         False, self.local_rank)
 
@@ -550,7 +510,7 @@ class WORKER(object):
             plot_img_canvas((generated_images.detach().cpu()+1)/2, "./figures/{run_name}/generated_canvas.png".\
                             format(run_name=self.run_name), ncol, self.logger, logging=True)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -561,7 +521,7 @@ class WORKER(object):
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
 
             resnet50_model = torch.hub.load("pytorch/vision:v0.6.0", "resnet50", pretrained=True)
@@ -571,7 +531,7 @@ class WORKER(object):
             resnet50_conv.eval()
 
             for c in tqdm(range(self.num_classes)):
-                fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
+                fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.Dis, self.truncated_factor, self.prior, self.latent_op,
                                                                    self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.local_rank)
                 fake_image = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
@@ -604,7 +564,7 @@ class WORKER(object):
                     row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -615,7 +575,7 @@ class WORKER(object):
         if standing_statistics: self.counter += 1
         assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
             shared = generator.module.shared if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.shared
             assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
@@ -645,7 +605,7 @@ class WORKER(object):
                 plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\
                                 format(num=num, run_name=self.run_name, fix_flag=name), ncol, self.logger, logging=False)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -655,7 +615,7 @@ class WORKER(object):
         if self.global_rank == 0: self.logger.info("Start frequency analysis....")
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
 
             train_iter = iter(self.train_dataloader)
@@ -669,7 +629,7 @@ class WORKER(object):
                                                      None, self.local_rank)
 
                 if self.latent_op:
-                    zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                    zs = latent_optimise(zs, fake_labels, self.Gen, self.Dis, self.conditional_strategy,
                                          self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
                                          False, self.local_rank)
 
@@ -707,7 +667,7 @@ class WORKER(object):
 
             plot_spectrum_image(real_gray_spectrum, fake_gray_spectrum, self.run_name, self.logger, logging=True)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
     ################################################################################################################################
 
@@ -717,19 +677,19 @@ class WORKER(object):
         if self.global_rank == 0: self.logger.info("Start tsne analysis....")
         if standing_statistics: self.counter += 1
         with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
-            if isinstance(self.gen_model, DataParallel) or isinstance(self.gen_model, DistributedDataParallel):
-                dis_model = self.dis_model.module
+            if isinstance(self.Gen, DataParallel) or isinstance(self.Gen, DistributedDataParallel):
+                Dis = self.Dis.module
             else:
-                dis_model = self.dis_model
+                Dis = self.Dis
 
             save_output = SaveOutput()
             hook_handles = []
             real, fake = {}, {}
             tsne_iter = iter(dataloader)
             num_batches = len(dataloader.dataset)//self.batch_size
-            for name, layer in dis_model.named_children():
+            for name, layer in Dis.named_children():
                 if name == "linear1":
                     handle = layer.register_forward_pre_hook(save_output)
                     hook_handles.append(handle)
@@ -743,7 +703,7 @@ class WORKER(object):
                                                      None, self.local_rank)
 
                 if self.latent_op:
-                    zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
+                    zs = latent_optimise(zs, fake_labels, self.Gen, self.Dis, self.conditional_strategy,
                                          self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
                                          False, self.local_rank)
 
@@ -752,11 +712,11 @@ class WORKER(object):
                 fake_images = generator(zs, fake_labels, evaluation=True)
 
                 if self.conditional_strategy == "ACGAN":
-                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
+                    cls_out_real, dis_out_real = self.Dis(real_images, real_labels)
                 elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                    dis_out_real = self.dis_model(real_images, real_labels)
+                    dis_out_real = self.Dis(real_images, real_labels)
                 elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels)
+                    cls_proxies_real, cls_embed_real, dis_out_real = self.Dis(real_images, real_labels)
                 else:
                     raise NotImplementedError
 
@@ -770,11 +730,11 @@ class WORKER(object):
                 save_output.clear()
 
                 if self.conditional_strategy == "ACGAN":
-                    cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
+                    cls_out_fake, dis_out_fake = self.Dis(fake_images, fake_labels)
                 elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                    dis_out_fake = self.dis_model(fake_images, fake_labels)
+                    dis_out_fake = self.Dis(fake_images, fake_labels)
                 elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                    cls_proxies_fake, cls_embed_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
+                    cls_proxies_fake, cls_embed_fake, dis_out_fake = self.Dis(fake_images, fake_labels)
                 else:
                     raise NotImplementedError
 
@@ -801,6 +761,6 @@ class WORKER(object):
             fake_tsne_results = tsne.fit_transform(fake["embeds"])
             plot_tsne_scatter_plot(fake, fake_tsne_results, "fake", self.run_name, self.logger, logging=True)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
+            generator = change_generator_mode(self.Gen, self.Gen_ema, self.bn_stat_OnTheFly, standing_statistics, standing_step,
                                               self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
     ################################################################################################################################

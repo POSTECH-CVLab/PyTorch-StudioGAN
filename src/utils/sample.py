@@ -25,7 +25,7 @@ def truncated_normal(size, threshold=1.):
 
 def sample_normal(batch_size, z_dim, truncation_th, device):
     if truncation_th == -1.0:
-        latents = torch.randn(batch_size, z_dim).to(device)
+        latents = torch.randn(batch_size, z_dim, device=device)
     elif truncation_th > 0:
         latents = torch.FloatTensor(truncated_normal([batch_size, z_dim], truncation_th)).to(device)
     else:
@@ -62,6 +62,11 @@ def sample_y(y_sampler, batch_size, num_classes, device):
     return y_fake
 
 def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_th, y_sampler, radius, device):
+    fake_labels = sample_y(y_sampler=y_sampler,
+                           batch_size=batch_size,
+                           num_classes=num_classes,
+                           device=device)
+
     if z_prior == "gaussian":
         zs = sample_normal(batch_size=batch_size,
                            z_dim=z_dim,
@@ -71,11 +76,6 @@ def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_th, y_sampler,
         zs = torch.FloatTensor(batch_size, z_dim).uniform_(-1.0, 1.0).to(device)
     else:
         raise NotImplementedError
-
-    fake_labels = sample_y(y_sampler=y_sampler,
-                           batch_size=batch_size,
-                           num_classes=num_classes,
-                           device=device)
 
     if isinstance(radius, float) and radius > 0.0:
         if z_prior == "gaussian":

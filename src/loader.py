@@ -37,7 +37,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # define default variables for loading ckpt or evaluating the trained GAN model.
     # -----------------------------------------------------------------------------
-    ada_p, step, best_step, best_fid, best_ckpt_path = None, 0, 0, None, None
+    ada_p, step, best_step, best_fid, best_ckpt_path, is_best = None, 0, 0, None, None, False
     mu, sigma, eval_model = None, None, None
 
     # -----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       is_train=cfgs.RUN.train,
                                       RUN=cfgs.RUN,
                                       logger=logger,
-                                      gobal_rank=global_rank,
+                                      global_rank=global_rank,
                                       device=local_rank)
 
     # -----------------------------------------------------------------------------
@@ -220,27 +220,45 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         best_ckpt_path=best_ckpt_path,
     )
 
-    if global_rank == 0 and cfgs.RUN.train: logger.info("Start training!")
+    # -----------------------------------------------------------------------------
+    # train GAN until "total_setps" generator updates
+    # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
+        if global_rank == 0: logger.info("Start training!")
         while step <= cfgs.OPTIMIZATION.total_steps:
             step = worker.train(current_step=step)
 
-            is_best = False
-            if cfgs.RUN.eval and step % cfgs.RUN.eval_save_every == 0:
-                is_best = worker.evaluate(step=step)
-
             if step % cfgs.RUN.eval_save_every == 0:
+                # evaluate GAN for monitoring purpose
+                if cfgs.RUN.eval:
+                    is_best = worker.evaluate(step=step)
+
+                # save GAN in "./checkpoints/RUN_NAME/*"
                 if global_rank == 0:
                     worker.save(step=step, is_best=is_best)
 
+                # stop processes until all processes arrive
                 if cfgs.RUN.distributed_data_parallel:
                     dist.barrier(worker.group)
 
+    # -----------------------------------------------------------------------------
+    # re-evaluate the best GAN and conduct ordered analyses
+    # -----------------------------------------------------------------------------
+    logger.info("-"*80)
+    best_step = ckpt.load_best_model(ckpt_dir=cfgs.RUN.ckpt_dir,
+                                     Gen=Gen,
+                                     Dis=Dis,
+                                     apply_g_ema=cfgs.MODEL.apply_g_ema,
+                                     Gen_ema=Gen_ema,
+                                     ema=ema)
+
+    worker.train = False
     worker.standing_statistics = cfgs.RUN.standing_statistics
+    worker.standing_max_batch = cfgs.RUN.standing_max_batch
     worker.standing_step = cfgs.RUN.standing_step
 
     if cfgs.RUN.eval:
-        _ = worker.evaluate(step=step)
+        _ = worker.evaluate(step=best_step, writing=False)
 
     if cfgs.RUN.save_fake_images:
         worker.save_fake_images(is_generate=True, png=True, npz=True)
