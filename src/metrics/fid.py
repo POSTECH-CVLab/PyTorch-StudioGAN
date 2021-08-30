@@ -113,7 +113,7 @@ def calculate_fid(data_loader, generator, discriminator, eval_model, num_generat
     disable_tqdm = device != 0
     eval_model.eval()
 
-    if device == 0: logger.info("Calculate FID score of generated images.")
+    if device == 0: logger.info("Calculate FID score of generated images ({} images).".format(num_generate))
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std
     else:

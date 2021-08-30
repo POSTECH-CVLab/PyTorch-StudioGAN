@@ -66,7 +66,7 @@ class precision_recall(object):
 
         max_val = max(np.max(precision), np.max(recall))
         if max_val > 1.001:
-            raise ValueError('Detected value > 1.001, this should not happen.')
+            raise ValueError("Detected value > 1.001, this should not happen.")
         precision = np.clip(precision, 0, 1)
         recall = np.clip(recall, 0, 1)
         return precision, recall
@@ -125,7 +125,7 @@ def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, dis
     eval_model.eval()
     PR = precision_recall(eval_model, device=device)
 
-    if device == 0: logger.info("Calculate F_beta score of generated images.")
+    if device == 0: logger.info("Calculate F_beta score of generated images ({} images).".format(num_generate))
     precisions, recalls = PR.compute_precision_recall(data_loader=data_loader,
                                                       num_generate=num_generate,
                                                       batch_size=cfgs.OPTIMIZATION.batch_size,
@@ -141,11 +141,11 @@ def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, dis
                                                       device=device)
 
     if not ((precisions >= 0).all() and (precisions <= 1).all()):
-        raise ValueError('All values in precision must be in [0, 1].')
+        raise ValueError("All values in precision must be in [0, 1].")
     if not ((recalls >= 0).all() and (recalls <= 1).all()):
-        raise ValueError('All values in recall must be in [0, 1].')
+        raise ValueError("All values in recall must be in [0, 1].")
     if beta <= 0:
-        raise ValueError('Given parameter beta %s must be positive.' % str(beta))
+        raise ValueError("Given parameter beta %s must be positive." % str(beta))
 
     f_beta = np.max(PR.compute_f_beta(precisions, recalls, beta=beta))
     f_beta_inv = np.max(PR.compute_f_beta(precisions, recalls, beta=1/beta))

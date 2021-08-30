@@ -184,12 +184,13 @@ def calculate_all_sn(model):
                 sigmas[name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
     return sigmas
 
-def apply_standing_statistics(generator, DATA, MODEL, LOSS, OPTIMIZATION, RUN, device, logger):
+def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION,
+                              RUN, device, logger):
     generator.train()
     generator.apply(reset_bn_statistics)
     logger.info("Acuumulate statistics of batchnorm layers to improve generation performance.")
-    for i in tqdm(range(RUN.standing_step)):
-        batch_size_per_gpu = OPTIMIZATION.standing_max_batch//OPTIMIZATION.world_size
+    for i in tqdm(range(standing_step)):
+        batch_size_per_gpu = standing_max_batch//OPTIMIZATION.world_size
         if RUN.distributed_data_parallel:
             rand_batch_size = random.randint(1, batch_size_per_gpu)
         else:
@@ -209,8 +210,8 @@ def apply_standing_statistics(generator, DATA, MODEL, LOSS, OPTIMIZATION, RUN, d
                                                                 cal_trsp_cost=False)
     generator.eval()
 
-def prepare_generator(generator, batch_statistics, standing_statistics, DATA, MODEL, LOSS,
-                      OPTIMIZATION, RUN, device, logger, counter):
+def prepare_generator(generator, batch_statistics, standing_statistics, standing_max_batch, standing_step,
+                      DATA, MODEL, LOSS, OPTIMIZATION, RUN, device, logger, counter):
     if standing_statistics:
         if counter > 1:
             generator.eval()
@@ -218,6 +219,8 @@ def prepare_generator(generator, batch_statistics, standing_statistics, DATA, MO
         else:
             generator.train()
             apply_standing_statistics(generator=generator,
+                                      standing_max_batch=standing_max_batch,
+                                      standing_step=standing_step,
                                       DATA=DATA,
                                       MODEL=MODEL,
                                       LOSS=LOSS,

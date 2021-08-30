@@ -41,7 +41,8 @@ def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler
     eval_model.eval()
     ps_holder = []
 
-    if device == 0: logger.info("Calculate inception score of generated images.")
+    if device == 0:
+        logger.info("Calculate inception score of generated images ({} images).".format(num_generate))
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         fake_images, fake_labels, _, _ = sample.generate_images(z_prior=z_prior,

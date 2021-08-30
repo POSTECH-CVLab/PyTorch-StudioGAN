@@ -385,7 +385,9 @@ class WORKER(object):
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                batch_statistics=self.RUN.batch_statistics,
-                                               standing_statistics=self.RUN.standing_statistics,
+                                               standing_statistics=self.standing_statistics,
+                                               standing_max_batch=self.standing_max_batch,
+                                               standing_step=self.standing_step,
                                                DATA=self.DATA,
                                                MODEL=self.MODEL,
                                                LOSS=self.LOSS,
@@ -453,7 +455,7 @@ class WORKER(object):
                 self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(step=step, type=self.RUN.ref_dataset, FID=fid_score))
                 self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=precision))
                 self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=recall))
-                if self.train:
+                if self.training:
                     self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)

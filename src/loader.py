@@ -225,10 +225,11 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
         if global_rank == 0: logger.info("Start training!")
+        worker.training = True
         while step <= cfgs.OPTIMIZATION.total_steps:
             step = worker.train(current_step=step)
 
-            if step % cfgs.RUN.eval_save_every == 0:
+            if step % cfgs.RUN.save_every == 0:
                 # evaluate GAN for monitoring purpose
                 if cfgs.RUN.eval:
                     is_best = worker.evaluate(step=step)
@@ -244,18 +245,18 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
     # -----------------------------------------------------------------------------
-    logger.info("-"*80)
+    if global_rank == 0: logger.info("-"*80)
+    worker.training = False
+    worker.standing_statistics = cfgs.RUN.standing_statistics
+    worker.standing_max_batch = cfgs.RUN.standing_max_batch
+    worker.standing_step = cfgs.RUN.standing_step
+
     best_step = ckpt.load_best_model(ckpt_dir=cfgs.RUN.ckpt_dir,
                                      Gen=Gen,
                                      Dis=Dis,
                                      apply_g_ema=cfgs.MODEL.apply_g_ema,
                                      Gen_ema=Gen_ema,
                                      ema=ema)
-
-    worker.train = False
-    worker.standing_statistics = cfgs.RUN.standing_statistics
-    worker.standing_max_batch = cfgs.RUN.standing_max_batch
-    worker.standing_step = cfgs.RUN.standing_step
 
     if cfgs.RUN.eval:
         _ = worker.evaluate(step=best_step, writing=False)
