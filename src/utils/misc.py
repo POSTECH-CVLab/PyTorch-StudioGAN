@@ -71,6 +71,46 @@ class GatherLayer(torch.autograd.Function):
         grad_out[:] = grads[dist.get_rank()]
         return grad_out
 
+class GeneratorController(object):
+    def __init__(self, generator, batch_statistics, standing_statistics, standing_max_batch,
+                 standing_step, cfgs, device, logger, std_stat_counter):
+        self.generator = generator
+        self.batch_statistics = batch_statistics
+        self.standing_statistics = standing_statistics
+        self.standing_max_batch = standing_max_batch
+        self.standing_step = standing_step
+        self.cfgs = cfgs
+        self.device = device
+        self.logger = logger
+        self.std_stat_counter = std_stat_counter
+
+    def prepare_generator(self):
+        if self.standing_statistics:
+            if self.std_stat_counter > 1:
+                self.generator.eval()
+                self.generator.apply(set_deterministic_op_trainable)
+            else:
+                self.generator.train()
+                apply_standing_statistics(generator=self.generator,
+                                        standing_max_batch=self.standing_max_batch,
+                                        standing_step=self.standing_step,
+                                        DATA=self.cfgs.DATA,
+                                        MODEL=self.cfgs.MODEL,
+                                        LOSS=self.cfgs.LOSS,
+                                        OPTIMIZATION=self.cfgs.OPTIMIZATION,
+                                        RUN=self.cfgs.RUN,
+                                        device=self.device,
+                                        logger=self.logger)
+                self.generator.eval()
+                self.generator.apply(set_deterministic_op_trainable)
+        else:
+            self.generator.eval()
+            if self.batch_statistics:
+                self.generator.apply(set_bn_trainable)
+                self.generator.apply(untrack_bn_statistics)
+            self.generator.apply(set_deterministic_op_trainable)
+        return self.generator
+
 def fix_seed(seed):
     random.seed(seed)
     torch.manual_seed(seed)
@@ -209,34 +249,6 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                 device=device,
                                                                 cal_trsp_cost=False)
     generator.eval()
-
-def prepare_generator(generator, batch_statistics, standing_statistics, standing_max_batch, standing_step,
-                      DATA, MODEL, LOSS, OPTIMIZATION, RUN, device, logger, counter):
-    if standing_statistics:
-        if counter > 1:
-            generator.eval()
-            generator.apply(set_deterministic_op_trainable)
-        else:
-            generator.train()
-            apply_standing_statistics(generator=generator,
-                                      standing_max_batch=standing_max_batch,
-                                      standing_step=standing_step,
-                                      DATA=DATA,
-                                      MODEL=MODEL,
-                                      LOSS=LOSS,
-                                      OPTIMIZATION=OPTIMIZATION,
-                                      RUN=RUN,
-                                      device=device,
-                                      logger=logger)
-            generator.eval()
-            generator.apply(set_deterministic_op_trainable)
-    else:
-        generator.eval()
-        if batch_statistics:
-            generator.apply(set_bn_trainable)
-            generator.apply(untrack_bn_statistics)
-        generator.apply(set_deterministic_op_trainable)
-    return generator
 
 def make_GAN_trainable(Gen, Gen_ema, Dis):
     Gen.train()

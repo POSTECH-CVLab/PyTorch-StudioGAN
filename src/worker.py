@@ -52,6 +52,7 @@ LOG_FORMAT = (
 class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Dis, Gen_ema, ema, eval_model, train_dataloader, eval_dataloader,
                  global_rank, local_rank, mu, sigma, logger, writer, ada_p, best_step, best_fid, best_ckpt_path):
+        self.start_time = datetime.now()
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
@@ -82,11 +83,6 @@ class WORKER(object):
         self.AUG = cfgs.AUG
         self.RUN = cfgs.RUN
 
-        self.standing_statistics = False
-        self.standing_max_batch = "N/A"
-        self.standing_step = "N/A"
-        self.std_stat_counter = 0
-
         if self.RUN.train:
             self.train_iter = iter(self.train_dataloader)
 
@@ -113,7 +109,16 @@ class WORKER(object):
         else:
             self.num_eval = {"train": len(self.train_dataloader.data), "valid": len(self.eval_dataset.data)}
 
-        self.start_time = datetime.now()
+        self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
+                                                 batch_statistics=self.RUN.batch_statistics,
+                                                 standing_statistics=False,
+                                                 standing_max_batch="N/A",
+                                                 standing_step="N/A",
+                                                 cfgs=self.cfgs,
+                                                 device=self.local_rank,
+                                                 logger=self.logger,
+                                                 std_stat_counter=0)
+
 
     def sample_data_basket(self):
         try:
@@ -128,7 +133,7 @@ class WORKER(object):
 
     def train(self, current_step):
         # -----------------------------------------------------------------------------
-        # Train Discriminator
+        # train Discriminator.
         # -----------------------------------------------------------------------------
         batch_counter = 0
         # make GAN be trainable before starting training
@@ -261,7 +266,7 @@ class WORKER(object):
                 self.writer.add_scalars("SN_of_dis", dis_sigmas, current_step+1)
 
         # -----------------------------------------------------------------------------
-        # Train Generator
+        # train Generator.
         # -----------------------------------------------------------------------------
         # toggle gradients of the generator and discriminator
         misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1)
@@ -348,24 +353,15 @@ class WORKER(object):
                 self.writer.add_scalars("SN_of_gen", gen_sigmas, current_step+1)
         return current_step+1
 
+    # -----------------------------------------------------------------------------
+    # visualize fake images for monitoring purpose.
+    # -----------------------------------------------------------------------------
     def visualize_fake_images(self, ncol):
         if self.global_rank == 0: self.logger.info("Visualize (nrow x 8) fake image canvans.")
-        if self.standing_statistics: self.std_stat_counter += 1
+        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
-                                               batch_statistics=self.RUN.batch_statistics,
-                                               standing_statistics=self.standing_statistics,
-                                               standing_max_batch=self.standing_max_batch,
-                                               standing_step=self.standing_step,
-                                               DATA=self.DATA,
-                                               MODEL=self.MODEL,
-                                               LOSS=self.LOSS,
-                                               OPTIMIZATION=self.OPTIMIZATION,
-                                               RUN=self.RUN,
-                                               device=self.local_rank,
-                                               logger=self.logger,
-                                               counter=self.std_stat_counter)
+            generator = self.gen_ctlr.prepare_generator()
 
             fake_images, fake_labels, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                     truncation_th=self.RUN.truncation_th,
@@ -389,25 +385,16 @@ class WORKER(object):
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # evaluate GAN using IS, FID, and Precision and recall.
+    # -----------------------------------------------------------------------------
     def evaluate(self, step, writing=True):
         if self.global_rank == 0: self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
-        if self.standing_statistics: self.std_stat_counter += 1
+        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
         is_best, num_split, num_runs4PR, num_clusters4PR, beta4PR = False, 1, 10, 20, 8
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
-                                               batch_statistics=self.RUN.batch_statistics,
-                                               standing_statistics=self.standing_statistics,
-                                               standing_max_batch=self.standing_max_batch,
-                                               standing_step=self.standing_step,
-                                               DATA=self.DATA,
-                                               MODEL=self.MODEL,
-                                               LOSS=self.LOSS,
-                                               OPTIMIZATION=self.OPTIMIZATION,
-                                               RUN=self.RUN,
-                                               device=self.local_rank,
-                                               logger=self.logger,
-                                               counter=self.std_stat_counter)
+            generator = self.gen_ctlr.prepare_generator()
 
             kl_score, kl_std = ins.eval_generator(generator=generator,
                                                   discriminator=self.Dis,
@@ -425,54 +412,54 @@ class WORKER(object):
                                                   logger=self.logger,
                                                   disable_tqdm=self.local_rank!=0)
 
-            fid_score, self.m1, self.s1 = fid.calculate_fid(data_loader=self.eval_dataloader,
-                                                            generator=generator,
-                                                            discriminator=self.Dis,
-                                                            eval_model=self.eval_model,
-                                                            num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                            y_sampler="totally_random",
-                                                            cfgs=self.cfgs,
-                                                            device=self.local_rank,
-                                                            logger=self.logger,
-                                                            pre_cal_mean=self.mu,
-                                                            pre_cal_std=self.sigma)
+            fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
+                                                  generator=generator,
+                                                  discriminator=self.Dis,
+                                                  eval_model=self.eval_model,
+                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                  y_sampler="totally_random",
+                                                  cfgs=self.cfgs,
+                                                  device=self.local_rank,
+                                                  logger=self.logger,
+                                                  pre_cal_mean=self.mu,
+                                                  pre_cal_std=self.sigma)
 
-            precisions, recalls, precision, recall = f_beta.calculate_f_beta(eval_model=self.eval_model,
-                                                                             data_loader=self.eval_dataloader,
-                                                                             num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                                             cfgs=self.cfgs,
-                                                                             generator=generator,
-                                                                             discriminator=self.Dis,
-                                                                             num_runs=num_runs4PR,
-                                                                             num_clusters=num_clusters4PR,
-                                                                             beta=beta4PR,
-                                                                             device=self.local_rank,
-                                                                             logger=self.logger)
-
-            pr_curve = misc.plot_pr_curve(precisions, recalls, self.run_name, self.logger, logging=True)
+            prc, rec, _ = f_beta.calculate_f_beta(eval_model=self.eval_model,
+                                                  data_loader=self.eval_dataloader,
+                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                  cfgs=self.cfgs,
+                                                  generator=generator,
+                                                  discriminator=self.Dis,
+                                                  num_runs=num_runs4PR,
+                                                  num_clusters=num_clusters4PR,
+                                                  beta=beta4PR,
+                                                  device=self.local_rank,
+                                                  logger=self.logger)
 
             if self.best_fid is None or fid_score <= self.best_fid:
                 self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best =\
-                    fid_score, step, True, recall, precision
+                    fid_score, step, True, rec, prc
 
             if self.global_rank == 0 and writing:
                 self.writer.add_scalars("IS score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): kl_score}, step)
                 self.writer.add_scalars("FID score", {"using {type} moments".format(type=self.RUN.ref_dataset): fid_score}, step)
-                self.writer.add_scalars("F_beta_inv score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): precision}, step)
-                self.writer.add_scalars("F_beta score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): recall}, step)
-                self.writer.add_figure("PR_Curve", pr_curve, global_step=step)
+                self.writer.add_scalars("F_beta_inv score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): prc}, step)
+                self.writer.add_scalars("F_beta score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): rec}, step)
 
             if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
                 self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(step=step, type=self.RUN.ref_dataset, FID=fid_score))
-                self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=precision))
-                self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=recall))
+                self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=prc))
+                self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=rec))
                 if self.training:
                     self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         return is_best
 
+    # -----------------------------------------------------------------------------
+    # save the trained generator, generator_ema, and discriminator.
+    # -----------------------------------------------------------------------------
     def save(self, step, is_best):
         when = "best" if is_best is True else "current"
         misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
@@ -502,24 +489,15 @@ class WORKER(object):
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # save fake images to examine generated images qualitatively and calculate official IS.
+    # -----------------------------------------------------------------------------
     def save_fake_images(self, png=True, npz=True):
         if self.global_rank == 0: self.logger.info("Save {num_images} generated images in png or npz format.".format(num_images=self.num_eval[self.RUN.ref_dataset]))
-        if self.standing_statistics: self.std_stat_counter += 1
+        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
-                                               batch_statistics=self.RUN.batch_statistics,
-                                               standing_statistics=self.standing_statistics,
-                                               standing_max_batch=self.standing_max_batch,
-                                               standing_step=self.standing_step,
-                                               DATA=self.DATA,
-                                               MODEL=self.MODEL,
-                                               LOSS=self.LOSS,
-                                               OPTIMIZATION=self.OPTIMIZATION,
-                                               RUN=self.RUN,
-                                               device=self.local_rank,
-                                               logger=self.logger,
-                                               counter=self.std_stat_counter)
+            generator = self.gen_ctlr.prepare_generator()
 
             if png:
                 misc.save_images_png(data_loader=self.eval_dataloader,
@@ -554,24 +532,15 @@ class WORKER(object):
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # run k-nearest neighbor analysis to identify whether GAN memorizes the training images or not.
+    # -----------------------------------------------------------------------------
     def run_k_nearest_neighbor(self, dataset, nrow, ncol):
         if self.global_rank == 0: self.logger.info("Run K-nearest neighbor analysis using fake and {ref} dataset.".format(ref=self.RUN.ref_dataset))
-        if self.standing_statistics: self.std_stat_counter += 1
+        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
-                                               batch_statistics=self.RUN.batch_statistics,
-                                               standing_statistics=self.standing_statistics,
-                                               standing_max_batch=self.standing_max_batch,
-                                               standing_step=self.standing_step,
-                                               DATA=self.DATA,
-                                               MODEL=self.MODEL,
-                                               LOSS=self.LOSS,
-                                               OPTIMIZATION=self.OPTIMIZATION,
-                                               RUN=self.RUN,
-                                               device=self.local_rank,
-                                               logger=self.logger,
-                                               counter=self.std_stat_counter)
+            generator = self.gen_ctlr.prepare_generator()
 
             resnet50_model = torch.hub.load("pytorch/vision:v0.6.0", "resnet50", pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.local_rank)
@@ -637,28 +606,18 @@ class WORKER(object):
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # conduct latent interpolation analysis to identify the quaility of latent space (Z)
+    # -----------------------------------------------------------------------------
     def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, num_saves=100):
         assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
         if self.global_rank == 0: self.logger.info("Run linear interpolation analysis ({num} times).".format(num=num_saves))
-        if self.standing_statistics: self.std_stat_counter += 1
+        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
-                                               batch_statistics=self.RUN.batch_statistics,
-                                               standing_statistics=self.standing_statistics,
-                                               standing_max_batch=self.standing_max_batch,
-                                               standing_step=self.standing_step,
-                                               DATA=self.DATA,
-                                               MODEL=self.MODEL,
-                                               LOSS=self.LOSS,
-                                               OPTIMIZATION=self.OPTIMIZATION,
-                                               RUN=self.RUN,
-                                               device=self.local_rank,
-                                               logger=self.logger,
-                                               counter=self.std_stat_counter)
+            generator = self.gen_ctlr.prepare_generator()
 
             shared = misc.peel_model(generator).shared
-
             for ns in tqdm(range(num_saves)):
                 if fix_z:
                     zs = torch.randn(nrow, 1, self.MODEL.z_dim, device=self.local_rank)
@@ -692,25 +651,16 @@ class WORKER(object):
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # visualize shifted fourier spectrums of real and fake images
+    # -----------------------------------------------------------------------------
     def run_frequency_analysis(self, dataloader):
         if self.global_rank == 0: self.logger.info("Run frequency analysis (use {num} fake and {ref} images ).".\
                                                    format(num=len(dataloader), ref=self.RUN.ref_dataset))
-        if self.standing_statistics: self.std_stat_counter += 1
+        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
-                                               batch_statistics=self.RUN.batch_statistics,
-                                               standing_statistics=self.standing_statistics,
-                                               standing_max_batch=self.standing_max_batch,
-                                               standing_step=self.standing_step,
-                                               DATA=self.DATA,
-                                               MODEL=self.MODEL,
-                                               LOSS=self.LOSS,
-                                               OPTIMIZATION=self.OPTIMIZATION,
-                                               RUN=self.RUN,
-                                               device=self.local_rank,
-                                               logger=self.logger,
-                                               counter=self.std_stat_counter)
+            generator = self.gen_ctlr.prepare_generator()
 
             data_iter = iter(dataloader)
             num_batches = len(dataloader)//self.OPTIMIZATION.batch_size
@@ -768,26 +718,17 @@ class WORKER(object):
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # visualize discriminator's embeddings of real or fake images using TSNE
+    # -----------------------------------------------------------------------------
     def run_tsne(self, dataloader):
         if self.global_rank == 0:
             self.logger.info("Start TSNE analysis using randomly sampled 10 classes.")
             self.logger.info("Use {ref} dataset and the same amount of generated images for visualization.".format(ref=self.RUN.ref_dataset))
-        if self.standing_statistics: self.std_stat_counter += 1
+        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = misc.prepare_generator(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
-                                               batch_statistics=self.RUN.batch_statistics,
-                                               standing_statistics=self.standing_statistics,
-                                               standing_max_batch=self.standing_max_batch,
-                                               standing_step=self.standing_step,
-                                               DATA=self.DATA,
-                                               MODEL=self.MODEL,
-                                               LOSS=self.LOSS,
-                                               OPTIMIZATION=self.OPTIMIZATION,
-                                               RUN=self.RUN,
-                                               device=self.local_rank,
-                                               logger=self.logger,
-                                               counter=self.std_stat_counter)
+            generator = self.gen_ctlr.prepare_generator()
 
             save_output, real, fake, hook_handles = misc.SaveOutput(), {}, {}, []
             for name, layer in misc.peel_model(self.Dis).named_children():

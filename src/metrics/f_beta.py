@@ -149,4 +149,4 @@ def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, dis
 
     f_beta = np.max(PR.compute_f_beta(precisions, recalls, beta=beta))
     f_beta_inv = np.max(PR.compute_f_beta(precisions, recalls, beta=1/beta))
-    return precisions, recalls, f_beta_inv, f_beta
+    return f_beta_inv, f_beta, {"precisions": precisions, "recalls": recalls}
