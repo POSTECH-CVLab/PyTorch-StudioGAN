@@ -362,6 +362,9 @@ class Configurations(object):
             assert self.RUN.ckpt_dir is not None, "Freezing discriminator needs a pre-trained model.\
                 Please specify the checkpoint directory (using -ckpt) for loading a pre-trained discriminator."
 
+        if not self.RUN.train and self.RUN.eval:
+            assert self.RUN.ckpt_dir is not None, "Specify -ckpt CHECKPOINT_FOLDER to evaluate GAN without training."
+
         if self.RUN.distributed_data_parallel:
             msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, and tsne analysis with DDP. \
                 Please change DDP with a single GPU training or DataParallel instead."
@@ -371,6 +374,9 @@ class Configurations(object):
                 self.RUN.frequency_analysis + \
                 self.RUN.tsne_analysis == 0, \
             msg
+
+        if self.RUN.vis_fake_images + self.RUN.k_nearest_neighbor + self.RUN.interpolation >= 1:
+            assert self.OPTIMIZATION.batch_size % 8 == 0, "batch_size should be divided by 8."
 
         if self.MODEL.d_cond_mtd in ["ContraGAN", "ReACGAN"]:
             assert not self.RUN.distributed_data_parallel, \
@@ -389,7 +395,7 @@ class Configurations(object):
             assert self.RUN.ref_dataset in ["train", "test"], "There is no data for validation."
 
         if self.RUN.interpolation:
-            assert self.RUN.backbone in ["big_resnet", "deep_big_resnet"], \
+            assert self.MODEL.backbone in ["big_resnet", "deep_big_resnet"], \
                 "StudioGAN does not support interpolation analysis except for biggan and deep_big_resnet."
 
         assert self.RUN.batch_statistics*self.RUN.standing_statistics == 0, \

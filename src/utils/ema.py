@@ -54,7 +54,6 @@ class Ema(object):
                 self.target_dict[key].data.copy_(self.target_dict[key].data*decay + \
                                                  self.source_dict[key].data*(1. - decay))
 
-
 class EmaDpSyncBN(object):
     def __init__(self, source, target, decay=0.9999, start_iter=0):
         self.source = source

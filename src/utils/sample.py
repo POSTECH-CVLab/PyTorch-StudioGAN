@@ -125,7 +125,7 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
         fake_images_eps = None
     return fake_images, fake_labels, fake_images_eps, trsp_cost
 
-def sample_1hot(batch_size, num_classes, device="cuda"):
+def sample_onehot(batch_size, num_classes, device="cuda"):
     return torch.randint(low=0, high=num_classes, size=(batch_size,),
                          device=device, dtype=torch.int64, requires_grad=False)
 
@@ -142,7 +142,7 @@ def make_mask(labels, num_classes, mask_negatives, device):
         mask_multi[c, c_indices] = target
     return torch.tensor(mask_multi).type(torch.long).to(device)
 
-def sample_target_class(dataset, target_class):
+def make_target_cls_sampler(dataset, target_class):
     try:
         targets = dataset.data.targets
     except:

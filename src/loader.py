@@ -38,7 +38,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define default variables for loading ckpt or evaluating the trained GAN model.
     # -----------------------------------------------------------------------------
     ada_p, step, best_step, best_fid, best_ckpt_path, is_best = None, 0, 0, None, None, False
-    mu, sigma, eval_model = None, None, None
+    mu, sigma, eval_model, nrow, ncol = None, None, None, 10, 8
 
     # -----------------------------------------------------------------------------
     # initialize all processes and identify the local rank.
@@ -81,7 +81,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         train_dataset = None
 
-    if cfgs.RUN.eval:
+    if cfgs.RUN.eval + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         if local_rank == 0: logger.info("Load {name} {ref} datasets.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
                                 data_path=cfgs.DATA.path,
@@ -117,7 +117,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         train_dataloader = None
 
-    if cfgs.RUN.eval:
+    if cfgs.RUN.eval + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         eval_dataloader = DataLoader(dataset=eval_dataset,
                                      batch_size=cfgs.OPTIMIZATION.batch_size,
                                      shuffle=False,
@@ -230,6 +230,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             step = worker.train(current_step=step)
 
             if step % cfgs.RUN.save_every == 0:
+                # visuailize fake images
+                worker.visualize_fake_images(ncol=ncol)
+
                 # evaluate GAN for monitoring purpose
                 if cfgs.RUN.eval:
                     is_best = worker.evaluate(step=step)
@@ -245,7 +248,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
     # -----------------------------------------------------------------------------
-    if global_rank == 0: logger.info("-"*80)
+    if global_rank == 0: logger.info("\n" + "-"*80)
     worker.training = False
     worker.standing_statistics = cfgs.RUN.standing_statistics
     worker.standing_max_batch = cfgs.RUN.standing_max_batch
@@ -262,27 +265,27 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         _ = worker.evaluate(step=best_step, writing=False)
 
     if cfgs.RUN.save_fake_images:
-        worker.save_fake_images(is_generate=True, png=True, npz=True)
+        worker.save_fake_images(png=True, npz=True)
 
     if cfgs.RUN.vis_fake_images:
-        worker.visualize_fake_images(nrow=cfgs.nrow, ncol=cfgs.ncol)
+        worker.visualize_fake_images(ncol=ncol)
 
     if cfgs.RUN.k_nearest_neighbor:
-        worker.run_k_nearest_neighbor(nrow=cfgs.nrow, ncol=cfgs.ncol)
+        worker.run_k_nearest_neighbor(dataset=eval_dataset, nrow=nrow, ncol=ncol)
 
     if cfgs.RUN.interpolation:
-        worker.run_linear_interpolation(nrow=cfgs.nrow,
-                                        ncol=cfgs.ncol,
+        worker.run_linear_interpolation(nrow=nrow,
+                                        ncol=ncol,
                                         fix_z=True,
                                         fix_y=False)
 
-        worker.run_linear_interpolation(nrow=cfgs.nrow,
-                                        ncol=cfgs.ncol,
+        worker.run_linear_interpolation(nrow=nrow,
+                                        ncol=ncol,
                                         fix_z=False,
                                         fix_y=True)
 
     if cfgs.RUN.frequency_analysis:
-        worker.run_frequency_analysis(num_images=len(train_dataset))
+        worker.run_frequency_analysis(dataloader=eval_dataloader)
 
     if cfgs.RUN.tsne_analysis:
         worker.run_tsne(dataloader=eval_dataloader)

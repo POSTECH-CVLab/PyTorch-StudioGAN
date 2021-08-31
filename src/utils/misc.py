@@ -250,12 +250,15 @@ def make_GAN_trainable(Gen, Gen_ema, Dis):
 
 def make_GAN_untrainable(Gen, Gen_ema, Dis):
     Gen.eval()
+    Gen.apply(set_deterministic_op_trainable)
     if Gen_ema is not None:
         Gen_ema.eval()
+        Gen_ema.apply(set_deterministic_op_trainable)
 
     Dis.eval()
+    Dis.apply(set_deterministic_op_trainable)
 
-def peel_module(Gen, Gen_ema, Dis):
+def peel_models(Gen, Gen_ema, Dis):
     if isinstance(Gen, DataParallel) or isinstance(Gen, DistributedDataParallel):
         gen, dis = Gen.module, Dis.module
         if Gen_ema is not None:
@@ -269,6 +272,11 @@ def peel_module(Gen, Gen_ema, Dis):
         else:
             gen_ema = None
     return gen, gen_ema, dis
+
+def peel_model(model):
+    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
+        model = model.module
+    return model
 
 def save_model(model, when, step, ckpt_dir, states):
     model_tpl = "model={model}-{when}-weights-step={step}.pth"
@@ -287,14 +295,14 @@ def find_and_remove(path):
     if os.path.isfile(path):
         os.remove(path)
 
-def plot_img_canvas(images, save_path, nrow, logger, logging=True):
+def plot_img_canvas(images, save_path, ncol, logger, logging=True):
     if logger is None: logging = False
     directory = dirname(save_path)
 
     if not exists(abspath(directory)):
         os.makedirs(directory)
 
-    save_image(images, save_path, padding=0, nrow=nrow)
+    save_image(images, save_path, padding=0, nrow=ncol)
     if logging: logger.info("Saved image to {}".format(save_path))
 
 def plot_pr_curve(precision, recall, run_name, logger, logging=True):
@@ -365,13 +373,15 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger, logging=Tru
 def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size,
                     z_prior, truncation_th, z_dim, num_classes, LOSS, run_name, device):
     num_batches = math.ceil(float(num_images)/float(batch_size))
-    if not is_generate:
+    if is_generate:
+        image_type = "fake"
+    else:
+        image_type = "real"
         data_iter = iter(data_loader)
 
-    type = "fake" if is_generate else "real"
-    print("Save {num_images} {type} images in npz format....".format(num_images=num_images, type=type))
+    print("Save {num_images} {image_type} images in npz format.".format(num_images=num_images, image_type=image_type))
 
-    directory = join('./samples', run_name, type, "npz")
+    directory = join('./samples', run_name, image_type, "npz")
     if exists(abspath(directory)):
         shutil.rmtree(abspath(directory))
     os.makedirs(directory)
@@ -379,30 +389,30 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
     x = []
     y = []
     with torch.no_grad() if not LOSS.apply_lo else dummy_context_mgr() as mpc:
-        for i in tqdm(range(0, num_batches), disable=False):
+        for i in tqdm(range(0, num_batches)):
             start = i*batch_size
             end = start + batch_size
             if is_generate:
-                images, labels = sample.generate_images(z_prior=z_prior,
-                                                        truncation_th=truncation_th,
-                                                        batch_size=batch_size,
-                                                        z_dim=z_dim,
-                                                        num_classes=num_classes,
-                                                        y_sampler=y_sampler,
-                                                        radius="N/A",
-                                                        generator=generator,
-                                                        discriminator=discriminator,
-                                                        is_train=False,
-                                                        LOSS=LOSS,
-                                                        device=device,
-                                                        cal_trsp_cost=False)
+                images, labels, _, _ = sample.generate_images(z_prior=z_prior,
+                                                              truncation_th=truncation_th,
+                                                              batch_size=batch_size,
+                                                              z_dim=z_dim,
+                                                              num_classes=num_classes,
+                                                              y_sampler=y_sampler,
+                                                              radius="N/A",
+                                                              generator=generator,
+                                                              discriminator=discriminator,
+                                                              is_train=False,
+                                                              LOSS=LOSS,
+                                                              device=device,
+                                                              cal_trsp_cost=False)
             else:
                 try:
                     images, labels = next(data_iter)
                 except StopIteration:
                     break
 
-            x += [np.uint8(255 * (images.detach().cpu().numpy() + 1) / 2.)]
+            x += [np.uint8(255*(images.detach().cpu().numpy() + 1) /2.)]
             y += [labels.detach().cpu().numpy()]
 
     x = np.concatenate(x, 0)[:num_images]
@@ -410,19 +420,21 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
     print("Images shape: {image_shape}, Labels shape: {label_shape}".format(image_shape=x.shape,
                                                                             label_shape=y.shape))
     npz_filename = join(directory, "samples.npz")
-    print("Saving npz to {file_name}".format(file_name=npz_filename))
+    print("Finish saving npz to {file_name}".format(file_name=npz_filename))
     np.savez(npz_filename, **{"x" : x, "y" : y})
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size,
                     z_prior, truncation_th, z_dim, num_classes, LOSS, run_name, device):
     num_batches = math.ceil(float(num_images)/float(batch_size))
-    if not is_generate:
+    if is_generate:
+        image_type = "fake"
+    else:
+        image_type = "real"
         data_iter = iter(data_loader)
 
-    type = "fake" if is_generate is True else "real"
-    print("Save {num_images} {type} images in png format....".format(num_images=num_images, type=type))
+    print("Save {num_images} {image_type} images in png format.".format(num_images=num_images, image_type=image_type))
 
-    directory = join('./samples', run_name, type, "png")
+    directory = join('./samples', run_name, image_type, "png")
     if exists(abspath(directory)):
         shutil.rmtree(abspath(directory))
     os.makedirs(directory)
@@ -434,19 +446,19 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
             start = i*batch_size
             end = start + batch_size
             if is_generate:
-                images, labels = sample.generate_images(z_prior=z_prior,
-                                                        truncation_th=truncation_th,
-                                                        batch_size=batch_size,
-                                                        z_dim=z_dim,
-                                                        num_classes=num_classes,
-                                                        y_sampler=y_sampler,
-                                                        radius="N/A",
-                                                        generator=generator,
-                                                        discriminator=discriminator,
-                                                        is_train=False,
-                                                        LOSS=LOSS,
-                                                        device=device,
-                                                        cal_trsp_cost=False)
+                images, labels, _, _ = sample.generate_images(z_prior=z_prior,
+                                                              truncation_th=truncation_th,
+                                                              batch_size=batch_size,
+                                                              z_dim=z_dim,
+                                                              num_classes=num_classes,
+                                                              y_sampler=y_sampler,
+                                                              radius="N/A",
+                                                              generator=generator,
+                                                              discriminator=discriminator,
+                                                              is_train=False,
+                                                              LOSS=LOSS,
+                                                              device=device,
+                                                              cal_trsp_cost=False)
             else:
                 try:
                     images, labels = next(data_iter)
@@ -455,13 +467,13 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
 
             for idx, img in enumerate(images.detach()):
                 if batch_size*i + idx < num_images:
-                    save_image((img + 1)/2,
-                               join(directory,
-                                    str(labels[idx].item()),
-                                    "{idx}.png".format(idx=batch_size*i + idx)))
+                    save_image((img + 1)/2, join(directory,
+                                                 str(labels[idx].item()),
+                                                 "{idx}.png".format(idx=batch_size*i + idx)))
                 else:
                     pass
-    print("Save png to ./generated_images/{run_name}".format(run_name=run_name))
+
+    print("Finish saving *.png images to {directory}".format(directory=directory))
 
 def generate_images_for_KNN(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler,
                             generator, discriminator, LOSS, device):

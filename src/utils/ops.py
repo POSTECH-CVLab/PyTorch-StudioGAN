@@ -29,7 +29,6 @@ class ConditionalBatchNorm2d(nn.Module):
         out = self.bn(x)
         return out*gain + bias
 
-
 class BigGANConditionalBatchNorm2d(nn.Module):
     # https://github.com/voletiv/self-attention-GAN-pytorch
     def __init__(self, in_features, out_features, MODULES):
@@ -49,7 +48,6 @@ class BigGANConditionalBatchNorm2d(nn.Module):
         bias = self.bias(y).view(y.size(0), -1, 1, 1)
         out = self.bn(x)
         return out*gain + bias
-
 
 class SelfAttention(nn.Module):
     # https://github.com/voletiv/self-attention-GAN-pytorch
