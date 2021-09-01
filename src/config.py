@@ -69,10 +69,10 @@ class Configurations(object):
         self.MODEL.d_act_fn = "ReLU"
         # whether to apply self-attention proposed by zhang et al. (SAGAN)
         self.MODEL.apply_attn = True
-        # location of the self-attention layer in the generator
-        self.MODEL.attn_g_loc = 2
-        # location of the self-attention layer in the discriminator
-        self.MODEL.attn_d_loc = 1
+        # locations of the self-attention layer in the generator
+        self.MODEL.attn_g_loc = [2]
+        # locations of the self-attention layer in the discriminator
+        self.MODEL.attn_d_loc = [1]
         # prior distribution for noise sampling \in ["gaussian", "uniform"]
         self.MODEL.z_prior = "gaussian"
         # dimension of noise vectors
@@ -357,6 +357,10 @@ class Configurations(object):
 
         if self.MODEL.backbone == "deep_conv":
             assert self.DATA.img_size == 32, "StudioGAN does not support the deep_conv backbone for the dataset whose spatial resolution is not 32."
+
+        if self.MODEL.backbone == "deep_big_resnet":
+            assert self.g_cond_mtd and self.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
+                without applying spectral normalization to the generator and discriminator."
 
         if self.RUN.freezeD > -1:
             assert self.RUN.ckpt_dir is not None, "Freezing discriminator needs a pre-trained model.\

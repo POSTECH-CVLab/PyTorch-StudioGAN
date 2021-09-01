@@ -14,48 +14,39 @@ import utils.misc as misc
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_spectral_norm, activation_fn, conditional_bn, num_classes):
+    def __init__(self, in_channels, out_channels, g_cond_mtd, num_classes, MODULES):
         super(GenBlock, self).__init__()
-        self.conditional_bn = conditional_bn
+        self.g_cond_mtd = g_cond_mtd
 
-        if g_spectral_norm:
-            self.deconv0 = sndeconv2d(in_channels=in_channels, out_channels=out_channels,
-                                  kernel_size=4, stride=2, padding=1)
-        else:
-            self.deconv0 = deconv2d(in_channels=in_channels, out_channels=out_channels,
-                                  kernel_size=4, stride=2, padding=1)
+        self.deconv0 = MODULES.g_deconv2d(in_channels=in_channels,
+                                          out_channels=out_channels,
+                                          kernel_size=4,
+                                          stride=2,
+                                          padding=1)
 
-        if self.conditional_bn:
-            self.bn0 = ConditionalBatchNorm2d(num_features=out_channels, num_classes=num_classes,
-                                              spectral_norm=g_spectral_norm)
-        else:
-            self.bn0 = batchnorm_2d(in_features=out_channels)
-
-        if activation_fn == "ReLU":
-            self.activation = nn.ReLU(inplace=True)
-        elif activation_fn == "Leaky_ReLU":
-            self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
-        elif activation_fn == "ELU":
-            self.activation = nn.ELU(alpha=1.0, inplace=True)
-        elif activation_fn == "GELU":
-            self.activation = nn.GELU()
+        if self.g_cond_mtd == "W/O":
+            self.bn0 = MODULES.g_bn(in_features=out_channels)
+        elif self.g_cond_mtd == "cBN":
+            self.bn0 = MODULES.g_bn(num_classes, out_channels, MODULES)
         else:
             raise NotImplementedError
 
+        self.activation = MODULES.g_act_fn
+
     def forward(self, x, label):
         x = self.deconv0(x)
-        if self.conditional_bn:
+        if self.g_cond_mtd == "W/O":
+            x = self.bn0(x)
+        elif self.g_cond_mtd == "cBN":
             x = self.bn0(x, label)
         else:
-            x = self.bn0(x)
+            raise NotImplementedError
         out = self.activation(x)
         return out
 
-
 class Generator(nn.Module):
-    """Generator."""
-    def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, g_spectral_norm, attention, attention_after_nth_gen_block, activation_fn,
-                 conditional_strategy, num_classes, initialize, G_depth, mixed_precision):
+    def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_attn, attn_g_loc, g_cond_mtd,
+                 num_classes, g_init, g_depth, mixed_precision, MODULES):
         super(Generator, self).__init__()
         self.in_dims =  [512, 256, 128]
         self.out_dims = [256, 128, 64]
@@ -63,203 +54,172 @@ class Generator(nn.Module):
         self.z_dim = z_dim
         self.num_classes = num_classes
         self.mixed_precision = mixed_precision
-        conditional_bn = True if conditional_strategy in ["ACGAN", "ProjGAN", "ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"] else False
 
-        if g_spectral_norm:
-            self.linear0 = snlinear(in_features=self.z_dim, out_features=self.in_dims[0]*4*4)
-        else:
-            self.linear0 = linear(in_features=self.z_dim, out_features=self.in_dims[0]*4*4)
+        self.linear0 = MODULES.g_linear(in_features=self.z_dim,
+                                        out_features=self.in_dims[0]*4*4,
+                                        bias=True)
 
         self.blocks = []
         for index in range(len(self.in_dims)):
             self.blocks += [[GenBlock(in_channels=self.in_dims[index],
-                                          out_channels=self.out_dims[index],
-                                          g_spectral_norm=g_spectral_norm,
-                                          activation_fn=activation_fn,
-                                          conditional_bn=conditional_bn,
-                                          num_classes=self.num_classes)]]
+                                      out_channels=self.out_dims[index],
+                                      g_cond_mtd=g_cond_mtd,
+                                      num_classes=self.num_classes,
+                                      MODULES=MODULES)]]
 
-            if index+1 == attention_after_nth_gen_block and attention is True:
-                self.blocks += [[Self_Attn(self.out_dims[index], g_spectral_norm)]]
+            if index + 1 in attn_g_loc and apply_attn:
+                self.blocks += [[ops.SelfAttention(self.out_dims[index], is_generator=True, MODULES=MODULES)]]
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
-        if g_spectral_norm:
-            self.conv4 = snconv2d(in_channels=self.out_dims[-1], out_channels=3, kernel_size=3, stride=1, padding=1)
-        else:
-            self.conv4 = conv2d(in_channels=self.out_dims[-1], out_channels=3, kernel_size=3, stride=1, padding=1)
+        self.conv2d4 = MODULES.g_conv2d(in_channels=self.out_dims[-1],
+                                        out_channels=3,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1)
 
         self.tanh = nn.Tanh()
 
-        # Weight init
-        if initialize is not False:
-            init_weights(self.modules, initialize)
+        ops.init_weights(self.modules, g_init)
 
-    def forward(self, z, label, evaluation=False):
-        with torch.cuda.amp.autocast() if self.mixed_precision is True and evaluation is False else dummy_context_mgr() as mp:
+    def forward(self, z, label, eval=False):
+        with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
             act = self.linear0(z)
             act = act.view(-1, self.in_dims[0], 4, 4)
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
-                    if isinstance(block, Self_Attn):
+                    if isinstance(block, ops.SelfAttention):
                         act = block(act)
                     else:
                         act = block(act, label)
+
             act = self.conv4(act)
             out = self.tanh(act)
         return out
 
-
 class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, d_spectral_norm, activation_fn):
+    def __init__(self, in_channels, out_channels, apply_d_sn, MODULES):
         super(DiscBlock, self).__init__()
-        self.d_spectral_norm = d_spectral_norm
+        self.apply_d_sn = apply_d_sn
 
-        if d_spectral_norm:
-            self.conv0 = snconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-            self.conv1 = snconv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=4, stride=2, padding=1)
-        else:
-            self.conv0 = conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-            self.conv1 = conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=4, stride=2, padding=1)
+        self.conv0 = MODULES.d_conv2d(in_channels=in_channels,
+                                      out_channels=out_channels,
+                                      kernel_size=3,
+                                      stride=1,
+                                      padding=1)
 
-            self.bn0 = batchnorm_2d(in_features=out_channels)
-            self.bn1 = batchnorm_2d(in_features=out_channels)
+        self.conv1 = MODULES.d_conv2d(in_channels=out_channels,
+                                      out_channels=out_channels,
+                                      kernel_size=4,
+                                      stride=2,
+                                      padding=1)
 
-        if activation_fn == "ReLU":
-            self.activation = nn.ReLU(inplace=True)
-        elif activation_fn == "Leaky_ReLU":
-            self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
-        elif activation_fn == "ELU":
-            self.activation = nn.ELU(alpha=1.0, inplace=True)
-        elif activation_fn == "GELU":
-            self.activation = nn.GELU()
-        else:
-            raise NotImplementedError
+        if not apply_d_sn:
+            self.bn0 = MODULES.d_bn(in_features=out_channels)
+            self.bn1 = MODULES.d_bn(in_features=out_channels)
+
+        self.activation = MODULES.d_act_fn
 
     def forward(self, x):
         x = self.conv0(x)
-        if self.d_spectral_norm is False:
+        if not self.apply_d_sn:
             x = self.bn0(x)
         x = self.activation(x)
+
         x = self.conv1(x)
-        if self.d_spectral_norm is False:
+        if not self.apply_d_sn:
             x = self.bn1(x)
         out = self.activation(x)
         return out
 
-
 class Discriminator(nn.Module):
-    """Discriminator."""
-    def __init__(self, img_size, d_conv_dim, d_spectral_norm, attention, attention_after_nth_dis_block, activation_fn, conditional_strategy,
-                 hypersphere_dim, num_classes, nonlinear_embed, normalize_embed, initialize, D_depth, mixed_precision):
+    def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_cond_mtd, d_embed_dim,
+                 normalize_d_embed, num_classes, d_init, d_depth, mixed_precision, MODULES):
         super(Discriminator, self).__init__()
         self.in_dims  = [3] + [64, 128]
         self.out_dims = [64, 128, 256]
 
-        self.d_spectral_norm = d_spectral_norm
-        self.conditional_strategy = conditional_strategy
-        self.num_classes = num_classes
-        self.nonlinear_embed = nonlinear_embed
-        self.normalize_embed = normalize_embed
+        self.d_cond_mtd = d_cond_mtd
+        self.normalize_d_embed = normalize_d_embed
         self.mixed_precision = mixed_precision
 
         self.blocks = []
         for index in range(len(self.in_dims)):
             self.blocks += [[DiscBlock(in_channels=self.in_dims[index],
                                        out_channels=self.out_dims[index],
-                                       d_spectral_norm=d_spectral_norm,
-                                       activation_fn=activation_fn)]]
+                                       apply_d_sn=self.apply_d_sn,
+                                       MODULES=MODULES)]]
 
-            if index+1 == attention_after_nth_dis_block and attention is True:
-                self.blocks += [[Self_Attn(self.out_dims[index], d_spectral_norm)]]
+            if index + 1 in attn_d_loc and apply_attn:
+                self.blocks += [[ops.SelfAttention(self.out_dims[index], is_generator=False, MODULES=MODULES)]]
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
-        if self.d_spectral_norm:
-            self.conv = snconv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
+        self.activation = MODULES.d_act_fn
+
+        self.conv = MODULES.d_conv2d(in_channels=256,
+                                     out_channels=512,
+                                     kernel_size=3,
+                                     stride=1,
+                                     padding=1)
+
+        if not self.apply_d_sn:
+            self.bn = MODULES.d_bn(in_features=512)
+
+        if self.d_cond_mtd == "MH":
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
+                                            out_features=1+num_classes,
+                                            bias=True)
         else:
-            self.conv = conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
-            self.bn = batchnorm_2d(in_features=512)
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
+                                            out_features=1,
+                                            bias=True)
 
-        if activation_fn == "ReLU":
-            self.activation = nn.ReLU(inplace=True)
-        elif activation_fn == "Leaky_ReLU":
-            self.activation = nn.LeakyReLU(negative_slope=0.1, inplace=True)
-        elif activation_fn == "ELU":
-            self.activation = nn.ELU(alpha=1.0, inplace=True)
-        elif activation_fn == "GELU":
-            self.activation = nn.GELU()
+        if self.d_cond_mtd == "AC":
+            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
+                                            out_features=num_classes,
+                                            bias=False)
+        elif self.d_cond_mtd == "PD":
+            self.embedding = MODULES.d_embedding(num_classes, self.out_dims[-1])
+        elif self.d_cond_mtd == "2C":
+            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
+                                            out_features=d_embed_dim,
+                                            bias=True)
+            self.embedding = MODULES.d_embedding(num_classes, d_embed_dim)
         else:
-            raise NotImplementedError
+            pass
 
-        if d_spectral_norm:
-            self.linear1 = snlinear(in_features=512, out_features=1)
-            if self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'NT_Xent_GAN']:
-                self.linear2 = snlinear(in_features=512, out_features=hypersphere_dim)
-                if self.nonlinear_embed:
-                    self.linear3 = snlinear(in_features=hypersphere_dim, out_features=hypersphere_dim)
-                self.embedding = sn_embedding(num_classes, hypersphere_dim)
-            elif self.conditional_strategy == 'ProjGAN':
-                self.embedding = sn_embedding(num_classes, 512)
-            elif self.conditional_strategy == 'ACGAN':
-                self.linear4 = snlinear(in_features=512, out_features=num_classes)
-            else:
-                pass
-        else:
-            self.linear1 = linear(in_features=512, out_features=1)
-            if self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'NT_Xent_GAN']:
-                self.linear2 = linear(in_features=512, out_features=hypersphere_dim)
-                if self.nonlinear_embed:
-                    self.linear3 = linear(in_features=hypersphere_dim, out_features=hypersphere_dim)
-                self.embedding = embedding(num_classes, hypersphere_dim)
-            elif self.conditional_strategy == 'ProjGAN':
-                self.embedding = embedding(num_classes, 512)
-            elif self.conditional_strategy == 'ACGAN':
-                self.linear4 = linear(in_features=512, out_features=num_classes)
-            else:
-                pass
+        if d_init:
+            ops.init_weights(self.modules, d_init)
 
-        # Weight init
-        if initialize is not False:
-            init_weights(self.modules, initialize)
-
-
-    def forward(self, x, label, evaluation=False):
-        with torch.cuda.amp.autocast() if self.mixed_precision is True and evaluation is False else dummy_context_mgr() as mp:
+    def forward(self, x, label, eval=False):
+        with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
+            embed, proxy, cls_output = None, None, None
             h = x
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
                     h = block(h)
             h = self.conv(h)
-            if self.d_spectral_norm is False:
+            if not self.apply_d_sn:
                 h = self.bn(h)
             h = self.activation(h)
             h = torch.sum(h, dim=[2, 3])
 
-            if self.conditional_strategy == 'no':
-                authen_output = torch.squeeze(self.linear1(h))
-                return authen_output
-
-            elif self.conditional_strategy in ['ContraGAN', 'Proxy_NCA_GAN', 'NT_Xent_GAN']:
-                authen_output = torch.squeeze(self.linear1(h))
-                cls_proxy = self.embedding(label)
-                cls_embed = self.linear2(h)
-                if self.nonlinear_embed:
-                    cls_embed = self.linear3(self.activation(cls_embed))
-                if self.normalize_embed:
-                    cls_proxy = F.normalize(cls_proxy, dim=1)
-                    cls_embed = F.normalize(cls_embed, dim=1)
-                return cls_proxy, cls_embed, authen_output
-
-            elif self.conditional_strategy == 'ProjGAN':
-                authen_output = torch.squeeze(self.linear1(h))
-                proj = torch.sum(torch.mul(self.embedding(label), h), 1)
-                return authen_output + proj
-
-            elif self.conditional_strategy == 'ACGAN':
-                authen_output = torch.squeeze(self.linear1(h))
-                cls_output = self.linear4(h)
-                return cls_output, authen_output
-
+            adv_output = torch.squeeze(self.linear1(h))
+            if self.d_cond_mtd == "AC":
+                if self.normalize_d_embed:
+                    for W in self.linear2.parameters():
+                        W = F.normalize(W, dim=1)
+                    h = F.normalize(h, dim=1)
+                cls_output = self.linear2(h)
+            elif self.d_cond_mtd == "PD":
+                adv_output = adv_output + torch.sum(torch.mul(self.embedding(label), h), 1)
+            elif self.d_cond_mtd == "2C":
+                embed = self.linear2(h)
+                proxy = self.embedding(label)
+                if self.normalize_d_embed:
+                    embed = F.normalize(embed, dim=1)
+                    proxy = F.normalize(proxy, dim=1)
             else:
                 raise NotImplementedError
+            return {"adv_output": adv_output, "embed": embed, "proxy": proxy, "cls_output": cls_output, "label": label}
