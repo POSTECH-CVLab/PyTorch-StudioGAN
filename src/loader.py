@@ -12,7 +12,6 @@ import os
 import random
 import warnings
 
-from torchlars import LARS
 from torch.utils.data import DataLoader
 from torch.nn import DataParallel
 from torch.utils.tensorboard import SummaryWriter
