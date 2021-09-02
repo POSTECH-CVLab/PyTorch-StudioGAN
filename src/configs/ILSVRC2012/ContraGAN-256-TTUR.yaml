@@ -1,27 +1,35 @@
 DATA:
-  name: "CIFAR10"
-  path: "./data/CIFAR10"
-  img_size: 32
-  num_classes: 10
+  name: "ImageNet"
+  path: "./data/ImageNet"
+  img_size: 128
+  num_classes: 1000
 MODEL:
   backbone: "big_resnet"
   g_cond_mtd: "cBN"
   d_cond_mtd: "2C"
   normalize_d_embed: True
-  d_embed_dim: 512
+  d_embed_dim: 1536
   apply_g_sn: True
   apply_d_sn: True
   apply_attn: True
-  attn_g_loc: [2]
+  attn_g_loc: [4]
   attn_d_loc: [1]
-  z_dim: 80
+  z_dim: 120
   g_shared_dim: 128
   g_conv_dim: 96
   d_conv_dim: 96
   apply_g_ema: True
   g_ema_decay: 0.9999
-  g_ema_start: 1000
+  g_ema_start: 20000
 LOSS:
   adv_loss: "hinge"
   cond_lambda: 1.0
   temperature: 1.0
+OPTIMIZATION:
+  batch_size: 256
+  g_lr: 0.0001
+  d_lr: 0.0004
+  beta1: 0.0
+  beta2: 0.999
+  d_updates_per_step: 1
+  total_steps: 250000

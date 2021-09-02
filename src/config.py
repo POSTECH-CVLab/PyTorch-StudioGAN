@@ -49,50 +49,50 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.MODEL = lambda: None
         # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet"]
-        self.MODEL.backbone = "big_resnet"
+        self.MODEL.backbone = "resnet"
         # conditioning method of the generator \in ["W/O", "cBN"]
-        self.MODEL.g_cond_mtd = "cBN"
+        self.MODEL.g_cond_mtd = "W/O"
         # conditioning method of the discriminator \in ["W/O", "AC", "PD", "MH", "2C", "D2DCE"]
-        self.MODEL.d_cond_mtd = "2C"
+        self.MODEL.d_cond_mtd = "W/O"
         # whether to normalize feature maps from the discriminator or not
-        self.MODEL.normalize_d_embed = True
+        self.MODEL.normalize_d_embed = False
         # dimension of feature maps from the discriminator
         # only appliable when MODEL.d_cond_mtd \in ["2C, D2DCE"]
-        self.MODEL.d_embed_dim = 512
+        self.MODEL.d_embed_dim = "N/A"
         # whether to apply spectral normalization on the generator
-        self.MODEL.apply_g_sn = True
+        self.MODEL.apply_g_sn = False
         # whether to apply spectral normalization on the discriminator
-        self.MODEL.apply_d_sn = True
+        self.MODEL.apply_d_sn = False
         # type of activation function in the generator \in ["ReLU", "Leaky_ReLU", "ELU", "GELU"]
         self.MODEL.g_act_fn = "ReLU"
         # type of activation function in the discriminator \in ["ReLU", "Leaky_ReLU", "ELU", "GELU"]
         self.MODEL.d_act_fn = "ReLU"
         # whether to apply self-attention proposed by zhang et al. (SAGAN)
-        self.MODEL.apply_attn = True
-        # locations of the self-attention layer in the generator
-        self.MODEL.attn_g_loc = [2]
-        # locations of the self-attention layer in the discriminator
-        self.MODEL.attn_d_loc = [1]
+        self.MODEL.apply_attn = False
+        # locations of the self-attention layer in the generator (should be list type)
+        self.MODEL.attn_g_loc = ["N/A"]
+        # locations of the self-attention layer in the discriminator (should be list type)
+        self.MODEL.attn_d_loc = ["N/A"]
         # prior distribution for noise sampling \in ["gaussian", "uniform"]
         self.MODEL.z_prior = "gaussian"
         # dimension of noise vectors
-        self.MODEL.z_dim = 80
+        self.MODEL.z_dim = 128
         # dimension of a shared latent embedding
-        self.MODEL.g_shared_dim = 128
+        self.MODEL.g_shared_dim = "N/A"
         # base channel for the resnet style generator architecture
-        self.MODEL.g_conv_dim = 96
+        self.MODEL.g_conv_dim = 64
         # base channel for the resnet style discriminator architecture
-        self.MODEL.d_conv_dim = 96
+        self.MODEL.d_conv_dim = 64
         # generator's depth for deep_big_resnet
         self.MODEL.g_depth = "N/A"
         # discriminator's depth for deep_big_resnet self.MODEL.d_depth = "N/A"
         self.MODEL.d_depth = "N/A"
         # whether to apply moving average update for the generator
-        self.MODEL.apply_g_ema = True
+        self.MODEL.apply_g_ema = False
         # decay rate for the ema generator
-        self.MODEL.g_ema_decay = 0.9999
+        self.MODEL.g_ema_decay = "N/A"
         # starting step for g_ema update
-        self.MODEL.g_ema_start = 1000
+        self.MODEL.g_ema_start = "N/A"
         # weight initialization method for the generator \in ["ortho", "N02", "glorot", "xavier"]
         self.MODEL.g_init = "ortho"
         # weight initialization method for the discriminator \in ["ortho", "N02", "glorot", "xavier"]
@@ -103,13 +103,13 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.LOSS = lambda: None
         # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge"]
-        self.LOSS.adv_loss = "hinge"
+        self.LOSS.adv_loss = "vanilla"
         # balancing hyperparameter for conditional image generation
-        self.LOSS.cond_lambda = 1.0
+        self.LOSS.cond_lambda = "N/A"
         # margin hyperparameter for [AMSoftmax, D2DCE]
         self.LOSS.margin = "N/A"
         # temperature scalar for [AMsoftmax, 2C, D2DCE]
-        self.LOSS.temperature = 1.0
+        self.LOSS.temperature = "N/A"
         # whether to apply weight clipping regularization to let the discriminator satisfy Lipschitzness
         self.LOSS.apply_wc = False
         # clipping bound for weight clippling regularization
@@ -125,7 +125,7 @@ class Configurations(object):
         # whether to apply consistency regularization
         self.LOSS.apply_cr = False
         # strength of the consistency regularization
-        self.LOSS.cr_labmda = "N/A"
+        self.LOSS.cr_lambda = "N/A"
         # whether to apply balanced consistency regularization
         self.LOSS.apply_bcr = False
         # attraction strength between logits of real and augmented real samples
@@ -136,10 +136,10 @@ class Configurations(object):
         self.LOSS.apply_zcr = False
         # radius of ball to generate an fake image G(z + radius)
         self.LOSS.radius = "N/A"
-        # attaction stength between logits of fake images (G(z), G(z + radius))
-        self.LOSS.d_lambda = "N/A"
         # repulsion stength between fake images (G(z), G(z + radius))
         self.LOSS.g_lambda = "N/A"
+        # attaction stength between logits of fake images (G(z), G(z + radius))
+        self.LOSS.d_lambda = "N/A"
         # whether to apply latent optimization for stable training
         self.LOSS.apply_lo = False
         # hyperparameters for latent optimization regularization
@@ -388,7 +388,7 @@ class Configurations(object):
 
         if self.RUN.train*self.RUN.standing_statistics:
             print("StudioGAN does not support standing_statistics during training. \
-                  After training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model using the accumulated satistics.")
+                  \nAfter training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model using the accumulated satistics.")
 
         if self.RUN.distributed_data_parallel:
             msg = "Turning on DDP might cause inexact evaluation results. \

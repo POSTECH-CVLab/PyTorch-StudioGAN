@@ -25,3 +25,5 @@ LOSS:
   adv_loss: "hinge"
   cond_lambda: 1.0
   temperature: 1.0
+  apply_cr: True
+  cr_lambda: 10.0

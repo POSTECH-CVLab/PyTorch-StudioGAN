@@ -72,11 +72,11 @@ class Generator(nn.Module):
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
-        self.conv2d4 = MODULES.g_conv2d(in_channels=self.out_dims[-1],
-                                        out_channels=3,
-                                        kernel_size=3,
-                                        stride=1,
-                                        padding=1)
+        self.conv4 = MODULES.g_conv2d(in_channels=self.out_dims[-1],
+                                      out_channels=3,
+                                      kernel_size=3,
+                                      stride=1,
+                                      padding=1)
 
         self.tanh = nn.Tanh()
 
@@ -139,6 +139,7 @@ class Discriminator(nn.Module):
         self.in_dims  = [3] + [64, 128]
         self.out_dims = [64, 128, 256]
 
+        self.apply_d_sn = apply_d_sn
         self.d_cond_mtd = d_cond_mtd
         self.normalize_d_embed = normalize_d_embed
         self.mixed_precision = mixed_precision
@@ -157,32 +158,32 @@ class Discriminator(nn.Module):
 
         self.activation = MODULES.d_act_fn
 
-        self.conv = MODULES.d_conv2d(in_channels=256,
-                                     out_channels=512,
-                                     kernel_size=3,
-                                     stride=1,
-                                     padding=1)
+        self.conv1 = MODULES.d_conv2d(in_channels=256,
+                                      out_channels=512,
+                                      kernel_size=3,
+                                      stride=1,
+                                      padding=1)
 
         if not self.apply_d_sn:
-            self.bn = MODULES.d_bn(in_features=512)
+            self.bn1 = MODULES.d_bn(in_features=512)
 
         if self.d_cond_mtd == "MH":
-            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
+            self.linear1 = MODULES.d_linear(in_features=512,
                                             out_features=1+num_classes,
                                             bias=True)
         else:
-            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
+            self.linear1 = MODULES.d_linear(in_features=512,
                                             out_features=1,
                                             bias=True)
 
         if self.d_cond_mtd == "AC":
-            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
+            self.linear2 = MODULES.d_linear(in_features=512,
                                             out_features=num_classes,
                                             bias=False)
         elif self.d_cond_mtd == "PD":
-            self.embedding = MODULES.d_embedding(num_classes, self.out_dims[-1])
+            self.embedding = MODULES.d_embedding(num_classes, 512)
         elif self.d_cond_mtd == "2C":
-            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
+            self.linear2 = MODULES.d_linear(in_features=512,
                                             out_features=d_embed_dim,
                                             bias=True)
             self.embedding = MODULES.d_embedding(num_classes, d_embed_dim)
@@ -199,9 +200,9 @@ class Discriminator(nn.Module):
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
                     h = block(h)
-            h = self.conv(h)
+            h = self.conv1(h)
             if not self.apply_d_sn:
-                h = self.bn(h)
+                h = self.bn1(h)
             h = self.activation(h)
             h = torch.sum(h, dim=[2, 3])
 
@@ -220,6 +221,8 @@ class Discriminator(nn.Module):
                 if self.normalize_d_embed:
                     embed = F.normalize(embed, dim=1)
                     proxy = F.normalize(proxy, dim=1)
+            elif self.d_cond_mtd == "W/O":
+                pass
             else:
                 raise NotImplementedError
             return {"adv_output": adv_output, "embed": embed, "proxy": proxy, "cls_output": cls_output, "label": label}

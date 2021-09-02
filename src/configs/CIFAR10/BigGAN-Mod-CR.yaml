@@ -6,9 +6,7 @@ DATA:
 MODEL:
   backbone: "big_resnet"
   g_cond_mtd: "cBN"
-  d_cond_mtd: "2C"
-  normalize_d_embed: True
-  d_embed_dim: 512
+  d_cond_mtd: "PD"
   apply_g_sn: True
   apply_d_sn: True
   apply_attn: True
@@ -23,5 +21,5 @@ MODEL:
   g_ema_start: 1000
 LOSS:
   adv_loss: "hinge"
-  cond_lambda: 1.0
-  temperature: 1.0
+  apply_cr: True
+  cr_lambda: 10.0

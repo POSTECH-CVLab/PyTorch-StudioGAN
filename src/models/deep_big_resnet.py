@@ -362,6 +362,8 @@ class Discriminator(nn.Module):
                 if self.normalize_d_embed:
                     embed = F.normalize(embed, dim=1)
                     proxy = F.normalize(proxy, dim=1)
+            elif self.d_cond_mtd == "W/O":
+                pass
             else:
                 raise NotImplementedError
             return {"adv_output": adv_output, "embed": embed, "proxy": proxy, "cls_output": cls_output, "label": label}

@@ -1,0 +1,9 @@
+DATA:
+  name: "CIFAR10"
+  path: "./data/CIFAR10"
+  img_size: 32
+  num_classes: 10
+LOSS:
+  adv_loss: "wasserstein"
+  apply_wc: True
+  wc_bound: 0.01

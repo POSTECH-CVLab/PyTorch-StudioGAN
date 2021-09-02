@@ -60,7 +60,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, device
                                    attn_g_loc=MODEL.attn_g_loc,
                                    g_cond_mtd=MODEL.g_cond_mtd,
                                    num_classes=DATA.num_classes,
-                                   g_init=False,
+                                   g_init=MODEL.g_init,
                                    g_depth=MODEL.g_depth,
                                    mixed_precision=RUN.mixed_precision,
                                    MODULES=MODULES

@@ -145,7 +145,7 @@ def cal_deriv4gp(real_images, real_labels, fake_images, discriminator, device):
     grads_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
     return grads_penalty
 
-def calc_derv4dra(real_images, real_labels, discriminator, device):
+def cal_deriv4dra(real_images, real_labels, discriminator, device):
     batch_size, c, h, w = real_images.shape
     alpha = torch.rand(batch_size, 1, 1, 1)
     alpha = alpha.to(device)
