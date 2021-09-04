@@ -5,7 +5,7 @@
 # src/utils/misc.py
 
 
-from os.path import dirname, abspath, exists, join
+from os.path import dirname, abspath, exists, join, isfile
 from datetime import datetime
 from collections import defaultdict
 import random
@@ -304,7 +304,7 @@ def find_string(list_, string):
             return i
 
 def find_and_remove(path):
-    if os.path.isfile(path):
+    if isfile(path):
         os.remove(path)
 
 def plot_img_canvas(images, save_path, ncol, logger, logging=True):
@@ -517,3 +517,23 @@ def orthogonalize_model(model, strength=1e-4, blacklist=[]):
 def interpolate(x0, x1, num_midpoints):
     lerp = torch.linspace(0, 1.0, num_midpoints + 2, device="cuda").to(x0.dtype)
     return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))
+
+def accum_values_convert_dict(list_dict, value_dict, step, interval):
+    for name, value_list in list_dict.items():
+        try:
+            value_list[step//interval - 1] = value_dict[name]
+        except IndexError:
+            try:
+                value_list += [value_dict[name]]
+            except:
+                raise KeyError
+
+        list_dict[name] = value_list
+    return list_dict
+
+def save_dict_npy(directory, name, dictionary):
+    if not exists(abspath(directory)):
+        os.makedirs(directory)
+
+    save_path = abspath(join(directory, name + ".npy"))
+    np.save(save_path, dictionary)

@@ -25,5 +25,7 @@ LOSS:
   adv_loss: "hinge"
   cond_lambda: 1.0
   temperature: 1.0
+OPTIMIZATION:
+  total_steps: 200000
 AUG:
   apply_diffaug: True

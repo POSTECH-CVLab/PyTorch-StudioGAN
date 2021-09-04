@@ -32,8 +32,8 @@ def calculate_kl_div(ps, splits):
             kl = torch.exp(kl)
             scores.append(kl.unsqueeze(0))
         scores = torch.cat(scores, 0)
-        m_scores = torch.mean(scores).detach().cpu().numpy()
-        m_std = torch.std(scores).detach().cpu().numpy()
+        m_scores = torch.mean(scores).detach().cpu().numpy().item()
+        m_std = torch.std(scores).detach().cpu().numpy().item()
     return m_scores, m_std
 
 def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size, z_prior,

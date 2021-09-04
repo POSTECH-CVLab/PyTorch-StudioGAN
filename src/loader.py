@@ -38,6 +38,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     ada_p, step, best_step, best_fid, best_ckpt_path, is_best = None, 0, 0, None, None, False
     mu, sigma, eval_model, nrow, ncol = None, None, None, 10, 8
+    loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
+    metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
 
     # -----------------------------------------------------------------------------
     # initialize all processes and identify the local rank.
@@ -56,7 +58,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if local_rank == 0:
         writer = SummaryWriter(log_dir=join("./logs", run_name))
         logger = log.make_logger(run_name, None)
-        logger.info("Run name : {run_name}".format(run_name=run_name))
+        if cfgs.RUN.ckpt_dir is not None:
+            logger.info("Run name : {run_name}".format(run_name=cfgs.RUN.ckpt_dir.split("/")[-1]))
+        else:
+            logger.info("Run name : {run_name}".format(run_name=run_name))
         for k, v in cfgs.super_cfgs.items():
             logger.info("cfgs." + k + " =")
             logger.info(json.dumps(vars(v), indent=2))
@@ -149,7 +154,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.ckpt_dir is None:
         cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(cfgs.RUN.ckpt_dir, run_name)
     else:
-        step, ada_p, best_step, best_fid, best_ckpt_path, writer =\
+        run_name, step, ada_p, best_step, best_fid, best_ckpt_path, writer =\
             ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
                                       load_best=cfgs.RUN.load_best,
                                       Gen=Gen,
@@ -165,6 +170,18 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       logger=logger,
                                       global_rank=global_rank,
                                       device=local_rank)
+
+        dict_directory = join("./values", run_name)
+
+    try:
+        loss_list_dict = ckpt.load_prev_dict(directory=dict_directory, file_name="losses.npy")
+    except:
+        loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
+
+    try:
+        metric_list_dict = ckpt.load_prev_dict(directory=dict_directory, file_name="metrics.npy")
+    except:
+        metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
 
     # -----------------------------------------------------------------------------
     # prepare parallel training
@@ -217,6 +234,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         best_step=best_step,
         best_fid=best_fid,
         best_ckpt_path=best_ckpt_path,
+        loss_list_dict=loss_list_dict,
+        metric_list_dict=metric_list_dict,
     )
 
     # -----------------------------------------------------------------------------

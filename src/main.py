@@ -120,7 +120,7 @@ def main():
     misc.fix_seed(cfgs.RUN.seed)
 
     if cfgs.OPTIMIZATION.world_size == 1:
-        warnings.warn("You have chosen a specific GPU. This will completely disable data parallelism.")
+        print("You have chosen a specific GPU. This will completely disable data parallelism.")
 
     if cfgs.RUN.distributed_data_parallel and cfgs.RUN.world_size > 1:
         print("Train the models through DistributedDataParallel (DDP) mode.")

@@ -11,6 +11,7 @@ import glob
 
 from torch.utils.tensorboard import SummaryWriter
 import torch
+import numpy as np
 
 import utils.log as log
 import utils.misc as misc
@@ -60,12 +61,12 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
               load_opt=True,
               load_misc=False)
 
-    seed, run_name, step, ada_p, best_step, best_fid, best_ckpt_path = load_ckpt(model=Dis,
-                                                                                 optimizer=d_optimizer,
-                                                                                 ckpt_path=Dis_ckpt_path,
-                                                                                 load_model=True,
-                                                                                 load_opt=True,
-                                                                                 load_misc=True)
+    seed, prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path = load_ckpt(model=Dis,
+                                                                                      optimizer=d_optimizer,
+                                                                                      ckpt_path=Dis_ckpt_path,
+                                                                                      load_model=True,
+                                                                                      load_opt=True,
+                                                                                      load_misc=True)
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
@@ -78,20 +79,20 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
 
         ema.source, ema.target = Gen, Gen_ema
 
-    writer = SummaryWriter(log_dir=join('./logs', run_name)) if global_rank == 0 else None
+    writer = SummaryWriter(log_dir=join('./logs', prev_run_name)) if global_rank == 0 else None
 
     if is_train and RUN.seed != seed:
         RUN.seed = seed
         misc.fix_seed(RUN.seed)
 
     if device == 0:
-        logger = log.make_logger(run_name, None)
+        logger = log.make_logger(prev_run_name, None)
         logger.info("Generator checkpoint is {}".format(Gen_ckpt_path))
         logger.info("Discriminator checkpoint is {}".format(Dis_ckpt_path))
 
     if RUN.freezeD > -1 :
-        step, ada_p, best_step, best_fid, best_ckpt_path = 0, None, 0, None, None
-    return step, ada_p, best_step, best_fid, best_ckpt_path, writer
+        prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path = run_name, 0, None, 0, None, None
+    return prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path, writer
 
 def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-best-weights-step*.pth"))[0]
@@ -122,3 +123,7 @@ def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
 
         ema.source, ema.target = Gen, Gen_ema
     return best_step
+
+def load_prev_dict(directory, file_name):
+    return np.load(join(directory, file_name), allow_pickle=True).item()
+

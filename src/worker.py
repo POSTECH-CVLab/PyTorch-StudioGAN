@@ -43,15 +43,16 @@ LOG_FORMAT = (
     "Step: {step:>6} "
     "Progress: {progress:<.1%} "
     "Elapsed: {elapsed} "
-    "Temperature: {temperature:<.4} "
-    "Dis_loss: {dis_loss:<.4} "
     "Gen_loss: {gen_loss:<.4} "
+    "Dis_loss: {dis_loss:<.4} "
+    "Cls_loss: {cls_loss:<.4} "
 )
 
 
 class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Dis, Gen_ema, ema, eval_model, train_dataloader, eval_dataloader,
-                 global_rank, local_rank, mu, sigma, logger, writer, ada_p, best_step, best_fid, best_ckpt_path):
+                 global_rank, local_rank, mu, sigma, logger, writer, ada_p, best_step, best_fid, best_ckpt_path,
+                 loss_list_dict, metric_list_dict):
         self.start_time = datetime.now()
         self.cfgs = cfgs
         self.run_name = run_name
@@ -72,6 +73,8 @@ class WORKER(object):
         self.best_step = best_step
         self.best_fid = best_fid
         self.best_ckpt_path = best_ckpt_path
+        self.loss_list_dict = loss_list_dict
+        self.metric_list_dict = metric_list_dict
 
         self.cfgs.define_augments()
         self.cfgs.define_losses()
@@ -334,18 +337,33 @@ class WORKER(object):
 
         # logging
         if (current_step + 1) % self.RUN.print_every == 0 and self.global_rank == 0:
+            if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
+                cls_loss = real_cond_loss.item()
+            else:
+                cls_loss = "N/A"
             log_message = LOG_FORMAT.format(step=current_step+1,
                                             progress=(current_step+1)/self.OPTIMIZATION.total_steps,
                                             elapsed=misc.elapsed_time(self.start_time),
-                                            temperature=self.LOSS.temperature,
-                                            dis_loss=dis_acml_loss.item(),
                                             gen_loss=gen_acml_loss.item(),
+                                            dis_loss=dis_acml_loss.item(),
+                                            cls_loss=cls_loss,
                                             )
             self.logger.info(log_message)
 
-            self.writer.add_scalars("Losses", {"discriminator": dis_acml_loss.item(),
-                                               "generator": gen_acml_loss.item()},
-                                    current_step+1)
+            # save loss values in tensorboard event file and .npz format
+            loss_dict = {"gen_loss": gen_acml_loss.item(),
+                         "dis_loss": dis_acml_loss.item(),
+                         "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss}
+
+            self.writer.add_scalars("Losses", loss_dict, current_step+1)
+
+            save_dict = misc.accum_values_convert_dict(list_dict=self.loss_list_dict,
+                                                       value_dict=loss_dict,
+                                                       step=current_step+1,
+                                                       interval=self.RUN.print_every)
+            misc.save_dict_npy(directory=join("./values", self.run_name),
+                               name="losses",
+                               dictionary=save_dict)
 
             # calculate the spectral norms of all weights in the generator for monitoring purpose
             if self.MODEL.apply_g_sn:
@@ -453,6 +471,20 @@ class WORKER(object):
                 self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=rec))
                 if self.training:
                     self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
+
+                    # save metric values in .npz format
+                    metric_dict = {"IS": kl_score,
+                                   "FID": fid_score,
+                                   "F_beta_inv": prc,
+                                   "F_beta": rec}
+
+                    save_dict = misc.accum_values_convert_dict(list_dict=self.metric_list_dict,
+                                                               value_dict=metric_dict,
+                                                               step=step,
+                                                               interval=self.RUN.save_every)
+                    misc.save_dict_npy(directory=join("./values", self.run_name),
+                                       name="metrics",
+                                       dictionary=save_dict)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         return is_best
