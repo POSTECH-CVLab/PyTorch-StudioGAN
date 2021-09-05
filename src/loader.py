@@ -56,8 +56,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define tensorflow writer and python logger.
     # -----------------------------------------------------------------------------
     if local_rank == 0:
-        writer = SummaryWriter(log_dir=join("./logs", run_name))
-        logger = log.make_logger(run_name, None)
+        logger = log.make_logger(cfgs.RUN.save_dir, run_name, None)
+        writer = SummaryWriter(log_dir=join(cfgs.RUN.save_dir, "logs", run_name))
         if cfgs.RUN.ckpt_dir is not None:
             logger.info("Run name : {run_name}".format(run_name=cfgs.RUN.ckpt_dir.split("/")[-1]))
         else:
@@ -74,7 +74,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.train:
         if local_rank == 0: logger.info("Load {name} train dataset.".format(name=cfgs.DATA.name))
         train_dataset = Dataset_(data_name=cfgs.DATA.name,
-                                 data_path=cfgs.DATA.path,
+                                 data_path=cfgs.RUN.data_dir,
                                  train=True,
                                  crop_long_edge=cfgs.PRE.crop_long_edge,
                                  resize_size=cfgs.PRE.resize_size,
@@ -88,7 +88,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.eval + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         if local_rank == 0: logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
-                                data_path=cfgs.DATA.path,
+                                data_path=cfgs.RUN.data_dir,
                                 train=True if cfgs.RUN.ref_dataset == "train" else False,
                                 crop_long_edge=False if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else True,
                                 resize_size=None if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else cfgs.DATA.img_size,
@@ -152,9 +152,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # load the generator and the discriminator from a checkpoint if possible
     # -----------------------------------------------------------------------------
     if cfgs.RUN.ckpt_dir is None:
-        cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(cfgs.RUN.ckpt_dir, run_name)
+        cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
     else:
-        run_name, step, ada_p, best_step, best_fid, best_ckpt_path, writer =\
+        run_name, step, ada_p, best_step, best_fid, best_ckpt_path, logger, writer =\
             ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
                                       load_best=cfgs.RUN.load_best,
                                       Gen=Gen,
@@ -171,15 +171,15 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       global_rank=global_rank,
                                       device=local_rank)
 
-        dict_directory = join("./values", run_name)
+        dict_dir = join(cfgs.RUN.save_dir, "values", run_name)
 
     try:
-        loss_list_dict = ckpt.load_prev_dict(directory=dict_directory, file_name="losses.npy")
+        loss_list_dict = ckpt.load_prev_dict(directory=dict_dir, file_name="losses.npy")
     except:
         loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
 
     try:
-        metric_list_dict = ckpt.load_prev_dict(directory=dict_directory, file_name="metrics.npy")
+        metric_list_dict = ckpt.load_prev_dict(directory=dict_dir, file_name="metrics.npy")
     except:
         metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
 

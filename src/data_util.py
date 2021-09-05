@@ -86,13 +86,13 @@ class Dataset_(Dataset):
 
     def load_dataset(self):
         if self.hdf5_path is not None:
-            with h5.File(self.hdf5_path, 'r') as f:
-                self.data = np.transpose(f["imgs"], (0, 2, 3, 1))
-                self.labels = f["labels"]
-                if self.load_data_in_memory:
-                    print("Load {path} into memory.".format(path=self.hdf5_path))
-                    self.data, self.labels = self.data[:], self.labels[:]
-                return
+            self.hdf5 = h5.File(self.hdf5_path, 'r')
+            if self.load_data_in_memory:
+                print("Load {path} into memory.".format(path=self.hdf5_path))
+                self.data = np.transpose(self.hdf5["imgs"], (0, 2, 3, 1))[:]
+                self.labels = self.hdf5["labels"][:]
+                self.hdf5.close()
+            return
 
         if self.data_name == "CIFAR10":
             self.data = CIFAR10(root=self.data_path,
@@ -110,14 +110,21 @@ class Dataset_(Dataset):
 
     def __len__(self):
         if self.hdf5_path is not None:
-            num_dataset = self.data.shape[0]
+            if self.load_data_in_memory:
+                num_dataset = self.data.shape[0]
+            else:
+                num_dataset = len(self.hdf5["imgs"])
         else:
             num_dataset = len(self.data)
         return num_dataset
 
     def __getitem__(self, index):
         if self.hdf5_path is not None:
-            img, label = self.data[index], int(self.labels[index])
+            if self.load_data_in_memory:
+                img, label = self.data[index], int(self.labels[index])
+            else:
+                img = np.transpose(self.hdf5["imgs"][index], (1, 2, 0))
+                label = self.hdf5["labels"][index]
         else:
             img, label = self.data[index]
         return self.trsf(img), int(label)

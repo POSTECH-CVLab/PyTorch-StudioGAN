@@ -17,9 +17,8 @@ import utils.log as log
 import utils.misc as misc
 
 
-def make_ckpt_dir(ckpt_dir, run_name):
-    ckpt_dir = ckpt_dir if ckpt_dir is not None else os.path.join("checkpoints", run_name)
-    if not os.path.exists(os.path.abspath(ckpt_dir)):
+def make_ckpt_dir(ckpt_dir):
+    if not os.path.exists(ckpt_dir):
         os.makedirs(ckpt_dir)
     return ckpt_dir
 
@@ -79,20 +78,20 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
 
         ema.source, ema.target = Gen, Gen_ema
 
-    writer = SummaryWriter(log_dir=join('./logs', prev_run_name)) if global_rank == 0 else None
+    writer = SummaryWriter(log_dir=join(RUN.save_dir, 'logs', prev_run_name)) if global_rank == 0 else None
 
     if is_train and RUN.seed != seed:
         RUN.seed = seed
         misc.fix_seed(RUN.seed)
 
     if device == 0:
-        logger = log.make_logger(prev_run_name, None)
+        logger = log.make_logger(RUN.save_dir, prev_run_name, None)
         logger.info("Generator checkpoint is {}".format(Gen_ckpt_path))
         logger.info("Discriminator checkpoint is {}".format(Dis_ckpt_path))
 
     if RUN.freezeD > -1 or RUN.freezeG > -1:
         prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path = run_name, 0, None, 0, None, None
-    return prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path, writer
+    return prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path, logger, writer
 
 def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-best-weights-step*.pth"))[0]

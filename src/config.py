@@ -37,8 +37,6 @@ class Configurations(object):
         self.DATA = lambda: None
         # dataset name \in ["CIFAR10", "CIFAR100", "Tiny_ImageNet", "CUB200", "ImageNet", "MY_DATASET"]
         self.DATA.name = "CIFAR10"
-        # dataset path for data loading
-        self.DATA.path = "./data/CIFAR10"
         # image size for training
         self.DATA.img_size = 32
         # number of classes in training dataset, if there is no explicit class label, DATA.num_classes = 1

@@ -354,11 +354,11 @@ class WORKER(object):
 
             self.writer.add_scalars("Losses", loss_dict, current_step+1)
 
-            save_dict = misc.accum_values_convert_dict(list_dict=self.loss_list_dict,
-                                                       value_dict=loss_dict,
-                                                       step=current_step+1,
-                                                       interval=self.RUN.print_every)
-            misc.save_dict_npy(directory=join("./values", self.run_name),
+            save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
+                                                      value_dict=loss_dict,
+                                                      step=current_step+1,
+                                                      interval=self.RUN.print_every)
+            misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
                                name="losses",
                                dictionary=save_dict)
 
@@ -393,7 +393,8 @@ class WORKER(object):
                                                                     cal_trsp_cost=False)
 
         misc.plot_img_canvas(images=(fake_images.detach().cpu()+1)/2,
-                             save_path="./figures/{run_name}/generated_canvas.png".format(run_name=self.run_name),
+                             save_path=join(self.RUN.save_dir,
+                                            "figures/{run_name}/generated_canvas.png".format(run_name=self.run_name)),
                              ncol=ncol,
                              logger=self.logger,
                              logging=True)
@@ -475,11 +476,11 @@ class WORKER(object):
                                    "F_beta_inv": prc,
                                    "F_beta": rec}
 
-                    save_dict = misc.accum_values_convert_dict(list_dict=self.metric_list_dict,
-                                                               value_dict=metric_dict,
-                                                               step=step,
-                                                               interval=self.RUN.save_every)
-                    misc.save_dict_npy(directory=join("./values", self.run_name),
+                    save_dict = misc.accm_values_convert_dict(list_dict=self.metric_list_dict,
+                                                              value_dict=metric_dict,
+                                                              step=step,
+                                                              interval=self.RUN.save_every)
+                    misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
                                        name="metrics",
                                        dictionary=save_dict)
 
@@ -541,7 +542,7 @@ class WORKER(object):
                                      z_dim=self.MODEL.z_dim,
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
-                                     run_name=self.run_name,
+                                     directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
             if npz:
                 misc.save_images_npz(data_loader=self.eval_dataloader,
@@ -556,7 +557,7 @@ class WORKER(object):
                                      z_dim=self.MODEL.z_dim,
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
-                                     run_name=self.run_name,
+                                     directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
@@ -624,8 +625,8 @@ class WORKER(object):
                     row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
                     misc.plot_img_canvas(images=(torch.from_numpy(canvas)+1)/2,
-                                         save_path="./figures/{run_name}/fake_anchor_{ncol}NN_{cls}_classes.png".\
-                                    format(run_name=self.run_name, ncol=ncol, cls=c+1),
+                                         save_path=join(self.RUN.save_dir, "figures/{run_name}/fake_anchor_{ncol}NN_{cls}_classes.png".\
+                                                        format(run_name=self.run_name, ncol=ncol, cls=c+1)),
                                          ncol=ncol,
                                          logger=self.logger,
                                          logging=False)
@@ -672,8 +673,8 @@ class WORKER(object):
                 interpolated_images = generator(zs, None, shared_label=ys, eval=True)
 
                 misc.plot_img_canvas(images=(interpolated_images.detach().cpu()+1)/2,
-                                     save_path="./figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\
-                                format(num=ns, run_name=self.run_name, fix_flag=name),
+                                     save_path=join(self.RUN.save_dir, "figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\
+                                                    format(num=ns, run_name=self.run_name, fix_flag=name)),
                                      ncol=ncol,
                                      logger=self.logger,
                                      logging=False)
@@ -741,7 +742,7 @@ class WORKER(object):
 
         misc.plot_spectrum_image(real_spectrum=real_gray_spectrum,
                                  fake_spectrum=fake_gray_spectrum,
-                                 run_name=self.run_name,
+                                 directory=join(self.RUN.save_dir, "figures", self.run_name),
                                  logger=self.logger,
                                  logging=True)
 
@@ -817,7 +818,7 @@ class WORKER(object):
             misc.plot_tsne_scatter_plot(df=real,
                                         tsne_results=real_tsne_results,
                                         flag="real",
-                                        run_name=self.run_name,
+                                        directory=join(self.RUN.save_dir, "figures", self.run_name),
                                         logger=self.logger,
                                         logging=True)
 
@@ -825,7 +826,7 @@ class WORKER(object):
             misc.plot_tsne_scatter_plot(df=fake,
                                         tsne_results=fake_tsne_results,
                                         flag="fake",
-                                        run_name=self.run_name,
+                                        directory=join(self.RUN.save_dir, "figures", self.run_name),
                                         logger=self.logger,
                                         logging=True)
 

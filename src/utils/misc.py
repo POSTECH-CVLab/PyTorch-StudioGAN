@@ -5,7 +5,7 @@
 # src/utils/misc.py
 
 
-from os.path import dirname, abspath, exists, join, isfile
+from os.path import dirname, exists, join, isfile
 from datetime import datetime
 from collections import defaultdict
 import random
@@ -199,7 +199,7 @@ def reset_bn_statistics(m):
 def elapsed_time(start_time):
     now = datetime.now()
     elapsed = now - start_time
-    return str(elapsed).split('.')[0]  # remove milliseconds
+    return str(elapsed).split(".")[0]  # remove milliseconds
 
 def reshape_weight_to_matrix(weight):
     weight_mat = weight
@@ -215,7 +215,7 @@ def calculate_all_sn(model):
         for name, param in model.named_parameters():
             operations = model
             if "weight_orig" in name:
-                splited_name = name.split('.')
+                splited_name = name.split(".")
                 for name_element in splited_name[:-1]:
                     operations = getattr(operations, name_element)
                 weight_orig = reshape_weight_to_matrix(operations.weight_orig)
@@ -311,36 +311,16 @@ def plot_img_canvas(images, save_path, ncol, logger, logging=True):
     if logger is None: logging = False
     directory = dirname(save_path)
 
-    if not exists(abspath(directory)):
+    if not exists(directory):
         os.makedirs(directory)
 
     save_image(images, save_path, padding=0, nrow=ncol)
     if logging: logger.info("Saved image to {}".format(save_path))
 
-def plot_pr_curve(precision, recall, run_name, logger, logging=True):
-    if logger is None: logging = False
-    directory = join('./figures', run_name)
-
-    if not exists(abspath(directory)):
-        os.makedirs(directory)
-    save_path = join(directory, "pr_curve.png")
-
-    fig, ax = plt.subplots()
-    ax.plot([0, 1], [0, 1], linestyle='--')
-    ax.plot(recall, precision)
-    ax.grid(True)
-    ax.set_xlabel('Recall (Higher is better)', fontsize=15)
-    ax.set_ylabel('Precision (Higher is better)', fontsize=15)
-    fig.tight_layout()
-    fig.savefig(save_path)
-    if logging: logger.info("Save image to {}".format(save_path))
-    return fig
-
-def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, logging=True):
+def plot_spectrum_image(real_spectrum, fake_spectrum, directory, logger, logging=True):
     if logger is None: logging=False
-    directory = join("./figures", run_name)
 
-    if not exists(abspath(directory)):
+    if not exists(directory):
         os.makedirs(directory)
 
     save_path = join(directory, "dfft_spectrum.png")
@@ -357,14 +337,13 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, logging=
     fig.savefig(save_path)
     if logging: logger.info("Save image to {}".format(save_path))
 
-def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger, logging=True):
+def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=True):
     if logger is None: logging=False
-    directory = join("./figures", run_name, flag)
 
-    if not exists(abspath(directory)):
+    if not exists(directory):
         os.makedirs(directory)
 
-    save_path = join(directory, "tsne_scatter.png")
+    save_path = join(directory, "tsne_scatter_{flag}.png".format(flag=flag))
 
     df["tsne-2d-one"] = tsne_results[:,0]
     df["tsne-2d-two"] = tsne_results[:,1]
@@ -377,13 +356,13 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger, logging=Tru
         legend="full",
         alpha=0.5).legend(fontsize = 15, loc ="upper right")
     plt.title("TSNE result of {flag} images".format(flag=flag), fontsize=25)
-    plt.xlabel('', fontsize=7)
-    plt.ylabel('', fontsize=7)
+    plt.xlabel("", fontsize=7)
+    plt.ylabel("", fontsize=7)
     plt.savefig(save_path)
     if logging: logger.info("Save image to {path}".format(path=save_path))
 
 def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size,
-                    z_prior, truncation_th, z_dim, num_classes, LOSS, run_name, device):
+                    z_prior, truncation_th, z_dim, num_classes, LOSS, directory, device):
     num_batches = math.ceil(float(num_images)/float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -393,9 +372,9 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
 
     print("Save {num_images} {image_type} images in npz format.".format(num_images=num_images, image_type=image_type))
 
-    directory = join('./samples', run_name, image_type, "npz")
-    if exists(abspath(directory)):
-        shutil.rmtree(abspath(directory))
+    directory = join(directory, image_type, "npz")
+    if exists(directory):
+        shutil.rmtree(directory)
     os.makedirs(directory)
 
     x = []
@@ -436,7 +415,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
     np.savez(npz_filename, **{"x" : x, "y" : y})
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size,
-                    z_prior, truncation_th, z_dim, num_classes, LOSS, run_name, device):
+                    z_prior, truncation_th, z_dim, num_classes, LOSS, directory, device):
     num_batches = math.ceil(float(num_images)/float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -446,9 +425,9 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
 
     print("Save {num_images} {image_type} images in png format.".format(num_images=num_images, image_type=image_type))
 
-    directory = join('./samples', run_name, image_type, "png")
-    if exists(abspath(directory)):
-        shutil.rmtree(abspath(directory))
+    directory = join(directory, image_type, "png")
+    if exists(directory):
+        shutil.rmtree(directory)
     os.makedirs(directory)
     for f in range(num_classes):
         os.makedirs(join(directory, str(f)))
@@ -518,7 +497,7 @@ def interpolate(x0, x1, num_midpoints):
     lerp = torch.linspace(0, 1.0, num_midpoints + 2, device="cuda").to(x0.dtype)
     return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))
 
-def accum_values_convert_dict(list_dict, value_dict, step, interval):
+def accm_values_convert_dict(list_dict, value_dict, step, interval):
     for name, value_list in list_dict.items():
         try:
             value_list[step//interval - 1] = value_dict[name]
@@ -532,8 +511,8 @@ def accum_values_convert_dict(list_dict, value_dict, step, interval):
     return list_dict
 
 def save_dict_npy(directory, name, dictionary):
-    if not exists(abspath(directory)):
+    if not exists(directory):
         os.makedirs(directory)
 
-    save_path = abspath(join(directory, name + ".npy"))
+    save_path = join(directory, name + ".npy")
     np.save(save_path, dictionary)

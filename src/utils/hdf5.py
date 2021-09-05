@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 
+from os.path import dirname, exists, join, isfile
 import os
 
 from torch.utils.data import DataLoader
@@ -31,16 +32,19 @@ import h5py as h5
 from data_util import Dataset_
 
 
-def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
-    file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=DATA.name, size=DATA.img_size)
-    file_path = os.path.join(DATA.path, file_name)
+def make_hdf5(name, img_size, crop_long_edge, resize_size, save_dir, DATA, RUN):
+    file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=name, size=img_size)
+    file_path = os.path.join(save_dir, "hdf5", file_name)
+    hdf5_dir = dirname(file_path)
+    if not exists(hdf5_dir):
+        os.makedirs(hdf5_dir)
 
     if os.path.isfile(file_path):
         print("{file_name} exist!\nThe file are located in the {file_path}.".format(file_name=file_name,
                                                                                     file_path=file_path))
     else:
         dataset = Dataset_(data_name=DATA.name,
-                           data_path=DATA.path,
+                           data_path=RUN.data_dir,
                            train=True,
                            crop_long_edge=crop_long_edge,
                            resize_size=resize_size,
@@ -55,7 +59,7 @@ def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
                                 num_workers=RUN.num_workers,
                                 drop_last=False)
 
-        print("Start to load {name} into an HDF5 file with chunk size 500.".format(name=DATA.name))
+        print("Start to load {name} into an HDF5 file with chunk size 500.".format(name=name))
         for i,(x,y) in enumerate(tqdm(dataloader)):
             x = (255*((x+1)/2.0)).byte().numpy()
             y = y.numpy()
@@ -64,9 +68,9 @@ def make_hdf5(DATA, RUN, crop_long_edge, resize_size):
                     print("Produce dataset of len {num_dataset}".format(num_dataset=len(dataset)))
                     imgs_dset = f.create_dataset("imgs", x.shape, dtype="uint8", maxshape=(len(dataset),
                                                                                            3,
-                                                                                           DATA.img_size,
-                                                                                           DATA.img_size),
-                                                chunks=(500, 3, DATA.img_size, DATA.img_size), compression=False)
+                                                                                           img_size,
+                                                                                           img_size),
+                                                chunks=(500, 3, img_size, img_size), compression=False)
                     print("Image chunks chosen as {chunk}".format(chunk=str(imgs_dset.chunks)))
                     imgs_dset[...] = x
 

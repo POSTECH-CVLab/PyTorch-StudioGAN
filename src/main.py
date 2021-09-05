@@ -33,7 +33,8 @@ RUN_NAME_FORMAT = (
 def main():
     parser = ArgumentParser(add_help=True)
     parser.add_argument("-cfg", "--cfg_file", type=str, default="./src/configs/CIFAR10/ContraGAN.yaml")
-    parser.add_argument("-default", "--default_dir", type=str, default=None)
+    parser.add_argument("-data", "--data_dir", type=str, default=None)
+    parser.add_argument("-save", "--save_dir", type=str, default="./")
     parser.add_argument("-ckpt", "--ckpt_dir", type=str, default=None)
     parser.add_argument("-best", "--load_best", action="store_true",
                         help="whether to load the best performed checkpoint or not")
@@ -106,10 +107,13 @@ def main():
     crop_long_edge = False if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else True
     resize_size = None if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else cfgs.DATA.img_size
     if cfgs.RUN.load_train_hdf5:
-        hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(DATA=cfgs.DATA,
-                                                                RUN=cfgs.RUN,
+        hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(name=cfgs.DATA.name,
+                                                                img_size=cfgs.DATA.img_size,
                                                                 crop_long_edge=crop_long_edge,
-                                                                resize_size=resize_size)
+                                                                resize_size=resize_size,
+                                                                save_dir=cfgs.RUN.save_dir,
+                                                                DATA=cfgs.DATA,
+                                                                RUN=cfgs.RUN)
     else:
         hdf5_path = None
     cfgs.PRE.crop_long_edge, cfgs.PRE.resize_size = crop_long_edge, resize_size

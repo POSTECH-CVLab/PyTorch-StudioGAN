@@ -4,7 +4,7 @@
 
 # src/utils/log.py
 
-from os.path import dirname, abspath, exists, join
+from os.path import dirname, exists, join
 from datetime import datetime
 import json
 import os
@@ -18,14 +18,14 @@ def make_run_name(format, framework, phase):
         timestamp=datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     )
 
-def make_logger(run_name, log_output):
+def make_logger(save_dir, run_name, log_output):
     if log_output is not None:
         run_name = log_output.split('/')[-1].split('.')[0]
     logger = logging.getLogger(run_name)
     logger.propagate = False
-    log_filepath = log_output if log_output is not None else join("logs", f"{run_name}.log")
+    log_filepath = log_output if log_output is not None else join(save_dir, "logs", f"{run_name}.log")
 
-    log_dir = dirname(abspath(log_filepath))
+    log_dir = dirname(log_filepath)
     if not exists(log_dir):
         os.makedirs(log_dir)
 

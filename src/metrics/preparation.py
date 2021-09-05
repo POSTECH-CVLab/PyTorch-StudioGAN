@@ -5,7 +5,7 @@
 # src/metrics/preparation.py
 
 
-from os.path import abspath, exists
+from os.path import exists, join
 import os
 
 from torch.nn import DataParallel
@@ -66,13 +66,14 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
     disable_tqdm = device != 0
     eval_model.eval()
 
-    if not exists(abspath("./moments")): os.makedirs("./moments")
-    save_path = os.path.abspath(os.path.join("./moments", cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
-                                             cfgs.RUN.eval_backbone + "_moments.npz"))
-    is_file = os.path.isfile(save_path)
+    moment_dir = join(cfgs.RUN.save_dir, "moments")
+    if not exists(moment_dir): os.makedirs(moment_dir)
+    moment_path = join(moment_dir, cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
+                       cfgs.RUN.eval_backbone + "_moments.npz")
+    is_file = os.path.isfile(moment_path)
     if is_file:
-        mu = np.load(save_path)["mu"]
-        sigma = np.load(save_path)["sigma"]
+        mu = np.load(moment_path)["mu"]
+        sigma = np.load(moment_path)["sigma"]
     else:
         if device == 0: logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
                                         format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
@@ -93,7 +94,7 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
                                           disable_tqdm=disable_tqdm)
 
         if device == 0: logger.info("Save calculated means and covariances to disk.")
-        np.savez(save_path, **{"mu": mu, "sigma": sigma})
+        np.savez(moment_path, **{"mu": mu, "sigma": sigma})
 
     if is_file:
         pass
