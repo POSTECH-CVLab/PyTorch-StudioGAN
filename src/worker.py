@@ -29,12 +29,9 @@ import numpy as np
 import metrics.ins as ins
 import metrics.fid as fid
 import metrics.f_beta as f_beta
-import utils.ada as ada
 import utils.sample as sample
 import utils.misc as misc
 import utils.losses as losses
-import utils.diffaug as diffaug
-import utils.cr as cr
 
 
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"

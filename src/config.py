@@ -19,7 +19,7 @@ import utils.misc as misc
 import utils.losses as losses
 import utils.ops as ops
 import utils.diffaug as diffaug
-import utils.simclr_aug as simclr_aug
+# import utils.simclr_aug as simclr_aug
 import utils.cr as cr
 
 
