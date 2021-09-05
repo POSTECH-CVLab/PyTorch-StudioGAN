@@ -1,34 +1,27 @@
-DATA:
-  name: "Tiny_ImageNet"
-  path: "./data/Tiny_ImageNet"
+data:
+  name: "tiny_imagenet"
   img_size: 64
   num_classes: 200
-MODEL:
+model:
   backbone: "big_resnet"
-  g_cond_mtd: "cBN"
-  d_cond_mtd: "PD"
-  apply_g_sn: True
-  apply_d_sn: True
-  apply_attn: True
+  g_cond_mtd: "cbn"
+  d_cond_mtd: "pd"
+  apply_g_sn: true
+  apply_d_sn: true
+  apply_attn: true
   attn_g_loc: [3]
   attn_d_loc: [1]
   z_dim: 100
   g_shared_dim: 128
   g_conv_dim: 80
   d_conv_dim: 80
-  apply_g_ema: True
+  apply_g_ema: true
   g_ema_decay: 0.9999
   g_ema_start: 20000
-LOSS:
+loss:
   adv_loss: "hinge"
-  apply_bcr: True
-  real_lambda: 10.0
-  fake_lambda: 10.0
-  apply_zcr: True
-  radius: 0.05
-  g_lambda: 0.5
-  d_lambda: 20.0
-OPTIMIZATION:
+
+optimization:
   batch_size: 1024
   g_lr: 0.0001
   d_lr: 0.0004

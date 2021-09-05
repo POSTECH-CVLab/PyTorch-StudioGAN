@@ -1,6 +1,5 @@
 DATA:
   name: "Tiny_ImageNet"
-  path: "./data/Tiny_ImageNet"
   img_size: 64
   num_classes: 200
 MODEL:
@@ -21,7 +20,13 @@ MODEL:
   g_ema_start: 20000
 LOSS:
   adv_loss: "hinge"
-
+  apply_bcr: True
+  real_lambda: 10.0
+  fake_lambda: 10.0
+  apply_zcr: True
+  radius: 0.05
+  g_lambda: 0.5
+  d_lambda: 20.0
 OPTIMIZATION:
   batch_size: 1024
   g_lr: 0.0001

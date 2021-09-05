@@ -1,6 +1,5 @@
 DATA:
   name: "Tiny_ImageNet"
-  path: "./data/Tiny_ImageNet"
   img_size: 64
   num_classes: 200
 MODEL:

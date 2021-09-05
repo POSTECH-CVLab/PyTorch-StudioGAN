@@ -1,6 +1,5 @@
 DATA:
   name: "ImageNet"
-  path: "./data/ImageNet"
   img_size: 128
   num_classes: 1000
 MODEL:
