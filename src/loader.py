@@ -86,7 +86,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         train_dataset = None
 
     if cfgs.RUN.eval + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
-        if local_rank == 0: logger.info("Load {name} {ref} datasets.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
+        if local_rank == 0: logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
                                 data_path=cfgs.DATA.path,
                                 train=True if cfgs.RUN.ref_dataset == "train" else False,

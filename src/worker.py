@@ -270,7 +270,7 @@ class WORKER(object):
         # -----------------------------------------------------------------------------
         # toggle gradients of the generator and discriminator
         misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1)
-        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1)
+        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=self.RUN.freezeG)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
             for acml_step in range(self.OPTIMIZATION.acml_steps):

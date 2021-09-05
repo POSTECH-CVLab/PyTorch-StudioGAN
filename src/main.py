@@ -33,8 +33,8 @@ RUN_NAME_FORMAT = (
 def main():
     parser = ArgumentParser(add_help=True)
     parser.add_argument("-cfg", "--cfg_file", type=str, default="./src/configs/CIFAR10/ContraGAN.yaml")
+    parser.add_argument("-default", "--default_dir", type=str, default=None)
     parser.add_argument("-ckpt", "--ckpt_dir", type=str, default=None)
-    parser.add_argument("-log", "--log_file", type=str, default=None)
     parser.add_argument("-best", "--load_best", action="store_true",
                         help="whether to load the best performed checkpoint or not")
 
@@ -58,6 +58,8 @@ def main():
                         (-1.0 menas not applying standing statistics trick for evaluation)")
     parser.add_argument("-std_step", "--standing_step", type=int, default=-1, help="# of steps for standing statistics \
                         (-1.0 menas not applying standing statistics trick for evaluation)")
+    parser.add_argument("--freezeG", type=int, default=-1,
+                        help="# of freezed blocks in the generator for transfer learning")
     parser.add_argument("--freezeD", type=int, default=-1,
                         help="# of freezed blocks in the discriminator for transfer learning")
 

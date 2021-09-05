@@ -90,7 +90,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
         logger.info("Generator checkpoint is {}".format(Gen_ckpt_path))
         logger.info("Discriminator checkpoint is {}".format(Dis_ckpt_path))
 
-    if RUN.freezeD > -1 :
+    if RUN.freezeD > -1 or RUN.freezeG > -1:
         prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path = run_name, 0, None, 0, None, None
     return prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path, writer
 
