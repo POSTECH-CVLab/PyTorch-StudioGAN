@@ -4,7 +4,6 @@
 
 # src/metrics/ins.py
 
-
 import math
 
 from torch.nn import DataParallel
@@ -21,12 +20,13 @@ def inception_softmax(eval_model, images):
         ps = torch.nn.functional.softmax(logits, dim=1)
     return ps
 
+
 def calculate_kl_div(ps, splits):
     scores = []
     num_samples = ps.shape[0]
     with torch.no_grad():
         for j in range(splits):
-            part = ps[(j*num_samples//splits): ((j+1)*num_samples//splits), :]
+            part = ps[(j * num_samples // splits):((j + 1) * num_samples // splits), :]
             kl = part * (torch.log(part) - torch.log(torch.unsqueeze(torch.mean(part, 0), 0)))
             kl = torch.mean(torch.sum(kl, 1))
             kl = torch.exp(kl)
@@ -36,8 +36,22 @@ def calculate_kl_div(ps, splits):
         m_std = torch.std(scores).detach().cpu().numpy().item()
     return m_scores, m_std
 
-def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size, z_prior,
-                   truncation_th, z_dim, num_classes, LOSS, device, logger, disable_tqdm=False):
+
+def eval_generator(generator,
+                   discriminator,
+                   eval_model,
+                   num_generate,
+                   y_sampler,
+                   split,
+                   batch_size,
+                   z_prior,
+                   truncation_th,
+                   z_dim,
+                   num_classes,
+                   LOSS,
+                   device,
+                   logger,
+                   disable_tqdm=False):
     eval_model.eval()
     ps_holder = []
 
@@ -65,10 +79,11 @@ def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler
         m_scores, m_std = calculate_kl_div(ps_holder[:num_generate], splits=split)
     return m_scores, m_std
 
+
 def eval_dataset(data_loader, eval_model, splits, batch_size, device, disable_tqdm=False):
     eval_model.eval()
     num_samples = len(data_loader.dataset)
-    num_batches = int(math.ceil(float(num_samples)/float(batch_size)))
+    num_batches = int(math.ceil(float(num_samples) / float(batch_size)))
     dataset_iter = iter(data_loader)
     ps_holder = []
 

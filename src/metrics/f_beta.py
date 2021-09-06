@@ -21,7 +21,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import math
 
 from torch.nn import DataParallel
@@ -35,7 +34,7 @@ import utils.sample as sample
 
 
 class precision_recall(object):
-    def __init__(self,eval_model, device):
+    def __init__(self, eval_model, device):
         self.eval_model = eval_model
         self.device = device
         self.disable_tqdm = device != 0
@@ -53,7 +52,7 @@ class precision_recall(object):
         return real_density, fake_density
 
     def compute_PRD(self, real_density, fake_density, num_angles=1001, epsilon=1e-10):
-        angles = np.linspace(epsilon, np.pi/2 - epsilon, num=num_angles)
+        angles = np.linspace(epsilon, np.pi / 2 - epsilon, num=num_angles)
         slopes = np.tan(angles)
 
         slopes_2d = np.expand_dims(slopes, 1)
@@ -61,7 +60,7 @@ class precision_recall(object):
         real_density_2d = np.expand_dims(real_density, 0)
         fake_density_2d = np.expand_dims(fake_density, 0)
 
-        precision = np.minimum(real_density_2d*slopes_2d, fake_density_2d).sum(axis=1)
+        precision = np.minimum(real_density_2d * slopes_2d, fake_density_2d).sum(axis=1)
         recall = precision / slopes
 
         max_val = max(np.max(precision), np.max(recall))
@@ -71,8 +70,21 @@ class precision_recall(object):
         recall = np.clip(recall, 0, 1)
         return precision, recall
 
-    def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes,
-                                 generator, discriminator, LOSS, num_runs, num_clusters, device, num_angles=1001):
+    def compute_precision_recall(self,
+                                 data_loader,
+                                 num_generate,
+                                 batch_size,
+                                 z_prior,
+                                 truncation_th,
+                                 z_dim,
+                                 num_classes,
+                                 generator,
+                                 discriminator,
+                                 LOSS,
+                                 num_runs,
+                                 num_clusters,
+                                 device,
+                                 num_angles=1001):
         data_iter = iter(data_loader)
         num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
         for i in tqdm(range(num_batches), disable=self.disable_tqdm):
@@ -120,12 +132,14 @@ class precision_recall(object):
     def compute_f_beta(self, precision, recall, beta=1, epsilon=1e-10):
         return (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall + epsilon)
 
+
 def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, discriminator, num_runs, num_clusters,
                      beta, device, logger):
     eval_model.eval()
     PR = precision_recall(eval_model, device=device)
 
-    if device == 0: logger.info("Calculate F_beta score of generated images ({} images).".format(num_generate))
+    if device == 0:
+        logger.info("Calculate F_beta score of generated images ({} images).".format(num_generate))
     precisions, recalls = PR.compute_precision_recall(data_loader=data_loader,
                                                       num_generate=num_generate,
                                                       batch_size=cfgs.OPTIMIZATION.batch_size,
@@ -148,5 +162,5 @@ def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, dis
         raise ValueError("Given parameter beta %s must be positive." % str(beta))
 
     f_beta = np.max(PR.compute_f_beta(precisions, recalls, beta=beta))
-    f_beta_inv = np.max(PR.compute_f_beta(precisions, recalls, beta=1/beta))
+    f_beta_inv = np.max(PR.compute_f_beta(precisions, recalls, beta=1 / beta))
     return f_beta_inv, f_beta, {"precisions": precisions, "recalls": recalls}

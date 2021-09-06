@@ -24,7 +24,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import random
 
 import torch
@@ -54,6 +53,7 @@ class Ema(object):
                 self.target_dict[key].data.copy_(self.target_dict[key].data*decay + \
                                                  self.source_dict[key].data*(1. - decay))
 
+
 class EmaDpSyncBN(object):
     def __init__(self, source, target, decay=0.9999, start_iter=0):
         self.source = source
@@ -73,5 +73,5 @@ class EmaDpSyncBN(object):
 
         with torch.no_grad():
             for key in self.source.state_dict():
-                data = self.target.state_dict()[key].data*decay + self.source.state_dict()[key].data*(1. - decay)
+                data = self.target.state_dict()[key].data * decay + self.source.state_dict()[key].data * (1. - decay)
                 self.target.state_dict()[key].data.copy_(data)

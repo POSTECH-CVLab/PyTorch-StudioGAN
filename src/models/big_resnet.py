@@ -4,7 +4,6 @@
 
 # models/big_resnet.py
 
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -73,21 +72,30 @@ class GenBlock(nn.Module):
         out = x + x0
         return out
 
-class Generator(nn.Module):
-    def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_attn, attn_g_loc, g_cond_mtd,
-                 num_classes, g_init, g_depth, mixed_precision, MODULES):
-        super(Generator, self).__init__()
-        g_in_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
-                                "64": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
-                                "128": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
-                                "256": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2],
-                                "512": [g_conv_dim*16, g_conv_dim*16, g_conv_dim*8, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim]}
 
-        g_out_dims_collection = {"32": [g_conv_dim*4, g_conv_dim*4, g_conv_dim*4],
-                                 "64": [g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
-                                 "128": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
-                                 "256": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim],
-                                 "512": [g_conv_dim*16, g_conv_dim*8, g_conv_dim*8, g_conv_dim*4, g_conv_dim*2, g_conv_dim, g_conv_dim]}
+class Generator(nn.Module):
+    def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_attn, attn_g_loc, g_cond_mtd, num_classes,
+                 g_init, g_depth, mixed_precision, MODULES):
+        super(Generator, self).__init__()
+        g_in_dims_collection = {
+            "32": [g_conv_dim * 4, g_conv_dim * 4, g_conv_dim * 4],
+            "64": [g_conv_dim * 16, g_conv_dim * 8, g_conv_dim * 4, g_conv_dim * 2],
+            "128": [g_conv_dim * 16, g_conv_dim * 16, g_conv_dim * 8, g_conv_dim * 4, g_conv_dim * 2],
+            "256": [g_conv_dim * 16, g_conv_dim * 16, g_conv_dim * 8, g_conv_dim * 8, g_conv_dim * 4, g_conv_dim * 2],
+            "512": [
+                g_conv_dim * 16, g_conv_dim * 16, g_conv_dim * 8, g_conv_dim * 8, g_conv_dim * 4, g_conv_dim * 2,
+                g_conv_dim
+            ]
+        }
+
+        g_out_dims_collection = {
+            "32": [g_conv_dim * 4, g_conv_dim * 4, g_conv_dim * 4],
+            "64": [g_conv_dim * 8, g_conv_dim * 4, g_conv_dim * 2, g_conv_dim],
+            "128": [g_conv_dim * 16, g_conv_dim * 8, g_conv_dim * 4, g_conv_dim * 2, g_conv_dim],
+            "256": [g_conv_dim * 16, g_conv_dim * 8, g_conv_dim * 8, g_conv_dim * 4, g_conv_dim * 2, g_conv_dim],
+            "512":
+            [g_conv_dim * 16, g_conv_dim * 8, g_conv_dim * 8, g_conv_dim * 4, g_conv_dim * 2, g_conv_dim, g_conv_dim]
+        }
 
         bottom_collection = {"32": 4, "64": 4, "128": 4, "256": 4, "512": 4}
 
@@ -95,27 +103,29 @@ class Generator(nn.Module):
         self.g_shared_dim = g_shared_dim
         self.num_classes = num_classes
         self.mixed_precision = mixed_precision
-        self.in_dims =  g_in_dims_collection[str(img_size)]
+        self.in_dims = g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
         self.bottom = bottom_collection[str(img_size)]
         self.num_blocks = len(self.in_dims)
-        self.chunk_size = z_dim//(self.num_blocks+1)
+        self.chunk_size = z_dim // (self.num_blocks + 1)
         self.hier_z_dim = self.chunk_size + self.g_shared_dim
         assert self.z_dim % (self.num_blocks + 1) == 0, "z_dim should be divided by the number of blocks"
 
         self.linear0 = MODULES.g_linear(in_features=self.chunk_size,
-                                        out_features=self.in_dims[0]*self.bottom*self.bottom,
+                                        out_features=self.in_dims[0] * self.bottom * self.bottom,
                                         bias=True)
 
         self.shared = ops.embedding(num_embeddings=self.num_classes, embedding_dim=self.g_shared_dim)
 
         self.blocks = []
         for index in range(self.num_blocks):
-            self.blocks += [[GenBlock(in_channels=self.in_dims[index],
-                                      out_channels=self.out_dims[index],
-                                      g_cond_mtd=g_cond_mtd,
-                                      hier_z_dim=self.hier_z_dim,
-                                      MODULES=MODULES)]]
+            self.blocks += [[
+                GenBlock(in_channels=self.in_dims[index],
+                         out_channels=self.out_dims[index],
+                         g_cond_mtd=g_cond_mtd,
+                         hier_z_dim=self.hier_z_dim,
+                         MODULES=MODULES)
+            ]]
 
             if index + 1 in attn_g_loc and apply_attn:
                 self.blocks += [[ops.SelfAttention(self.out_dims[index], is_generator=True, MODULES=MODULES)]]
@@ -155,13 +165,14 @@ class Generator(nn.Module):
                         act = block(act)
                     else:
                         act = block(act, labels[counter])
-                        counter +=1
+                        counter += 1
 
             act = self.bn4(act)
             act = self.activation(act)
             act = self.conv2d5(act)
             out = self.tanh(act)
         return out
+
 
 class DiscOptBlock(nn.Module):
     def __init__(self, in_channels, out_channels, apply_d_sn, MODULES):
@@ -210,6 +221,7 @@ class DiscOptBlock(nn.Module):
         x0 = self.conv2d0(x0)
         out = x + x0
         return out
+
 
 class DiscBlock(nn.Module):
     def __init__(self, in_channels, out_channels, apply_d_sn, MODULES, downsample=True):
@@ -273,48 +285,66 @@ class DiscBlock(nn.Module):
         out = x + x0
         return out
 
+
 class Discriminator(nn.Module):
     def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_cond_mtd, d_embed_dim,
                  normalize_d_embed, num_classes, d_init, d_depth, mixed_precision, MODULES):
         super(Discriminator, self).__init__()
-        d_in_dims_collection = {"32": [3] + [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
-                                "64": [3] + [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8],
-                                "128": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16],
-                                "256": [3] +[d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*8, d_conv_dim*16],
-                                "512": [3] +[d_conv_dim, d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*8, d_conv_dim*16]}
+        d_in_dims_collection = {
+            "32": [3] + [d_conv_dim * 2, d_conv_dim * 2, d_conv_dim * 2],
+            "64": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8],
+            "128": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
+            "256": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16],
+            "512": [3] +
+            [d_conv_dim, d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16]
+        }
 
-        d_out_dims_collection = {"32": [d_conv_dim*2, d_conv_dim*2, d_conv_dim*2, d_conv_dim*2],
-                                 "64": [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16],
-                                 "128": [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16],
-                                 "256": [d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16],
-                                 "512": [d_conv_dim, d_conv_dim, d_conv_dim*2, d_conv_dim*4, d_conv_dim*8, d_conv_dim*8, d_conv_dim*16, d_conv_dim*16]}
+        d_out_dims_collection = {
+            "32": [d_conv_dim * 2, d_conv_dim * 2, d_conv_dim * 2, d_conv_dim * 2],
+            "64": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
+            "128": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
+            "256": [
+                d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16,
+                d_conv_dim * 16
+            ],
+            "512": [
+                d_conv_dim, d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16,
+                d_conv_dim * 16
+            ]
+        }
 
-        d_down = {"32": [True, True, False, False],
-                  "64": [True, True, True, True, False],
-                  "128": [True, True, True, True, True, False],
-                  "256": [True, True, True, True, True, True, False],
-                  "512": [True, True, True, True, True, True, True, False]}
+        d_down = {
+            "32": [True, True, False, False],
+            "64": [True, True, True, True, False],
+            "128": [True, True, True, True, True, False],
+            "256": [True, True, True, True, True, True, False],
+            "512": [True, True, True, True, True, True, True, False]
+        }
 
         self.d_cond_mtd = d_cond_mtd
         self.normalize_d_embed = normalize_d_embed
         self.mixed_precision = mixed_precision
-        self.in_dims  = d_in_dims_collection[str(img_size)]
+        self.in_dims = d_in_dims_collection[str(img_size)]
         self.out_dims = d_out_dims_collection[str(img_size)]
         down = d_down[str(img_size)]
 
         self.blocks = []
         for index in range(len(self.in_dims)):
             if index == 0:
-                self.blocks += [[DiscOptBlock(in_channels=self.in_dims[index],
-                                              out_channels=self.out_dims[index],
-                                              apply_d_sn=apply_d_sn,
-                                              MODULES=MODULES)]]
+                self.blocks += [[
+                    DiscOptBlock(in_channels=self.in_dims[index],
+                                 out_channels=self.out_dims[index],
+                                 apply_d_sn=apply_d_sn,
+                                 MODULES=MODULES)
+                ]]
             else:
-                self.blocks += [[DiscBlock(in_channels=self.in_dims[index],
-                                           out_channels=self.out_dims[index],
-                                           apply_d_sn=apply_d_sn,
-                                           MODULES=MODULES,
-                                           downsample=down[index])]]
+                self.blocks += [[
+                    DiscBlock(in_channels=self.in_dims[index],
+                              out_channels=self.out_dims[index],
+                              apply_d_sn=apply_d_sn,
+                              MODULES=MODULES,
+                              downsample=down[index])
+                ]]
 
             if index + 1 in attn_d_loc and apply_attn:
                 self.blocks += [[ops.SelfAttention(self.out_dims[index], is_generator=False, MODULES=MODULES)]]
@@ -324,24 +354,16 @@ class Discriminator(nn.Module):
         self.activation = MODULES.d_act_fn
 
         if self.d_cond_mtd == "MH":
-            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
-                                            out_features=1+num_classes,
-                                            bias=True)
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1 + num_classes, bias=True)
         else:
-            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1],
-                                            out_features=1,
-                                            bias=True)
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1, bias=True)
 
         if self.d_cond_mtd == "AC":
-            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
-                                            out_features=num_classes,
-                                            bias=False)
+            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=False)
         elif self.d_cond_mtd == "PD":
             self.embedding = MODULES.d_embedding(num_classes, self.out_dims[-1])
         elif self.d_cond_mtd == "2C":
-            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1],
-                                            out_features=d_embed_dim,
-                                            bias=True)
+            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=d_embed_dim, bias=True)
             self.embedding = MODULES.d_embedding(num_classes, d_embed_dim)
         else:
             pass
@@ -357,7 +379,7 @@ class Discriminator(nn.Module):
                 for block in blocklist:
                     h = block(h)
             h = self.activation(h)
-            h = torch.sum(h, dim=[2,3])
+            h = torch.sum(h, dim=[2, 3])
 
             adv_output = torch.squeeze(self.linear1(h))
             if self.d_cond_mtd == "AC":

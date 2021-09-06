@@ -4,7 +4,6 @@
 
 # src/data_util.py
 
-
 import os
 import random
 
@@ -29,10 +28,8 @@ class RandomCropLongEdge(object):
     def __call__(self, img):
         size = (min(img.size), min(img.size))
         # Only step forward along this edge if it's the long edge
-        i = (0 if size[0] == img.size[0]
-            else np.random.randint(low=0,high=img.size[0] - size[0]))
-        j = (0 if size[1] == img.size[1]
-            else np.random.randint(low=0,high=img.size[1] - size[1]))
+        i = (0 if size[0] == img.size[0] else np.random.randint(low=0, high=img.size[0] - size[0]))
+        j = (0 if size[1] == img.size[1] else np.random.randint(low=0, high=img.size[1] - size[1]))
         return transforms.functional.crop(img, j, i, size[0], size[1])
 
     def __repr__(self):
@@ -53,8 +50,15 @@ class CenterCropLongEdge(object):
 
 
 class Dataset_(Dataset):
-    def __init__(self, data_name, data_path, train, crop_long_edge=False, resize_size=None,
-                 random_flip=False, hdf5_path=None, load_data_in_memory=False):
+    def __init__(self,
+                 data_name,
+                 data_path,
+                 train,
+                 crop_long_edge=False,
+                 resize_size=None,
+                 random_flip=False,
+                 hdf5_path=None,
+                 load_data_in_memory=False):
         super(Dataset_, self).__init__()
         self.data_name = data_name
         self.data_path = data_path
@@ -78,8 +82,7 @@ class Dataset_(Dataset):
             if self.random_flip:
                 self.trsf_list += [transforms.RandomHorizontalFlip()]
 
-        self.trsf_list += [transforms.ToTensor(),
-                           transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+        self.trsf_list += [transforms.ToTensor(), transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
         self.trsf = transforms.Compose(self.trsf_list)
 
         self.load_dataset()
@@ -95,14 +98,10 @@ class Dataset_(Dataset):
             return
 
         if self.data_name == "CIFAR10":
-            self.data = CIFAR10(root=self.data_path,
-                                train=self.train,
-                                download=True)
+            self.data = CIFAR10(root=self.data_path, train=self.train, download=True)
 
         elif self.data_name == "CIFAR100":
-            self.data = CIFAR100(root=self.data_path,
-                                 train=self.train,
-                                 download=True)
+            self.data = CIFAR100(root=self.data_path, train=self.train, download=True)
         else:
             mode = "train" if self.train == True else "valid"
             root = os.path.join(self.data_path, mode)

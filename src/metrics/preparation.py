@@ -4,7 +4,6 @@
 
 # src/metrics/preparation.py
 
-
 from os.path import exists, join
 import os
 
@@ -40,13 +39,9 @@ class LoadEvalModel(object):
 
         if world_size > 1 and distributed_data_parallel:
             misc.toggle_grad(self.model, on=True)
-            self.model = DDP(self.model,
-                             device_ids=[device],
-                             broadcast_buffers=False,
-                             find_unused_parameters=True)
+            self.model = DDP(self.model, device_ids=[device], broadcast_buffers=False, find_unused_parameters=True)
         elif world_size > 1 and distributed_data_parallel is False:
-            self.model = DataParallel(self.model,
-                                      output_device=device)
+            self.model = DataParallel(self.model, output_device=device)
         else:
             pass
 
@@ -62,12 +57,14 @@ class LoadEvalModel(object):
             self.save_output.clear()
         return repres, logits
 
+
 def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger, device):
     disable_tqdm = device != 0
     eval_model.eval()
 
     moment_dir = join(cfgs.RUN.save_dir, "moments")
-    if not exists(moment_dir): os.makedirs(moment_dir)
+    if not exists(moment_dir):
+        os.makedirs(moment_dir)
     moment_path = join(moment_dir, cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
                        cfgs.RUN.eval_backbone + "_moments.npz")
     is_file = os.path.isfile(moment_path)
@@ -75,8 +72,8 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
         mu = np.load(moment_path)["mu"]
         sigma = np.load(moment_path)["sigma"]
     else:
-        if device == 0: logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
-                                        format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
+        if device == 0:            logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
+format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         mu, sigma = fid.calculate_moments(data_loader=data_loader,
                                           generator="N/A",
                                           discriminator="N/A",
@@ -93,19 +90,21 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
                                           device=device,
                                           disable_tqdm=disable_tqdm)
 
-        if device == 0: logger.info("Save calculated means and covariances to disk.")
+        if device == 0:
+            logger.info("Save calculated means and covariances to disk.")
         np.savez(moment_path, **{"mu": mu, "sigma": sigma})
 
     if is_file:
         pass
     else:
-        if device == 0: logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
-                                        format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
+        if device == 0:            logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
+format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         is_score, is_std = ins.eval_dataset(data_loader=data_loader,
                                             eval_model=eval_model,
                                             splits=splits,
                                             batch_size=cfgs.OPTIMIZATION.batch_size,
                                             device=device,
                                             disable_tqdm=disable_tqdm)
-        if device == 0: logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))
+        if device == 0:
+            logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))
     return mu, sigma

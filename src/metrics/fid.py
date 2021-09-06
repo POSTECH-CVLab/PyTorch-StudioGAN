@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 from os.path import dirname, abspath, exists, join
 import math
 import os
@@ -61,8 +60,22 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     tr_covmean = np.trace(covmean)
     return (diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * tr_covmean)
 
-def calculate_moments(data_loader, generator, discriminator, eval_model, is_generate, num_generate, y_sampler,
-                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, device, disable_tqdm=False):
+
+def calculate_moments(data_loader,
+                      generator,
+                      discriminator,
+                      eval_model,
+                      is_generate,
+                      num_generate,
+                      y_sampler,
+                      batch_size,
+                      z_prior,
+                      truncation_th,
+                      z_dim,
+                      num_classes,
+                      LOSS,
+                      device,
+                      disable_tqdm=False):
     if is_generate:
         total_instance = num_generate
     else:
@@ -72,7 +85,7 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
 
     acts = np.empty((total_instance, 2048))
     for i in tqdm(range(0, num_batches), disable=disable_tqdm):
-        start = i*batch_size
+        start = i * batch_size
         end = start + batch_size
         if is_generate:
             images, labels, _, _ = sample.generate_images(z_prior=z_prior,
@@ -108,12 +121,23 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
     sigma = np.cov(acts, rowvar=False)
     return mu, sigma
 
-def calculate_fid(data_loader, generator, discriminator, eval_model, num_generate, y_sampler, cfgs,
-                  device, logger, pre_cal_mean=None, pre_cal_std=None):
+
+def calculate_fid(data_loader,
+                  generator,
+                  discriminator,
+                  eval_model,
+                  num_generate,
+                  y_sampler,
+                  cfgs,
+                  device,
+                  logger,
+                  pre_cal_mean=None,
+                  pre_cal_std=None):
     disable_tqdm = device != 0
     eval_model.eval()
 
-    if device == 0: logger.info("Calculate FID score of generated images ({} images).".format(num_generate))
+    if device == 0:
+        logger.info("Calculate FID score of generated images ({} images).".format(num_generate))
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std
     else:

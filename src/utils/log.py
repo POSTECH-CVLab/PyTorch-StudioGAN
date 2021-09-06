@@ -12,18 +12,15 @@ import logging
 
 
 def make_run_name(format, framework, phase):
-    return format.format(
-        framework=framework,
-        phase=phase,
-        timestamp=datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    )
+    return format.format(framework=framework, phase=phase, timestamp=datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
+
 
 def make_logger(save_dir, run_name, log_output):
     if log_output is not None:
         run_name = log_output.split('/')[-1].split('.')[0]
     logger = logging.getLogger(run_name)
     logger.propagate = False
-    log_filepath = log_output if log_output is not None else join(save_dir, "logs", f"{run_name}.log")
+    log_filepath = log_output if log_output is not None else join(save_dir, "logs", run_name + ".log")
 
     log_dir = dirname(log_filepath)
     if not exists(log_dir):

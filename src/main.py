@@ -4,7 +4,6 @@
 
 # src/main.py
 
-
 from argparse import ArgumentParser
 import json
 import os
@@ -20,14 +19,9 @@ import config
 import loader
 import utils.hdf5 as hdf5
 import utils.log as log
-import utils.misc  as misc
+import utils.misc as misc
 
-
-RUN_NAME_FORMAT = (
-    "{framework}-"
-    "{phase}-"
-    "{timestamp}"
-)
+RUN_NAME_FORMAT = ("{framework}-" "{phase}-" "{timestamp}")
 
 
 def main():
@@ -36,7 +30,7 @@ def main():
     parser.add_argument("-data", "--data_dir", type=str, default=None)
     parser.add_argument("-save", "--save_dir", type=str, default="./")
     parser.add_argument("-ckpt", "--ckpt_dir", type=str, default=None)
-    parser.add_argument("-best", "--load_best", action="store_true",
+    parser.add_argument("-best", "--load_best",action="store_true",
                         help="whether to load the best performed checkpoint or not")
 
     parser.add_argument("-DDP", "--distributed_data_parallel", action="store_true")
@@ -45,19 +39,24 @@ def main():
 
     parser.add_argument("--seed", type=int, default=-1, help="seed for generating random numbers")
     parser.add_argument("--num_workers", type=int, default=8)
-    parser.add_argument("-sync_bn", "--synchronized_bn", action="store_true", help="whether to turn on synchronized batchnorm")
-    parser.add_argument("-mpc", "--mixed_precision", action="store_true", help="whether to turn on mixed precision training")
+    parser.add_argument("-sync_bn", "--synchronized_bn", action="store_true",
+                        help="whether to turn on synchronized batchnorm")
+    parser.add_argument("-mpc", "--mixed_precision", action="store_true",
+                        help="whether to turn on mixed precision training")
 
-    parser.add_argument("--truncation_th", type=float, default=-1.0, help="threshold value for truncation trick \
+    parser.add_argument("--truncation_th", type=float, default=-1.0,
+                        help="threshold value for truncation trick \
                         (-1.0 means not applying truncation trick)")
     parser.add_argument("-batch_stat", "--batch_statistics", action="store_true",
                         help="use the statistics of a batch when evaluating GAN \
                         (if false, use the moving average updated statistics)")
     parser.add_argument("-std_stat", "--standing_statistics", action="store_true",
                         help="whether to apply standing statistics for evaluation")
-    parser.add_argument("-std_max", "--standing_max_batch", type=int, default=-1, help="maximum batch_size for calculating standing statistics \
+    parser.add_argument("-std_max", "--standing_max_batch", type=int, default=-1,
+                        help="maximum batch_size for calculating standing statistics \
                         (-1.0 menas not applying standing statistics trick for evaluation)")
-    parser.add_argument("-std_step", "--standing_step", type=int, default=-1, help="# of steps for standing statistics \
+    parser.add_argument("-std_step", "--standing_step", type=int, default=-1,
+                        help="# of steps for standing statistics \
                         (-1.0 menas not applying standing statistics trick for evaluation)")
     parser.add_argument("--freezeG", type=int, default=-1,
                         help="# of freezed blocks in the generator for transfer learning")
@@ -72,15 +71,19 @@ def main():
     parser.add_argument("-e", "--eval", action="store_true")
     parser.add_argument("-s", "--save_fake_images", action="store_true")
     parser.add_argument("-v", "--vis_fake_images", action="store_true", help="whether to visualize image canvas")
-    parser.add_argument("-knn", "--k_nearest_neighbor", action="store_true", help="whether to conduct k-nearest neighbor analysis")
-    parser.add_argument("-itp", "--interpolation", action="store_true", help="whether to conduct interpolation analysis")
-    parser.add_argument("-fa", "--frequency_analysis", action="store_true", help="whether to conduct frequency analysis")
+    parser.add_argument("-knn", "--k_nearest_neighbor", action="store_true",
+                        help="whether to conduct k-nearest neighbor analysis")
+    parser.add_argument("-itp", "--interpolation", action="store_true",
+                        help="whether to conduct interpolation analysis")
+    parser.add_argument("-fa", "--frequency_analysis", action="store_true",
+                        help="whether to conduct frequency analysis")
     parser.add_argument("-tsne", "--tsne_analysis", action="store_true", help="whether to conduct tsne analysis")
 
     parser.add_argument("--print_every", type=int, default=100, help="logging interval")
     parser.add_argument("--save_every", type=int, default=2000, help="save interval")
     parser.add_argument('--eval_backbone', type=str, default='Inception_V3', help='[SwAV, Inception_V3]')
-    parser.add_argument("-ref", "--ref_dataset", type=str, default="train", help="reference dataset for evaluation[train/valid/test]")
+    parser.add_argument("-ref", "--ref_dataset", type=str, default="train",
+                        help="reference dataset for evaluation[train/valid/test]")
     args = parser.parse_args()
     run_cfgs = vars(args)
 
@@ -99,7 +102,7 @@ def main():
 
     cfgs = config.Configurations(args.cfg_file)
     cfgs.update_cfgs(run_cfgs, super="RUN")
-    cfgs.OPTIMIZATION.world_size = gpus_per_node*cfgs.RUN.total_nodes
+    cfgs.OPTIMIZATION.world_size = gpus_per_node * cfgs.RUN.total_nodes
     cfgs.check_compatability()
 
     run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
@@ -130,10 +133,7 @@ def main():
 
     if cfgs.RUN.distributed_data_parallel and cfgs.RUN.world_size > 1:
         print("Train the models through DistributedDataParallel (DDP) mode.")
-        mp.spawn(loader.load_worker, nprocs=gpus_per_node, args=(cfgs,
-                                                                 gpus_per_node,
-                                                                 run_name,
-                                                                 hdf5_path))
+        mp.spawn(loader.load_worker, nprocs=gpus_per_node, args=(cfgs, gpus_per_node, run_name, hdf5_path))
     else:
         loader.load_worker(local_rank=rank,
                            cfgs=cfgs,

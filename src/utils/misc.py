@@ -4,7 +4,6 @@
 
 # src/utils/misc.py
 
-
 from os.path import dirname, exists, join, isfile
 from datetime import datetime
 from collections import defaultdict
@@ -41,6 +40,7 @@ class dummy_context_mgr():
     def __exit__(self, exc_type, exc_value, traceback):
         return False
 
+
 class SaveOutput:
     def __init__(self):
         self.outputs = []
@@ -50,6 +50,7 @@ class SaveOutput:
 
     def clear(self):
         self.outputs = []
+
 
 class GatherLayer(torch.autograd.Function):
     """
@@ -71,9 +72,10 @@ class GatherLayer(torch.autograd.Function):
         grad_out[:] = grads[dist.get_rank()]
         return grad_out
 
+
 class GeneratorController(object):
-    def __init__(self, generator, batch_statistics, standing_statistics, standing_max_batch,
-                 standing_step, cfgs, device, logger, std_stat_counter):
+    def __init__(self, generator, batch_statistics, standing_statistics, standing_max_batch, standing_step, cfgs,
+                 device, logger, std_stat_counter):
         self.generator = generator
         self.batch_statistics = batch_statistics
         self.standing_statistics = standing_statistics
@@ -92,15 +94,15 @@ class GeneratorController(object):
             else:
                 self.generator.train()
                 apply_standing_statistics(generator=self.generator,
-                                        standing_max_batch=self.standing_max_batch,
-                                        standing_step=self.standing_step,
-                                        DATA=self.cfgs.DATA,
-                                        MODEL=self.cfgs.MODEL,
-                                        LOSS=self.cfgs.LOSS,
-                                        OPTIMIZATION=self.cfgs.OPTIMIZATION,
-                                        RUN=self.cfgs.RUN,
-                                        device=self.device,
-                                        logger=self.logger)
+                                          standing_max_batch=self.standing_max_batch,
+                                          standing_step=self.standing_step,
+                                          DATA=self.cfgs.DATA,
+                                          MODEL=self.cfgs.MODEL,
+                                          LOSS=self.cfgs.LOSS,
+                                          OPTIMIZATION=self.cfgs.OPTIMIZATION,
+                                          RUN=self.cfgs.RUN,
+                                          device=self.device,
+                                          logger=self.logger)
                 self.generator.eval()
                 self.generator.apply(set_deterministic_op_trainable)
         else:
@@ -111,6 +113,7 @@ class GeneratorController(object):
             self.generator.apply(set_deterministic_op_trainable)
         return self.generator
 
+
 def fix_seed(seed):
     random.seed(seed)
     torch.manual_seed(seed)
@@ -118,21 +121,17 @@ def fix_seed(seed):
     torch.cuda.manual_seed(seed)
     np.random.seed(seed)
 
+
 def setup(rank, world_size, backend="nccl"):
     if sys.platform == "win32":
         # Distributed package only covers collective communications with Gloo
         # backend and FileStore on Windows platform. Set init_method parameter
         # in init_process_group to a local file.
         # Example init_method="file:///f:/libtmp/some_file"
-        init_method="file:///{your local file path}"
+        init_method = "file:///{your local file path}"
 
         # initialize the process group
-        dist.init_process_group(
-            backend,
-            init_method=init_method,
-            rank=rank,
-            world_size=world_size
-        )
+        dist.init_process_group(backend, init_method=init_method, rank=rank, world_size=world_size)
     else:
         # initialize the process group
         dist.init_process_group(backend,
@@ -140,11 +139,14 @@ def setup(rank, world_size, backend="nccl"):
                                 rank=rank,
                                 world_size=world_size)
 
+
 def cleanup():
     dist.destroy_process_group()
 
+
 def count_parameters(module):
     return "Number of parameters: {num}".format(num=sum([p.data.nelement() for p in module.parameters()]))
+
 
 def toggle_grad(model, grad, num_freeze_layers=-1):
     if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
@@ -167,20 +169,25 @@ def toggle_grad(model, grad, num_freeze_layers=-1):
                 if block_name in name:
                     param.requires_grad = False
 
+
 def identity(x):
     return x
+
 
 def set_bn_trainable(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.train()
 
+
 def untrack_bn_statistics(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.track_running_stats = False
 
+
 def track_bn_statistics(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.track_running_stats = True
+
 
 def set_deterministic_op_trainable(m):
     if isinstance(m, torch.nn.modules.conv.Conv2d):
@@ -192,22 +199,26 @@ def set_deterministic_op_trainable(m):
     if isinstance(m, torch.nn.modules.Embedding):
         m.train()
 
+
 def reset_bn_statistics(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.reset_running_stats()
+
 
 def elapsed_time(start_time):
     now = datetime.now()
     elapsed = now - start_time
     return str(elapsed).split(".")[0]  # remove milliseconds
 
+
 def reshape_weight_to_matrix(weight):
     weight_mat = weight
-    dim =0
+    dim = 0
     if dim != 0:
         weight_mat = weight_mat.permute(dim, *[d for d in range(weight_mat.dim()) if d != dim])
     height = weight_mat.size(0)
     return weight_mat.reshape(height, -1)
+
 
 def calculate_all_sn(model):
     sigmas = {}
@@ -224,17 +235,18 @@ def calculate_all_sn(model):
                 sigmas[name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
     return sigmas
 
-def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION,
-                              RUN, device, logger):
+
+def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN,
+                              device, logger):
     generator.train()
     generator.apply(reset_bn_statistics)
     logger.info("Acuumulate statistics of batchnorm layers to improve generation performance.")
     for i in tqdm(range(standing_step)):
-        batch_size_per_gpu = standing_max_batch//OPTIMIZATION.world_size
+        batch_size_per_gpu = standing_max_batch // OPTIMIZATION.world_size
         if RUN.distributed_data_parallel:
             rand_batch_size = random.randint(1, batch_size_per_gpu)
         else:
-            rand_batch_size = random.randint(1, batch_size_per_gpu)*OPTIMIZATION.world_size
+            rand_batch_size = random.randint(1, batch_size_per_gpu) * OPTIMIZATION.world_size
         fake_images, fake_labels, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
                                                                 truncation_th=-1,
                                                                 batch_size=rand_batch_size,
@@ -250,6 +262,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                 cal_trsp_cost=False)
     generator.eval()
 
+
 def make_GAN_trainable(Gen, Gen_ema, Dis):
     Gen.train()
     Gen.apply(track_bn_statistics)
@@ -260,6 +273,7 @@ def make_GAN_trainable(Gen, Gen_ema, Dis):
     Dis.train()
     Dis.apply(track_bn_statistics)
 
+
 def make_GAN_untrainable(Gen, Gen_ema, Dis):
     Gen.eval()
     Gen.apply(set_deterministic_op_trainable)
@@ -269,6 +283,7 @@ def make_GAN_untrainable(Gen, Gen_ema, Dis):
 
     Dis.eval()
     Dis.apply(set_deterministic_op_trainable)
+
 
 def peel_models(Gen, Gen_ema, Dis):
     if isinstance(Gen, DataParallel) or isinstance(Gen, DistributedDataParallel):
@@ -285,10 +300,12 @@ def peel_models(Gen, Gen_ema, Dis):
             gen_ema = None
     return gen, gen_ema, dis
 
+
 def peel_model(model):
     if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
         model = model.module
     return model
+
 
 def save_model(model, when, step, ckpt_dir, states):
     model_tpl = "model={model}-{when}-weights-step={step}.pth"
@@ -298,27 +315,34 @@ def save_model(model, when, step, ckpt_dir, states):
 
     torch.save(states, join(ckpt_dir, model_tpl.format(model=model, when=when, step=step)))
 
+
 def find_string(list_, string):
     for i, s in enumerate(list_):
         if string == s:
             return i
 
+
 def find_and_remove(path):
     if isfile(path):
         os.remove(path)
 
+
 def plot_img_canvas(images, save_path, ncol, logger, logging=True):
-    if logger is None: logging = False
+    if logger is None:
+        logging = False
     directory = dirname(save_path)
 
     if not exists(directory):
         os.makedirs(directory)
 
     save_image(images, save_path, padding=0, nrow=ncol)
-    if logging: logger.info("Saved image to {}".format(save_path))
+    if logging:
+        logger.info("Saved image to {}".format(save_path))
+
 
 def plot_spectrum_image(real_spectrum, fake_spectrum, directory, logger, logging=True):
-    if logger is None: logging=False
+    if logger is None:
+        logging = False
 
     if not exists(directory):
         os.makedirs(directory)
@@ -335,35 +359,40 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, directory, logger, logging
     ax2.imshow(fake_spectrum, cmap="viridis")
     ax2.set_title("Spectrum of fake images")
     fig.savefig(save_path)
-    if logging: logger.info("Save image to {}".format(save_path))
+    if logging:
+        logger.info("Save image to {}".format(save_path))
+
 
 def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=True):
-    if logger is None: logging=False
+    if logger is None:
+        logging = False
 
     if not exists(directory):
         os.makedirs(directory)
 
     save_path = join(directory, "tsne_scatter_{flag}.png".format(flag=flag))
 
-    df["tsne-2d-one"] = tsne_results[:,0]
-    df["tsne-2d-two"] = tsne_results[:,1]
-    plt.figure(figsize=(16,10))
-    sns.scatterplot(
-        x="tsne-2d-one", y="tsne-2d-two",
-        hue="labels",
-        palette=sns.color_palette("hls", 10),
-        data=df,
-        legend="full",
-        alpha=0.5).legend(fontsize = 15, loc ="upper right")
+    df["tsne-2d-one"] = tsne_results[:, 0]
+    df["tsne-2d-two"] = tsne_results[:, 1]
+    plt.figure(figsize=(16, 10))
+    sns.scatterplot(x="tsne-2d-one",
+                    y="tsne-2d-two",
+                    hue="labels",
+                    palette=sns.color_palette("hls", 10),
+                    data=df,
+                    legend="full",
+                    alpha=0.5).legend(fontsize=15, loc="upper right")
     plt.title("TSNE result of {flag} images".format(flag=flag), fontsize=25)
     plt.xlabel("", fontsize=7)
     plt.ylabel("", fontsize=7)
     plt.savefig(save_path)
-    if logging: logger.info("Save image to {path}".format(path=save_path))
+    if logging:
+        logger.info("Save image to {path}".format(path=save_path))
 
-def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size,
-                    z_prior, truncation_th, z_dim, num_classes, LOSS, directory, device):
-    num_batches = math.ceil(float(num_images)/float(batch_size))
+
+def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
+                    truncation_th, z_dim, num_classes, LOSS, directory, device):
+    num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
     else:
@@ -381,7 +410,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
     y = []
     with torch.no_grad() if not LOSS.apply_lo else dummy_context_mgr() as mpc:
         for i in tqdm(range(0, num_batches)):
-            start = i*batch_size
+            start = i * batch_size
             end = start + batch_size
             if is_generate:
                 images, labels, _, _ = sample.generate_images(z_prior=z_prior,
@@ -403,20 +432,20 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
                 except StopIteration:
                     break
 
-            x += [np.uint8(255*(images.detach().cpu().numpy() + 1) /2.)]
+            x += [np.uint8(255 * (images.detach().cpu().numpy() + 1) / 2.)]
             y += [labels.detach().cpu().numpy()]
 
     x = np.concatenate(x, 0)[:num_images]
     y = np.concatenate(y, 0)[:num_images]
-    print("Images shape: {image_shape}, Labels shape: {label_shape}".format(image_shape=x.shape,
-                                                                            label_shape=y.shape))
+    print("Images shape: {image_shape}, Labels shape: {label_shape}".format(image_shape=x.shape, label_shape=y.shape))
     npz_filename = join(directory, "samples.npz")
     print("Finish saving npz to {file_name}".format(file_name=npz_filename))
-    np.savez(npz_filename, **{"x" : x, "y" : y})
+    np.savez(npz_filename, **{"x": x, "y": y})
 
-def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size,
-                    z_prior, truncation_th, z_dim, num_classes, LOSS, directory, device):
-    num_batches = math.ceil(float(num_images)/float(batch_size))
+
+def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
+                    truncation_th, z_dim, num_classes, LOSS, directory, device):
+    num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
     else:
@@ -434,7 +463,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
 
     with torch.no_grad() if not LOSS.apply_lo else dummy_context_mgr() as mpc:
         for i in tqdm(range(0, num_batches), disable=False):
-            start = i*batch_size
+            start = i * batch_size
             end = start + batch_size
             if is_generate:
                 images, labels, _, _ = sample.generate_images(z_prior=z_prior,
@@ -457,17 +486,17 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                     break
 
             for idx, img in enumerate(images.detach()):
-                if batch_size*i + idx < num_images:
-                    save_image((img + 1)/2, join(directory,
-                                                 str(labels[idx].item()),
-                                                 "{idx}.png".format(idx=batch_size*i + idx)))
+                if batch_size * i + idx < num_images:
+                    save_image((img + 1) / 2,
+                               join(directory, str(labels[idx].item()), "{idx}.png".format(idx=batch_size * i + idx)))
                 else:
                     pass
 
     print("Finish saving *.png images to {directory}".format(directory=directory))
 
-def generate_images_for_KNN(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler,
-                            generator, discriminator, LOSS, device):
+
+def generate_images_for_KNN(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler, generator, discriminator,
+                            LOSS, device):
     with torch.no_grad():
         fake_images, fake_labels, _, _ = sample.generate_images(z_prior=z_prior,
                                                                 truncation_th=truncation_th,
@@ -484,23 +513,26 @@ def generate_images_for_KNN(z_prior, truncation_th, batch_size, z_dim, num_class
                                                                 cal_trsp_cost=False)
     return fake_images, list(fake_labels.detach().cpu().numpy())
 
+
 def orthogonalize_model(model, strength=1e-4, blacklist=[]):
     with torch.no_grad():
         for param in model.parameters():
             if len(param.shape) < 2 or any([param is item for item in blacklist]):
                 continue
             w = param.view(param.shape[0], -1)
-            grad = (2*torch.mm(torch.mm(w, w.t())*(1. - torch.eye(w.shape[0], device=w.device)), w))
-            param.grad.data += strength*grad.view(param.shape)
+            grad = (2 * torch.mm(torch.mm(w, w.t()) * (1. - torch.eye(w.shape[0], device=w.device)), w))
+            param.grad.data += strength * grad.view(param.shape)
+
 
 def interpolate(x0, x1, num_midpoints):
     lerp = torch.linspace(0, 1.0, num_midpoints + 2, device="cuda").to(x0.dtype)
     return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))
 
+
 def accm_values_convert_dict(list_dict, value_dict, step, interval):
     for name, value_list in list_dict.items():
         try:
-            value_list[step//interval - 1] = value_dict[name]
+            value_list[step // interval - 1] = value_dict[name]
         except IndexError:
             try:
                 value_list += [value_dict[name]]
@@ -509,6 +541,7 @@ def accm_values_convert_dict(list_dict, value_dict, step, interval):
 
         list_dict[name] = value_list
     return list_dict
+
 
 def save_dict_npy(directory, name, dictionary):
     if not exists(directory):

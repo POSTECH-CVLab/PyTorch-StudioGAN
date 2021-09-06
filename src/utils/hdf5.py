@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 from os.path import dirname, exists, join, isfile
 import os
 
@@ -60,28 +59,33 @@ def make_hdf5(name, img_size, crop_long_edge, resize_size, save_dir, DATA, RUN):
                                 drop_last=False)
 
         print("Start to load {name} into an HDF5 file with chunk size 500.".format(name=name))
-        for i,(x,y) in enumerate(tqdm(dataloader)):
-            x = (255*((x+1)/2.0)).byte().numpy()
+        for i, (x, y) in enumerate(tqdm(dataloader)):
+            x = (255 * ((x + 1) / 2.0)).byte().numpy()
             y = y.numpy()
             if i == 0:
                 with h5.File(file_path, "w") as f:
                     print("Produce dataset of len {num_dataset}".format(num_dataset=len(dataset)))
-                    imgs_dset = f.create_dataset("imgs", x.shape, dtype="uint8", maxshape=(len(dataset),
-                                                                                           3,
-                                                                                           img_size,
-                                                                                           img_size),
-                                                chunks=(500, 3, img_size, img_size), compression=False)
+                    imgs_dset = f.create_dataset("imgs",
+                                                 x.shape,
+                                                 dtype="uint8",
+                                                 maxshape=(len(dataset), 3, img_size, img_size),
+                                                 chunks=(500, 3, img_size, img_size),
+                                                 compression=False)
                     print("Image chunks chosen as {chunk}".format(chunk=str(imgs_dset.chunks)))
                     imgs_dset[...] = x
 
-                    labels_dset = f.create_dataset("labels", y.shape, dtype="int64", maxshape=(len(dataloader.dataset),),
-                                                    chunks=(500,), compression=False)
+                    labels_dset = f.create_dataset("labels",
+                                                   y.shape,
+                                                   dtype="int64",
+                                                   maxshape=(len(dataloader.dataset), ),
+                                                   chunks=(500, ),
+                                                   compression=False)
                     print("Label chunks chosen as {chunk}".format(chunk=str(labels_dset.chunks)))
                     labels_dset[...] = y
             else:
                 with h5.File(file_path, "a") as f:
-                  f["imgs"].resize(f["imgs"].shape[0] + x.shape[0], axis=0)
-                  f["imgs"][-x.shape[0]:] = x
-                  f["labels"].resize(f["labels"].shape[0] + y.shape[0], axis=0)
-                  f["labels"][-y.shape[0]:] = y
+                    f["imgs"].resize(f["imgs"].shape[0] + x.shape[0], axis=0)
+                    f["imgs"][-x.shape[0]:] = x
+                    f["labels"].resize(f["labels"].shape[0] + y.shape[0], axis=0)
+                    f["labels"][-y.shape[0]:] = y
     return file_path, False, None

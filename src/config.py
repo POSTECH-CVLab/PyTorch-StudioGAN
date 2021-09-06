@@ -4,7 +4,6 @@
 
 # src/config.py
 
-
 import json
 import os
 import random
@@ -215,14 +214,15 @@ class Configurations(object):
 
         self.MODULES = lambda: None
 
-        self.super_cfgs = {"DATA": self.DATA,
-                           "MODEL": self.MODEL,
-                           "LOSS": self.LOSS,
-                           "OPTIMIZATION": self.OPTIMIZATION,
-                           "PRE": self.PRE,
-                           "AUG": self.AUG,
-                           "RUN": self.RUN,
-                           }
+        self.super_cfgs = {
+            "DATA": self.DATA,
+            "MODEL": self.MODEL,
+            "LOSS": self.LOSS,
+            "OPTIMIZATION": self.OPTIMIZATION,
+            "PRE": self.PRE,
+            "AUG": self.AUG,
+            "RUN": self.RUN,
+        }
 
     def update_cfgs(self, cfgs, super="RUN"):
         for attr, value in cfgs.items():
@@ -236,11 +236,19 @@ class Configurations(object):
                     setattr(self.super_cfgs[super_cfg_name], attr, value)
 
     def define_losses(self):
-        g_losses = {"vanilla": losses.g_vanilla, "least_square": losses.g_ls,
-                    "hinge": losses.g_hinge, "wasserstein": losses.g_wasserstein}
+        g_losses = {
+            "vanilla": losses.g_vanilla,
+            "least_square": losses.g_ls,
+            "hinge": losses.g_hinge,
+            "wasserstein": losses.g_wasserstein
+        }
 
-        d_losses = {"vanilla": losses.d_vanilla, "least_square": losses.d_ls,
-                    "hinge": losses.d_hinge, "wasserstein": losses.d_wasserstein}
+        d_losses = {
+            "vanilla": losses.d_vanilla,
+            "least_square": losses.d_ls,
+            "hinge": losses.d_hinge,
+            "wasserstein": losses.d_wasserstein
+        }
 
         self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
         self.LOSS.d_loss = d_losses[self.LOSS.adv_loss]
@@ -316,12 +324,14 @@ class Configurations(object):
                                                             momentum=self.OPTIMIZATION.momentum,
                                                             nesterov=self.OPTIMIZATION.nesterov)
         elif self.OPTIMIZATION.type_ == "RMSprop":
-            self.OPTIMIZATION.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Gen.parameters()),
+            self.OPTIMIZATION.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad,
+                                                                              Gen.parameters()),
                                                                 lr=self.OPTIMIZATION.g_lr,
                                                                 weight_decay=self.OPTIMIZATION.g_weight_decay,
                                                                 momentum=self.OPTIMIZATION.momentum,
                                                                 alpha=self.OPTIMIZATION.alpha)
-            self.OPTIMIZATION.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Dis.parameters()),
+            self.OPTIMIZATION.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad,
+                                                                              Dis.parameters()),
                                                                 lr=self.OPTIMIZATION.d_lr,
                                                                 weight_decay=self.OPTIMIZATION.d_weight_decay,
                                                                 momentum=self.OPTIMIZATION.momentum,
@@ -384,13 +394,15 @@ class Configurations(object):
             assert not self.RUN.distributed_data_parallel, \
             "StudioGAN does not support DDP training for ContraGAN and ReACGAN."
 
-        if self.RUN.train*self.RUN.standing_statistics:
+        if self.RUN.train * self.RUN.standing_statistics:
             print("StudioGAN does not support standing_statistics during training. \
-                  \nAfter training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model using the accumulated satistics.")
+                  \nAfter training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model using the accumulated satistics."
+                  )
 
         if self.RUN.distributed_data_parallel:
             msg = "Turning on DDP might cause inexact evaluation results. \
                 Please use a single GPU or DataParallel for the exact evluation."
+
             warnings.warn(msg)
 
         if self.DATA.name in ["CIFAR10", "CIFAR100"]:

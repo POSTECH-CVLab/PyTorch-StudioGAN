@@ -4,7 +4,6 @@
 
 # src/loader.py
 
-
 from os.path import dirname, abspath, exists, join
 import glob
 import json
@@ -45,7 +44,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # initialize all processes and identify the local rank.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
-        global_rank = cfgs.RUN.cn*(gpus_per_node) + local_rank
+        global_rank = cfgs.RUN.cn * (gpus_per_node) + local_rank
         print("Use GPU: {global_rank} for training.".format(global_rank=global_rank))
         misc.setup(global_rank, cfgs.OPTIMIZATION.world_size)
         torch.cuda.set_device(local_rank)
@@ -72,7 +71,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # load train and evaluation dataset.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
-        if local_rank == 0: logger.info("Load {name} train dataset.".format(name=cfgs.DATA.name))
+        if local_rank == 0:
+            logger.info("Load {name} train dataset.".format(name=cfgs.DATA.name))
         train_dataset = Dataset_(data_name=cfgs.DATA.name,
                                  data_path=cfgs.RUN.data_dir,
                                  train=True,
@@ -81,21 +81,25 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                  random_flip=cfgs.PRE.apply_rflip,
                                  hdf5_path=hdf5_path,
                                  load_data_in_memory=cfgs.RUN.load_data_in_memory)
-        if local_rank == 0: logger.info("Train dataset size: {dataset_size}".format(dataset_size=len(train_dataset)))
+        if local_rank == 0:
+            logger.info("Train dataset size: {dataset_size}".format(dataset_size=len(train_dataset)))
     else:
         train_dataset = None
 
     if cfgs.RUN.eval + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
-        if local_rank == 0: logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
-        eval_dataset = Dataset_(data_name=cfgs.DATA.name,
-                                data_path=cfgs.RUN.data_dir,
-                                train=True if cfgs.RUN.ref_dataset == "train" else False,
-                                crop_long_edge=False if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else True,
-                                resize_size=None if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else cfgs.DATA.img_size,
-                                random_flip=False,
-                                hdf5_path=None,
-                                load_data_in_memory=False)
-        if local_rank == 0: logger.info("Eval dataset size: {dataset_size}".format(dataset_size=len(eval_dataset)))
+        if local_rank == 0:
+            logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
+        eval_dataset = Dataset_(
+            data_name=cfgs.DATA.name,
+            data_path=cfgs.RUN.data_dir,
+            train=True if cfgs.RUN.ref_dataset == "train" else False,
+            crop_long_edge=False if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else True,
+            resize_size=None if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else cfgs.DATA.img_size,
+            random_flip=False,
+            hdf5_path=None,
+            load_data_in_memory=False)
+        if local_rank == 0:
+            logger.info("Eval dataset size: {dataset_size}".format(dataset_size=len(eval_dataset)))
     else:
         eval_dataset = None
 
@@ -105,10 +109,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
         train_sampler = DistributedSampler(train_dataset)
-        cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size//cfgs.OPTIMIZATION.world_size
+        cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size // cfgs.OPTIMIZATION.world_size
     else:
         train_sampler = None
-    cfgs.OPTIMIZATION.basket_size = cfgs.OPTIMIZATION.batch_size*cfgs.OPTIMIZATION.acml_steps*cfgs.OPTIMIZATION.d_updates_per_step
+    cfgs.OPTIMIZATION.basket_size = cfgs.OPTIMIZATION.batch_size * cfgs.OPTIMIZATION.acml_steps * cfgs.OPTIMIZATION.d_updates_per_step
 
     if cfgs.RUN.train:
         train_dataloader = DataLoader(dataset=train_dataset,
@@ -242,7 +246,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # train GAN until "total_setps" generator updates
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
-        if global_rank == 0: logger.info("Start training!")
+        if global_rank == 0:
+            logger.info("Start training!")
         worker.training = True
         while step <= cfgs.OPTIMIZATION.total_steps:
             step = worker.train(current_step=step)
@@ -266,7 +271,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
     # -----------------------------------------------------------------------------
-    if global_rank == 0: logger.info("\n" + "-"*80)
+    if global_rank == 0:
+        logger.info("\n" + "-" * 80)
     worker.training = False
     worker.gen_ctlr.standing_statistics = cfgs.RUN.standing_statistics
     worker.gen_ctlr.standing_max_batch = cfgs.RUN.standing_max_batch
@@ -292,15 +298,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.run_k_nearest_neighbor(dataset=eval_dataset, nrow=nrow, ncol=ncol)
 
     if cfgs.RUN.interpolation:
-        worker.run_linear_interpolation(nrow=nrow,
-                                        ncol=ncol,
-                                        fix_z=True,
-                                        fix_y=False)
+        worker.run_linear_interpolation(nrow=nrow, ncol=ncol, fix_z=True, fix_y=False)
 
-        worker.run_linear_interpolation(nrow=nrow,
-                                        ncol=ncol,
-                                        fix_z=False,
-                                        fix_y=True)
+        worker.run_linear_interpolation(nrow=nrow, ncol=ncol, fix_z=False, fix_y=True)
 
     if cfgs.RUN.frequency_analysis:
         worker.run_frequency_analysis(dataloader=eval_dataloader)

@@ -4,7 +4,6 @@
 
 # src/worker.py
 
-
 from os.path import join
 import sys
 import glob
@@ -33,17 +32,14 @@ import utils.sample as sample
 import utils.misc as misc
 import utils.losses as losses
 
-
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
 
-LOG_FORMAT = (
-    "Step: {step:>6} "
-    "Progress: {progress:<.1%} "
-    "Elapsed: {elapsed} "
-    "Gen_loss: {gen_loss:<.4} "
-    "Dis_loss: {dis_loss:<.4} "
-    "Cls_loss: {cls_loss:<.4} "
-)
+LOG_FORMAT = ("Step: {step:>6} "
+              "Progress: {progress:<.1%} "
+              "Elapsed: {elapsed} "
+              "Gen_loss: {gen_loss:<.4} "
+              "Dis_loss: {dis_loss:<.4} "
+              "Cls_loss: {cls_loss:<.4} ")
 
 
 class WORKER(object):
@@ -119,7 +115,6 @@ class WORKER(object):
                                                  logger=self.logger,
                                                  std_stat_counter=0)
 
-
     def sample_data_basket(self):
         try:
             real_image_basket, real_label_basket = next(self.train_iter)
@@ -148,19 +143,20 @@ class WORKER(object):
             with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     # sample fake images and labels from p(G(z), y)
-                    fake_images, fake_labels, fake_images_eps, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                                          truncation_th=-1.0,
-                                                                                          batch_size=self.OPTIMIZATION.batch_size,
-                                                                                          z_dim=self.MODEL.z_dim,
-                                                                                          num_classes=self.DATA.num_classes,
-                                                                                          y_sampler="totally_random",
-                                                                                          radius=self.LOSS.radius,
-                                                                                          generator=self.Gen,
-                                                                                          discriminator=self.Dis,
-                                                                                          is_train=True,
-                                                                                          LOSS=self.LOSS,
-                                                                                          device=self.local_rank,
-                                                                                          cal_trsp_cost=False)
+                    fake_images, fake_labels, fake_images_eps, _ = sample.generate_images(
+                        z_prior=self.MODEL.z_prior,
+                        truncation_th=-1.0,
+                        batch_size=self.OPTIMIZATION.batch_size,
+                        z_dim=self.MODEL.z_dim,
+                        num_classes=self.DATA.num_classes,
+                        y_sampler="totally_random",
+                        radius=self.LOSS.radius,
+                        generator=self.Gen,
+                        discriminator=self.Dis,
+                        is_train=True,
+                        LOSS=self.LOSS,
+                        device=self.local_rank,
+                        cal_trsp_cost=False)
 
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images = self.AUG.series_augment(real_image_basket[batch_counter])
@@ -175,7 +171,7 @@ class WORKER(object):
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
                         real_cond_loss = self.cond_loss(**real_dict)
-                        dis_acml_loss += self.LOSS.cond_lambda*real_cond_loss
+                        dis_acml_loss += self.LOSS.cond_lambda * real_cond_loss
 
                     # if LOSS.apply_cr is True, force the adv. and cls. logits to be the same
                     if self.LOSS.apply_cr:
@@ -188,7 +184,7 @@ class WORKER(object):
                             real_consist_loss += self.l2_loss(real_dict["embed"], real_prl_dict["embed"])
                         else:
                             pass
-                        dis_acml_loss += self.LOSS.cr_lambda*real_consist_loss
+                        dis_acml_loss += self.LOSS.cr_lambda * real_consist_loss
 
                     # if LOSS.apply_bcr is True, apply balanced consistency regularization proposed in ICRGAN
                     if self.LOSS.apply_bcr:
@@ -206,7 +202,7 @@ class WORKER(object):
                             fake_bcr_loss += self.l2_loss(fake_dict["embed"], fake_prl_dict["embed"])
                         else:
                             pass
-                        dis_acml_loss += self.LOSS.real_lambda*real_bcr_loss + self.LOSS.fake_lambda*fake_bcr_loss
+                        dis_acml_loss += self.LOSS.real_lambda * real_bcr_loss + self.LOSS.fake_lambda * fake_bcr_loss
 
                     # if LOSS.apply_zcr is True, apply latent consistency regularization proposed in ICRGAN
                     if self.LOSS.apply_zcr:
@@ -218,7 +214,7 @@ class WORKER(object):
                             fake_zcr_loss += self.l2_loss(fake_dict["embed"], fake_eps_dict["embed"])
                         else:
                             pass
-                        dis_acml_loss += self.LOSS.d_lambda*fake_zcr_loss
+                        dis_acml_loss += self.LOSS.d_lambda * fake_zcr_loss
 
                     # apply gradient penalty regularization to train wasserstein GAN
                     if self.LOSS.apply_gp:
@@ -227,7 +223,7 @@ class WORKER(object):
                                                       fake_images=fake_images,
                                                       discriminator=self.Dis,
                                                       device=self.local_rank)
-                        dis_acml_loss += self.LOSS.gp_lambda*gp_loss
+                        dis_acml_loss += self.LOSS.gp_lambda * gp_loss
 
                     # apply deep regret analysis regularization to train wasserstein GAN
                     if self.LOSS.apply_dra:
@@ -235,10 +231,10 @@ class WORKER(object):
                                                         real_labels=real_label_basket[batch_counter],
                                                         discriminator=self.Dis,
                                                         device=self.local_rank)
-                        dis_acml_loss += self.LOSS.dra_lambda*dra_loss
+                        dis_acml_loss += self.LOSS.dra_lambda * dra_loss
 
                     # adjust gradients for applying gradient accumluation trick
-                    dis_acml_loss = dis_acml_loss/self.OPTIMIZATION.acml_steps
+                    dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
                     batch_counter += 1
 
                 # accumulate gradients of the discriminator
@@ -263,7 +259,7 @@ class WORKER(object):
         if (current_step + 1) % self.RUN.print_every == 0 and self.MODEL.apply_d_sn:
             if self.global_rank == 0:
                 dis_sigmas = misc.calculate_all_sn(self.Dis)
-                self.writer.add_scalars("SN_of_dis", dis_sigmas, current_step+1)
+                self.writer.add_scalars("SN_of_dis", dis_sigmas, current_step + 1)
 
         # -----------------------------------------------------------------------------
         # train Generator.
@@ -276,19 +272,20 @@ class WORKER(object):
             for acml_step in range(self.OPTIMIZATION.acml_steps):
                 with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
                     # sample fake images and labels from p(G(z), y)
-                    fake_images, fake_labels, fake_images_eps, trsp_cost = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                                                  truncation_th=-1.0,
-                                                                                                  batch_size=self.OPTIMIZATION.batch_size,
-                                                                                                  z_dim=self.MODEL.z_dim,
-                                                                                                  num_classes=self.DATA.num_classes,
-                                                                                                  y_sampler="totally_random",
-                                                                                                  radius=self.LOSS.radius,
-                                                                                                  generator=self.Gen,
-                                                                                                  discriminator=self.Dis,
-                                                                                                  is_train=True,
-                                                                                                  LOSS=self.LOSS,
-                                                                                                  device=self.local_rank,
-                                                                                                  cal_trsp_cost=True)
+                    fake_images, fake_labels, fake_images_eps, trsp_cost = sample.generate_images(
+                        z_prior=self.MODEL.z_prior,
+                        truncation_th=-1.0,
+                        batch_size=self.OPTIMIZATION.batch_size,
+                        z_dim=self.MODEL.z_dim,
+                        num_classes=self.DATA.num_classes,
+                        y_sampler="totally_random",
+                        radius=self.LOSS.radius,
+                        generator=self.Gen,
+                        discriminator=self.Dis,
+                        is_train=True,
+                        LOSS=self.LOSS,
+                        device=self.local_rank,
+                        cal_trsp_cost=True)
 
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     fake_images_ = self.AUG.series_augment(fake_images)
@@ -301,19 +298,19 @@ class WORKER(object):
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
                         fake_cond_loss = self.cond_loss(**fake_dict)
-                        gen_acml_loss += self.LOSS.cond_lambda*fake_cond_loss
+                        gen_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
 
                     # add transport cost for latent optimization training
                     if self.LOSS.apply_lo:
-                        gen_acml_loss += self.LOSS.lo_rate*trsp_cost
+                        gen_acml_loss += self.LOSS.lo_rate * trsp_cost
 
                     # apply latent consistency regularization for generating diverse images
                     if self.LOSS.apply_zcr:
-                        fake_zcr_loss = -1*self.l2_loss(fake_images, fake_images_eps)
-                        gen_acml_loss += self.LOSS.g_lambda*fake_zcr_loss
+                        fake_zcr_loss = -1 * self.l2_loss(fake_images, fake_images_eps)
+                        gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
 
                     # adjust gradients for applying gradient accumluation trick
-                    gen_acml_loss = gen_acml_loss/self.OPTIMIZATION.acml_steps
+                    gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
                 # accumulate gradients of the generator
                 if self.RUN.mixed_precision:
@@ -338,25 +335,28 @@ class WORKER(object):
                 cls_loss = real_cond_loss.item()
             else:
                 cls_loss = "N/A"
-            log_message = LOG_FORMAT.format(step=current_step+1,
-                                            progress=(current_step+1)/self.OPTIMIZATION.total_steps,
-                                            elapsed=misc.elapsed_time(self.start_time),
-                                            gen_loss=gen_acml_loss.item(),
-                                            dis_loss=dis_acml_loss.item(),
-                                            cls_loss=cls_loss,
-                                            )
+            log_message = LOG_FORMAT.format(
+                step=current_step + 1,
+                progress=(current_step + 1) / self.OPTIMIZATION.total_steps,
+                elapsed=misc.elapsed_time(self.start_time),
+                gen_loss=gen_acml_loss.item(),
+                dis_loss=dis_acml_loss.item(),
+                cls_loss=cls_loss,
+            )
             self.logger.info(log_message)
 
             # save loss values in tensorboard event file and .npz format
-            loss_dict = {"gen_loss": gen_acml_loss.item(),
-                         "dis_loss": dis_acml_loss.item(),
-                         "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss}
+            loss_dict = {
+                "gen_loss": gen_acml_loss.item(),
+                "dis_loss": dis_acml_loss.item(),
+                "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss
+            }
 
-            self.writer.add_scalars("Losses", loss_dict, current_step+1)
+            self.writer.add_scalars("Losses", loss_dict, current_step + 1)
 
             save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
                                                       value_dict=loss_dict,
-                                                      step=current_step+1,
+                                                      step=current_step + 1,
                                                       interval=self.RUN.print_every)
             misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
                                name="losses",
@@ -365,15 +365,17 @@ class WORKER(object):
             # calculate the spectral norms of all weights in the generator for monitoring purpose
             if self.MODEL.apply_g_sn:
                 gen_sigmas = misc.calculate_all_sn(self.Gen)
-                self.writer.add_scalars("SN_of_gen", gen_sigmas, current_step+1)
-        return current_step+1
+                self.writer.add_scalars("SN_of_gen", gen_sigmas, current_step + 1)
+        return current_step + 1
 
     # -----------------------------------------------------------------------------
     # visualize fake images for monitoring purpose.
     # -----------------------------------------------------------------------------
     def visualize_fake_images(self, ncol):
-        if self.global_rank == 0: self.logger.info("Visualize (nrow x 8) fake image canvans.")
-        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
+        if self.global_rank == 0:
+            self.logger.info("Visualize (nrow x 8) fake image canvans.")
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -392,7 +394,7 @@ class WORKER(object):
                                                                     device=self.local_rank,
                                                                     cal_trsp_cost=False)
 
-        misc.plot_img_canvas(images=(fake_images.detach().cpu()+1)/2,
+        misc.plot_img_canvas(images=(fake_images.detach().cpu() + 1) / 2,
                              save_path=join(self.RUN.save_dir,
                                             "figures/{run_name}/generated_canvas.png".format(run_name=self.run_name)),
                              ncol=ncol,
@@ -405,8 +407,10 @@ class WORKER(object):
     # evaluate GAN using IS, FID, and Precision and recall.
     # -----------------------------------------------------------------------------
     def evaluate(self, step, writing=True):
-        if self.global_rank == 0: self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
-        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
+        if self.global_rank == 0:
+            self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
         is_best, num_split, num_runs4PR, num_clusters4PR, beta4PR = False, 1, 10, 20, 8
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
@@ -426,7 +430,7 @@ class WORKER(object):
                                                   LOSS=self.LOSS,
                                                   device=self.local_rank,
                                                   logger=self.logger,
-                                                  disable_tqdm=self.local_rank!=0)
+                                                  disable_tqdm=self.local_rank != 0)
 
             fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
                                                   generator=generator,
@@ -457,24 +461,33 @@ class WORKER(object):
                     fid_score, step, True, rec, prc
 
             if self.global_rank == 0 and writing:
-                self.writer.add_scalars("IS score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): kl_score}, step)
-                self.writer.add_scalars("FID score", {"using {type} moments".format(type=self.RUN.ref_dataset): fid_score}, step)
-                self.writer.add_scalars("F_beta_inv score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): prc}, step)
-                self.writer.add_scalars("F_beta score", {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): rec}, step)
+                self.writer.add_scalars(
+                    "IS score",
+                    {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): kl_score}, step)
+                self.writer.add_scalars("FID score",
+                                        {"using {type} moments".format(type=self.RUN.ref_dataset): fid_score}, step)
+                self.writer.add_scalars(
+                    "F_beta_inv score",
+                    {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): prc}, step)
+                self.writer.add_scalars(
+                    "F_beta score",
+                    {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): rec}, step)
 
             if self.global_rank == 0:
-                self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
-                self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(step=step, type=self.RUN.ref_dataset, FID=fid_score))
-                self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=prc))
-                self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=rec))
+                self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
+                    step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
+                self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(
+                    step=step, type=self.RUN.ref_dataset, FID=fid_score))
+                self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(
+                    beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=prc))
+                self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(
+                    beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=rec))
                 if self.training:
-                    self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
+                    self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
+                        step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
                     # save metric values in .npz format
-                    metric_dict = {"IS": kl_score,
-                                   "FID": fid_score,
-                                   "F_beta_inv": prc,
-                                   "F_beta": rec}
+                    metric_dict = {"IS": kl_score, "FID": fid_score, "F_beta_inv": prc, "F_beta": rec}
 
                     save_dict = misc.accm_values_convert_dict(list_dict=self.metric_list_dict,
                                                               value_dict=metric_dict,
@@ -497,9 +510,17 @@ class WORKER(object):
 
         g_states = {"state_dict": Gen.state_dict(), "optimizer": self.OPTIMIZATION.g_optimizer.state_dict()}
 
-        d_states = {"state_dict": Dis.state_dict(), "optimizer": self.OPTIMIZATION.d_optimizer.state_dict(),
-                    "seed": self.RUN.seed, "run_name": self.run_name, "step": step, "ada_p": self.ada_p,
-                    "best_step": self.best_step, "best_fid": self.best_fid, "best_fid_ckpt": self.RUN.ckpt_dir}
+        d_states = {
+            "state_dict": Dis.state_dict(),
+            "optimizer": self.OPTIMIZATION.d_optimizer.state_dict(),
+            "seed": self.RUN.seed,
+            "run_name": self.run_name,
+            "step": step,
+            "ada_p": self.ada_p,
+            "best_step": self.best_step,
+            "best_fid": self.best_fid,
+            "best_fid_ckpt": self.RUN.ckpt_dir
+        }
 
         if self.Gen_ema is not None:
             g_ema_states = {"state_dict": Gen_ema.state_dict()}
@@ -513,9 +534,14 @@ class WORKER(object):
             misc.save_model(model="G", when="current", step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_states)
             misc.save_model(model="D", when="current", step=step, ckpt_dir=self.RUN.ckpt_dir, states=d_states)
             if self.Gen_ema is not None:
-                misc.save_model(model="G_ema", when="current", step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_ema_states)
+                misc.save_model(model="G_ema",
+                                when="current",
+                                step=step,
+                                ckpt_dir=self.RUN.ckpt_dir,
+                                states=g_ema_states)
 
-        if self.global_rank == 0 and self.logger: self.logger.info("Save model to {}".format(self.RUN.ckpt_dir))
+        if self.global_rank == 0 and self.logger:
+            self.logger.info("Save model to {}".format(self.RUN.ckpt_dir))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -523,8 +549,11 @@ class WORKER(object):
     # save fake images to examine generated images qualitatively and calculate official IS.
     # -----------------------------------------------------------------------------
     def save_fake_images(self, png=True, npz=True):
-        if self.global_rank == 0: self.logger.info("Save {num_images} generated images in png or npz format.".format(num_images=self.num_eval[self.RUN.ref_dataset]))
-        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
+        if self.global_rank == 0:
+            self.logger.info("Save {num_images} generated images in png or npz format.".format(
+                num_images=self.num_eval[self.RUN.ref_dataset]))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -566,8 +595,11 @@ class WORKER(object):
     # run k-nearest neighbor analysis to identify whether GAN memorizes the training images or not.
     # -----------------------------------------------------------------------------
     def run_k_nearest_neighbor(self, dataset, nrow, ncol):
-        if self.global_rank == 0: self.logger.info("Run K-nearest neighbor analysis using fake and {ref} dataset.".format(ref=self.RUN.ref_dataset))
-        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
+        if self.global_rank == 0:
+            self.logger.info(
+                "Run K-nearest neighbor analysis using fake and {ref} dataset.".format(ref=self.RUN.ref_dataset))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -594,10 +626,9 @@ class WORKER(object):
                                                                         cal_trsp_cost=False)
 
                 fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
-                fake_anchor_embed = torch.squeeze(resnet50_conv((fake_anchor+1)/2))
+                fake_anchor_embed = torch.squeeze(resnet50_conv((fake_anchor + 1) / 2))
 
-                num_samples, target_sampler = sample.make_target_cls_sampler(dataset=dataset,
-                                                                             target_class=c)
+                num_samples, target_sampler = sample.make_target_cls_sampler(dataset=dataset, target_class=c)
                 batch_size = self.OPTIMIZATION.batch_size if num_samples >= self.OPTIMIZATION.batch_size else num_samples
                 c_dataloader = torch.utils.data.DataLoader(dataset=dataset,
                                                            batch_size=batch_size,
@@ -607,22 +638,27 @@ class WORKER(object):
                                                            pin_memory=True)
 
                 c_iter = iter(c_dataloader)
-                for batch_idx in range(num_samples//batch_size):
+                for batch_idx in range(num_samples // batch_size):
                     real_images, real_labels = next(c_iter)
                     real_images = real_images.to(self.local_rank)
-                    real_embed = torch.squeeze(resnet50_conv((real_images+1)/2))
+                    real_embed = torch.squeeze(resnet50_conv((real_images + 1) / 2))
                     if batch_idx == 0:
-                        distances = torch.square(real_embed-fake_anchor_embed).mean(dim=1).detach().cpu().numpy()
+                        distances = torch.square(real_embed - fake_anchor_embed).mean(dim=1).detach().cpu().numpy()
                         image_holder = real_images.detach().cpu().numpy()
                     else:
-                        distances = np.concatenate([distances, torch.square(real_embed-fake_anchor_embed).mean(dim=1).detach().cpu().numpy()], axis=0)
+                        distances = np.concatenate([
+                            distances,
+                            torch.square(real_embed - fake_anchor_embed).mean(dim=1).detach().cpu().numpy()
+                        ],
+                                                   axis=0)
                         image_holder = np.concatenate([image_holder, real_images.detach().cpu().numpy()], axis=0)
 
-                nearest_indices = (-distances).argsort()[-(ncol-1):][::-1]
+                nearest_indices = (-distances).argsort()[-(ncol - 1):][::-1]
                 if c % nrow == 0:
                     canvas = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
                 elif c % nrow == nrow - 1:
-                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
+                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
+                                                axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
                     misc.plot_img_canvas(images=(torch.from_numpy(canvas)+1)/2,
                                          save_path=join(self.RUN.save_dir, "figures/{run_name}/fake_anchor_{ncol}NN_{cls}_classes.png".\
@@ -631,7 +667,8 @@ class WORKER(object):
                                          logger=self.logger,
                                          logging=False)
                 else:
-                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
+                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
+                                                axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
@@ -640,9 +677,11 @@ class WORKER(object):
     # conduct latent interpolation analysis to identify the quaility of latent space (Z)
     # -----------------------------------------------------------------------------
     def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, num_saves=100):
-        assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
-        if self.global_rank == 0: self.logger.info("Run linear interpolation analysis ({num} times).".format(num=num_saves))
-        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
+        assert int(fix_z) * int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
+        if self.global_rank == 0:
+            self.logger.info("Run linear interpolation analysis ({num} times).".format(num=num_saves))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -663,12 +702,13 @@ class WORKER(object):
                                               num_classes=self.DATA.num_classes,
                                               device=self.local_rank)
                     ys = shared(ys).view(nrow, 1, -1)
-                    ys = ys.repeat(1, ncol, 1).view(nrow*(ncol), -1)
+                    ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
                     name = "fix_y"
                 else:
-                    ys = misc.interpolate(shared(sample.sample_onehot(nrow, self.DATA.num_classes)).view(nrow, 1, -1),
-                                          shared(sample.sample_onehot(nrow, self.DATA.num_classes)).view(nrow, 1, -1),
-                                          ncol - 2).view(nrow*(ncol), -1)
+                    ys = misc.interpolate(
+                        shared(sample.sample_onehot(nrow, self.DATA.num_classes)).view(nrow, 1, -1),
+                        shared(sample.sample_onehot(nrow, self.DATA.num_classes)).view(nrow, 1, -1),
+                        ncol - 2).view(nrow * (ncol), -1)
 
                 interpolated_images = generator(zs, None, shared_label=ys, eval=True)
 
@@ -685,15 +725,16 @@ class WORKER(object):
     # visualize shifted fourier spectrums of real and fake images
     # -----------------------------------------------------------------------------
     def run_frequency_analysis(self, dataloader):
-        if self.global_rank == 0: self.logger.info("Run frequency analysis (use {num} fake and {ref} images ).".\
-                                                   format(num=len(dataloader), ref=self.RUN.ref_dataset))
-        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
+        if self.global_rank == 0:            self.logger.info("Run frequency analysis (use {num} fake and {ref} images ).".\
+format(num=len(dataloader), ref=self.RUN.ref_dataset))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
             data_iter = iter(dataloader)
-            num_batches = len(dataloader)//self.OPTIMIZATION.batch_size
+            num_batches = len(dataloader) // self.OPTIMIZATION.batch_size
             for i in range(num_batches):
                 real_images, real_labels = next(data_iter)
                 fake_images, fake_labels, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
@@ -711,34 +752,34 @@ class WORKER(object):
                                                                         cal_trsp_cost=False)
                 fake_images = fake_images.detach().cpu().numpy()
 
-                real_images = np.asarray((real_images + 1)*127.5, np.uint8)
-                fake_images = np.asarray((fake_images + 1)*127.5, np.uint8)
+                real_images = np.asarray((real_images + 1) * 127.5, np.uint8)
+                fake_images = np.asarray((fake_images + 1) * 127.5, np.uint8)
 
                 if i == 0:
                     real_array = real_images
                     fake_array = fake_images
                 else:
-                    real_array = np.concatenate([real_array, real_images], axis = 0)
-                    fake_array = np.concatenate([fake_array, fake_images], axis = 0)
+                    real_array = np.concatenate([real_array, real_images], axis=0)
+                    fake_array = np.concatenate([fake_array, fake_images], axis=0)
 
             N, C, H, W = np.shape(real_array)
-            real_r, real_g, real_b = real_array[:,0,:,:], real_array[:,1,:,:], real_array[:,2,:,:]
+            real_r, real_g, real_b = real_array[:, 0, :, :], real_array[:, 1, :, :], real_array[:, 2, :, :]
             real_gray = 0.2989 * real_r + 0.5870 * real_g + 0.1140 * real_b
-            fake_r, fake_g, fake_b = fake_array[:,0,:,:], fake_array[:,1,:,:], fake_array[:,2,:,:]
+            fake_r, fake_g, fake_b = fake_array[:, 0, :, :], fake_array[:, 1, :, :], fake_array[:, 2, :, :]
             fake_gray = 0.2989 * fake_r + 0.5870 * fake_g + 0.1140 * fake_b
             for j in tqdm(range(N)):
-                real_gray_f = np.fft.fft2(real_gray[j] - ndimage.median_filter(real_gray[j], size= H//8))
-                fake_gray_f = np.fft.fft2(fake_gray[j] - ndimage.median_filter(fake_gray[j], size=H//8))
+                real_gray_f = np.fft.fft2(real_gray[j] - ndimage.median_filter(real_gray[j], size=H // 8))
+                fake_gray_f = np.fft.fft2(fake_gray[j] - ndimage.median_filter(fake_gray[j], size=H // 8))
 
                 real_gray_f_shifted = np.fft.fftshift(real_gray_f)
                 fake_gray_f_shifted = np.fft.fftshift(fake_gray_f)
 
                 if j == 0:
-                    real_gray_spectrum = 20*np.log(np.abs(real_gray_f_shifted))/N
-                    fake_gray_spectrum = 20*np.log(np.abs(fake_gray_f_shifted))/N
+                    real_gray_spectrum = 20 * np.log(np.abs(real_gray_f_shifted)) / N
+                    fake_gray_spectrum = 20 * np.log(np.abs(fake_gray_f_shifted)) / N
                 else:
-                    real_gray_spectrum += 20*np.log(np.abs(real_gray_f_shifted))/N
-                    fake_gray_spectrum += 20*np.log(np.abs(fake_gray_f_shifted))/N
+                    real_gray_spectrum += 20 * np.log(np.abs(real_gray_f_shifted)) / N
+                    fake_gray_spectrum += 20 * np.log(np.abs(fake_gray_f_shifted)) / N
 
         misc.plot_spectrum_image(real_spectrum=real_gray_spectrum,
                                  fake_spectrum=fake_gray_spectrum,
@@ -754,8 +795,10 @@ class WORKER(object):
     def run_tsne(self, dataloader):
         if self.global_rank == 0:
             self.logger.info("Start TSNE analysis using randomly sampled 10 classes.")
-            self.logger.info("Use {ref} dataset and the same amount of generated images for visualization.".format(ref=self.RUN.ref_dataset))
-        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
+            self.logger.info("Use {ref} dataset and the same amount of generated images for visualization.".format(
+                ref=self.RUN.ref_dataset))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -767,7 +810,7 @@ class WORKER(object):
                     hook_handles.append(handle)
 
             tsne_iter = iter(dataloader)
-            num_batches = len(dataloader.dataset)//self.OPTIMIZATION.batch_size
+            num_batches = len(dataloader.dataset) // self.OPTIMIZATION.batch_size
             for i in range(num_batches):
                 real_images, real_labels = next(tsne_iter)
                 real_images, real_labels = real_images.to(self.local_rank), real_labels.to(self.local_rank)
@@ -777,7 +820,8 @@ class WORKER(object):
                     real["embeds"] = save_output.outputs[0][0].detach().cpu().numpy()
                     real["labels"] = real_labels.detach().cpu().numpy()
                 else:
-                    real["embeds"] = np.concatenate([real["embeds"], save_output.outputs[0][0].cpu().detach().numpy()], axis=0)
+                    real["embeds"] = np.concatenate([real["embeds"], save_output.outputs[0][0].cpu().detach().numpy()],
+                                                    axis=0)
                     real["labels"] = np.concatenate([real["labels"], real_labels.detach().cpu().numpy()])
 
                 save_output.clear()
@@ -801,18 +845,19 @@ class WORKER(object):
                     fake["embeds"] = save_output.outputs[0][0].detach().cpu().numpy()
                     fake["labels"] = fake_labels.detach().cpu().numpy()
                 else:
-                    fake["embeds"] = np.concatenate([fake["embeds"], save_output.outputs[0][0].cpu().detach().numpy()], axis=0)
+                    fake["embeds"] = np.concatenate([fake["embeds"], save_output.outputs[0][0].cpu().detach().numpy()],
+                                                    axis=0)
                     fake["labels"] = np.concatenate([fake["labels"], fake_labels.detach().cpu().numpy()])
 
                 save_output.clear()
 
             tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
             if self.DATA.num_classes > 10:
-                 cls_indices = np.random.permutation(self.DATA.num_classes)[:10]
-                 real["embeds"] = real["embeds"][np.isin(real["labels"], cls_indices)]
-                 real["labels"] = real["labels"][np.isin(real["labels"], cls_indices)]
-                 fake["embeds"] = fake["embeds"][np.isin(fake["labels"], cls_indices)]
-                 fake["labels"] = fake["labels"][np.isin(fake["labels"], cls_indices)]
+                cls_indices = np.random.permutation(self.DATA.num_classes)[:10]
+                real["embeds"] = real["embeds"][np.isin(real["labels"], cls_indices)]
+                real["labels"] = real["labels"][np.isin(real["labels"], cls_indices)]
+                fake["embeds"] = fake["embeds"][np.isin(fake["labels"], cls_indices)]
+                fake["labels"] = fake["labels"][np.isin(fake["labels"], cls_indices)]
 
             real_tsne_results = tsne.fit_transform(real["embeds"])
             misc.plot_tsne_scatter_plot(df=real,
