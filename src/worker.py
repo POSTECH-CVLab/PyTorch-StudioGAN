@@ -83,12 +83,19 @@ class WORKER(object):
             self.train_iter = iter(self.train_dataloader)
 
         self.l2_loss = torch.nn.MSELoss()
+        self.fm_loss = losses.feature_matching_loss
+        if self.LOSS.adv_loss == "MH":
+            self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
+            self.lossy.data.fill_(self.DATA.num_classes)
+
         if self.MODEL.d_cond_mtd == "AC":
             self.cond_loss = losses.CrossEntropyLoss()
         elif self.MODEL.d_cond_mtd == "2C":
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
                                                                temperature=self.LOSS.temperature,
                                                                global_rank=self.global_rank)
+        else:
+            pass
 
         if self.RUN.distributed_data_parallel:
             self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
@@ -167,7 +174,12 @@ class WORKER(object):
                     fake_dict = self.Dis(fake_images_, fake_labels)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
-                    dis_acml_loss = self.LOSS.d_loss(real_dict["adv_output"], fake_dict["adv_output"])
+                    if self.LOSS.adv_loss == "MH":
+                        dis_acml_loss = self.LOSS.d_loss(**real_dict)
+                        dis_acml_loss += self.LOSS.d_loss(fake_dict["adv_output"], self.lossy)
+                    else:
+                        dis_acml_loss = self.LOSS.d_loss(real_dict["adv_output"], fake_dict["adv_output"])
+
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
                         real_cond_loss = self.cond_loss(**real_dict)
@@ -294,11 +306,20 @@ class WORKER(object):
                     fake_dict = self.Dis(fake_images_, fake_labels)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
-                    gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"])
+                    if self.LOSS.adv_loss == "MH":
+                        gen_acml_loss = self.LOSS.mh_lambda*self.LOSS.g_loss(**fake_dict)
+                    else:
+                        gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"])
+
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
                         fake_cond_loss = self.cond_loss(**fake_dict)
                         gen_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
+
+                    # apply feature matching regularization to stabilize adversarial dynamics
+                    if self.LOSS.apply_fm:
+                        mean_match_loss = self.fm_loss(real_dict["h"].detach(), fake_dict["h"])
+                        gen_acml_loss += self.LOSS.fm_lambda * mean_match_loss
 
                     # add transport cost for latent optimization training
                     if self.LOSS.apply_lo:

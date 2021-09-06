@@ -106,6 +106,26 @@ def g_wasserstein(g_logit_fake):
     return -torch.mean(g_logit_fake)
 
 
+def crammer_singer_loss(adv_output, label, **_):
+    # https://github.com/ilyakava/BigGAN-PyTorch/blob/master/train_fns.py
+    # crammer singer criterion
+    num_real_classes = adv_output.shape[1] - 1
+    mask = torch.ones_like(adv_output).to(adv_output.device)
+    mask.scatter_(1, label.unsqueeze(-1), 0)
+    wrongs = torch.masked_select(adv_output, mask.bool()).reshape(adv_output.shape[0], num_real_classes)
+    max_wrong, _ = wrongs.max(1)
+    max_wrong = max_wrong.unsqueeze(-1)
+    target = adv_output.gather(1, label.unsqueeze(-1))
+    return torch.mean(F.relu(1 + max_wrong - target))
+
+
+def feature_matching_loss(real_embed, fake_embed):
+    # https://github.com/ilyakava/BigGAN-PyTorch/blob/master/train_fns.py
+    # feature matching criterion
+    fm_loss = torch.mean(torch.abs(torch.mean(fake_embed, 0) - torch.mean(real_embed, 0)))
+    return fm_loss
+
+
 def cal_deriv(inputs, outputs, device):
     grads = autograd.grad(outputs=outputs,
                           inputs=inputs,

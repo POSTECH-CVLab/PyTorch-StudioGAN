@@ -99,11 +99,17 @@ class Configurations(object):
         # loss settings
         # -----------------------------------------------------------------------------
         self.LOSS = lambda: None
-        # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge"]
+        # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge", "MH"]
         self.LOSS.adv_loss = "vanilla"
         # balancing hyperparameter for conditional image generation
         self.LOSS.cond_lambda = "N/A"
-        # margin hyperparameter for [AMSoftmax, D2DCE]
+        # strength of multi-hinge loss (MH) for the generator training
+        self.LOSS.mh_lambda = "N/A"
+        # whether to apply feature matching regularization
+        self.LOSS.apply_fm = False
+        # strength of feature matching regularization
+        self.LOSS.fm_lambda = "N/A"
+        # margin hyperparameter for D2DCE
         self.LOSS.margin = "N/A"
         # temperature scalar for [AMsoftmax, 2C, D2DCE]
         self.LOSS.temperature = "N/A"
@@ -190,7 +196,8 @@ class Configurations(object):
         # whether to apply random flip preprocessing before training
         self.PRE.apply_rflip = True
 
-        # ----------------------------------------------------------------------------- differentiable augmentation settings
+        # -----------------------------------------------------------------------------
+        # differentiable augmentation settings
         # -----------------------------------------------------------------------------
         self.AUG = lambda: None
         # whether to apply differentiable augmentation used in DiffAugmentGAN
@@ -236,22 +243,26 @@ class Configurations(object):
                     setattr(self.super_cfgs[super_cfg_name], attr, value)
 
     def define_losses(self):
-        g_losses = {
-            "vanilla": losses.g_vanilla,
-            "least_square": losses.g_ls,
-            "hinge": losses.g_hinge,
-            "wasserstein": losses.g_wasserstein
-        }
+        if self.MODEL.d_cond_mtd == "MH" and self.LOSS.adv_loss == "MH":
+            self.LOSS.g_loss = losses.crammer_singer_loss
+            self.LOSS.d_loss = losses.crammer_singer_loss
+        else:
+            g_losses = {
+                "vanilla": losses.g_vanilla,
+                "least_square": losses.g_ls,
+                "hinge": losses.g_hinge,
+                "wasserstein": losses.g_wasserstein
+            }
 
-        d_losses = {
-            "vanilla": losses.d_vanilla,
-            "least_square": losses.d_ls,
-            "hinge": losses.d_hinge,
-            "wasserstein": losses.d_wasserstein
-        }
+            d_losses = {
+                "vanilla": losses.d_vanilla,
+                "least_square": losses.d_ls,
+                "hinge": losses.d_hinge,
+                "wasserstein": losses.d_wasserstein
+            }
 
-        self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
-        self.LOSS.d_loss = d_losses[self.LOSS.adv_loss]
+            self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
+            self.LOSS.d_loss = d_losses[self.LOSS.adv_loss]
 
     def define_modules(self):
         if self.MODEL.apply_g_sn:
@@ -370,6 +381,10 @@ class Configurations(object):
             assert self.g_cond_mtd and self.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
                 without applying spectral normalization to the generator and discriminator."
 
+        if self.RUN.freezeG > -1:
+            assert self.RUN.ckpt_dir is not None, "Freezing generator needs a pre-trained model.\
+                Please specify the checkpoint directory (using -ckpt) for loading a pre-trained generator."
+
         if self.RUN.freezeD > -1:
             assert self.RUN.ckpt_dir is not None, "Freezing discriminator needs a pre-trained model.\
                 Please specify the checkpoint directory (using -ckpt) for loading a pre-trained discriminator."
@@ -393,6 +408,10 @@ class Configurations(object):
         if self.MODEL.d_cond_mtd in ["ContraGAN", "ReACGAN"]:
             assert not self.RUN.distributed_data_parallel, \
             "StudioGAN does not support DDP training for ContraGAN and ReACGAN."
+
+        if self.MODEL.d_cond_mtd == "MH" or self.LOSS.adv_loss == "MH":
+            assert self.MODEL.d_cond_mtd == "MH" and self.LOSS.adv_loss == "MH", \
+            "To train a GAN with Multi-Hinge loss, both d_cond_mtd and adv_loss must be 'MH'."
 
         if self.RUN.train * self.RUN.standing_statistics:
             print("StudioGAN does not support standing_statistics during training. \
