@@ -8,5 +8,3 @@ MODEL:
   apply_d_sn: True
 LOSS:
   adv_loss: "hinge"
-OPTIMIZATION:
-  batch_size: 512

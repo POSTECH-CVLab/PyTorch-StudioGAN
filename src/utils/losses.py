@@ -159,7 +159,7 @@ def latent_optimise(zs, fake_labels, generator, discriminator, batch_size, lo_ra
         return zs, trsf_cost
 
 
-def cal_deriv4gp(real_images, real_labels, fake_images, discriminator, device):
+def cal_grad_penalty(real_images, real_labels, fake_images, discriminator, device):
     batch_size, c, h, w = real_images.shape
     alpha = torch.rand(batch_size, 1)
     alpha = alpha.expand(batch_size, real_images.nelement() // batch_size).contiguous().view(batch_size, c, h, w)
@@ -177,7 +177,7 @@ def cal_deriv4gp(real_images, real_labels, fake_images, discriminator, device):
     return grads_penalty
 
 
-def cal_deriv4dra(real_images, real_labels, discriminator, device):
+def cal_dra_penalty(real_images, real_labels, discriminator, device):
     batch_size, c, h, w = real_images.shape
     alpha = torch.rand(batch_size, 1, 1, 1)
     alpha = alpha.to(device)
@@ -193,3 +193,12 @@ def cal_deriv4dra(real_images, real_labels, discriminator, device):
 
     grads_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
     return grads_penalty
+
+
+def cal_r1_reg(adv_output, images, device):
+    batch_size = images.size(0)
+    grad_dout = cal_deriv(inputs=images, outputs=adv_output.sum(), device=device)
+    grad_dout2 = grad_dout.pow(2)
+    assert(grad_dout2.size() == images.size())
+    r1_reg = 0.5 * grad_dout2.view(batch_size, -1).sum(1).mean(0)
+    return r1_reg

@@ -101,7 +101,6 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
         if total_instance >= batch_size:
             acts[start:end] = embeddings.cpu().data.numpy().reshape(batch_size, -1)
         else:
-            import pdb;pdb.set_trace()
             acts[start:] = embeddings[:total_instance].cpu().data.numpy().reshape(total_instance, -1)
         total_instance -= images.shape[0]
 
@@ -120,11 +119,11 @@ def calculate_fid(data_loader,
                   device,
                   logger,
                   pre_cal_mean=None,
-                  pre_cal_std=None):
-    disable_tqdm = device != 0
+                  pre_cal_std=None,
+                  disable_tqdm=False):
     eval_model.eval()
 
-    if device == 0:
+    if device == 0 and not disable_tqdm:
         logger.info("Calculate FID score of generated images ({} images).".format(num_generate))
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std

@@ -49,7 +49,7 @@ class Configurations(object):
         self.MODEL.backbone = "resnet"
         # conditioning method of the generator \in ["W/O", "cBN"]
         self.MODEL.g_cond_mtd = "W/O"
-        # conditioning method of the discriminator \in ["W/O", "AC", "PD", "MH", "2C", "D2DCE"]
+        # conditioning method of the discriminator \in ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE"]
         self.MODEL.d_cond_mtd = "W/O"
         # whether to normalize feature maps from the discriminator or not
         self.MODEL.normalize_d_embed = False
@@ -109,9 +109,13 @@ class Configurations(object):
         self.LOSS.apply_fm = False
         # strength of feature matching regularization
         self.LOSS.fm_lambda = "N/A"
+        # whether to apply r1 regularization used in multiple-discriminator (FUNIT)
+        self.LOSS.apply_r1_reg = False
+        # strength of r1 regularization
+        self.LOSS.r1_lambda = "N/A"
         # margin hyperparameter for D2DCE
         self.LOSS.margin = "N/A"
-        # temperature scalar for [AMsoftmax, 2C, D2DCE]
+        # temperature scalar for [2C, D2DCE]
         self.LOSS.temperature = "N/A"
         # whether to apply weight clipping regularization to let the discriminator satisfy Lipschitzness
         self.LOSS.apply_wc = False
@@ -401,6 +405,10 @@ class Configurations(object):
                 self.RUN.frequency_analysis + \
                 self.RUN.tsne_analysis == 0, \
             msg
+
+        if self.RUN.intra_class_fid:
+            assert self.RUN.load_data_in_memory*self.RUN.load_train_hdf5 or not self.RUN.load_train_hdf5, \
+            "StudioGAN does not support calculating iFID using hdf5 data format without load_data_in_memory option."
 
         if self.RUN.vis_fake_images + self.RUN.k_nearest_neighbor + self.RUN.interpolation + self.RUN.intra_class_fid >= 1:
             assert self.OPTIMIZATION.batch_size % 8 == 0, "batch_size should be divided by 8."

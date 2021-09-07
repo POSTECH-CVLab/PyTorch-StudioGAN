@@ -38,7 +38,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     ada_p, step, best_step, best_fid, best_ckpt_path, is_best = None, 0, 0, None, None, False
     mu, sigma, eval_model, nrow, ncol = None, None, None, 10, 8
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
-    metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": [], "iFID": []}
+    metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
 
     # -----------------------------------------------------------------------------
     # initialize all processes and identify the local rank.
@@ -202,12 +202,13 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # load a pre-trained network (InceptionV3 or ResNet50 trained using SwAV)
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.eval:
+    if cfgs.RUN.eval or cfgs.RUN.intra_class_fid:
         eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
                                       world_size=cfgs.OPTIMIZATION.world_size,
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                       device=local_rank)
 
+    if cfgs.RUN.eval:
         mu, sigma = pp.prepare_moments_calculate_ins(data_loader=eval_dataloader,
                                                      eval_model=eval_model,
                                                      splits=1,

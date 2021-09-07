@@ -5,7 +5,7 @@ data:
 model:
   backbone: "big_resnet"
   g_cond_mtd: "cBN"
-  d_cond_mtd: "PD"
+  d_cond_mtd: "MD"
   apply_g_sn: true
   apply_d_sn: true
   apply_attn: true
@@ -19,7 +19,9 @@ model:
   g_ema_decay: 0.9999
   g_ema_start: 20000
 loss:
-  adv_loss: "hinge"
+  adv_loss: "vanilla"
+  apply_r1_reg: True
+  r1_lambda: 1.0
 
 optimization:
   batch_size: 1024

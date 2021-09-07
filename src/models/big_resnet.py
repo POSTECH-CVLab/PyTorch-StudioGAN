@@ -355,6 +355,8 @@ class Discriminator(nn.Module):
 
         if self.d_cond_mtd == "MH":
             self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1 + num_classes, bias=True)
+        elif self.d_cond_mtd == "MD":
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=True)
         else:
             self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1, bias=True)
 
@@ -396,6 +398,9 @@ class Discriminator(nn.Module):
                 if self.normalize_d_embed:
                     embed = F.normalize(embed, dim=1)
                     proxy = F.normalize(proxy, dim=1)
+            elif self.d_cond_mtd == "MD":
+                idx = torch.LongTensor(range(label.size(0))).to(label.device)
+                adv_output = adv_output[idx, label]
             elif self.d_cond_mtd in ["W/O", "MH"]:
                 pass
             else:

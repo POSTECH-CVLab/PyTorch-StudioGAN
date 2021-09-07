@@ -165,6 +165,11 @@ class WORKER(object):
                         device=self.local_rank,
                         cal_trsp_cost=False)
 
+                    # if apply_r1_reg is True,
+                    # let real images require gradient calculation to compute \derv_{x}Dis(x)
+                    if self.LOSS.apply_r1_reg:
+                        real_image_basket[batch_counter].requires_grad_()
+
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images = self.AUG.series_augment(real_image_basket[batch_counter])
                     fake_images_ = self.AUG.series_augment(fake_images)
@@ -244,6 +249,13 @@ class WORKER(object):
                                                         discriminator=self.Dis,
                                                         device=self.local_rank)
                         dis_acml_loss += self.LOSS.dra_lambda * dra_loss
+
+                    # if LOSS.apply_r1_reg is True, apply R1 reg. used in multiple discriminator (FUNIT, StarGAN_v2)
+                    if self.LOSS.apply_r1_reg:
+                        real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                         images=real_image_basket[batch_counter],
+                                                         device=self.local_rank)
+                        dis_acml_loss += self.LOSS.r1_lambda * real_r1_loss
 
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
@@ -468,7 +480,8 @@ class WORKER(object):
                                                   device=self.local_rank,
                                                   logger=self.logger,
                                                   pre_cal_mean=self.mu,
-                                                  pre_cal_std=self.sigma)
+                                                  pre_cal_std=self.sigma,
+                                                  disable_tqdm=self.local_rank != 0)
 
             prc, rec, _ = f_beta.calculate_f_beta(data_loader=self.eval_dataloader,
                                                   eval_model=self.eval_model,
@@ -937,7 +950,9 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     def cal_intra_class_fid(self, dataset):
         if self.global_rank == 0:
-            self.logger.info("Start calculating iFID.")
+            self.logger.info("Start calculating iFID (use {num} fake images per class and train images as the reference).".\
+                             format(num=self.num_eval[self.RUN.ref_dataset]))
+
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
@@ -971,7 +986,7 @@ class WORKER(object):
                                                   num_classes=1,
                                                   LOSS="N/A",
                                                   device=self.local_rank,
-                                                  disable_tqdm=False)
+                                                  disable_tqdm=True)
 
                 ifid_score, _, _ = fid.calculate_fid(data_loader="N/A",
                                                      generator=generator,
@@ -983,19 +998,23 @@ class WORKER(object):
                                                      device=self.local_rank,
                                                      logger=self.logger,
                                                      pre_cal_mean=mu,
-                                                     pre_cal_std=sigma)
+                                                     pre_cal_std=sigma,
+                                                     disable_tqdm=True)
 
                 FIDs.append(ifid_score)
 
                 # save iFID values in .npz format
                 metric_dict = {"iFID": ifid_score}
 
-                save_dict = misc.accm_values_convert_dict(list_dict=self.metric_list_dict,
+                save_dict = misc.accm_values_convert_dict(list_dict={"iFID": []},
                                                           value_dict=metric_dict,
                                                           step=c,
                                                           interval=1)
                 misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
                                    name="metrics",
                                    dictionary=save_dict)
+
+        if self.global_rank == 0:
+            self.logger.info("Average iFID score: {iFID}".format(iFID=FIDs.mean()))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
