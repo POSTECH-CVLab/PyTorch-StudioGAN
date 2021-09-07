@@ -257,3 +257,7 @@ def cal_r1_reg(adv_output, images, device):
     assert(grad_dout2.size() == images.size())
     r1_reg = 0.5 * grad_dout2.view(batch_size, -1).sum(1).mean(0)
     return r1_reg
+
+def adjust_k(current_k, topk_gamma, sup_k):
+    current_k = max(int(current_k*topk_gamma), sup_k)
+    return current_k

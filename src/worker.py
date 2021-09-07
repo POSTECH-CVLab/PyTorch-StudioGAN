@@ -136,6 +136,7 @@ class WORKER(object):
         except StopIteration:
             self.train_iter = iter(self.train_dataloader)
             real_image_basket, real_label_basket = next(self.train_iter)
+            self.epoch_counter += 1
 
         real_image_basket = torch.split(real_image_basket.to(self.local_rank), self.OPTIMIZATION.batch_size)
         real_label_basket = torch.split(real_label_basket.to(self.local_rank), self.OPTIMIZATION.batch_size)
@@ -173,7 +174,7 @@ class WORKER(object):
                         device=self.local_rank,
                         cal_trsp_cost=False)
 
-                    # if apply_r1_reg is True,
+                    # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
                     if self.LOSS.apply_r1_reg:
                         real_image_basket[batch_counter].requires_grad_()
@@ -198,7 +199,7 @@ class WORKER(object):
                         real_cond_loss = self.cond_loss(**real_dict)
                         dis_acml_loss += self.LOSS.cond_lambda * real_cond_loss
                         if self.MODEL.aux_cls_type == "TAC":
-                            tac_dis_loss = self.cond_loss_mi(**real_dict)
+                            tac_dis_loss = self.cond_loss_mi(**fake_dict)
                             dis_acml_loss += self.LOSS.tac_dis_lambda * tac_dis_loss
 
                     # if LOSS.apply_cr is True, force the adv. and cls. logits to be the same
@@ -327,6 +328,10 @@ class WORKER(object):
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     fake_dict = self.Dis(fake_images_, fake_labels)
+
+                    # apply top k sampling for discarding bottom 1-k samples which are 'in-between modes'
+                    if self.LOSS.apply_topk:
+                        fake_dict["adv_output"] = torch.topk(fake_dict["adv_output"], self.topk).values
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -592,6 +597,8 @@ class WORKER(object):
             "seed": self.RUN.seed,
             "run_name": self.run_name,
             "step": step,
+            "epoch": self.epoch_counter,
+            "topk": self.topk,
             "ada_p": self.ada_p,
             "best_step": self.best_step,
             "best_fid": self.best_fid,
@@ -1025,7 +1032,7 @@ class WORKER(object):
                                                           step=c,
                                                           interval=1)
                 misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
-                                   name="metrics",
+                                   name="iFID",
                                    dictionary=save_dict)
 
         if self.global_rank == 0:

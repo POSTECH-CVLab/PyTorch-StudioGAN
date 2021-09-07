@@ -163,6 +163,13 @@ class Configurations(object):
         self.LOSS.lo_alpha = "N/A"
         self.LOSS.lo_beta = "N/A"
         self.LOSS.lo_lambda = "N/A"
+        # whether to apply topk training for the generator update
+        self.LOSS.apply_topk = False
+        # hyperparameter for batch_size decay rate for topk training \in [0,1]
+        self.LOSS.topk_gamma = "N/A"
+        # hyperparameter for the supremum of the number of topk samples \in [0,1],
+        # sup_batch_size = int(topk_nu*batch_size)
+        self.LOSS.topk_nu = "N/A"
 
         # -----------------------------------------------------------------------------
         # optimizer settings
@@ -430,6 +437,10 @@ class Configurations(object):
         if self.MODEL.d_cond_mtd == "MH" or self.LOSS.adv_loss == "MH":
             assert self.MODEL.d_cond_mtd == "MH" and self.LOSS.adv_loss == "MH", \
             "To train a GAN with Multi-Hinge loss, both d_cond_mtd and adv_loss must be 'MH'."
+
+        if self.MODEL.d_cond_mtd == "MH" or self.LOSS.adv_loss == "MH":
+            assert not self.apply_topk, \
+            "StudioGAN does not support Topk training for MHGAN."
 
         if self.RUN.train * self.RUN.standing_statistics:
             print("StudioGAN does not support standing_statistics during training. \

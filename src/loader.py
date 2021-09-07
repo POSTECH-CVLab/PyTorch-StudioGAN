@@ -35,7 +35,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # define default variables for loading ckpt or evaluating the trained GAN model.
     # -----------------------------------------------------------------------------
-    ada_p, step, best_step, best_fid, best_ckpt_path, is_best = None, 0, 0, None, None, False
+    ada_p, step, epoch, topk, best_step, best_fid, best_ckpt_path, is_best = \
+        None, 0, 0, cfgs.OPTIMIZATION.batch_size, 0, None, None, False
     mu, sigma, eval_model, nrow, ncol = None, None, None, 10, 8
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
     metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
@@ -158,7 +159,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.ckpt_dir is None:
         cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
     else:
-        run_name, step, ada_p, best_step, best_fid, best_ckpt_path, logger, writer =\
+        run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path, logger, writer =\
             ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
                                       load_best=cfgs.RUN.load_best,
                                       Gen=Gen,
@@ -174,6 +175,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       logger=logger,
                                       global_rank=global_rank,
                                       device=local_rank)
+
+        if topk == "initialize": topk == cfgs.OPTIMIZATION.batch_size
 
         dict_dir = join(cfgs.RUN.save_dir, "values", run_name)
 
@@ -247,11 +250,16 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # train GAN until "total_setps" generator updates
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
-        if global_rank == 0:
-            logger.info("Start training!")
-        worker.training = True
+        if global_rank == 0: logger.info("Start training!")
+        worker.training, worker.epoch_counter, worker.topk = True, epoch, topk
         while step <= cfgs.OPTIMIZATION.total_steps:
             step = worker.train(current_step=step)
+            if (epoch + 1) == worker.epoch_counter:
+                epoch += 1
+                worker.topk = losses.adjust_k(current_k=topk,
+                                              topk_gamma=cfgs.LOSS.topk_gamma,
+                                              sup_k=int(cfgs.OPTIMIZATION.batch_size * cfgs.LOSS.topk_nu))
+                logger.info("Epoch : {epoch}\tTopk: {topk}".format(epoch=epoch, topk=worker.topk))
 
             if step % cfgs.RUN.save_every == 0:
                 # visuailize fake images
@@ -272,9 +280,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
     # -----------------------------------------------------------------------------
-    if global_rank == 0:
-        logger.info("\n" + "-" * 80)
-    worker.training = False
+    if global_rank == 0: logger.info("\n" + "-" * 80)
+    worker.training, worker.epoch_counter = False, epoch
     worker.gen_ctlr.standing_statistics = cfgs.RUN.standing_statistics
     worker.gen_ctlr.standing_max_batch = cfgs.RUN.standing_max_batch
     worker.gen_ctlr.standing_step = cfgs.RUN.standing_step

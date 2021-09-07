@@ -32,6 +32,8 @@ def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, loa
         seed = ckpt["seed"]
         run_name = ckpt["run_name"]
         step = ckpt["step"]
+        epoch = ckpt["epoch"]
+        topk = ckpt["topk"]
         ada_p = ckpt["ada_p"]
         if load_opt:
             for state in optimizer.state.values():
@@ -45,7 +47,7 @@ def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, loa
             best_ckpt_path = ckpt["best_fid_checkpoint_path"]
         except:
             best_ckpt_path = ckpt["best_fid_ckpt"]
-        return seed, run_name, step, ada_p, best_step, best_fid, best_ckpt_path
+        return seed, run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path
 
 
 def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer, run_name, apply_g_ema, Gen_ema, ema,
@@ -61,7 +63,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
               load_opt=True,
               load_misc=False)
 
-    seed, prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path = load_ckpt(model=Dis,
+    seed, prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path = load_ckpt(model=Dis,
                                                                                       optimizer=d_optimizer,
                                                                                       ckpt_path=Dis_ckpt_path,
                                                                                       load_model=True,
@@ -91,8 +93,9 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
         logger.info("Discriminator checkpoint is {}".format(Dis_ckpt_path))
 
     if RUN.freezeD > -1 or RUN.freezeG > -1:
-        prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path = run_name, 0, None, 0, None, None
-    return prev_run_name, step, ada_p, best_step, best_fid, best_ckpt_path, logger, writer
+        prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path = \
+            run_name, 0, 0, "initialize", None, 0, None, None
+    return prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path, logger, writer
 
 
 def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
