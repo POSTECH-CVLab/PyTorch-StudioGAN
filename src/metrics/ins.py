@@ -12,6 +12,7 @@ from tqdm import tqdm
 import torch
 
 import utils.sample as sample
+import utils.misc as misc
 
 
 def inception_softmax(eval_model, images):
@@ -37,23 +38,11 @@ def calculate_kl_div(ps, splits):
     return m_scores, m_std
 
 
-def eval_generator(generator,
-                   discriminator,
-                   eval_model,
-                   num_generate,
-                   y_sampler,
-                   split,
-                   batch_size,
-                   z_prior,
-                   truncation_th,
-                   z_dim,
-                   num_classes,
-                   LOSS,
-                   device,
-                   logger,
-                   disable_tqdm=False):
+def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size, z_prior,
+                   truncation_th, z_dim, num_classes, LOSS, device, logger, disable_tqdm):
     eval_model.eval()
     ps_holder = []
+    ImageNet_label_dict = misc.load_ImageNet_label_dict()
 
     if device == 0:
         logger.info("Calculate inception score of generated images ({} images).".format(num_generate))

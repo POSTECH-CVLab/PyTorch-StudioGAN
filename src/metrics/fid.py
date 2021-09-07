@@ -61,21 +61,8 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     return (diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * tr_covmean)
 
 
-def calculate_moments(data_loader,
-                      generator,
-                      discriminator,
-                      eval_model,
-                      is_generate,
-                      num_generate,
-                      y_sampler,
-                      batch_size,
-                      z_prior,
-                      truncation_th,
-                      z_dim,
-                      num_classes,
-                      LOSS,
-                      device,
-                      disable_tqdm=False):
+def calculate_moments(data_loader, generator, discriminator, eval_model, is_generate, num_generate, y_sampler,
+                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, device, disable_tqdm):
     if is_generate:
         total_instance = num_generate
     else:

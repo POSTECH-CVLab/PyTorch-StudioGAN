@@ -551,14 +551,13 @@ def save_dict_npy(directory, name, dictionary):
     np.save(save_path, dictionary)
 
 
-def load_ImageNet_dict():
-    label_file =  open("./src/utils/ImageNet_label.txt", 'r')
-    current_dict = {}
-    label = 0
+def load_ImageNet_label_dict():
+    label_table =  open("./src/utils/ImageNet_label.txt", 'r')
+    label_dict, label = {}, 0
     while True:
-        line = label_file.readline()
+        line = label_table.readline()
         if not line: break
         folder = line.split(' ')[0]
-        current_dict[folder] = label
+        label_dict[folder] = label
         label +=1
-    return current_dict
+    return label_dict

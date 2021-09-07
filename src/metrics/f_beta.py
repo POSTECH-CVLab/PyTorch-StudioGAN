@@ -70,21 +70,9 @@ class precision_recall(object):
         recall = np.clip(recall, 0, 1)
         return precision, recall
 
-    def compute_precision_recall(self,
-                                 data_loader,
-                                 num_generate,
-                                 batch_size,
-                                 z_prior,
-                                 truncation_th,
-                                 z_dim,
-                                 num_classes,
-                                 generator,
-                                 discriminator,
-                                 LOSS,
-                                 num_runs,
-                                 num_clusters,
-                                 device,
-                                 num_angles=1001):
+    def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim,
+                                 num_classes, generator, discriminator, LOSS, num_runs, num_clusters, num_angles,
+                                 device):
         data_iter = iter(data_loader)
         num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
         for i in tqdm(range(num_batches), disable=self.disable_tqdm):
@@ -134,7 +122,7 @@ class precision_recall(object):
 
 
 def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, discriminator, num_runs, num_clusters,
-                     beta, device, logger):
+                     num_angles, beta, device, logger):
     eval_model.eval()
     PR = precision_recall(eval_model, device=device)
 
@@ -152,6 +140,7 @@ def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, dis
                                                       LOSS=cfgs.LOSS,
                                                       num_runs=num_runs,
                                                       num_clusters=num_clusters,
+                                                      num_angles=num_angles,
                                                       device=device)
 
     if not ((precisions >= 0).all() and (precisions <= 1).all()):

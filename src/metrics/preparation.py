@@ -72,8 +72,9 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
         mu = np.load(moment_path)["mu"]
         sigma = np.load(moment_path)["sigma"]
     else:
-        if device == 0:            logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
-format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
+        if device == 0:
+            logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
+                        format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         mu, sigma = fid.calculate_moments(data_loader=data_loader,
                                           generator="N/A",
                                           discriminator="N/A",
@@ -97,8 +98,9 @@ format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
     if is_file:
         pass
     else:
-        if device == 0:            logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
-format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
+        if device == 0:
+            logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
+                        format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         is_score, is_std = ins.eval_dataset(data_loader=data_loader,
                                             eval_model=eval_model,
                                             splits=splits,

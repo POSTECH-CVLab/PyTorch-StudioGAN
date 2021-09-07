@@ -432,7 +432,7 @@ class WORKER(object):
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
-        is_best, num_split, num_runs4PR, num_clusters4PR, beta4PR = False, 1, 10, 20, 8
+        is_best, num_split, num_runs4PR, num_clusters4PR, num_angles, beta4PR = False, 1, 10, 20, 1001, 8
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -473,6 +473,7 @@ class WORKER(object):
                                                   discriminator=self.Dis,
                                                   num_runs=num_runs4PR,
                                                   num_clusters=num_clusters4PR,
+                                                  num_angles=num_angles,
                                                   beta=beta4PR,
                                                   device=self.local_rank,
                                                   logger=self.logger)
