@@ -8,6 +8,7 @@ import math
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
+from sklearn.metrics import top_k_accuracy_score
 from tqdm import tqdm
 import torch
 
@@ -38,11 +39,16 @@ def calculate_kl_div(ps, splits):
     return m_scores, m_std
 
 
-def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size, z_prior,
-                   truncation_th, z_dim, num_classes, LOSS, device, logger, disable_tqdm):
+def eval_generator(data_loader, generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size,
+                   z_prior, truncation_th, z_dim, num_classes, LOSS, is_acc, device, logger, disable_tqdm):
     eval_model.eval()
     ps_holder = []
-    ImageNet_label_dict = misc.load_ImageNet_label_dict()
+    if is_acc:
+        ImageNet_folder_label_dict = misc.load_ImageNet_label_dict()
+        loader_label_folder_dict = {v: k for k, v, in data_loader.dataset.data.class_to_idx.items()}
+        loader_label_holder = []
+    else:
+        top1, top5 = "N/A", "N/A"
 
     if device == 0:
         logger.info("Calculate inception score of generated images ({} images).".format(num_generate))
@@ -62,11 +68,21 @@ def eval_generator(generator, discriminator, eval_model, num_generate, y_sampler
                                                                 device=device)
         ps = inception_softmax(eval_model, fake_images)
         ps_holder.append(ps)
+        if is_acc:
+            loader_label_holder += list(fake_labels.detach().cpu().numpy())
 
     with torch.no_grad():
         ps_holder = torch.cat(ps_holder, 0)
         m_scores, m_std = calculate_kl_div(ps_holder[:num_generate], splits=split)
-    return m_scores, m_std
+
+    if is_acc:
+        converted_labels = []
+        for loader_label in loader_label_holder:
+            converted_labels.append(ImageNet_folder_label_dict[loader_label_folder_dict[loader_label]])
+        pred = torch.argmax(ps_holder, 1).detach().cpu().numpy() - 1
+        top1 = top_k_accuracy_score([i + 1 for i in converted_labels], ps_holder[:, 1:1001].detach().cpu().numpy(), k=1)
+        top5 = top_k_accuracy_score([i + 1 for i in converted_labels], ps_holder[:, 1:1001].detach().cpu().numpy(), k=5)
+    return m_scores, m_std, top1, top5
 
 
 def eval_dataset(data_loader, eval_model, splits, batch_size, device, disable_tqdm=False):

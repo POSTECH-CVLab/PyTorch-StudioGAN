@@ -121,7 +121,7 @@ class precision_recall(object):
         return (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall + epsilon)
 
 
-def calculate_f_beta(eval_model, data_loader, num_generate, cfgs, generator, discriminator, num_runs, num_clusters,
+def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, discriminator, num_runs, num_clusters,
                      num_angles, beta, device, logger):
     eval_model.eval()
     PR = precision_recall(eval_model, device=device)

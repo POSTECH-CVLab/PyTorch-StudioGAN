@@ -307,7 +307,7 @@ class WORKER(object):
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
-                        gen_acml_loss = self.LOSS.mh_lambda*self.LOSS.g_loss(**fake_dict)
+                        gen_acml_loss = self.LOSS.mh_lambda * self.LOSS.g_loss(**fake_dict)
                     else:
                         gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"])
 
@@ -397,6 +397,7 @@ class WORKER(object):
             self.logger.info("Visualize (nrow x 8) fake image canvans.")
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
+
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -432,26 +433,30 @@ class WORKER(object):
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
+
         is_best, num_split, num_runs4PR, num_clusters4PR, num_angles, beta4PR = False, 1, 10, 20, 1001, 8
+        is_acc = True if self.DATA.name == "ImageNet" else False
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
-            kl_score, kl_std = ins.eval_generator(generator=generator,
-                                                  discriminator=self.Dis,
-                                                  eval_model=self.eval_model,
-                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                  y_sampler="totally_random",
-                                                  split=num_split,
-                                                  batch_size=self.OPTIMIZATION.batch_size,
-                                                  z_prior=self.MODEL.z_prior,
-                                                  truncation_th=self.RUN.truncation_th,
-                                                  z_dim=self.MODEL.z_dim,
-                                                  num_classes=self.DATA.num_classes,
-                                                  LOSS=self.LOSS,
-                                                  device=self.local_rank,
-                                                  logger=self.logger,
-                                                  disable_tqdm=self.local_rank != 0)
+            kl_score, kl_std, top1, top5 = ins.eval_generator(data_loader=self.eval_dataloader,
+                                                              generator=generator,
+                                                              discriminator=self.Dis,
+                                                              eval_model=self.eval_model,
+                                                              num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                              y_sampler="totally_random",
+                                                              split=num_split,
+                                                              batch_size=self.OPTIMIZATION.batch_size,
+                                                              z_prior=self.MODEL.z_prior,
+                                                              truncation_th=self.RUN.truncation_th,
+                                                              z_dim=self.MODEL.z_dim,
+                                                              num_classes=self.DATA.num_classes,
+                                                              LOSS=self.LOSS,
+                                                              is_acc=is_acc,
+                                                              device=self.local_rank,
+                                                              logger=self.logger,
+                                                              disable_tqdm=self.local_rank != 0)
 
             fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
                                                   generator=generator,
@@ -465,8 +470,8 @@ class WORKER(object):
                                                   pre_cal_mean=self.mu,
                                                   pre_cal_std=self.sigma)
 
-            prc, rec, _ = f_beta.calculate_f_beta(eval_model=self.eval_model,
-                                                  data_loader=self.eval_dataloader,
+            prc, rec, _ = f_beta.calculate_f_beta(data_loader=self.eval_dataloader,
+                                                  eval_model=self.eval_model,
                                                   num_generate=self.num_eval[self.RUN.ref_dataset],
                                                   cfgs=self.cfgs,
                                                   generator=generator,
@@ -495,6 +500,14 @@ class WORKER(object):
                     "F_beta score",
                     {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): rec}, step)
 
+                if is_acc:
+                    self.writer.add_scalars(
+                        "Inception_V3 Top1 acc",
+                        {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): top1}, step)
+                    self.writer.add_scalars(
+                        "Inception_V3 Top5 acc",
+                        {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): top5}, step)
+
             if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
                     step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
@@ -504,12 +517,26 @@ class WORKER(object):
                     beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=prc))
                 self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(
                     beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=rec))
+
+                if is_acc:
+                    self.logger.info("Inception_V3 Top1 acc: (Step: {step}, {num} generated images): {Top1}".format(
+                        step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top1=top1))
+                    self.logger.info("Inception_V3 Top5 acc: (Step: {step}, {num} generated images): {Top5}".format(
+                        step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top5=top5))
+
                 if self.training:
                     self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
                         step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
                     # save metric values in .npz format
-                    metric_dict = {"IS": kl_score, "FID": fid_score, "F_beta_inv": prc, "F_beta": rec}
+                    metric_dict = {
+                        "IS": kl_score,
+                        "FID": fid_score,
+                        "F_beta_inv": prc,
+                        "F_beta": rec,
+                        "Top1": top1,
+                        "Top5": top5
+                    }
 
                     save_dict = misc.accm_values_convert_dict(list_dict=self.metric_list_dict,
                                                               value_dict=metric_dict,
@@ -576,6 +603,7 @@ class WORKER(object):
                 num_images=self.num_eval[self.RUN.ref_dataset]))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
+
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -622,6 +650,7 @@ class WORKER(object):
                 "Run K-nearest neighbor analysis using fake and {ref} dataset.".format(ref=self.RUN.ref_dataset))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
+
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -704,6 +733,7 @@ class WORKER(object):
             self.logger.info("Run linear interpolation analysis ({num} times).".format(num=num_saves))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
+
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -747,10 +777,12 @@ class WORKER(object):
     # visualize shifted fourier spectrums of real and fake images
     # -----------------------------------------------------------------------------
     def run_frequency_analysis(self, dataloader):
-        if self.global_rank == 0:            self.logger.info("Run frequency analysis (use {num} fake and {ref} images ).".\
-format(num=len(dataloader), ref=self.RUN.ref_dataset))
+        if self.global_rank == 0:
+            self.logger.info("Run frequency analysis (use {num} fake and {ref} images ).".\
+                             format(num=len(dataloader), ref=self.RUN.ref_dataset))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
+
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -821,6 +853,7 @@ format(num=len(dataloader), ref=self.RUN.ref_dataset))
                 ref=self.RUN.ref_dataset))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
+
         with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
@@ -896,5 +929,73 @@ format(num=len(dataloader), ref=self.RUN.ref_dataset))
                                         directory=join(self.RUN.save_dir, "figures", self.run_name),
                                         logger=self.logger,
                                         logging=True)
+
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+
+    # -----------------------------------------------------------------------------
+    # calculate intra-class FID (iFID) to identify intra-class diversity
+    # -----------------------------------------------------------------------------
+    def cal_intra_class_fid(self, dataset):
+        if self.global_rank == 0:
+            self.logger.info("Start calculating iFID.")
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        FIDs = []
+        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator = self.gen_ctlr.prepare_generator()
+
+            for c in tqdm(range(self.DATA.num_classes)):
+                num_samples, target_sampler = sample.make_target_cls_sampler(dataset, c)
+                batch_size = self.OPTIMIZATION.batch_size if num_samples >= self.OPTIMIZATION.batch_size else num_samples
+                dataloader = torch.utils.data.DataLoader(dataset,
+                                                         batch_size=batch_size,
+                                                         shuffle=False,
+                                                         sampler=target_sampler,
+                                                         num_workers=self.RUN.num_workers,
+                                                         pin_memory=True,
+                                                         drop_last=True)
+
+                mu, sigma = fid.calculate_moments(data_loader=dataloader,
+                                                  generator="N/A",
+                                                  discriminator="N/A",
+                                                  eval_model=self.eval_model,
+                                                  is_generate=False,
+                                                  num_generate="N/A",
+                                                  y_sampler="N/A",
+                                                  batch_size=batch_size,
+                                                  z_prior="N/A",
+                                                  truncation_th="N/A",
+                                                  z_dim="N/A",
+                                                  num_classes=1,
+                                                  LOSS="N/A",
+                                                  device=self.local_rank,
+                                                  disable_tqdm=False)
+
+                ifid_score, _, _ = fid.calculate_fid(data_loader="N/A",
+                                                     generator=generator,
+                                                     discriminator=self.Dis,
+                                                     eval_model=self.eval_model,
+                                                     num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                     y_sampler=c,
+                                                     cfgs=self.cfgs,
+                                                     device=self.local_rank,
+                                                     logger=self.logger,
+                                                     pre_cal_mean=mu,
+                                                     pre_cal_std=sigma)
+
+                FIDs.append(ifid_score)
+
+                # save iFID values in .npz format
+                metric_dict = {"iFID": ifid_score}
+
+                save_dict = misc.accm_values_convert_dict(list_dict=self.metric_list_dict,
+                                                          value_dict=metric_dict,
+                                                          step=c,
+                                                          interval=1)
+                misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
+                                   name="metrics",
+                                   dictionary=save_dict)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)

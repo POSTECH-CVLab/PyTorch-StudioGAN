@@ -78,6 +78,7 @@ def main():
     parser.add_argument("-fa", "--frequency_analysis", action="store_true",
                         help="whether to conduct frequency analysis")
     parser.add_argument("-tsne", "--tsne_analysis", action="store_true", help="whether to conduct tsne analysis")
+    parser.add_argument("-ifid", "--intra_class_fid", action="store_true", help="whether to calculate intra-class fid")
 
     parser.add_argument("--print_every", type=int, default=100, help="logging interval")
     parser.add_argument("--save_every", type=int, default=2000, help="save interval")
@@ -94,7 +95,8 @@ def main():
             not args.k_nearest_neighbor and \
             not args.interpolation and \
             not args.frequency_analysis and \
-            not args.tsne_analysis:
+            not args.tsne_analysis and \
+            not args.intra_class_fid:
         parser.print_help(sys.stderr)
         sys.exit(1)
 

@@ -402,7 +402,7 @@ class Configurations(object):
                 self.RUN.tsne_analysis == 0, \
             msg
 
-        if self.RUN.vis_fake_images + self.RUN.k_nearest_neighbor + self.RUN.interpolation >= 1:
+        if self.RUN.vis_fake_images + self.RUN.k_nearest_neighbor + self.RUN.interpolation + self.RUN.intra_class_fid >= 1:
             assert self.OPTIMIZATION.batch_size % 8 == 0, "batch_size should be divided by 8."
 
         if self.MODEL.d_cond_mtd in ["ContraGAN", "ReACGAN"]:

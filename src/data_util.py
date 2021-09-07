@@ -52,7 +52,7 @@ class CenterCropLongEdge(object):
 class Dataset_(Dataset):
     def __init__(self,
                  data_name,
-                 data_path,
+                 data_dir,
                  train,
                  crop_long_edge=False,
                  resize_size=None,
@@ -61,7 +61,7 @@ class Dataset_(Dataset):
                  load_data_in_memory=False):
         super(Dataset_, self).__init__()
         self.data_name = data_name
-        self.data_path = data_path
+        self.data_dir = data_dir
         self.train = train
         self.random_flip = random_flip
         self.hdf5_path = hdf5_path
@@ -98,13 +98,13 @@ class Dataset_(Dataset):
             return
 
         if self.data_name == "CIFAR10":
-            self.data = CIFAR10(root=self.data_path, train=self.train, download=True)
+            self.data = CIFAR10(root=self.data_dir, train=self.train, download=True)
 
         elif self.data_name == "CIFAR100":
-            self.data = CIFAR100(root=self.data_path, train=self.train, download=True)
+            self.data = CIFAR100(root=self.data_dir, train=self.train, download=True)
         else:
             mode = "train" if self.train == True else "valid"
-            root = os.path.join(self.data_path, mode)
+            root = os.path.join(self.data_dir, mode)
             self.data = ImageFolder(root=root)
 
     def __len__(self):

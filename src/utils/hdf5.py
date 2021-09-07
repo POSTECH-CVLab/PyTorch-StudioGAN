@@ -43,7 +43,7 @@ def make_hdf5(name, img_size, crop_long_edge, resize_size, save_dir, DATA, RUN):
                                                                                     file_path=file_path))
     else:
         dataset = Dataset_(data_name=DATA.name,
-                           data_path=RUN.data_dir,
+                           data_dir=RUN.data_dir,
                            train=True,
                            crop_long_edge=crop_long_edge,
                            resize_size=resize_size,

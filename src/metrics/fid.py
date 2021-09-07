@@ -101,6 +101,7 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
         if total_instance >= batch_size:
             acts[start:end] = embeddings.cpu().data.numpy().reshape(batch_size, -1)
         else:
+            import pdb;pdb.set_trace()
             acts[start:] = embeddings[:total_instance].cpu().data.numpy().reshape(total_instance, -1)
         total_instance -= images.shape[0]
 

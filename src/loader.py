@@ -38,7 +38,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     ada_p, step, best_step, best_fid, best_ckpt_path, is_best = None, 0, 0, None, None, False
     mu, sigma, eval_model, nrow, ncol = None, None, None, 10, 8
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
-    metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
+    metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": [], "iFID": []}
 
     # -----------------------------------------------------------------------------
     # initialize all processes and identify the local rank.
@@ -70,11 +70,11 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # load train and evaluation dataset.
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.train:
+    if cfgs.RUN.train or cfgs.RUN.intra_class_fid:
         if local_rank == 0:
             logger.info("Load {name} train dataset.".format(name=cfgs.DATA.name))
         train_dataset = Dataset_(data_name=cfgs.DATA.name,
-                                 data_path=cfgs.RUN.data_dir,
+                                 data_dir=cfgs.RUN.data_dir,
                                  train=True,
                                  crop_long_edge=cfgs.PRE.crop_long_edge,
                                  resize_size=cfgs.PRE.resize_size,
@@ -91,7 +91,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(
             data_name=cfgs.DATA.name,
-            data_path=cfgs.RUN.data_dir,
+            data_dir=cfgs.RUN.data_dir,
             train=True if cfgs.RUN.ref_dataset == "train" else False,
             crop_long_edge=False if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else True,
             resize_size=None if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else cfgs.DATA.img_size,
@@ -307,3 +307,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
     if cfgs.RUN.tsne_analysis:
         worker.run_tsne(dataloader=eval_dataloader)
+
+    if cfgs.RUN.intra_class_fid:
+        worker.cal_intra_class_fid(dataset=train_dataset)
