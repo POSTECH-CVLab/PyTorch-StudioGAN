@@ -94,8 +94,16 @@ class WORKER(object):
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
                                                                temperature=self.LOSS.temperature,
                                                                global_rank=self.global_rank)
-        else:
-            pass
+
+        if self.MODEL.aux_cls_type == "TAC":
+            if self.MODEL.d_cond_mtd == "AC":
+                self.cond_loss_mi = losses.CrossEntropyLossMI()
+            elif self.MODEL.d_cond_mtd == "2C":
+                self.cond_loss_mi = losses.ConditionalContrastiveLossMI(num_classes=self.DATA.num_classes,
+                                                                        temperature=self.LOSS.temperature,
+                                                                        global_rank=self.global_rank)
+            else:
+                raise NotImplementedError
 
         if self.RUN.distributed_data_parallel:
             self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
@@ -189,6 +197,9 @@ class WORKER(object):
                     if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
                         real_cond_loss = self.cond_loss(**real_dict)
                         dis_acml_loss += self.LOSS.cond_lambda * real_cond_loss
+                        if self.MODEL.aux_cls_type == "TAC":
+                            tac_dis_loss = self.cond_loss_mi(**real_dict)
+                            dis_acml_loss += self.LOSS.tac_dis_lambda * tac_dis_loss
 
                     # if LOSS.apply_cr is True, force the adv. and cls. logits to be the same
                     if self.LOSS.apply_cr:
@@ -327,6 +338,9 @@ class WORKER(object):
                     if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
                         fake_cond_loss = self.cond_loss(**fake_dict)
                         gen_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
+                        if self.MODEL.aux_cls_type == "TAC":
+                            tac_gen_loss = -self.cond_loss_mi(**fake_dict)
+                            dis_acml_loss += self.LOSS.tac_gen_lambda * tac_gen_loss
 
                     # apply feature matching regularization to stabilize adversarial dynamics
                     if self.LOSS.apply_fm:

@@ -41,6 +41,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, device
                                apply_attn=MODEL.apply_attn,
                                attn_d_loc=MODEL.attn_d_loc,
                                d_cond_mtd=MODEL.d_cond_mtd,
+                               aux_cls_type=MODEL.aux_cls_type,
                                d_embed_dim=MODEL.d_embed_dim,
                                num_classes=DATA.num_classes,
                                normalize_d_embed=MODEL.normalize_d_embed,

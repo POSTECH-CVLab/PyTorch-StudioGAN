@@ -131,7 +131,7 @@ class DiscBlock(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_cond_mtd, d_embed_dim,
+    def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_cond_mtd, aux_cls_type, d_embed_dim,
                  normalize_d_embed, num_classes, d_init, d_depth, mixed_precision, MODULES):
         super(Discriminator, self).__init__()
         self.in_dims = [3] + [64, 128]
@@ -139,6 +139,7 @@ class Discriminator(nn.Module):
 
         self.apply_d_sn = apply_d_sn
         self.d_cond_mtd = d_cond_mtd
+        self.aux_cls_type = aux_cls_type
         self.normalize_d_embed = normalize_d_embed
         self.mixed_precision = mixed_precision
 
@@ -163,22 +164,34 @@ class Discriminator(nn.Module):
         if not self.apply_d_sn:
             self.bn1 = MODULES.d_bn(in_features=512)
 
+        # liner layer for adversarial training
         if self.d_cond_mtd == "MH":
-            self.linear1 = MODULES.d_linear(in_features=512, out_features=1 + num_classes, bias=True)
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1 + num_classes, bias=True)
         elif self.d_cond_mtd == "MD":
             self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=True)
         else:
-            self.linear1 = MODULES.d_linear(in_features=512, out_features=1, bias=True)
+            self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1, bias=True)
 
+        # liner and embedding layers for discriminator conditioning
         if self.d_cond_mtd == "AC":
-            self.linear2 = MODULES.d_linear(in_features=512, out_features=num_classes, bias=False)
+            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=False)
         elif self.d_cond_mtd == "PD":
-            self.embedding = MODULES.d_embedding(num_classes, 512)
+            self.embedding = MODULES.d_embedding(num_classes, self.out_dims[-1])
         elif self.d_cond_mtd == "2C":
-            self.linear2 = MODULES.d_linear(in_features=512, out_features=d_embed_dim, bias=True)
+            self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=d_embed_dim, bias=True)
             self.embedding = MODULES.d_embedding(num_classes, d_embed_dim)
         else:
             pass
+
+        # liner and embedding layers for evolved classifier-based GAN
+        if self.aux_cls_type == "TAC":
+            if self.d_cond_mtd == "AC":
+                self.linear_mi = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=False)
+            elif self.d_cond_mtd == "2C":
+                self.linear_mi = MODULES.d_linear(in_features=self.out_dims[-1], out_features=d_embed_dim, bias=True)
+                self.embedding_mi = MODULES.d_embedding(num_classes, d_embed_dim)
+            else:
+                raise NotImplementedError
 
         if d_init:
             ops.init_weights(self.modules, d_init)
@@ -186,6 +199,7 @@ class Discriminator(nn.Module):
     def forward(self, x, label, eval=False):
         with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
             embed, proxy, cls_output = None, None, None
+            mi_embed, mi_proxy, mi_cls_output = None, None, None
             h = x
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
@@ -196,7 +210,10 @@ class Discriminator(nn.Module):
             h = self.activation(h)
             h = torch.sum(h, dim=[2, 3])
 
+            # adversarial training
             adv_output = torch.squeeze(self.linear1(h))
+
+            # class conditioning
             if self.d_cond_mtd == "AC":
                 if self.normalize_d_embed:
                     for W in self.linear2.parameters():
@@ -218,4 +235,19 @@ class Discriminator(nn.Module):
                 pass
             else:
                 raise NotImplementedError
-            return {"h": h, "adv_output": adv_output, "embed": embed, "proxy": proxy, "cls_output": cls_output, "label": label}
+
+            # extra conditioning for TACGAN and ADCGAN
+            if self.aux_cls_type == "TAC":
+                if self.d_cond_mtd == "AC":
+                    if self.normalize_d_embed:
+                        for W in self.linear_mi.parameters():
+                            W = F.normalize(W, dim=1)
+                    mi_cls_output = self.linear_mi(h)
+                elif self.d_cond_mtd == "2C":
+                    mi_embed = self.linear_mi(h)
+                    mi_proxy = self.embedding_mi(label)
+                    if self.normalize_d_embed:
+                        mi_embed = F.normalize(mi_embed, dim=1)
+                        mi_proxy = F.normalize(mi_proxy, dim=1)
+            return {"h": h, "adv_output": adv_output, "embed": embed, "proxy": proxy, "cls_output": cls_output,
+                    "label": label, "mi_embed": mi_embed, "mi_proxy": mi_proxy, "mi_cls_output": mi_cls_output}

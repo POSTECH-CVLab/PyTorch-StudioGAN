@@ -23,6 +23,15 @@ class CrossEntropyLoss(torch.nn.Module):
         return self.ce_loss(cls_output, label).mean()
 
 
+class CrossEntropyLossMI(torch.nn.Module):
+    def __init__(self):
+        super(CrossEntropyLossMI, self).__init__()
+        self.ce_loss = torch.nn.CrossEntropyLoss()
+
+    def forward(self, mi_cls_output, label, **_):
+        return self.ce_loss(mi_cls_output, label).mean()
+
+
 class ConditionalContrastiveLoss(torch.nn.Module):
     def __init__(self, num_classes, temperature, global_rank):
         super(ConditionalContrastiveLoss, self).__init__()
@@ -63,6 +72,52 @@ class ConditionalContrastiveLoss(torch.nn.Module):
         sim_pos_only = neg_removal_mask * sim_matrix
 
         emb2proxy = torch.exp(self.cosine_similarity(embed, proxy) / self.temperature)
+
+        numerator = emb2proxy + sim_pos_only.sum(dim=1)
+        denomerator = torch.cat([torch.unsqueeze(emb2proxy, dim=1), sim_matrix], dim=1).sum(dim=1)
+        return -torch.log(numerator / denomerator).mean()
+
+
+class ConditionalContrastiveLossMI(torch.nn.Module):
+    def __init__(self, num_classes, temperature, global_rank):
+        super(ConditionalContrastiveLossMI, self).__init__()
+        self.num_classes = num_classes
+        self.temperature = temperature
+        self.global_rank = global_rank
+        self.calculate_similarity_matrix = self._calculate_similarity_matrix()
+        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
+
+    def _make_neg_removal_mask(self, labels):
+        labels = labels.detach().cpu().numpy()
+        n_samples = labels.shape[0]
+        mask_multi, target = np.zeros([self.num_classes, n_samples]), 1.0
+        for c in range(self.num_classes):
+            c_indices = np.where(labels == c)
+            mask_multi[c, c_indices] = target
+        return torch.tensor(mask_multi).type(torch.long).to(self.global_rank)
+
+    def _calculate_similarity_matrix(self):
+        return self._cosine_simililarity_matrix
+
+    def _remove_diag(self, M):
+        h, w = M.shape
+        assert h == w, "h and w should be same"
+        mask = np.ones((h, w)) - np.eye(h)
+        mask = torch.from_numpy(mask)
+        mask = (mask).type(torch.bool).to(self.global_rank)
+        return M[mask].view(h, -1)
+
+    def _cosine_simililarity_matrix(self, x, y):
+        v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
+        return v
+
+    def forward(self, mi_embed, mi_proxy, label, **_):
+        sim_matrix = self.calculate_similarity_matrix(mi_embed, mi_embed)
+        sim_matrix = torch.exp(self._remove_diag(sim_matrix) / self.temperature)
+        neg_removal_mask = self._remove_diag(self._make_neg_removal_mask(label)[label])
+        sim_pos_only = neg_removal_mask * sim_matrix
+
+        emb2proxy = torch.exp(self.cosine_similarity(mi_embed, mi_proxy) / self.temperature)
 
         numerator = emb2proxy + sim_pos_only.sum(dim=1)
         denomerator = torch.cat([torch.unsqueeze(emb2proxy, dim=1), sim_matrix], dim=1).sum(dim=1)
