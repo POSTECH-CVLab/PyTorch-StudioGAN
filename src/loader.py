@@ -45,7 +45,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # initialize all processes and identify the local rank.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
-        global_rank = cfgs.RUN.cn * (gpus_per_node) + local_rank
+        global_rank = cfgs.RUN.current_node * (gpus_per_node) + local_rank
         print("Use GPU: {global_rank} for training.".format(global_rank=global_rank))
         misc.setup(global_rank, cfgs.OPTIMIZATION.world_size)
         torch.cuda.set_device(local_rank)

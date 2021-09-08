@@ -33,6 +33,10 @@ import utils.sample as sample
 import utils.losses as losses
 
 
+class make_empty_object(object):
+    pass
+
+
 class dummy_context_mgr():
     def __enter__(self):
         return None

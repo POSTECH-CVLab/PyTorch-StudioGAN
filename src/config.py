@@ -8,7 +8,6 @@ import json
 import os
 import random
 import sys
-import warnings
 import yaml
 
 import torch
@@ -22,6 +21,9 @@ import utils.diffaug as diffaug
 import utils.cr as cr
 
 
+class make_empty_object(object):
+    pass
+
 class Configurations(object):
     def __init__(self, cfg_file):
         self.cfg_file = cfg_file
@@ -33,7 +35,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # Data settings
         # -----------------------------------------------------------------------------
-        self.DATA = lambda: None
+        self.DATA = misc.make_empty_object()
         # dataset name \in ["CIFAR10", "CIFAR100", "Tiny_ImageNet", "CUB200", "ImageNet", "MY_DATASET"]
         self.DATA.name = "CIFAR10"
         # image size for training
@@ -44,7 +46,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # Model settings
         # -----------------------------------------------------------------------------
-        self.MODEL = lambda: None
+        self.MODEL = misc.make_empty_object()
         # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet"]
         self.MODEL.backbone = "resnet"
         # conditioning method of the generator \in ["W/O", "cBN"]
@@ -100,7 +102,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # loss settings
         # -----------------------------------------------------------------------------
-        self.LOSS = lambda: None
+        self.LOSS = misc.make_empty_object()
         # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge", "MH"]
         self.LOSS.adv_loss = "vanilla"
         # balancing hyperparameter for conditional image generation
@@ -174,7 +176,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # optimizer settings
         # -----------------------------------------------------------------------------
-        self.OPTIMIZATION = lambda: None
+        self.OPTIMIZATION = misc.make_empty_object()
         # type of the optimizer for GAN training \in ["SGD", RMSprop, "Adam"]
         self.OPTIMIZATION.type_ = "Adam"
         # number of batch size for GAN training,
@@ -209,14 +211,14 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # preprocessing settings
         # -----------------------------------------------------------------------------
-        self.PRE = lambda: None
+        self.PRE = misc.make_empty_object()
         # whether to apply random flip preprocessing before training
         self.PRE.apply_rflip = True
 
         # -----------------------------------------------------------------------------
         # differentiable augmentation settings
         # -----------------------------------------------------------------------------
-        self.AUG = lambda: None
+        self.AUG = misc.make_empty_object()
         # whether to apply differentiable augmentation used in DiffAugmentGAN
         self.AUG.apply_diffaug = False
         # whether to apply adaptive discriminator augmentation
@@ -229,14 +231,14 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # run settings
         # -----------------------------------------------------------------------------
-        self.RUN = lambda: None
+        self.RUN = misc.make_empty_object()
 
         # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings
         # -----------------------------------------------------------------------------
-        self.STYLEGAN2 = lambda: None
+        self.STYLEGAN2 = misc.make_empty_object()
 
-        self.MODULES = lambda: None
+        self.MODULES = misc.make_empty_object()
 
         self.super_cfgs = {
             "DATA": self.DATA,
@@ -448,10 +450,9 @@ class Configurations(object):
                   )
 
         if self.RUN.distributed_data_parallel:
-            msg = "Turning on DDP might cause inexact evaluation results. \
-                Please use a single GPU or DataParallel for the exact evluation."
+            print("Turning on DDP might cause inexact evaluation results. \
+                \nPlease use a single GPU or DataParallel for the exact evluation.")
 
-            warnings.warn(msg)
 
         if self.DATA.name in ["CIFAR10", "CIFAR100"]:
             assert self.RUN.ref_dataset in ["train", "test"], "There is no data for validation."
