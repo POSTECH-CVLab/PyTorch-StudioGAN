@@ -259,5 +259,5 @@ def cal_r1_reg(adv_output, images, device):
     return r1_reg
 
 def adjust_k(current_k, topk_gamma, sup_k):
-    current_k = max(int(current_k*topk_gamma), sup_k)
+    current_k = max(current_k*topk_gamma, sup_k)
     return current_k

@@ -256,7 +256,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             step = worker.train(current_step=step)
             if (epoch + 1) == worker.epoch_counter:
                 epoch += 1
-                worker.topk = losses.adjust_k(current_k=topk,
+                worker.topk = losses.adjust_k(current_k=worker.topk,
                                               topk_gamma=cfgs.LOSS.topk_gamma,
                                               sup_k=int(cfgs.OPTIMIZATION.batch_size * cfgs.LOSS.topk_nu))
                 logger.info("Epoch : {epoch}\tTopk: {topk}".format(epoch=epoch, topk=worker.topk))

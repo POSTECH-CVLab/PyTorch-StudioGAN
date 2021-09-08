@@ -331,7 +331,7 @@ class WORKER(object):
 
                     # apply top k sampling for discarding bottom 1-k samples which are 'in-between modes'
                     if self.LOSS.apply_topk:
-                        fake_dict["adv_output"] = torch.topk(fake_dict["adv_output"], self.topk).values
+                        fake_dict["adv_output"] = torch.topk(fake_dict["adv_output"], int(self.topk)).values
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
