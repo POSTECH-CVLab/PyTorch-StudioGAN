@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import numpy as np
 
 import utils.ops as ops
+import utils.misc as misc
 
 
 class CrossEntropyLoss(torch.nn.Module):
@@ -66,6 +67,12 @@ class ConditionalContrastiveLoss(torch.nn.Module):
         return v
 
     def forward(self, embed, proxy, label, **_):
+        if self.DDP:
+            embed = torch.cat(misc.GatherLayer.apply(embed), dim=0)
+            proxy = torch.cat(misc.GatherLayer.apply(proxy), dim=0)
+            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+        import pdb;pdb.set_trace()
+
         sim_matrix = self.calculate_similarity_matrix(embed, embed)
         sim_matrix = torch.exp(self._remove_diag(sim_matrix) / self.temperature)
         neg_removal_mask = self._remove_diag(self._make_neg_removal_mask(label)[label])
@@ -112,6 +119,11 @@ class ConditionalContrastiveLossMI(torch.nn.Module):
         return v
 
     def forward(self, mi_embed, mi_proxy, label, **_):
+        if self.DDP:
+            mi_embed = torch.cat(misc.GatherLayer.apply(mi_embed), dim=0)
+            mi_proxy = torch.cat(misc.GatherLayer.apply(mi_proxy), dim=0)
+            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+
         sim_matrix = self.calculate_similarity_matrix(mi_embed, mi_embed)
         sim_matrix = torch.exp(self._remove_diag(sim_matrix) / self.temperature)
         neg_removal_mask = self._remove_diag(self._make_neg_removal_mask(label)[label])

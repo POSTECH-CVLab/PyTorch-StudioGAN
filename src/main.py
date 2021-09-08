@@ -133,7 +133,7 @@ def main():
     if cfgs.OPTIMIZATION.world_size == 1:
         print("You have chosen a specific GPU. This will completely disable data parallelism.")
 
-    if cfgs.RUN.distributed_data_parallel and cfgs.RUN.world_size > 1:
+    if cfgs.RUN.distributed_data_parallel and cfgs.OPTIMIZATION.world_size > 1:
         print("Train the models through DistributedDataParallel (DDP) mode.")
         mp.spawn(loader.load_worker, nprocs=gpus_per_node, args=(cfgs, gpus_per_node, run_name, hdf5_path))
     else:

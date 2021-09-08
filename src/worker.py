@@ -39,7 +39,8 @@ LOG_FORMAT = ("Step: {step:>6} "
               "Elapsed: {elapsed} "
               "Gen_loss: {gen_loss:<.4} "
               "Dis_loss: {dis_loss:<.4} "
-              "Cls_loss: {cls_loss:<.4} ")
+              "Cls_loss: {cls_loss:<.4} "
+              "Topk: {topk:>4} ")
 
 
 class WORKER(object):
@@ -394,6 +395,7 @@ class WORKER(object):
                 gen_loss=gen_acml_loss.item(),
                 dis_loss=dis_acml_loss.item(),
                 cls_loss=cls_loss,
+                topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
             )
             self.logger.info(log_message)
 
