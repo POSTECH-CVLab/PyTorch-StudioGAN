@@ -118,6 +118,13 @@ class GeneratorController(object):
         return self.generator
 
 
+def prepare_folder(names, save_dir):
+    for name in names:
+        folder_path = join(save_dir, name)
+        if not exists(folder_path):
+            os.makedirs(folder_path)
+
+
 def fix_seed(seed):
     random.seed(seed)
     torch.manual_seed(seed)

@@ -106,6 +106,11 @@ def main():
     cfgs.update_cfgs(run_cfgs, super="RUN")
     cfgs.OPTIMIZATION.world_size = gpus_per_node * cfgs.RUN.total_nodes
     cfgs.check_compatability()
+    misc.prepare_folder(names=["checkpoints", "firgures", "hdf5", "logs", "moments", "samples", "values"],
+                        save_dir=cfgs.RUN.save_dir)
+
+    if cfgs.RUN.distributed_data_parallel:
+        torch.multiprocessing.set_start_method('spawn')
 
     run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
 
