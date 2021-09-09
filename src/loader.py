@@ -254,11 +254,12 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.training, worker.epoch_counter, worker.topk = True, epoch, topk
         while step <= cfgs.OPTIMIZATION.total_steps:
             step = worker.train(current_step=step)
-            if (epoch + 1) == worker.epoch_counter:
-                epoch += 1
-                worker.topk = losses.adjust_k(current_k=worker.topk,
-                                              topk_gamma=cfgs.LOSS.topk_gamma,
-                                              sup_k=int(cfgs.OPTIMIZATION.batch_size * cfgs.LOSS.topk_nu))
+            if cfgs.LOSS.apply_topk:
+                if (epoch + 1) == worker.epoch_counter:
+                    epoch += 1
+                    worker.topk = losses.adjust_k(current_k=worker.topk,
+                                                  topk_gamma=cfgs.LOSS.topk_gamma,
+                                                  sup_k=int(cfgs.OPTIMIZATION.batch_size * cfgs.LOSS.topk_nu))
 
             if step % cfgs.RUN.save_every == 0:
                 # visuailize fake images
