@@ -174,6 +174,13 @@ def toggle_grad(model, grad, num_freeze_layers=-1):
                     param.requires_grad = False
 
 
+def make_model_require_grad(model):
+    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
+        model = model.module
+
+    for name, param in model.named_parameters():
+        param.requires_grad = True
+
 def identity(x):
     return x
 

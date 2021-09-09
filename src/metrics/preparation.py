@@ -38,7 +38,7 @@ class LoadEvalModel(object):
             raise NotImplementedError
 
         if world_size > 1 and distributed_data_parallel:
-            misc.toggle_grad(self.model, on=True)
+            misc.make_model_require_grad(self.model)
             self.model = DDP(self.model, device_ids=[device], broadcast_buffers=False, find_unused_parameters=True)
         elif world_size > 1 and distributed_data_parallel is False:
             self.model = DataParallel(self.model, output_device=device)
@@ -61,7 +61,6 @@ class LoadEvalModel(object):
 def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger, device):
     disable_tqdm = device != 0
     eval_model.eval()
-
     moment_dir = join(cfgs.RUN.save_dir, "moments")
     if not exists(moment_dir):
         os.makedirs(moment_dir)
