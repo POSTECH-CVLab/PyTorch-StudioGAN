@@ -15,6 +15,7 @@ import glob
 import warnings
 
 from torch.nn import DataParallel
+from torchvision.datasets import CIFAR10, CIFAR100
 from torch.nn.parallel import DistributedDataParallel
 from torchvision.utils import save_image
 from itertools import chain
@@ -123,6 +124,12 @@ def prepare_folder(names, save_dir):
         folder_path = join(save_dir, name)
         if not exists(folder_path):
             os.makedirs(folder_path)
+
+def download_data_if_possible(data_name, data_dir):
+    if data_name == "CIFAR10":
+        data = CIFAR10(root=data_dir, train=True, download=True)
+    elif data_name == "CIFAR100":
+        data = CIFAR100(root=data_dir, train=True, download=True)
 
 
 def fix_seed(seed):

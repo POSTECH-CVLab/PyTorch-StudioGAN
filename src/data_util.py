@@ -12,7 +12,6 @@ from torchvision.datasets import CIFAR10, CIFAR100
 from torchvision.datasets import ImageFolder
 from scipy import io
 from PIL import ImageOps, Image
-
 import torch
 import torchvision.transforms as transforms
 import h5py as h5
@@ -89,12 +88,13 @@ class Dataset_(Dataset):
 
     def load_dataset(self):
         if self.hdf5_path is not None:
-            self.hdf5 = h5.File(self.hdf5_path, 'r')
-            if self.load_data_in_memory:
-                print("Load {path} into memory.".format(path=self.hdf5_path))
-                self.data = np.transpose(self.hdf5["imgs"], (0, 2, 3, 1))[:]
-                self.labels = self.hdf5["labels"][:]
-                self.hdf5.close()
+            with h5.File(self.hdf5_path, "r") as f:
+                data, labels = f["imgs"], f["labels"]
+                self.num_dataset = data.shape[0]
+                if self.load_data_in_memory:
+                    print("Load {path} into memory.".format(path=self.hdf5_path))
+                    self.data = np.transpose(data, (0, 2, 3, 1))[:]
+                    self.labels = labels[:]
             return
 
         if self.data_name == "CIFAR10":
@@ -107,12 +107,15 @@ class Dataset_(Dataset):
             root = os.path.join(self.data_dir, mode)
             self.data = ImageFolder(root=root)
 
+    def _get_hdf5(self, index):
+        with h5.File(self.hdf5_path, "r") as f:
+            img = np.transpose(f["imgs"][index], (1, 2, 0))
+            label = f["labels"][index]
+        return img, label
+
     def __len__(self):
         if self.hdf5_path is not None:
-            if self.load_data_in_memory:
-                num_dataset = self.data.shape[0]
-            else:
-                num_dataset = len(self.hdf5["imgs"])
+            num_dataset = self.num_dataset
         else:
             num_dataset = len(self.data)
         return num_dataset
@@ -120,10 +123,9 @@ class Dataset_(Dataset):
     def __getitem__(self, index):
         if self.hdf5_path is not None:
             if self.load_data_in_memory:
-                img, label = self.data[index], int(self.labels[index])
+                img, label = self.data[index], self.labels[index]
             else:
-                img = np.transpose(self.hdf5["imgs"][index], (1, 2, 0))
-                label = self.hdf5["labels"][index]
+                img, label = self._get_hdf5(index, )
         else:
             img, label = self.data[index]
         return self.trsf(img), int(label)

@@ -109,9 +109,6 @@ def main():
     misc.prepare_folder(names=["checkpoints", "firgures", "hdf5", "logs", "moments", "samples", "values"],
                         save_dir=cfgs.RUN.save_dir)
 
-    if cfgs.RUN.distributed_data_parallel:
-        torch.multiprocessing.set_start_method('spawn')
-
     run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
 
     crop_long_edge = False if cfgs.DATA in ["CIFAR10", "CIFAR100", "Tiny_ImageNet"] else True
@@ -139,6 +136,9 @@ def main():
         print("You have chosen a specific GPU. This will completely disable data parallelism.")
 
     if cfgs.RUN.distributed_data_parallel and cfgs.OPTIMIZATION.world_size > 1:
+        folder_names = ["checkpoints", "firgures", "hdf5", "logs", "moments", "samples", "values"]
+        misc.prepare_folder(names=folder_names, save_dir=cfgs.RUN.save_dir)
+        misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
         print("Train the models through DistributedDataParallel (DDP) mode.")
         mp.spawn(loader.load_worker, nprocs=gpus_per_node, args=(cfgs, gpus_per_node, run_name, hdf5_path))
     else:
