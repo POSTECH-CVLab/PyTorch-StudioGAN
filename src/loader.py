@@ -109,7 +109,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define dataloaders for train and evaluation.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
-        train_sampler = DistributedSampler(train_dataset)
+        train_sampler = DistributedSampler(train_dataset,
+                                           num_replicas=cfgs.OPTIMIZATION.world_size,
+                                           rank=local_rank)
         cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size // cfgs.OPTIMIZATION.world_size
     else:
         train_sampler = None

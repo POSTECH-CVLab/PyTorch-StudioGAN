@@ -125,7 +125,7 @@ class Dataset_(Dataset):
             if self.load_data_in_memory:
                 img, label = self.data[index], self.labels[index]
             else:
-                img, label = self._get_hdf5(index, )
+                img, label = self._get_hdf5(index)
         else:
             img, label = self.data[index]
         return self.trsf(img), int(label)

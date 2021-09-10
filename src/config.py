@@ -234,10 +234,21 @@ class Configurations(object):
         self.RUN = misc.make_empty_object()
 
         # -----------------------------------------------------------------------------
+        # run settings
+        # -----------------------------------------------------------------------------
+        self.MISC = misc.make_empty_object()
+        self.MISC.no_proc_data = ["CIFAR10", "CIFAR100", "Tiny_ImageNet"]
+        self.MISC.base_folders = ["checkpoints", "figures", "hdf5", "logs", "moments",
+                                  "samples", "values"]
+
+        # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings
         # -----------------------------------------------------------------------------
         self.STYLEGAN2 = misc.make_empty_object()
 
+        # -----------------------------------------------------------------------------
+        # Module settings
+        # -----------------------------------------------------------------------------
         self.MODULES = misc.make_empty_object()
 
         self.super_cfgs = {

@@ -106,9 +106,6 @@ class WORKER(object):
             else:
                 raise NotImplementedError
 
-        if self.RUN.distributed_data_parallel:
-            self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
-
         if self.RUN.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
 
@@ -139,8 +136,11 @@ class WORKER(object):
             real_image_basket, real_label_basket = next(self.train_iter)
             self.epoch_counter += 1
 
-        real_image_basket = torch.split(real_image_basket.to(self.local_rank), self.OPTIMIZATION.batch_size)
-        real_label_basket = torch.split(real_label_basket.to(self.local_rank), self.OPTIMIZATION.batch_size)
+        real_image_basket.cuda(non_blocking=True)
+        real_label_basket.cuda(non_blocking=True)
+
+        real_image_basket = torch.split(real_image_basket, self.OPTIMIZATION.batch_size)
+        real_label_basket = torch.split(real_label_basket, self.OPTIMIZATION.batch_size)
         return real_image_basket, real_label_basket
 
     def train(self, current_step):
@@ -174,7 +174,6 @@ class WORKER(object):
                         LOSS=self.LOSS,
                         device=self.local_rank,
                         cal_trsp_cost=False)
-                    print(current_step)
 
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
