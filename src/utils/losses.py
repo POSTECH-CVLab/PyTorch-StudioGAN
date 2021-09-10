@@ -34,11 +34,12 @@ class CrossEntropyLossMI(torch.nn.Module):
 
 
 class ConditionalContrastiveLoss(torch.nn.Module):
-    def __init__(self, num_classes, temperature, global_rank):
+    def __init__(self, num_classes, temperature, master_rank, DDP):
         super(ConditionalContrastiveLoss, self).__init__()
         self.num_classes = num_classes
         self.temperature = temperature
-        self.global_rank = global_rank
+        self.master_rank = master_rank
+        self.DDP = DDP
         self.calculate_similarity_matrix = self._calculate_similarity_matrix()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
 
@@ -49,7 +50,7 @@ class ConditionalContrastiveLoss(torch.nn.Module):
         for c in range(self.num_classes):
             c_indices = np.where(labels == c)
             mask_multi[c, c_indices] = target
-        return torch.tensor(mask_multi).type(torch.long).to(self.global_rank)
+        return torch.tensor(mask_multi).type(torch.long).to(self.master_rank)
 
     def _calculate_similarity_matrix(self):
         return self._cosine_simililarity_matrix
@@ -59,7 +60,7 @@ class ConditionalContrastiveLoss(torch.nn.Module):
         assert h == w, "h and w should be same"
         mask = np.ones((h, w)) - np.eye(h)
         mask = torch.from_numpy(mask)
-        mask = (mask).type(torch.bool).to(self.global_rank)
+        mask = (mask).type(torch.bool).to(self.master_rank)
         return M[mask].view(h, -1)
 
     def _cosine_simililarity_matrix(self, x, y):
@@ -71,7 +72,6 @@ class ConditionalContrastiveLoss(torch.nn.Module):
             embed = torch.cat(misc.GatherLayer.apply(embed), dim=0)
             proxy = torch.cat(misc.GatherLayer.apply(proxy), dim=0)
             label = torch.cat(misc.GatherLayer.apply(label), dim=0)
-        import pdb;pdb.set_trace()
 
         sim_matrix = self.calculate_similarity_matrix(embed, embed)
         sim_matrix = torch.exp(self._remove_diag(sim_matrix) / self.temperature)
@@ -86,11 +86,12 @@ class ConditionalContrastiveLoss(torch.nn.Module):
 
 
 class ConditionalContrastiveLossMI(torch.nn.Module):
-    def __init__(self, num_classes, temperature, global_rank):
+    def __init__(self, num_classes, temperature, master_rank, DDP):
         super(ConditionalContrastiveLossMI, self).__init__()
         self.num_classes = num_classes
         self.temperature = temperature
-        self.global_rank = global_rank
+        self.master_rank = master_rank
+        self.DDP = DDP
         self.calculate_similarity_matrix = self._calculate_similarity_matrix()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
 
@@ -101,7 +102,7 @@ class ConditionalContrastiveLossMI(torch.nn.Module):
         for c in range(self.num_classes):
             c_indices = np.where(labels == c)
             mask_multi[c, c_indices] = target
-        return torch.tensor(mask_multi).type(torch.long).to(self.global_rank)
+        return torch.tensor(mask_multi).type(torch.long).to(self.master_rank)
 
     def _calculate_similarity_matrix(self):
         return self._cosine_simililarity_matrix
@@ -111,7 +112,7 @@ class ConditionalContrastiveLossMI(torch.nn.Module):
         assert h == w, "h and w should be same"
         mask = np.ones((h, w)) - np.eye(h)
         mask = torch.from_numpy(mask)
-        mask = (mask).type(torch.bool).to(self.global_rank)
+        mask = (mask).type(torch.bool).to(self.master_rank)
         return M[mask].view(h, -1)
 
     def _cosine_simililarity_matrix(self, x, y):

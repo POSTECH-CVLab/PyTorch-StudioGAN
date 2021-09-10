@@ -50,7 +50,7 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
     else:
         top1, top5 = "N/A", "N/A"
 
-    if device == 0:
+    if device == 0 and not disable_tqdm:
         logger.info("Calculate inception score of generated images ({} images).".format(num_generate))
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):

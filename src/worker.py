@@ -82,6 +82,7 @@ class WORKER(object):
 
         if self.RUN.train:
             self.train_iter = iter(self.train_dataloader)
+            self.epoch_counter = 0
 
         self.l2_loss = torch.nn.MSELoss()
         self.fm_loss = losses.feature_matching_loss
@@ -94,7 +95,8 @@ class WORKER(object):
         elif self.MODEL.d_cond_mtd == "2C":
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
                                                                temperature=self.LOSS.temperature,
-                                                               global_rank=self.global_rank)
+                                                               master_rank="cuda",
+                                                               DDP=self.RUN.distributed_data_parallel)
 
         if self.MODEL.aux_cls_type == "TAC":
             if self.MODEL.d_cond_mtd == "AC":
@@ -102,9 +104,14 @@ class WORKER(object):
             elif self.MODEL.d_cond_mtd == "2C":
                 self.cond_loss_mi = losses.ConditionalContrastiveLossMI(num_classes=self.DATA.num_classes,
                                                                         temperature=self.LOSS.temperature,
-                                                                        global_rank=self.global_rank)
+                                                                        master_rank="cuda",
+                                                                        DDP=self.RUN.distributed_data_parallel)
             else:
                 raise NotImplementedError
+
+        if self.RUN.distributed_data_parallel:
+            self.train_dataloader.sampler.set_epoch(self.epoch_counter)
+            self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
 
         if self.RUN.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
@@ -132,9 +139,13 @@ class WORKER(object):
         try:
             real_image_basket, real_label_basket = next(self.train_iter)
         except StopIteration:
+            self.epoch_counter += 1
+            if self.RUN.distributed_data_parallel:
+                self.train_dataloader.sampler.set_epoch(self.epoch_counter)
+            else:
+                pass
             self.train_iter = iter(self.train_dataloader)
             real_image_basket, real_label_basket = next(self.train_iter)
-            self.epoch_counter += 1
 
         real_image_basket.cuda(non_blocking=True)
         real_label_basket.cuda(non_blocking=True)
@@ -454,7 +465,7 @@ class WORKER(object):
                                             "figures/{run_name}/generated_canvas.png".format(run_name=self.run_name)),
                              ncol=ncol,
                              logger=self.logger,
-                             logging=True)
+                             logging= self.global_rank == 0)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -489,7 +500,7 @@ class WORKER(object):
                                                               is_acc=is_acc,
                                                               device=self.local_rank,
                                                               logger=self.logger,
-                                                              disable_tqdm=self.local_rank != 0)
+                                                              disable_tqdm=self.global_rank != 0)
 
             fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
                                                   generator=generator,
@@ -502,7 +513,7 @@ class WORKER(object):
                                                   logger=self.logger,
                                                   pre_cal_mean=self.mu,
                                                   pre_cal_std=self.sigma,
-                                                  disable_tqdm=self.local_rank != 0)
+                                                  disable_tqdm=self.global_rank != 0)
 
             prc, rec, _ = f_beta.calculate_f_beta(data_loader=self.eval_dataloader,
                                                   eval_model=self.eval_model,
@@ -515,7 +526,8 @@ class WORKER(object):
                                                   num_angles=num_angles,
                                                   beta=beta4PR,
                                                   device=self.local_rank,
-                                                  logger=self.logger)
+                                                  logger=self.logger,
+                                                  disable_tqdm=self.global_rank != 0)
 
             if self.best_fid is None or fid_score <= self.best_fid:
                 self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best =\

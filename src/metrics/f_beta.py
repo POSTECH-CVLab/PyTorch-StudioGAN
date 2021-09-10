@@ -34,10 +34,10 @@ import utils.sample as sample
 
 
 class precision_recall(object):
-    def __init__(self, eval_model, device):
+    def __init__(self, eval_model, device, disable_tqdm):
         self.eval_model = eval_model
         self.device = device
-        self.disable_tqdm = device != 0
+        self.disable_tqdm = disable_tqdm
 
     def cluster_into_bins(self, real_embeds, fake_embeds, num_clusters):
         representations = np.vstack([real_embeds, fake_embeds])
@@ -122,11 +122,11 @@ class precision_recall(object):
 
 
 def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, discriminator, num_runs, num_clusters,
-                     num_angles, beta, device, logger):
+                     num_angles, beta, device, logger, disable_tqdm):
     eval_model.eval()
-    PR = precision_recall(eval_model, device=device)
+    PR = precision_recall(eval_model, device, disable_tqdm)
 
-    if device == 0:
+    if device == 0 and not disable_tqdm:
         logger.info("Calculate F_beta score of generated images ({} images).".format(num_generate))
     precisions, recalls = PR.compute_precision_recall(data_loader=data_loader,
                                                       num_generate=num_generate,
