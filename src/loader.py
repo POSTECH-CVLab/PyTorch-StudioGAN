@@ -49,6 +49,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         print("Use GPU: {global_rank} for training.".format(global_rank=global_rank))
         misc.setup(global_rank, cfgs.OPTIMIZATION.world_size)
         torch.cuda.set_device(local_rank)
+        misc.fix_seed(cfgs.RUN.seed + global_rank)
     else:
         global_rank = local_rank
 
