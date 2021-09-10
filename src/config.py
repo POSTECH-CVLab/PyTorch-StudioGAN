@@ -460,6 +460,8 @@ class Configurations(object):
             print("Turning on DDP might cause inexact evaluation results. \
                 \nPlease use a single GPU or DataParallel for the exact evluation.")
 
+        if self.OPTIMIZATION.world_size > 1 and self.RUN.synchronized_bn:
+            assert not self.RUN.batch_statistics, "batch_statistics cannot be used with synchronized_bn."
 
         if self.DATA.name in ["CIFAR10", "CIFAR100"]:
             assert self.RUN.ref_dataset in ["train", "test"], "There is no data for validation."
