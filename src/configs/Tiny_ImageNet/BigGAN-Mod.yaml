@@ -1,8 +1,8 @@
-data:
+DATA:
   name: "Tiny_ImageNet"
   img_size: 64
   num_classes: 200
-model:
+MODEL:
   backbone: "big_resnet"
   g_cond_mtd: "cBN"
   d_cond_mtd: "PD"
@@ -18,10 +18,9 @@ model:
   apply_g_ema: true
   g_ema_decay: 0.9999
   g_ema_start: 20000
-loss:
+LOSS:
   adv_loss: "hinge"
-
-optimization:
+OPTIMIZATION:
   batch_size: 1024
   g_lr: 0.0001
   d_lr: 0.0004

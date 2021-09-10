@@ -174,6 +174,7 @@ class WORKER(object):
                         LOSS=self.LOSS,
                         device=self.local_rank,
                         cal_trsp_cost=False)
+                    print(current_step)
 
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
