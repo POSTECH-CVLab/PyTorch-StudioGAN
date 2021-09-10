@@ -135,6 +135,7 @@ def main():
         print("You have chosen a specific GPU. This will completely disable data parallelism.")
 
     if cfgs.RUN.distributed_data_parallel and cfgs.OPTIMIZATION.world_size > 1:
+        mp.set_start_method("spawn")
         misc.prepare_folder(names=cfgs.MISC.base_folders, save_dir=cfgs.RUN.save_dir)
         misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
         print("Train the models through DistributedDataParallel (DDP) mode.")
@@ -154,5 +155,4 @@ def main():
 
 
 if __name__ == "__main__":
-    mp.set_start_method("spawn")
     main()
