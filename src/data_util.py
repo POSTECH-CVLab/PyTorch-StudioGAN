@@ -68,8 +68,9 @@ class Dataset_(Dataset):
         self.trsf_list = []
 
         if self.hdf5_path is not None:
+            self.trsf_list += [transforms.ToPILImage()]
             if self.random_flip:
-                self.trsf_list += [transforms.ToPILImage(), transforms.RandomHorizontalFlip()]
+                self.trsf_list += [transforms.RandomHorizontalFlip()]
         else:
             if crop_long_edge:
                 crop_op = RandomCropLongEdge() if self.train else CenterCropLongEdge()
