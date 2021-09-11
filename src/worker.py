@@ -123,7 +123,8 @@ class WORKER(object):
         elif self.DATA.name == "CIFAR10":
             self.num_eval = {"train": 50000, "test": 10000}
         else:
-            self.num_eval = {"train": len(self.train_dataloader.data), "valid": len(self.eval_dataset.data)}
+            self.num_eval = {"train": len(self.train_dataloader.dataset),
+                             "valid": len(self.eval_dataset.dataset)}
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  batch_statistics=self.RUN.batch_statistics,
@@ -147,11 +148,10 @@ class WORKER(object):
             self.train_iter = iter(self.train_dataloader)
             real_image_basket, real_label_basket = next(self.train_iter)
 
-        real_image_basket.cuda(non_blocking=True)
-        real_label_basket.cuda(non_blocking=True)
-
-        real_image_basket = torch.split(real_image_basket, self.OPTIMIZATION.batch_size)
-        real_label_basket = torch.split(real_label_basket, self.OPTIMIZATION.batch_size)
+        real_image_basket = torch.split(real_image_basket.to(self.local_rank, non_blocking=True),
+                                        self.OPTIMIZATION.batch_size)
+        real_label_basket = torch.split(real_label_basket.to(self.local_rank, non_blocking=True),
+                                        self.OPTIMIZATION.batch_size)
         return real_image_basket, real_label_basket
 
     def train(self, current_step):
