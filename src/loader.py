@@ -42,16 +42,17 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
 
     # -----------------------------------------------------------------------------
-    # initialize all processes and identify the local rank.
+    # initialize all processes and fix seed of each process
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
         global_rank = cfgs.RUN.current_node * (gpus_per_node) + local_rank
         print("Use GPU: {global_rank} for training.".format(global_rank=global_rank))
         misc.setup(global_rank, cfgs.OPTIMIZATION.world_size)
         torch.cuda.set_device(local_rank)
-        misc.fix_seed(cfgs.RUN.seed + global_rank)
     else:
         global_rank = local_rank
+
+    misc.fix_seed(cfgs.RUN.seed + global_rank)
 
     # -----------------------------------------------------------------------------
     # define tensorflow writer and python logger.
