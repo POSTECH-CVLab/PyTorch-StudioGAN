@@ -470,6 +470,9 @@ class Configurations(object):
             assert self.MODEL.backbone in ["big_resnet", "deep_big_resnet"], \
                 "StudioGAN does not support interpolation analysis except for biggan and deep_big_resnet."
 
+        if self.OPTIMIZATION.world_size == 1:
+            assert not self.RUN.distributed_data_parallel, "Cannot perform distributed training with a single gpu"
+
         assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
             \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \
             dataset to be downloaded."

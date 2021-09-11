@@ -32,6 +32,7 @@ import matplotlib.pyplot as plt
 
 import utils.sample as sample
 import utils.losses as losses
+import utils.ckpt as ckpt
 
 
 class make_empty_object(object):
@@ -188,12 +189,21 @@ def toggle_grad(model, grad, num_freeze_layers=-1):
                     param.requires_grad = False
 
 
+def load_log_dicts(directory, file_name, ph):
+    try:
+        log_dict = ckpt.load_prev_dict(directory=directory, file_name=file_name)
+    except:
+        log_dict = ph
+    return log_dict
+
+
 def make_model_require_grad(model):
     if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
         model = model.module
 
     for name, param in model.named_parameters():
         param.requires_grad = True
+
 
 def identity(x):
     return x

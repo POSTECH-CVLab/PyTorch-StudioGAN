@@ -84,7 +84,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
     writer = SummaryWriter(log_dir=join(RUN.save_dir, 'logs', prev_run_name)) if global_rank == 0 else None
 
     if is_train and RUN.seed != seed:
-        RUN.seed = seed
+        RUN.seed = seed + global_rank
         misc.fix_seed(RUN.seed)
 
     if device == 0:
@@ -109,12 +109,12 @@ def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
 
     load_ckpt(model=Gen, optimizer=None, ckpt_path=Gen_ckpt_path, load_model=True, load_opt=False, load_misc=False)
 
-    _, _, _, _, best_step, _, _ = load_ckpt(model=Dis,
-                                            optimizer=None,
-                                            ckpt_path=Dis_ckpt_path,
-                                            load_model=True,
-                                            load_opt=False,
-                                            load_misc=True)
+    _, _, _, _, _, _, best_step, _, _ = load_ckpt(model=Dis,
+                                                  optimizer=None,
+                                                  ckpt_path=Dis_ckpt_path,
+                                                  load_model=True,
+                                                  load_opt=False,
+                                                  load_misc=True)
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-best-weights-step*.pth"))[0]

@@ -179,19 +179,12 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       global_rank=global_rank,
                                       device=local_rank)
 
-        if topk == "initialize": topk == cfgs.OPTIMIZATION.batch_size
+        if topk == "initialize":
+            topk == cfgs.OPTIMIZATION.batch_size
 
         dict_dir = join(cfgs.RUN.save_dir, "values", run_name)
-
-    try:
-        loss_list_dict = ckpt.load_prev_dict(directory=dict_dir, file_name="losses.npy")
-    except:
-        loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
-
-    try:
-        metric_list_dict = ckpt.load_prev_dict(directory=dict_dir, file_name="metrics.npy")
-    except:
-        metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
+        loss_list_dict = misc.load_log_dicts(directory=dict_dir, file_name="losses.npy", ph=loss_list_dict)
+        metric_list_dict = misc.load_log_dicts(directory=dict_dir, file_name="metrics.npy", ph=metric_list_dict)
 
     # -----------------------------------------------------------------------------
     # prepare parallel training
