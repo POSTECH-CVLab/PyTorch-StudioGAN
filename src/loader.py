@@ -110,7 +110,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define a distributed sampler for DDP training.
     # define dataloaders for train and evaluation.
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.distributed_data_parallel:
+    if cfgs.RUN.train and cfgs.RUN.distributed_data_parallel:
         train_sampler = DistributedSampler(train_dataset,
                                            num_replicas=cfgs.OPTIMIZATION.world_size,
                                            rank=local_rank)
@@ -260,7 +260,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
             if step % cfgs.RUN.save_every == 0:
                 # visuailize fake images
-                worker.visualize_fake_images(ncol=ncol)
+                # worker.visualize_fake_images(ncol=ncol)
 
                 # evaluate GAN for monitoring purpose
                 if cfgs.RUN.eval:

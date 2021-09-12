@@ -110,8 +110,9 @@ class WORKER(object):
                 raise NotImplementedError
 
         if self.RUN.distributed_data_parallel:
-            self.train_dataloader.sampler.set_epoch(self.epoch_counter)
             self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
+            if self.RUN.train:
+                self.train_dataloader.sampler.set_epoch(self.epoch_counter)
 
         if self.RUN.mixed_precision:
             self.scaler = torch.cuda.amp.GradScaler()
@@ -141,7 +142,7 @@ class WORKER(object):
             real_image_basket, real_label_basket = next(self.train_iter)
         except StopIteration:
             self.epoch_counter += 1
-            if self.RUN.distributed_data_parallel:
+            if self.RUN.train and self.RUN.distributed_data_parallel:
                 self.train_dataloader.sampler.set_epoch(self.epoch_counter)
             else:
                 pass
