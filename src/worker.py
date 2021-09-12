@@ -134,6 +134,7 @@ class WORKER(object):
                                                  standing_step="N/A",
                                                  cfgs=self.cfgs,
                                                  device=self.local_rank,
+                                                 global_rank=self.global_rank,
                                                  logger=self.logger,
                                                  std_stat_counter=0)
 

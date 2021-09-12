@@ -81,7 +81,7 @@ class GatherLayer(torch.autograd.Function):
 
 class GeneratorController(object):
     def __init__(self, generator, batch_statistics, standing_statistics, standing_max_batch, standing_step, cfgs,
-                 device, logger, std_stat_counter):
+                 device, global_rank, logger, std_stat_counter):
         self.generator = generator
         self.batch_statistics = batch_statistics
         self.standing_statistics = standing_statistics
@@ -89,6 +89,7 @@ class GeneratorController(object):
         self.standing_step = standing_step
         self.cfgs = cfgs
         self.device = device
+        self.global_rank = global_rank
         self.logger = logger
         self.std_stat_counter = std_stat_counter
 
@@ -108,6 +109,7 @@ class GeneratorController(object):
                                           OPTIMIZATION=self.cfgs.OPTIMIZATION,
                                           RUN=self.cfgs.RUN,
                                           device=self.device,
+                                          global_rank=self.global_rank,
                                           logger=self.logger)
                 self.generator.eval()
                 self.generator.apply(set_deterministic_op_trainable)
@@ -272,10 +274,11 @@ def calculate_all_sn(model):
 
 
 def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN,
-                              device, logger):
+                              device, global_rank, logger):
     generator.train()
     generator.apply(reset_bn_statistics)
-    logger.info("Acuumulate statistics of batchnorm layers to improve generation performance.")
+    if global_rank == 0:
+        logger.info("Acuumulate statistics of batchnorm layers to improve generation performance.")
     for i in tqdm(range(standing_step)):
         batch_size_per_gpu = standing_max_batch // OPTIMIZATION.world_size
         if RUN.distributed_data_parallel:

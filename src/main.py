@@ -138,13 +138,16 @@ def main():
         misc.prepare_folder(names=cfgs.MISC.base_folders, save_dir=cfgs.RUN.save_dir)
         misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
         print("Train the models through DistributedDataParallel (DDP) mode.")
-        processes = []
-        for local_rank in range(gpus_per_node):
-            p = Process(target=loader.load_worker, args=(local_rank, cfgs, gpus_per_node, run_name, hdf5_path))
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join()
+        try:
+            processes = []
+            for local_rank in range(gpus_per_node):
+                p = Process(target=loader.load_worker, args=(local_rank, cfgs, gpus_per_node, run_name, hdf5_path))
+                p.start()
+                processes.append(p)
+            for p in processes:
+                p.join()
+        except KeyboardInterrupt:
+            misc.cleanup()
     else:
         loader.load_worker(local_rank=rank,
                            cfgs=cfgs,
