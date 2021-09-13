@@ -174,6 +174,15 @@ def g_wasserstein(g_logit_fake):
     return -torch.mean(g_logit_fake)
 
 
+def d_exp(d_logit_real, d_logit_fake):
+    d_loss = torch.exp(-d_logit_real) + torch.exp(d_logit_fake)
+    return d_loss.mean()
+
+
+def g_exp(g_logit_fake):
+    return -torch.mean(g_logit_fake)
+
+
 def crammer_singer_loss(adv_output, label, **_):
     # https://github.com/ilyakava/BigGAN-PyTorch/blob/master/train_fns.py
     # crammer singer criterion
@@ -241,8 +250,8 @@ def cal_grad_penalty(real_images, real_labels, fake_images, discriminator, devic
     grads = cal_deriv(inputs=interpolates, outputs=output_dict["adv_output"], device=device)
     grads = grads.view(grads.size(0), -1)
 
-    grads_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
-    return grads_penalty
+    grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
+    return grad_penalty
 
 
 def cal_dra_penalty(real_images, real_labels, discriminator, device):
@@ -259,8 +268,26 @@ def cal_dra_penalty(real_images, real_labels, discriminator, device):
     grads = cal_deriv(inputs=interpolates, outputs=output_dict["adv_output"], device=device)
     grads = grads.view(grads.size(0), -1)
 
-    grads_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
-    return grads_penalty
+    grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
+    return grad_penalty
+
+
+def cal_maxgrad_penalty(real_images, real_labels, fake_images, discriminator, device):
+    batch_size, c, h, w = real_images.shape
+    alpha = torch.rand(batch_size, 1)
+    alpha = alpha.expand(batch_size, real_images.nelement() // batch_size).contiguous().view(batch_size, c, h, w)
+    alpha = alpha.to(device)
+
+    real_images = real_images.to(device)
+    interpolates = alpha * real_images + ((1 - alpha) * fake_images)
+    interpolates = interpolates.to(device)
+    interpolates = autograd.Variable(interpolates, requires_grad=True)
+    output_dict = discriminator(interpolates, real_labels, eval=False)
+    grads = cal_deriv(inputs=interpolates, outputs=output_dict["adv_output"], device=device)
+    grads = grads.view(grads.size(0), -1)
+
+    maxgrad_penalty = torch.max(grads.norm(2, dim=1)**2)
+    return maxgrad_penalty
 
 
 def cal_r1_reg(adv_output, images, device):

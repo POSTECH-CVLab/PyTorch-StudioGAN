@@ -261,7 +261,7 @@ class WORKER(object):
 
                     # apply gradient penalty regularization to train wasserstein GAN
                     if self.LOSS.apply_gp:
-                        gp_loss = losses.cal_deriv4gp(real_images=real_image_basket[batch_counter],
+                        gp_loss = losses.cal_grad_penalty(real_images=real_image_basket[batch_counter],
                                                       real_labels=real_label_basket[batch_counter],
                                                       fake_images=fake_images,
                                                       discriminator=self.Dis,
@@ -270,11 +270,20 @@ class WORKER(object):
 
                     # apply deep regret analysis regularization to train wasserstein GAN
                     if self.LOSS.apply_dra:
-                        dra_loss = losses.cal_deriv4dra(real_images=real_image_basket[batch_counter],
-                                                        real_labels=real_label_basket[batch_counter],
-                                                        discriminator=self.Dis,
-                                                        device=self.local_rank)
+                        dra_loss = losses.cal_dra_penalty(real_images=real_image_basket[batch_counter],
+                                                          real_labels=real_label_basket[batch_counter],
+                                                          discriminator=self.Dis,
+                                                          device=self.local_rank)
                         dis_acml_loss += self.LOSS.dra_lambda * dra_loss
+
+                    # apply max gradient penalty regularization to train Lipschitz GAN
+                    if self.LOSS.apply_maxgp:
+                        maxgp_loss = losses.cal_maxgrad_penalty(real_images=real_image_basket[batch_counter],
+                                                                real_labels=real_label_basket[batch_counter],
+                                                                fake_images=fake_images,
+                                                                discriminator=self.Dis,
+                                                                device=self.local_rank)
+                        dis_acml_loss += self.LOSS.maxgp_lambda * maxgp_loss
 
                     # if LOSS.apply_r1_reg is True, apply R1 reg. used in multiple discriminator (FUNIT, StarGAN_v2)
                     if self.LOSS.apply_r1_reg:

@@ -103,7 +103,7 @@ class Configurations(object):
         # loss settings
         # -----------------------------------------------------------------------------
         self.LOSS = misc.make_empty_object()
-        # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge", "MH"]
+        # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge", "MH", "exp"]
         self.LOSS.adv_loss = "vanilla"
         # balancing hyperparameter for conditional image generation
         self.LOSS.cond_lambda = "N/A"
@@ -137,6 +137,10 @@ class Configurations(object):
         self.LOSS.apply_dra = False
         # strength of the deep regret analysis regularization
         self.LOSS.dra_labmda = "N/A"
+        # whther to apply max gradient penalty to let the discriminator satisfy Lipschitzness
+        self.LOSS.apply_maxgp = False
+        # strength of the maxgp regularization
+        self.LOSS.maxgp_lambda = "N/A"
         # whether to apply consistency regularization
         self.LOSS.apply_cr = False
         # strength of the consistency regularization
@@ -281,14 +285,16 @@ class Configurations(object):
                 "vanilla": losses.g_vanilla,
                 "least_square": losses.g_ls,
                 "hinge": losses.g_hinge,
-                "wasserstein": losses.g_wasserstein
+                "wasserstein": losses.g_wasserstein,
+                "exp": losses.g_exp
             }
 
             d_losses = {
                 "vanilla": losses.d_vanilla,
                 "least_square": losses.d_ls,
                 "hinge": losses.d_hinge,
-                "wasserstein": losses.d_wasserstein
+                "wasserstein": losses.d_wasserstein,
+                "exp": losses.d_exp
             }
 
             self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
