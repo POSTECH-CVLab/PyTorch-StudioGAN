@@ -72,12 +72,12 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
-        Gen_ema = load_ckpt(model=Gen_ema,
-                            optimizer=None,
-                            ckpt_path=Gen_ema_ckpt_path,
-                            load_model=True,
-                            load_opt=False,
-                            load_misc=False)
+        load_ckpt(model=Gen_ema,
+                  optimizer=None,
+                  ckpt_path=Gen_ema_ckpt_path,
+                  load_model=True,
+                  load_opt=False,
+                  load_misc=False)
 
         ema.source, ema.target = Gen, Gen_ema
 
@@ -90,6 +90,8 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
     if device == 0:
         logger = log.make_logger(RUN.save_dir, prev_run_name, None)
         logger.info("Generator checkpoint is {}".format(Gen_ckpt_path))
+        if apply_g_ema:
+            logger.info("EMA_Generator checkpoint is {}".format(Gen_ema_ckpt_path))
         logger.info("Discriminator checkpoint is {}".format(Dis_ckpt_path))
 
     if RUN.freezeD > -1 or RUN.freezeG > -1:
