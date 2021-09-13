@@ -9,7 +9,6 @@ import os
 import random
 import sys
 import yaml
-import warnings
 
 import torch
 import torch.nn as nn
@@ -402,7 +401,6 @@ class Configurations(object):
             self.AUG.parallel_augment = cr.apply_cr_aug
 
     def check_compatability(self):
-        warnings.filterwarnings("ignore")
         if self.RUN.load_data_in_memory:
             assert self.RUN.load_train_hdf5, "load_data_in_memory option is appliable with the load_train_hdf5 (-hdf5) option."
 
