@@ -161,11 +161,11 @@ class Configurations(object):
         self.LOSS.d_lambda = "N/A"
         # whether to apply latent optimization for stable training
         self.LOSS.apply_lo = False
-        # step size for latent optimization
+        # latent step size for latent optimization
         self.LOSS.lo_alpha = "N/A"
         # damping factor for calculating Fisher Information matrix
         self.LOSS.lo_beta = "N/A"
-        # a portion of z for latent optimization
+        # portion of z for latent optimization (c)
         self.LOSS.lo_rate = "N/A"
         # strength of latent optimization (w_{r})
         self.LOSS.lo_lambda = "N/A"

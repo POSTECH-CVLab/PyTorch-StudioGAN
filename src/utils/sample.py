@@ -116,6 +116,7 @@ def generate_images(z_prior,
                                                lo_steps=lo_steps,
                                                lo_alpha=LOSS.lo_alpha,
                                                lo_beta=LOSS.lo_beta,
+                                               eval=not is_train,
                                                cal_trsp_cost=cal_trsp_cost,
                                                device=device)
     else:

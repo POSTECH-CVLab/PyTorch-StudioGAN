@@ -65,7 +65,8 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
                                                                 discriminator=discriminator,
                                                                 is_train=False,
                                                                 LOSS=LOSS,
-                                                                device=device)
+                                                                device=device,
+                                                                cal_trsp_cost=False)
         ps = inception_softmax(eval_model, fake_images)
         ps_holder.append(ps)
         if is_acc:

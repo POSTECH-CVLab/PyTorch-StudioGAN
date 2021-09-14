@@ -174,7 +174,7 @@ class WORKER(object):
                     real_images = real_image_basket[batch_counter].to(self.local_rank, non_blocking=True)
                     real_labels = real_label_basket[batch_counter].to(self.local_rank, non_blocking=True)
                     # sample fake images and labels from p(G(z), y)
-                    fake_images, fake_labels, fake_images_eps, _ = sample.generate_images(
+                    fake_images, fake_labels, fake_images_eps, trsp_cost = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
                         truncation_th=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size,
@@ -187,7 +187,7 @@ class WORKER(object):
                         is_train=True,
                         LOSS=self.LOSS,
                         device=self.local_rank,
-                        cal_trsp_cost=False)
+                        cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
@@ -216,6 +216,10 @@ class WORKER(object):
                         if self.MODEL.aux_cls_type == "TAC":
                             tac_dis_loss = self.cond_loss_mi(**fake_dict)
                             dis_acml_loss += self.LOSS.tac_dis_lambda * tac_dis_loss
+
+                    # add transport cost for latent optimization training
+                    if self.LOSS.apply_lo:
+                        dis_acml_loss += self.LOSS.lo_lambda * trsp_cost
 
                     # if LOSS.apply_cr is True, force the adv. and cls. logits to be the same
                     if self.LOSS.apply_cr:
@@ -345,7 +349,7 @@ class WORKER(object):
                         is_train=True,
                         LOSS=self.LOSS,
                         device=self.local_rank,
-                        cal_trsp_cost=True)
+                        cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     fake_images_ = self.AUG.series_augment(fake_images)
@@ -378,7 +382,7 @@ class WORKER(object):
 
                     # add transport cost for latent optimization training
                     if self.LOSS.apply_lo:
-                        gen_acml_loss += self.LOSS.lo_rate * trsp_cost
+                        gen_acml_loss += self.LOSS.lo_lambda * trsp_cost
 
                     # apply latent consistency regularization for generating diverse images
                     if self.LOSS.apply_zcr:

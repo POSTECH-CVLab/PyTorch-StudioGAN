@@ -205,19 +205,19 @@ def cal_deriv(inputs, outputs, device):
 
 
 def latent_optimise(zs, fake_labels, generator, discriminator, batch_size, lo_rate, lo_steps, lo_alpha, lo_beta,
-                    cal_trsf_cost, device):
-    for step in range(lo_steps):
+                    eval, cal_trsp_cost, device):
+    for step in range(lo_steps-1):
         drop_mask = (torch.FloatTensor(batch_size, 1).uniform_() > 1 - lo_rate).to(device)
 
         zs = autograd.Variable(zs, requires_grad=True)
         fake_images = generator(zs, fake_labels)
-        output_dict = discriminator(fake_images, fake_labels, eval=False)
+        output_dict = discriminator(fake_images, fake_labels, eval=eval)
         z_grads = cal_deriv(inputs=zs, outputs=output_dict["adv_output"], device=device)
         z_grads_norm = torch.unsqueeze((z_grads.norm(2, dim=1)**2), dim=1)
         delta_z = lo_alpha * z_grads / (lo_beta + z_grads_norm)
         zs = torch.clamp(zs + drop_mask * delta_z, -1.0, 1.0)
 
-        if cal_trsf_cost:
+        if cal_trsp_cost:
             if step == 0:
                 trsf_cost = (delta_z.norm(2, dim=1)**2).mean()
             else:

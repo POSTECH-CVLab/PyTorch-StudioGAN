@@ -86,7 +86,8 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
                                                           discriminator=discriminator,
                                                           is_train=False,
                                                           LOSS=LOSS,
-                                                          device=device)
+                                                          device=device,
+                                                          cal_trsp_cost=False)
             images = images.to(device)
         else:
             try:
