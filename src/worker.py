@@ -150,10 +150,8 @@ class WORKER(object):
             self.train_iter = iter(self.train_dataloader)
             real_image_basket, real_label_basket = next(self.train_iter)
 
-        real_image_basket = torch.split(real_image_basket.to(self.local_rank, non_blocking=True),
-                                        self.OPTIMIZATION.batch_size)
-        real_label_basket = torch.split(real_label_basket.to(self.local_rank, non_blocking=True),
-                                        self.OPTIMIZATION.batch_size)
+        real_image_basket = torch.split(real_image_basket, self.OPTIMIZATION.batch_size)
+        real_label_basket = torch.split(real_label_basket, self.OPTIMIZATION.batch_size)
         return real_image_basket, real_label_basket
 
     def train(self, current_step):
@@ -172,6 +170,9 @@ class WORKER(object):
             self.OPTIMIZATION.d_optimizer.zero_grad()
             with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
+                    # load real images and labels onto the GPU memory
+                    real_images = real_image_basket[batch_counter].to(self.local_rank, non_blocking=True)
+                    real_labels = real_label_basket[batch_counter].to(self.local_rank, non_blocking=True)
                     # sample fake images and labels from p(G(z), y)
                     fake_images, fake_labels, fake_images_eps, _ = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
@@ -191,14 +192,14 @@ class WORKER(object):
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
                     if self.LOSS.apply_r1_reg:
-                        real_image_basket[batch_counter].requires_grad_()
+                        real_images.requires_grad_()
 
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
-                    real_images = self.AUG.series_augment(real_image_basket[batch_counter])
+                    real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
-                    real_dict = self.Dis(real_images, real_label_basket[batch_counter])
+                    real_dict = self.Dis(real_images_, real_labels)
                     fake_dict = self.Dis(fake_images_, fake_labels)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
@@ -218,8 +219,8 @@ class WORKER(object):
 
                     # if LOSS.apply_cr is True, force the adv. and cls. logits to be the same
                     if self.LOSS.apply_cr:
-                        real_prl_images = self.AUG.parallel_augment(real_image_basket[batch_counter])
-                        real_prl_dict = self.Dis(real_prl_images, real_label_basket[batch_counter])
+                        real_prl_images = self.AUG.parallel_augment(real_images)
+                        real_prl_dict = self.Dis(real_prl_images, real_labels)
                         real_consist_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
                         if self.MODEL.d_cond_mtd == "AC":
                             real_consist_loss += self.l2_loss(real_dict["cls_output"], real_prl_dict["cls_output"])
@@ -231,9 +232,9 @@ class WORKER(object):
 
                     # if LOSS.apply_bcr is True, apply balanced consistency regularization proposed in ICRGAN
                     if self.LOSS.apply_bcr:
-                        real_prl_images = self.AUG.parallel_augment(real_image_basket[batch_counter])
+                        real_prl_images = self.AUG.parallel_augment(real_images)
                         fake_prl_images = self.AUG.parallel_augment(fake_images)
-                        real_prl_dict = self.Dis(real_prl_images, real_label_basket[batch_counter])
+                        real_prl_dict = self.Dis(real_prl_images, real_labels)
                         fake_prl_dict = self.Dis(fake_prl_images, fake_labels)
                         real_bcr_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
                         fake_bcr_loss = self.l2_loss(fake_dict["adv_output"], fake_prl_dict["adv_output"])
@@ -261,8 +262,8 @@ class WORKER(object):
 
                     # apply gradient penalty regularization to train wasserstein GAN
                     if self.LOSS.apply_gp:
-                        gp_loss = losses.cal_grad_penalty(real_images=real_image_basket[batch_counter],
-                                                      real_labels=real_label_basket[batch_counter],
+                        gp_loss = losses.cal_grad_penalty(real_images=real_images,
+                                                      real_labels=real_labels,
                                                       fake_images=fake_images,
                                                       discriminator=self.Dis,
                                                       device=self.local_rank)
@@ -270,16 +271,16 @@ class WORKER(object):
 
                     # apply deep regret analysis regularization to train wasserstein GAN
                     if self.LOSS.apply_dra:
-                        dra_loss = losses.cal_dra_penalty(real_images=real_image_basket[batch_counter],
-                                                          real_labels=real_label_basket[batch_counter],
+                        dra_loss = losses.cal_dra_penalty(real_images=real_images,
+                                                          real_labels=real_labels,
                                                           discriminator=self.Dis,
                                                           device=self.local_rank)
                         dis_acml_loss += self.LOSS.dra_lambda * dra_loss
 
                     # apply max gradient penalty regularization to train Lipschitz GAN
                     if self.LOSS.apply_maxgp:
-                        maxgp_loss = losses.cal_maxgrad_penalty(real_images=real_image_basket[batch_counter],
-                                                                real_labels=real_label_basket[batch_counter],
+                        maxgp_loss = losses.cal_maxgrad_penalty(real_images=real_images,
+                                                                real_labels=real_labels,
                                                                 fake_images=fake_images,
                                                                 discriminator=self.Dis,
                                                                 device=self.local_rank)
@@ -288,7 +289,7 @@ class WORKER(object):
                     # if LOSS.apply_r1_reg is True, apply R1 reg. used in multiple discriminator (FUNIT, StarGAN_v2)
                     if self.LOSS.apply_r1_reg:
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                         images=real_image_basket[batch_counter],
+                                                         images=real_images,
                                                          device=self.local_rank)
                         dis_acml_loss += self.LOSS.r1_lambda * real_r1_loss
 
