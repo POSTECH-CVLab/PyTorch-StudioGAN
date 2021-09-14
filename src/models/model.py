@@ -96,10 +96,10 @@ def prepare_parallel_training(Gen, Dis, Gen_ema, world_size, distributed_data_pa
                 if apply_g_ema:
                     Gen_ema = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen_ema, process_group)
 
-            Gen = DDP(Gen, device_ids=[device], broadcast_buffers=False)
-            Dis = DDP(Dis, device_ids=[device], broadcast_buffers=False)
+            Gen = DDP(Gen, device_ids=[device], broadcast_buffers=True, find_unused_parameters=True)
+            Dis = DDP(Dis, device_ids=[device], broadcast_buffers=True, find_unused_parameters=True)
             if apply_g_ema:
-                Gen_ema = DDP(Gen_ema, device_ids=[device], broadcast_buffers=False)
+                Gen_ema = DDP(Gen_ema, device_ids=[device], broadcast_buffers=True, find_unused_parameters=True)
         else:
             Gen = DataParallel(Gen, output_device=device)
             Dis = DataParallel(Dis, output_device=device)
