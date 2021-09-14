@@ -103,7 +103,7 @@ class Configurations(object):
         # loss settings
         # -----------------------------------------------------------------------------
         self.LOSS = misc.make_empty_object()
-        # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge", "MH", "exp"]
+        # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge", "MH"]
         self.LOSS.adv_loss = "vanilla"
         # balancing hyperparameter for conditional image generation
         self.LOSS.cond_lambda = "N/A"
@@ -290,7 +290,6 @@ class Configurations(object):
                 "least_square": losses.g_ls,
                 "hinge": losses.g_hinge,
                 "wasserstein": losses.g_wasserstein,
-                "exp": losses.g_exp
             }
 
             d_losses = {
@@ -298,7 +297,6 @@ class Configurations(object):
                 "least_square": losses.d_ls,
                 "hinge": losses.d_hinge,
                 "wasserstein": losses.d_wasserstein,
-                "exp": losses.d_exp
             }
 
             self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
