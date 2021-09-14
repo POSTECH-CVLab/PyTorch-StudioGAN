@@ -180,7 +180,8 @@ def d_exp(d_logit_real, d_logit_fake):
 
 
 def g_exp(g_logit_fake):
-    return -torch.mean(g_logit_fake)
+    g_loss = torch.exp(-g_logit_fake)
+    return g_loss.mean()
 
 
 def crammer_singer_loss(adv_output, label, **_):

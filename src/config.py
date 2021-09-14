@@ -161,14 +161,18 @@ class Configurations(object):
         self.LOSS.d_lambda = "N/A"
         # whether to apply latent optimization for stable training
         self.LOSS.apply_lo = False
-        # hyperparameters for latent optimization regularization
-        # please refer to the original paper: https://arxiv.org/abs/1707.05776 for more details
-        self.LOSS.lo_rate = "N/A"
-        self.LOSS.lo_steps4train = "N/A"
-        self.LOSS.lo_steps4eval = "N/A"
+        # step size for latent optimization
         self.LOSS.lo_alpha = "N/A"
+        # damping factor for calculating Fisher Information matrix
         self.LOSS.lo_beta = "N/A"
+        # a portion of z for latent optimization
+        self.LOSS.lo_rate = "N/A"
+        # strength of latent optimization (w_{r})
         self.LOSS.lo_lambda = "N/A"
+        # number of latent optimization iterations for a single sample during training
+        self.LOSS.lo_steps4train = "N/A"
+        # number of latent optimization iterations for a single sample during evaluation
+        self.LOSS.lo_steps4eval = "N/A"
         # whether to apply topk training for the generator update
         self.LOSS.apply_topk = False
         # hyperparameter for batch_size decay rate for topk training \in [0,1]
