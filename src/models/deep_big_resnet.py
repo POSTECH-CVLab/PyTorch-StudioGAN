@@ -309,6 +309,7 @@ class Discriminator(nn.Module):
         self.d_cond_mtd = d_cond_mtd
         self.aux_cls_type = aux_cls_type
         self.normalize_d_embed = normalize_d_embed
+        self.num_classes = num_classes
         self.mixed_precision = mixed_precision
         self.in_dims = d_in_dims_collection[str(img_size)]
         self.out_dims = d_out_dims_collection[str(img_size)]
@@ -345,6 +346,10 @@ class Discriminator(nn.Module):
         else:
             self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1, bias=True)
 
+        # double num_classes for Auxiliary Discriminative Classifier
+        if self.aux_cls_type == "ADC":
+            num_classes = num_classes*2
+
         # liner and embedding layers for discriminator conditioning
         if self.d_cond_mtd == "AC":
             self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=False)
@@ -369,7 +374,7 @@ class Discriminator(nn.Module):
         if d_init:
             ops.init_weights(self.modules, d_init)
 
-    def forward(self, x, label, eval=False):
+    def forward(self, x, label, adc_fake=False):
         with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
             embed, proxy, cls_output = None, None, None
             mi_embed, mi_proxy, mi_cls_output = None, None, None
@@ -382,6 +387,10 @@ class Discriminator(nn.Module):
 
             # adversarial training
             adv_output = torch.squeeze(self.linear1(h))
+
+            # add num_classes for discrminating fake images using ADC
+            if adc_fake:
+                label = label + self.num_classes
 
             # class conditioning
             if self.d_cond_mtd == "AC":

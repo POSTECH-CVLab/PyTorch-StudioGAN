@@ -93,7 +93,11 @@ class WORKER(object):
         if self.MODEL.d_cond_mtd == "AC":
             self.cond_loss = losses.CrossEntropyLoss()
         elif self.MODEL.d_cond_mtd == "2C":
-            self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
+            if self.MODEL.aux_cls_type == "ADC":
+                num_classes = self.DATA.num_classes*2
+            else:
+                num_classes = self.DATA.num_classes
+            self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
                                                                temperature=self.LOSS.temperature,
                                                                master_rank="cuda",
                                                                DDP=self.RUN.distributed_data_parallel)
@@ -159,6 +163,7 @@ class WORKER(object):
         # train Discriminator.
         # -----------------------------------------------------------------------------
         batch_counter = 0
+        adc_fake = self.MODEL.aux_cls_type == "ADC"
         # make GAN be trainable before starting training
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
@@ -200,7 +205,7 @@ class WORKER(object):
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     real_dict = self.Dis(real_images_, real_labels)
-                    fake_dict = self.Dis(fake_images_, fake_labels)
+                    fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=adc_fake)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -216,6 +221,11 @@ class WORKER(object):
                         if self.MODEL.aux_cls_type == "TAC":
                             tac_dis_loss = self.cond_loss_mi(**fake_dict)
                             dis_acml_loss += self.LOSS.tac_dis_lambda * tac_dis_loss
+                        elif self.MODEL.aux_cls_type == "ADC":
+                            fake_cond_loss = self.cond_loss(**fake_dict)
+                            dis_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
+                        else:
+                            pass
 
                     # add transport cost for latent optimization training
                     if self.LOSS.apply_lo:
@@ -239,7 +249,7 @@ class WORKER(object):
                         real_prl_images = self.AUG.parallel_augment(real_images)
                         fake_prl_images = self.AUG.parallel_augment(fake_images)
                         real_prl_dict = self.Dis(real_prl_images, real_labels)
-                        fake_prl_dict = self.Dis(fake_prl_images, fake_labels)
+                        fake_prl_dict = self.Dis(fake_prl_images, fake_labels, adc_fake=adc_fake)
                         real_bcr_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
                         fake_bcr_loss = self.l2_loss(fake_dict["adv_output"], fake_prl_dict["adv_output"])
                         if self.MODEL.d_cond_mtd == "AC":
@@ -254,7 +264,7 @@ class WORKER(object):
 
                     # if LOSS.apply_zcr is True, apply latent consistency regularization proposed in ICRGAN
                     if self.LOSS.apply_zcr:
-                        fake_eps_dict = self.Dis(fake_images_eps, fake_labels)
+                        fake_eps_dict = self.Dis(fake_images_eps, fake_labels, adc_fake=adc_fake)
                         fake_zcr_loss = self.l2_loss(fake_dict["adv_output"], fake_eps_dict["adv_output"])
                         if self.MODEL.d_cond_mtd == "AC":
                             fake_zcr_loss += self.l2_loss(fake_dict["cls_output"], fake_eps_dict["cls_output"])
@@ -374,6 +384,10 @@ class WORKER(object):
                         if self.MODEL.aux_cls_type == "TAC":
                             tac_gen_loss = -self.cond_loss_mi(**fake_dict)
                             dis_acml_loss += self.LOSS.tac_gen_lambda * tac_gen_loss
+                        if self.MODEL.aux_cls_type == "ADC":
+                            adc_fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=adc_fake)
+                            adc_fake_cond_loss = -self.cond_loss(**adc_fake_dict)
+                            gen_acml_loss += self.LOSS.cond_lambda * adc_fake_cond_loss
 
                     # apply feature matching regularization to stabilize adversarial dynamics
                     if self.LOSS.apply_fm:
