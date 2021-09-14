@@ -374,7 +374,7 @@ class Discriminator(nn.Module):
         if d_init:
             ops.init_weights(self.modules, d_init)
 
-    def forward(self, x, label, adc_fake=False):
+    def forward(self, x, label, eval=False, adc_fake=False):
         with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
             embed, proxy, cls_output = None, None, None
             mi_embed, mi_proxy, mi_cls_output = None, None, None
