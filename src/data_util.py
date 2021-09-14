@@ -95,6 +95,7 @@ class Dataset_(Dataset):
                     print("Load {path} into memory.".format(path=self.hdf5_path))
                     self.data = data[:]
                     self.labels = labels[:]
+            return
 
         if self.data_name == "CIFAR10":
             self.data = CIFAR10(root=self.data_dir, train=self.train, download=True)
