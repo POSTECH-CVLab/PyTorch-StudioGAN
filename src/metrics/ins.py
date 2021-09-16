@@ -40,7 +40,7 @@ def calculate_kl_div(ps, splits):
 
 
 def eval_generator(data_loader, generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size,
-                   z_prior, truncation_th, z_dim, num_classes, LOSS, is_acc, device, logger, disable_tqdm):
+                   z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, is_acc, device, logger, disable_tqdm):
     eval_model.eval()
     ps_holder = []
     if is_acc:
@@ -65,6 +65,7 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
                                                                 discriminator=discriminator,
                                                                 is_train=False,
                                                                 LOSS=LOSS,
+                                                                RUN=RUN,
                                                                 device=device,
                                                                 cal_trsp_cost=False)
         ps = inception_softmax(eval_model, fake_images)

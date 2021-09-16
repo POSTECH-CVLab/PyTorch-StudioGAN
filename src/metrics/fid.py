@@ -62,7 +62,7 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 
 def calculate_moments(data_loader, generator, discriminator, eval_model, is_generate, num_generate, y_sampler,
-                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, device, disable_tqdm):
+                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, device, disable_tqdm):
     if is_generate:
         total_instance = num_generate
     else:
@@ -86,6 +86,7 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
                                                           discriminator=discriminator,
                                                           is_train=False,
                                                           LOSS=LOSS,
+                                                          RUN=RUN,
                                                           device=device,
                                                           cal_trsp_cost=False)
             images = images.to(device)
@@ -142,6 +143,7 @@ def calculate_fid(data_loader,
                                    z_dim="N/A",
                                    num_classes=cfgs.DATA.num_classes,
                                    LOSS="N/A",
+                                   RUN="N/A",
                                    device=device,
                                    disable_tqdm=disable_tqdm)
 
@@ -158,6 +160,7 @@ def calculate_fid(data_loader,
                                z_dim=cfgs.MODEL.z_dim,
                                num_classes=cfgs.DATA.num_classes,
                                LOSS=cfgs.LOSS,
+                               RUN=cfgs.RUN,
                                device=device,
                                disable_tqdm=disable_tqdm)
 

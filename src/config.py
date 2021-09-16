@@ -419,6 +419,24 @@ class Configurations(object):
             assert self.g_cond_mtd and self.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
                 without applying spectral normalization to the generator and discriminator."
 
+        if self.RUN.langevin_sampling or self.LOSS.apply_lo:
+            assert self.RUN.langevin_sampling*self.LOSS.apply_lo == 0, "Langevin sampling and latent optmization \
+                cannot be used simultaneously."
+
+        if self.RUN.langevin_sampling:
+            msg = "Langevin sampling cannot be used for training only."
+            assert self.RUN.eval + \
+                self.RUN.vis_fake_images + \
+                self.RUN.k_nearest_neighbor + \
+                self.RUN.interpolation + \
+                self.RUN.frequency_analysis + \
+                self.RUN.tsne_analysis + \
+                self.RUN.intra_class_fid != 0, \
+            msg
+
+        if self.RUN.langevin_sampling:
+            assert self.MODEL.z_prior == "gaussian", "Langevin sampling is defined only if z_prior is gaussian"
+
         if self.RUN.freezeG > -1:
             assert self.RUN.ckpt_dir is not None, "Freezing generator needs a pre-trained model.\
                 Please specify the checkpoint directory (using -ckpt) for loading a pre-trained generator."
@@ -437,7 +455,8 @@ class Configurations(object):
                 self.RUN.k_nearest_neighbor + \
                 self.RUN.interpolation + \
                 self.RUN.frequency_analysis + \
-                self.RUN.tsne_analysis == 0, \
+                self.RUN.tsne_analysis + \
+                self.RUN.intra_class_fid == 0, \
             msg
 
         if self.RUN.intra_class_fid:

@@ -191,6 +191,7 @@ class WORKER(object):
                         discriminator=self.Dis,
                         is_train=True,
                         LOSS=self.LOSS,
+                        RUN=self.RUN,
                         device=self.local_rank,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
@@ -358,6 +359,7 @@ class WORKER(object):
                         discriminator=self.Dis,
                         is_train=True,
                         LOSS=self.LOSS,
+                        RUN=self.RUN,
                         device=self.local_rank,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
@@ -472,7 +474,8 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
@@ -487,6 +490,7 @@ class WORKER(object):
                                                                     discriminator=self.Dis,
                                                                     is_train=False,
                                                                     LOSS=self.LOSS,
+                                                                    RUN=self.RUN,
                                                                     device=self.local_rank,
                                                                     cal_trsp_cost=False)
 
@@ -510,7 +514,8 @@ class WORKER(object):
 
         is_best, num_split, num_runs4PR, num_clusters4PR, num_angles, beta4PR = False, 1, 10, 20, 1001, 8
         is_acc = True if self.DATA.name == "ImageNet" else False
-        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
@@ -527,6 +532,7 @@ class WORKER(object):
                                                               z_dim=self.MODEL.z_dim,
                                                               num_classes=self.DATA.num_classes,
                                                               LOSS=self.LOSS,
+                                                              RUN=self.RUN,
                                                               is_acc=is_acc,
                                                               device=self.local_rank,
                                                               logger=self.logger,
@@ -682,7 +688,8 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
@@ -729,7 +736,8 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
@@ -751,6 +759,7 @@ class WORKER(object):
                                                                         discriminator=self.Dis,
                                                                         is_train=False,
                                                                         LOSS=self.LOSS,
+                                                                        RUN=self.RUN,
                                                                         device=self.local_rank,
                                                                         cal_trsp_cost=False)
 
@@ -812,7 +821,8 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
@@ -861,7 +871,8 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
@@ -880,6 +891,7 @@ class WORKER(object):
                                                                         discriminator=self.Dis,
                                                                         is_train=False,
                                                                         LOSS=self.LOSS,
+                                                                        RUN=self.RUN,
                                                                         device=self.local_rank,
                                                                         cal_trsp_cost=False)
                 fake_images = fake_images.detach().cpu().numpy()
@@ -932,7 +944,8 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
@@ -970,6 +983,7 @@ class WORKER(object):
                                                                         discriminator=self.Dis,
                                                                         is_train=False,
                                                                         LOSS=self.LOSS,
+                                                                        RUN=self.RUN,
                                                                         device=self.local_rank,
                                                                         cal_trsp_cost=False)
 
@@ -1022,7 +1036,8 @@ class WORKER(object):
             self.gen_ctlr.std_stat_counter += 1
 
         FIDs = []
-        with torch.no_grad() if not self.LOSS.apply_lo else misc.dummy_context_mgr() as mpc:
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 

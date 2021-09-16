@@ -71,8 +71,8 @@ class precision_recall(object):
         return precision, recall
 
     def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim,
-                                 num_classes, generator, discriminator, LOSS, num_runs, num_clusters, num_angles,
-                                 device):
+                                 num_classes, generator, discriminator, LOSS, RUN, num_runs, num_clusters,
+                                 num_angles, device):
         data_iter = iter(data_loader)
         num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
         for i in tqdm(range(num_batches), disable=self.disable_tqdm):
@@ -89,6 +89,7 @@ class precision_recall(object):
                                                           discriminator=discriminator,
                                                           is_train=False,
                                                           LOSS=LOSS,
+                                                          RUN=RUN,
                                                           device=device,
                                                           cal_trsp_cost=False)
 
@@ -138,6 +139,7 @@ def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, dis
                                                       generator=generator,
                                                       discriminator=discriminator,
                                                       LOSS=cfgs.LOSS,
+                                                      RUN=cfgs.RUN,
                                                       num_runs=num_runs,
                                                       num_clusters=num_clusters,
                                                       num_angles=num_angles,
