@@ -431,7 +431,8 @@ class Configurations(object):
                 self.RUN.interpolation + \
                 self.RUN.frequency_analysis + \
                 self.RUN.tsne_analysis + \
-                self.RUN.intra_class_fid != 0, \
+                self.RUN.intra_class_fid + \
+                self.RUN.semantic_factorization != 0, \
             msg
 
         if self.RUN.langevin_sampling:
@@ -456,7 +457,8 @@ class Configurations(object):
                 self.RUN.interpolation + \
                 self.RUN.frequency_analysis + \
                 self.RUN.tsne_analysis + \
-                self.RUN.intra_class_fid == 0, \
+                self.RUN.intra_class_fid + \
+                self.RUN.semantic_factorization == 0, \
             msg
 
         if self.RUN.intra_class_fid:
@@ -480,7 +482,8 @@ class Configurations(object):
 
         if self.RUN.train * self.RUN.standing_statistics:
             print("StudioGAN does not support standing_statistics during training. \
-                  \nAfter training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model using the accumulated satistics."
+                  \nAfter training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained \
+                  model using the accumulated satistics."
                   )
 
         if self.RUN.distributed_data_parallel:
@@ -496,6 +499,10 @@ class Configurations(object):
         if self.RUN.interpolation:
             assert self.MODEL.backbone in ["big_resnet", "deep_big_resnet"], \
                 "StudioGAN does not support interpolation analysis except for biggan and deep_big_resnet."
+
+        if self.RUN.semantic_factorization:
+            assert self.RUN.num_semantic_axis > 0, \
+            "To apply sefa, please set num_semantic_axis to a natual number greater than 0."
 
         if self.OPTIMIZATION.world_size == 1:
             assert not self.RUN.distributed_data_parallel, "Cannot perform distributed training with a single gpu"

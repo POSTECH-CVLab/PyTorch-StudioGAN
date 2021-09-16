@@ -37,7 +37,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     ada_p, step, epoch, topk, best_step, best_fid, best_ckpt_path, is_best = \
         None, 0, 0, cfgs.OPTIMIZATION.batch_size, 0, None, None, False
-    mu, sigma, eval_model, nrow, ncol = None, None, None, 10, 8
+    mu, sigma, eval_model, num_rows, num_cols = None, None, None, 10, 8
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
     metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
 
@@ -260,7 +260,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
             if step % cfgs.RUN.save_every == 0:
                 # visuailize fake images
-                worker.visualize_fake_images(ncol=ncol)
+                worker.visualize_fake_images(num_cols=num_cols)
 
                 # evaluate GAN for monitoring purpose
                 if cfgs.RUN.eval:
@@ -297,15 +297,15 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.save_fake_images(png=True, npz=True)
 
     if cfgs.RUN.vis_fake_images:
-        worker.visualize_fake_images(ncol=ncol)
+        worker.visualize_fake_images(num_cols=num_cols)
 
     if cfgs.RUN.k_nearest_neighbor:
-        worker.run_k_nearest_neighbor(dataset=eval_dataset, nrow=nrow, ncol=ncol)
+        worker.run_k_nearest_neighbor(dataset=eval_dataset, num_rows=num_rows, num_cols=num_cols)
 
     if cfgs.RUN.interpolation:
-        worker.run_linear_interpolation(nrow=nrow, ncol=ncol, fix_z=True, fix_y=False)
+        worker.run_linear_interpolation(num_rows=num_rows, num_cols=num_cols, fix_z=True, fix_y=False)
 
-        worker.run_linear_interpolation(nrow=nrow, ncol=ncol, fix_z=False, fix_y=True)
+        worker.run_linear_interpolation(num_rows=num_rows, num_cols=num_cols, fix_z=False, fix_y=True)
 
     if cfgs.RUN.frequency_analysis:
         worker.run_frequency_analysis(dataloader=eval_dataloader)
@@ -315,3 +315,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
     if cfgs.RUN.intra_class_fid:
         worker.cal_intra_class_fid(dataset=train_dataset)
+
+    if cfgs.RUN.semantic_factorization:
+            worker.run_semantic_factorization(num_rows=cfgs.RUN.num_semantic_axis, num_cols=num_cols)

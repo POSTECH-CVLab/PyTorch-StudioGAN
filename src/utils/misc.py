@@ -365,7 +365,7 @@ def find_and_remove(path):
         os.remove(path)
 
 
-def plot_img_canvas(images, save_path, ncol, logger, logging=True):
+def plot_img_canvas(images, save_path, num_cols, logger, logging=True):
     if logger is None:
         logging = False
     directory = dirname(save_path)
@@ -373,7 +373,7 @@ def plot_img_canvas(images, save_path, ncol, logger, logging=True):
     if not exists(directory):
         os.makedirs(directory)
 
-    save_image(images, save_path, padding=0, nrow=ncol)
+    save_image(images, save_path, padding=0, nrow=num_cols)
     if logging:
         logger.info("Saved image to {}".format(save_path))
 

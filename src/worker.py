@@ -31,6 +31,8 @@ import metrics.f_beta as f_beta
 import utils.sample as sample
 import utils.misc as misc
 import utils.losses as losses
+import utils.sefa as sefa
+
 
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
 
@@ -468,9 +470,9 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # visualize fake images for monitoring purpose.
     # -----------------------------------------------------------------------------
-    def visualize_fake_images(self, ncol):
+    def visualize_fake_images(self, num_cols):
         if self.global_rank == 0:
-            self.logger.info("Visualize (nrow x 8) fake image canvans.")
+            self.logger.info("Visualize (num_rows x 8) fake image canvans.")
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
@@ -497,7 +499,7 @@ class WORKER(object):
         misc.plot_img_canvas(images=(fake_images.detach().cpu() + 1) / 2,
                              save_path=join(self.RUN.save_dir,
                                             "figures/{run_name}/generated_canvas.png".format(run_name=self.run_name)),
-                             ncol=ncol,
+                             num_cols=num_cols,
                              logger=self.logger,
                              logging= self.global_rank == 0)
 
@@ -729,7 +731,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # run k-nearest neighbor analysis to identify whether GAN memorizes the training images or not.
     # -----------------------------------------------------------------------------
-    def run_k_nearest_neighbor(self, dataset, nrow, ncol):
+    def run_k_nearest_neighbor(self, dataset, num_rows, num_cols):
         if self.global_rank == 0:
             self.logger.info(
                 "Run K-nearest neighbor analysis using fake and {ref} dataset.".format(ref=self.RUN.ref_dataset))
@@ -791,17 +793,17 @@ class WORKER(object):
                                                    axis=0)
                         image_holder = np.concatenate([image_holder, real_images.detach().cpu().numpy()], axis=0)
 
-                nearest_indices = (-distances).argsort()[-(ncol - 1):][::-1]
-                if c % nrow == 0:
+                nearest_indices = (-distances).argsort()[-(num_cols - 1):][::-1]
+                if c % num_rows == 0:
                     canvas = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
-                elif c % nrow == nrow - 1:
+                elif c % num_rows == num_rows - 1:
                     row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
                                                 axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
                     misc.plot_img_canvas(images=(torch.from_numpy(canvas)+1)/2,
-                                         save_path=join(self.RUN.save_dir, "figures/{run_name}/fake_anchor_{ncol}NN_{cls}_classes.png".\
-                                                        format(run_name=self.run_name, ncol=ncol, cls=c+1)),
-                                         ncol=ncol,
+                                         save_path=join(self.RUN.save_dir, "figures/{run_name}/fake_anchor_{num_cols}NN_{cls}_classes.png".\
+                                                        format(run_name=self.run_name, num_cols=num_cols, cls=c+1)),
+                                         num_cols=num_cols,
                                          logger=self.logger,
                                          logging=False)
                 else:
@@ -814,7 +816,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # conduct latent interpolation analysis to identify the quaility of latent space (Z)
     # -----------------------------------------------------------------------------
-    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, num_saves=100):
+    def run_linear_interpolation(self, num_rows, num_cols, fix_z, fix_y, num_saves=100):
         assert int(fix_z) * int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
         if self.global_rank == 0:
             self.logger.info("Run linear interpolation analysis ({num} times).".format(num=num_saves))
@@ -829,33 +831,33 @@ class WORKER(object):
             shared = misc.peel_model(generator).shared
             for ns in tqdm(range(num_saves)):
                 if fix_z:
-                    zs = torch.randn(nrow, 1, self.MODEL.z_dim, device=self.local_rank)
-                    zs = zs.repeat(1, ncol, 1).view(-1, self.MODEL.z_dim)
+                    zs = torch.randn(num_rows, 1, self.MODEL.z_dim, device=self.local_rank)
+                    zs = zs.repeat(1, num_cols, 1).view(-1, self.MODEL.z_dim)
                     name = "fix_z"
                 else:
-                    zs = misc.interpolate(torch.randn(nrow, 1, self.MODEL.z_dim, device=self.local_rank),
-                                          torch.randn(nrow, 1, self.MODEL.z_dim, device=self.local_rank),
-                                          ncol - 2).view(-1, self.MODEL.z_dim)
+                    zs = misc.interpolate(torch.randn(num_rows, 1, self.MODEL.z_dim, device=self.local_rank),
+                                          torch.randn(num_rows, 1, self.MODEL.z_dim, device=self.local_rank),
+                                          num_cols - 2).view(-1, self.MODEL.z_dim)
 
                 if fix_y:
-                    ys = sample.sample_onehot(batch_size=nrow,
+                    ys = sample.sample_onehot(batch_size=num_rows,
                                               num_classes=self.DATA.num_classes,
                                               device=self.local_rank)
-                    ys = shared(ys).view(nrow, 1, -1)
-                    ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
+                    ys = shared(ys).view(num_rows, 1, -1)
+                    ys = ys.repeat(1, num_cols, 1).view(num_rows * (num_cols), -1)
                     name = "fix_y"
                 else:
                     ys = misc.interpolate(
-                        shared(sample.sample_onehot(nrow, self.DATA.num_classes)).view(nrow, 1, -1),
-                        shared(sample.sample_onehot(nrow, self.DATA.num_classes)).view(nrow, 1, -1),
-                        ncol - 2).view(nrow * (ncol), -1)
+                        shared(sample.sample_onehot(num_rows, self.DATA.num_classes)).view(num_rows, 1, -1),
+                        shared(sample.sample_onehot(num_rows, self.DATA.num_classes)).view(num_rows, 1, -1),
+                        num_cols - 2).view(num_rows * (num_cols), -1)
 
                 interpolated_images = generator(zs, None, shared_label=ys, eval=True)
 
                 misc.plot_img_canvas(images=(interpolated_images.detach().cpu()+1)/2,
                                      save_path=join(self.RUN.save_dir, "figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\
                                                     format(num=ns, run_name=self.run_name, fix_flag=name)),
-                                     ncol=ncol,
+                                     num_cols=num_cols,
                                      logger=self.logger,
                                      logging=False)
 
@@ -1096,5 +1098,45 @@ class WORKER(object):
 
         if self.global_rank == 0:
             self.logger.info("Average iFID score: {iFID}".format(iFID=FIDs.mean()))
+
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+
+    # -----------------------------------------------------------------------------
+    # perform semantic (closed-form) factorization for latent nevigation
+    # -----------------------------------------------------------------------------
+    def run_semantic_factorization(self, num_rows, num_cols):
+        if self.global_rank == 0:
+            self.logger.info("Perform semantic factorization for latent nevigation.")
+
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator = self.gen_ctlr.prepare_generator()
+
+            zs, fake_labels, _ = sample.sample_zy(z_prior=self.MODEL.z_prior,
+                                                  batch_size=self.OPTIMIZATION.batch_size,
+                                                  z_dim=self.MODEL.z_dim,
+                                                  num_classes=self.DATA.num_classes,
+                                                  truncation_th=self.RUN.truncation_th,
+                                                  y_sampler="totally_random",
+                                                  radius="N/A",
+                                                  device=self.local_rank)
+
+            for i in tqdm(range(self.OPTIMIZATION.batch_size)):
+                images_canvas = sefa.apply_sefa(generator=generator,
+                                                z=zs[i],
+                                                fake_label=fake_labels[i],
+                                                num_semantic_axis=num_rows,
+                                                num_cols=num_cols)
+
+                misc.plot_img_canvas(images=(images_canvas.detach().cpu()+1)/2,
+                                     save_path=join(self.RUN.save_dir, "figures/{run_name}/{idx}_sefa_images.png".\
+                                                    format(idx=i, run_name=self.run_name)),
+                                     num_cols=num_cols,
+                                     logger=self.logger,
+                                     logging=False)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)

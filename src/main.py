@@ -94,6 +94,10 @@ def main():
                         help="conduct frequency analysis")
     parser.add_argument("-tsne", "--tsne_analysis", action="store_true", help="conduct tsne analysis")
     parser.add_argument("-ifid", "--intra_class_fid", action="store_true", help="calculate intra-class fid")
+    parser.add_argument("-sefa", "--semantic_factorization", action="store_true",
+                        help="perform semantic (closed-form) factorization")
+    parser.add_argument("-num_axis", "--num_semantic_axis", type=int, default=-1,
+                        help="number of semantic axis for sefa")
 
     parser.add_argument("--print_every", type=int, default=100, help="logging interval")
     parser.add_argument("--save_every", type=int, default=2000, help="save interval")
@@ -111,7 +115,8 @@ def main():
             not args.interpolation and \
             not args.frequency_analysis and \
             not args.tsne_analysis and \
-            not args.intra_class_fid:
+            not args.intra_class_fid and \
+            not args.semantic_factorization:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
