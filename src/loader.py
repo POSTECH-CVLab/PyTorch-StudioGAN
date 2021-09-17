@@ -291,40 +291,40 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                      ema=ema)
 
     if cfgs.RUN.eval:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         _ = worker.evaluate(step=best_step, writing=False)
 
     if cfgs.RUN.save_fake_images:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         worker.save_fake_images(png=True, npz=True)
 
     if cfgs.RUN.vis_fake_images:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         worker.visualize_fake_images(num_cols=num_cols)
 
     if cfgs.RUN.k_nearest_neighbor:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         worker.run_k_nearest_neighbor(dataset=eval_dataset, num_rows=num_rows, num_cols=num_cols)
 
     if cfgs.RUN.interpolation:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         worker.run_linear_interpolation(num_rows=num_rows, num_cols=num_cols, fix_z=True, fix_y=False)
         worker.run_linear_interpolation(num_rows=num_rows, num_cols=num_cols, fix_z=False, fix_y=True)
 
     if cfgs.RUN.frequency_analysis:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         worker.run_frequency_analysis(dataloader=eval_dataloader)
 
     if cfgs.RUN.tsne_analysis:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         worker.run_tsne(dataloader=eval_dataloader)
 
     if cfgs.RUN.intra_class_fid:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         worker.cal_intra_class_fid(dataset=train_dataset)
 
     if cfgs.RUN.semantic_factorization:
-        if global_rank == 0: logger.info("\n-" * 80)
+        if global_rank == 0: logger.info("\n"+"-" * 80)
         worker.run_semantic_factorization(num_rows=cfgs.RUN.num_semantic_axis,
                                           num_cols=num_cols,
                                           maximum_variations=cfgs.RUN.maximum_variations)
