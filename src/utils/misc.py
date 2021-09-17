@@ -533,7 +533,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                 else:
                     pass
 
-    print("Finish saving *.png images to {directory}/CLS/*.png".format(directory=directory))
+    print("Finish saving *.png images to {directory}/*/*.png".format(directory=directory))
 
 
 def orthogonalize_model(model, strength=1e-4, blacklist=[]):

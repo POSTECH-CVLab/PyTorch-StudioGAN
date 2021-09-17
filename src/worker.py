@@ -821,7 +821,8 @@ class WORKER(object):
     def run_linear_interpolation(self, num_rows, num_cols, fix_z, fix_y, num_saves=100):
         assert int(fix_z) * int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
         if self.global_rank == 0:
-            self.logger.info("Run linear interpolation analysis ({num} times).".format(num=num_saves))
+            flag = "fix_z" if fix_z else "fix_y"
+            self.logger.info("Run linear interpolation analysis ({flag}) {num} times.".format(flag=flag, num=num_saves))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
@@ -864,7 +865,7 @@ class WORKER(object):
                                      logging=False)
 
         if self.global_rank == 0 and self.logger:
-            print("Save figures to {}/*.png".format(join(self.RUN.save_dir, "figures", self.run_name)))
+            print("Save figures to {}/*_Interpolated_images_{}.png".format(join(self.RUN.save_dir, "figures", self.run_name), flag))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -1133,6 +1134,7 @@ class WORKER(object):
 
             for i in tqdm(range(self.OPTIMIZATION.batch_size)):
                 images_canvas = sefa.apply_sefa(generator=generator,
+                                                backbone=self.MODEL.backbone,
                                                 z=zs[i],
                                                 fake_label=fake_labels[i],
                                                 num_semantic_axis=num_rows,
@@ -1147,6 +1149,6 @@ class WORKER(object):
                                      logging=False)
 
         if self.global_rank == 0 and self.logger:
-            print("Save figures to {}/*.png".format(join(self.RUN.save_dir, "figures", self.run_name)))
+            print("Save figures to {}/*_sefa_images.png".format(join(self.RUN.save_dir, "figures", self.run_name)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
