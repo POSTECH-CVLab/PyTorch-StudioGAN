@@ -1043,7 +1043,7 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        FIDs = []
+        fids = []
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
@@ -1090,7 +1090,7 @@ class WORKER(object):
                                                      pre_cal_std=sigma,
                                                      disable_tqdm=True)
 
-                FIDs.append(ifid_score)
+                fids.append(ifid_score)
 
                 # save iFID values in .npz format
                 metric_dict = {"iFID": ifid_score}
@@ -1104,7 +1104,7 @@ class WORKER(object):
                                    dictionary=save_dict)
 
         if self.global_rank == 0 and self.logger:
-            self.logger.info("Average iFID score: {iFID}".format(iFID=FIDs.mean()))
+            self.logger.info("Average iFID score: {iFID}".format(iFID=sum(fids, 0.0)/len(fids)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 

@@ -479,7 +479,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
     y = np.concatenate(y, 0)[:num_images]
     print("Images shape: {image_shape}, Labels shape: {label_shape}".format(image_shape=x.shape, label_shape=y.shape))
     npz_filename = join(directory, "samples.npz")
-    print("Finish saving *.npz to {file_name}".format(file_name=npz_filename))
+    print("Finish saving npz to {file_name}".format(file_name=npz_filename))
     np.savez(npz_filename, **{"x": x, "y": y})
 
 
@@ -533,7 +533,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                 else:
                     pass
 
-    print("Finish saving *.png images to {directory}/*/*.png".format(directory=directory))
+    print("Finish saving png images to {directory}/*/*.png".format(directory=directory))
 
 
 def orthogonalize_model(model, strength=1e-4, blacklist=[]):
