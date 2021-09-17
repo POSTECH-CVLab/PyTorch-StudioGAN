@@ -296,6 +296,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                 discriminator=None,
                                                                 is_train=True,
                                                                 LOSS=LOSS,
+                                                                RUN=RUN,
                                                                 device=device,
                                                                 cal_trsp_cost=False)
     generator.eval()
@@ -375,7 +376,7 @@ def plot_img_canvas(images, save_path, num_cols, logger, logging=True):
 
     save_image(images, save_path, padding=0, nrow=num_cols)
     if logging:
-        logger.info("Saved image to {}".format(save_path))
+        logger.info("Save image canvas to {}".format(save_path))
 
 
 def plot_spectrum_image(real_spectrum, fake_spectrum, directory, logger, logging=True):
@@ -429,7 +430,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=Tr
 
 
 def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, directory, device):
+                    truncation_th, z_dim, num_classes, LOSS, RUN, directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -462,6 +463,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
                                                               discriminator=discriminator,
                                                               is_train=False,
                                                               LOSS=LOSS,
+                                                              RUN=RUN,
                                                               device=device,
                                                               cal_trsp_cost=False)
             else:
@@ -477,12 +479,12 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
     y = np.concatenate(y, 0)[:num_images]
     print("Images shape: {image_shape}, Labels shape: {label_shape}".format(image_shape=x.shape, label_shape=y.shape))
     npz_filename = join(directory, "samples.npz")
-    print("Finish saving npz to {file_name}".format(file_name=npz_filename))
+    print("Finish saving *.npz to {file_name}".format(file_name=npz_filename))
     np.savez(npz_filename, **{"x": x, "y": y})
 
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, directory, device):
+                    truncation_th, z_dim, num_classes, LOSS, RUN, directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -515,6 +517,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                               discriminator=discriminator,
                                                               is_train=False,
                                                               LOSS=LOSS,
+                                                              RUN=RUN,
                                                               device=device,
                                                               cal_trsp_cost=False)
             else:
@@ -530,26 +533,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                 else:
                     pass
 
-    print("Finish saving *.png images to {directory}".format(directory=directory))
-
-
-def generate_images_for_KNN(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler, generator, discriminator,
-                            LOSS, device):
-    with torch.no_grad():
-        fake_images, fake_labels, _, _ = sample.generate_images(z_prior=z_prior,
-                                                                truncation_th=truncation_th,
-                                                                batch_size=batch_size,
-                                                                z_dim=z_dim,
-                                                                num_classes=num_classes,
-                                                                y_sampler=y_sampler,
-                                                                radius="N/A",
-                                                                generator=generator,
-                                                                discriminator=discriminator,
-                                                                is_train=False,
-                                                                LOSS=LOSS,
-                                                                device=device,
-                                                                cal_trsp_cost=False)
-    return fake_images, list(fake_labels.detach().cpu().numpy())
+    print("Finish saving *.png images to {directory}/CLS/*.png".format(directory=directory))
 
 
 def orthogonalize_model(model, strength=1e-4, blacklist=[]):

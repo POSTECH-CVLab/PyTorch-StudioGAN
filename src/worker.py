@@ -708,6 +708,7 @@ class WORKER(object):
                                      z_dim=self.MODEL.z_dim,
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
+                                     RUN=self.RUN,
                                      directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
             if npz:
@@ -723,6 +724,7 @@ class WORKER(object):
                                      z_dim=self.MODEL.z_dim,
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
+                                     RUN=self.RUN,
                                      directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
 
@@ -805,14 +807,11 @@ class WORKER(object):
                                                         format(run_name=self.run_name, num_cols=num_cols, cls=c+1)),
                                          num_cols=num_cols,
                                          logger=self.logger,
-                                         logging=False)
+                                         logging=self.global_rank == 0 and self.logger)
                 else:
                     row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
                                                 axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
-
-        if self.global_rank == 0 and self.logger:
-            print("Save figures to {}".format(join(self.RUN.save_dir, "figures", self.run_name)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -865,7 +864,7 @@ class WORKER(object):
                                      logging=False)
 
         if self.global_rank == 0 and self.logger:
-            print("Save figures to {}".format(join(self.RUN.save_dir, "figures", self.run_name)))
+            print("Save figures to {}/*.png".format(join(self.RUN.save_dir, "figures", self.run_name)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -874,7 +873,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     def run_frequency_analysis(self, dataloader):
         if self.global_rank == 0:
-            self.logger.info("Run frequency analysis (use {num} fake and {ref} images ).".\
+            self.logger.info("Run frequency analysis (use {num} fake and {ref} images).".\
                              format(num=len(dataloader), ref=self.RUN.ref_dataset))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
@@ -1073,6 +1072,7 @@ class WORKER(object):
                                                   z_dim="N/A",
                                                   num_classes=1,
                                                   LOSS="N/A",
+                                                  RUN=self.RUN,
                                                   device=self.local_rank,
                                                   disable_tqdm=True)
 
@@ -1147,6 +1147,6 @@ class WORKER(object):
                                      logging=False)
 
         if self.global_rank == 0 and self.logger:
-            print("Save figures to {}".format(join(self.RUN.save_dir, "figures", self.run_name)))
+            print("Save figures to {}/*.png".format(join(self.RUN.save_dir, "figures", self.run_name)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
