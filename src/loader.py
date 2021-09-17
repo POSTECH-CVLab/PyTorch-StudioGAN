@@ -317,4 +317,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.cal_intra_class_fid(dataset=train_dataset)
 
     if cfgs.RUN.semantic_factorization:
-            worker.run_semantic_factorization(num_rows=cfgs.RUN.num_semantic_axis, num_cols=num_cols)
+            worker.run_semantic_factorization(num_rows=cfgs.RUN.num_semantic_axis,
+                                              num_cols=num_cols,
+                                              maximum_variations=cfgs.RUN.maximum_variations)

@@ -501,7 +501,7 @@ class WORKER(object):
                                             "figures/{run_name}/generated_canvas.png".format(run_name=self.run_name)),
                              num_cols=num_cols,
                              logger=self.logger,
-                             logging= self.global_rank == 0)
+                             logging=self.global_rank == 0 and self.logger)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -811,6 +811,9 @@ class WORKER(object):
                                                 axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
+        if self.global_rank == 0 and self.logger:
+            print("Save figures to {}".format(join(self.RUN.save_dir, "figures", self.run_name)))
+
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
     # -----------------------------------------------------------------------------
@@ -860,6 +863,9 @@ class WORKER(object):
                                      num_cols=num_cols,
                                      logger=self.logger,
                                      logging=False)
+
+        if self.global_rank == 0 and self.logger:
+            print("Save figures to {}".format(join(self.RUN.save_dir, "figures", self.run_name)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -931,7 +937,7 @@ class WORKER(object):
                                  fake_spectrum=fake_gray_spectrum,
                                  directory=join(self.RUN.save_dir, "figures", self.run_name),
                                  logger=self.logger,
-                                 logging=True)
+                                 logging=self.global_rank == 0 and self.logger)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -1014,7 +1020,7 @@ class WORKER(object):
                                         flag="real",
                                         directory=join(self.RUN.save_dir, "figures", self.run_name),
                                         logger=self.logger,
-                                        logging=True)
+                                        logging=self.global_rank == 0 and self.logger)
 
             fake_tsne_results = tsne.fit_transform(fake["embeds"])
             misc.plot_tsne_scatter_plot(df=fake,
@@ -1022,7 +1028,7 @@ class WORKER(object):
                                         flag="fake",
                                         directory=join(self.RUN.save_dir, "figures", self.run_name),
                                         logger=self.logger,
-                                        logging=True)
+                                        logging=self.global_rank == 0 and self.logger)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -1096,7 +1102,7 @@ class WORKER(object):
                                    name="iFID",
                                    dictionary=save_dict)
 
-        if self.global_rank == 0:
+        if self.global_rank == 0 and self.logger:
             self.logger.info("Average iFID score: {iFID}".format(iFID=FIDs.mean()))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
@@ -1104,7 +1110,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # perform semantic (closed-form) factorization for latent nevigation
     # -----------------------------------------------------------------------------
-    def run_semantic_factorization(self, num_rows, num_cols):
+    def run_semantic_factorization(self, num_rows, num_cols, maximum_variations):
         if self.global_rank == 0:
             self.logger.info("Perform semantic factorization for latent nevigation.")
 
@@ -1130,6 +1136,7 @@ class WORKER(object):
                                                 z=zs[i],
                                                 fake_label=fake_labels[i],
                                                 num_semantic_axis=num_rows,
+                                                maximum_variations=maximum_variations,
                                                 num_cols=num_cols)
 
                 misc.plot_img_canvas(images=(images_canvas.detach().cpu()+1)/2,
@@ -1138,5 +1145,8 @@ class WORKER(object):
                                      num_cols=num_cols,
                                      logger=self.logger,
                                      logging=False)
+
+        if self.global_rank == 0 and self.logger:
+            print("Save figures to {}".format(join(self.RUN.save_dir, "figures", self.run_name)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
