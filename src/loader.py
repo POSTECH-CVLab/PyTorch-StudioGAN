@@ -277,7 +277,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
     # -----------------------------------------------------------------------------
-    if global_rank == 0: logger.info("\n" + "-" * 80)
     worker.training, worker.epoch_counter = False, epoch
     worker.gen_ctlr.standing_statistics = cfgs.RUN.standing_statistics
     worker.gen_ctlr.standing_max_batch = cfgs.RUN.standing_max_batch
