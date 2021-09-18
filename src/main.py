@@ -138,7 +138,7 @@ def main():
                                                                 img_size=cfgs.DATA.img_size,
                                                                 crop_long_edge=crop_long_edge,
                                                                 resize_size=resize_size,
-                                                                save_dir=cfgs.RUN.save_dir,
+                                                                data_dir=cfgs.RUN.data_dir,
                                                                 DATA=cfgs.DATA,
                                                                 RUN=cfgs.RUN)
     else:

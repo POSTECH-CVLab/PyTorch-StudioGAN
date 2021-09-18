@@ -31,9 +31,9 @@ import h5py as h5
 from data_util import Dataset_
 
 
-def make_hdf5(name, img_size, crop_long_edge, resize_size, save_dir, DATA, RUN):
+def make_hdf5(name, img_size, crop_long_edge, resize_size, data_dir, DATA, RUN):
     file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=name, size=img_size)
-    file_path = join(save_dir, "hdf5", file_name)
+    file_path = join(data_dir, "hdf5", file_name)
     hdf5_dir = dirname(file_path)
     if not exists(hdf5_dir):
         os.makedirs(hdf5_dir)
