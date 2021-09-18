@@ -135,13 +135,13 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
     return fake_images, fake_labels, fake_images_eps, trsp_cost
 
 
-def langevin_sampling(zs, z_dim, fake_labels, generator, discriminator, batch_size, langevin_rate,
-                      langevin_noise_std, langevin_decay, langevin_decay_steps, langevin_steps, device):
+def langevin_sampling(zs, z_dim, fake_labels, generator, discriminator, batch_size, langevin_rate, langevin_noise_std,
+                      langevin_decay, langevin_decay_steps, langevin_steps, device):
     scaler = 1.0
     apply_decay = langevin_decay > 0 and langevin_decay_steps > 0
     mean = torch.zeros(z_dim, device=device)
     prior_std = torch.eye(z_dim, device=device)
-    lgv_std = prior_std*langevin_noise_std
+    lgv_std = prior_std * langevin_noise_std
     prior = MN.MultivariateNormal(loc=mean, covariance_matrix=prior_std)
     lgv_prior = MN.MultivariateNormal(loc=mean, covariance_matrix=lgv_std)
     for i in range(langevin_steps):
@@ -149,10 +149,10 @@ def langevin_sampling(zs, z_dim, fake_labels, generator, discriminator, batch_si
         fake_images = generator(zs, fake_labels, eval=True)
         fake_dict = discriminator(fake_images, fake_labels, eval=True)
 
-        energy = - prior.log_prob(zs) - fake_dict["adv_output"]
+        energy = -prior.log_prob(zs) - fake_dict["adv_output"]
         z_grads = losses.cal_deriv(inputs=zs, outputs=energy, device=device)
 
-        zs = zs -0.5*langevin_rate*z_grads + (langevin_rate**0.5)*lgv_prior.sample([batch_size])*scaler
+        zs = zs - 0.5 * langevin_rate * z_grads + (langevin_rate**0.5) * lgv_prior.sample([batch_size]) * scaler
         if apply_decay and (i + 1) % langevin_decay_steps == 0:
             langevin_rate *= langevin_decay
             scaler *= langevin_decay

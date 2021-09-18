@@ -85,8 +85,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, device
     return Gen, Dis, Gen_ema, ema
 
 
-def prepare_parallel_training(Gen, Dis, Gen_ema, world_size, distributed_data_parallel, synchronized_bn, apply_g_ema,
-                              device):
+def prepare_parallel_training(Gen, Dis, Gen_ema, world_size, distributed_data_parallel, synchronized_bn, apply_g_ema, device):
     if world_size > 1:
         if distributed_data_parallel:
             if synchronized_bn:

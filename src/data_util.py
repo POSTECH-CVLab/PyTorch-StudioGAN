@@ -80,8 +80,7 @@ class Dataset_(Dataset):
         if self.random_flip:
             self.trsf_list += [transforms.RandomHorizontalFlip()]
 
-        self.trsf_list += [transforms.ToTensor(),
-                           transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+        self.trsf_list += [transforms.ToTensor(), transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
         self.trsf = transforms.Compose(self.trsf_list)
 
         self.load_dataset()
@@ -125,7 +124,7 @@ class Dataset_(Dataset):
             img, label = self.data[index]
         else:
             if self.load_data_in_memory:
-                img, label = np.transpose(self.data[index], (1,2,0)), self.labels[index]
+                img, label = np.transpose(self.data[index], (1, 2, 0)), self.labels[index]
             else:
                 img, label = self._get_hdf5(index)
         return self.trsf(img), int(label)

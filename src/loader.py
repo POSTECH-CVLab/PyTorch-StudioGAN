@@ -92,15 +92,14 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.eval + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         if local_rank == 0:
             logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
-        eval_dataset = Dataset_(
-            data_name=cfgs.DATA.name,
-            data_dir=cfgs.RUN.data_dir,
-            train=True if cfgs.RUN.ref_dataset == "train" else False,
-            crop_long_edge=False if cfgs.DATA in cfgs.MISC.no_proc_data else True,
-            resize_size=None if cfgs.DATA in cfgs.MISC.no_proc_data else cfgs.DATA.img_size,
-            random_flip=False,
-            hdf5_path=None,
-            load_data_in_memory=False)
+        eval_dataset = Dataset_(data_name=cfgs.DATA.name,
+                                data_dir=cfgs.RUN.data_dir,
+                                train=True if cfgs.RUN.ref_dataset == "train" else False,
+                                crop_long_edge=False if cfgs.DATA in cfgs.MISC.no_proc_data else True,
+                                resize_size=None if cfgs.DATA in cfgs.MISC.no_proc_data else cfgs.DATA.img_size,
+                                random_flip=False,
+                                hdf5_path=None,
+                                load_data_in_memory=False)
         if local_rank == 0:
             logger.info("Eval dataset size: {dataset_size}".format(dataset_size=len(eval_dataset)))
     else:
@@ -111,9 +110,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define dataloaders for train and evaluation.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train and cfgs.RUN.distributed_data_parallel:
-        train_sampler = DistributedSampler(train_dataset,
-                                           num_replicas=cfgs.OPTIMIZATION.world_size,
-                                           rank=local_rank)
+        train_sampler = DistributedSampler(train_dataset, num_replicas=cfgs.OPTIMIZATION.world_size, rank=local_rank)
         cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size // cfgs.OPTIMIZATION.world_size
     else:
         train_sampler = None

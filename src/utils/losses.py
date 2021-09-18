@@ -204,9 +204,9 @@ def cal_deriv(inputs, outputs, device):
     return grads
 
 
-def latent_optimise(zs, fake_labels, generator, discriminator, batch_size, lo_rate, lo_steps, lo_alpha, lo_beta,
-                    eval, cal_trsp_cost, device):
-    for step in range(lo_steps-1):
+def latent_optimise(zs, fake_labels, generator, discriminator, batch_size, lo_rate, lo_steps, lo_alpha, lo_beta, eval,
+                    cal_trsp_cost, device):
+    for step in range(lo_steps - 1):
         drop_mask = (torch.FloatTensor(batch_size, 1).uniform_() > 1 - lo_rate).to(device)
 
         zs = autograd.Variable(zs, requires_grad=True)
@@ -285,10 +285,11 @@ def cal_r1_reg(adv_output, images, device):
     batch_size = images.size(0)
     grad_dout = cal_deriv(inputs=images, outputs=adv_output.sum(), device=device)
     grad_dout2 = grad_dout.pow(2)
-    assert(grad_dout2.size() == images.size())
+    assert (grad_dout2.size() == images.size())
     r1_reg = 0.5 * grad_dout2.view(batch_size, -1).sum(1).mean(0)
     return r1_reg
 
+
 def adjust_k(current_k, topk_gamma, sup_k):
-    current_k = max(current_k*topk_gamma, sup_k)
+    current_k = max(current_k * topk_gamma, sup_k)
     return current_k

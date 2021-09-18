@@ -71,8 +71,8 @@ class precision_recall(object):
         return precision, recall
 
     def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim,
-                                 num_classes, generator, discriminator, LOSS, RUN, num_runs, num_clusters,
-                                 num_angles, device):
+                                 num_classes, generator, discriminator, LOSS, RUN, num_runs, num_clusters, num_angles,
+                                 device):
         data_iter = iter(data_loader)
         num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
         for i in tqdm(range(num_batches), disable=self.disable_tqdm):

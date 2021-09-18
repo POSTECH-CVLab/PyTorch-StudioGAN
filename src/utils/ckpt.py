@@ -63,12 +63,8 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
               load_opt=True,
               load_misc=False)
 
-    seed, prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path = load_ckpt(model=Dis,
-                                                                                      optimizer=d_optimizer,
-                                                                                      ckpt_path=Dis_ckpt_path,
-                                                                                      load_model=True,
-                                                                                      load_opt=True,
-                                                                                      load_misc=True)
+    seed, prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path = load_ckpt(
+        model=Dis, optimizer=d_optimizer, ckpt_path=Dis_ckpt_path, load_model=True, load_opt=True, load_misc=True)
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]

@@ -24,6 +24,7 @@ import utils.cr as cr
 class make_empty_object(object):
     pass
 
+
 class Configurations(object):
     def __init__(self, cfg_file):
         self.cfg_file = cfg_file
@@ -246,8 +247,8 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.MISC = misc.make_empty_object()
         self.MISC.no_proc_data = ["CIFAR10", "CIFAR100", "Tiny_ImageNet"]
-        self.MISC.base_folders = ["checkpoints", "figures", "logs", "moments",
-                                  "samples", "values"]
+        self.MISC.base_folders = ["checkpoints", "figures", "logs", "moments", "samples", "values"]
+        self.MISC.classifier_based_GAN = ["AC", "2C", "D2DCE"]
 
         # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings
@@ -420,7 +421,7 @@ class Configurations(object):
                 without applying spectral normalization to the generator and discriminator."
 
         if self.RUN.langevin_sampling or self.LOSS.apply_lo:
-            assert self.RUN.langevin_sampling*self.LOSS.apply_lo == 0, "Langevin sampling and latent optmization \
+            assert self.RUN.langevin_sampling * self.LOSS.apply_lo == 0, "Langevin sampling and latent optmization \
                 cannot be used simultaneously."
 
         if self.RUN.langevin_sampling:
@@ -469,7 +470,7 @@ class Configurations(object):
             assert self.OPTIMIZATION.batch_size % 8 == 0, "batch_size should be divided by 8."
 
         if self.MODEL.aux_cls_type != "W/O":
-            assert self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"], \
+            assert self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN, \
             "TAC and ADC are only applicable to classifier-based GANs."
 
         if self.MODEL.d_cond_mtd == "MH" or self.LOSS.adv_loss == "MH":
@@ -483,8 +484,7 @@ class Configurations(object):
         if self.RUN.train * self.RUN.standing_statistics:
             print("StudioGAN does not support standing_statistics during training. \
                   \nAfter training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained \
-                  model using the accumulated satistics."
-                  )
+                  model using the accumulated satistics.")
 
         if self.RUN.distributed_data_parallel:
             print("Turning on DDP might cause inexact evaluation results. \

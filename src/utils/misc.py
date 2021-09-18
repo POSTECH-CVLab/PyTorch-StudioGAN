@@ -128,6 +128,7 @@ def prepare_folder(names, save_dir):
         if not exists(folder_path):
             os.makedirs(folder_path)
 
+
 def download_data_if_possible(data_name, data_dir):
     if data_name == "CIFAR10":
         data = CIFAR10(root=data_dir, train=True, download=True)
@@ -574,12 +575,12 @@ def save_dict_npy(directory, name, dictionary):
 
 
 def load_ImageNet_label_dict():
-    label_table =  open("./src/utils/ImageNet_label.txt", 'r')
+    label_table = open("./src/utils/ImageNet_label.txt", 'r')
     label_dict, label = {}, 0
     while True:
         line = label_table.readline()
         if not line: break
         folder = line.split(' ')[0]
         label_dict[folder] = label
-        label +=1
+        label += 1
     return label_dict

@@ -39,7 +39,7 @@ class LoadEvalModel(object):
 
         if world_size > 1 and distributed_data_parallel:
             misc.make_model_require_grad(self.model)
-            self.model = DDP(self.model, device_ids=[device], broadcast_buffers=False, find_unused_parameters=True)
+            self.model = DDP(self.model, device_ids=[device], broadcast_buffers=False)
         elif world_size > 1 and distributed_data_parallel is False:
             self.model = DataParallel(self.model, output_device=device)
         else:

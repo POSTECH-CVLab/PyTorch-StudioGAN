@@ -33,7 +33,6 @@ import utils.misc as misc
 import utils.losses as losses
 import utils.sefa as sefa
 
-
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
 
 LOG_FORMAT = ("Step: {step:>6} "
@@ -81,6 +80,7 @@ class WORKER(object):
         self.PRE = cfgs.PRE
         self.AUG = cfgs.AUG
         self.RUN = cfgs.RUN
+        self.MISC = cfgs.MISC
 
         if self.RUN.train:
             self.train_iter = iter(self.train_dataloader)
@@ -96,7 +96,7 @@ class WORKER(object):
             self.cond_loss = losses.CrossEntropyLoss()
         elif self.MODEL.d_cond_mtd == "2C":
             if self.MODEL.aux_cls_type == "ADC":
-                num_classes = self.DATA.num_classes*2
+                num_classes = self.DATA.num_classes * 2
             else:
                 num_classes = self.DATA.num_classes
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
@@ -130,8 +130,7 @@ class WORKER(object):
         elif self.DATA.name == "CIFAR10":
             self.num_eval = {"train": 50000, "test": 10000}
         else:
-            self.num_eval = {"train": len(self.train_dataloader.dataset),
-                             "valid": len(self.eval_dataset.dataset)}
+            self.num_eval = {"train": len(self.train_dataloader.dataset), "valid": len(self.eval_dataset.dataset)}
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  batch_statistics=self.RUN.batch_statistics,
@@ -218,7 +217,7 @@ class WORKER(object):
                         dis_acml_loss = self.LOSS.d_loss(real_dict["adv_output"], fake_dict["adv_output"])
 
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
-                    if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
+                    if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
                         real_cond_loss = self.cond_loss(**real_dict)
                         dis_acml_loss += self.LOSS.cond_lambda * real_cond_loss
                         if self.MODEL.aux_cls_type == "TAC":
@@ -280,10 +279,10 @@ class WORKER(object):
                     # apply gradient penalty regularization to train wasserstein GAN
                     if self.LOSS.apply_gp:
                         gp_loss = losses.cal_grad_penalty(real_images=real_images,
-                                                      real_labels=real_labels,
-                                                      fake_images=fake_images,
-                                                      discriminator=self.Dis,
-                                                      device=self.local_rank)
+                                                          real_labels=real_labels,
+                                                          fake_images=fake_images,
+                                                          discriminator=self.Dis,
+                                                          device=self.local_rank)
                         dis_acml_loss += self.LOSS.gp_lambda * gp_loss
 
                     # apply deep regret analysis regularization to train wasserstein GAN
@@ -382,7 +381,7 @@ class WORKER(object):
                         gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"])
 
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
-                    if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
+                    if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
                         fake_cond_loss = self.cond_loss(**fake_dict)
                         gen_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
                         if self.MODEL.aux_cls_type == "TAC":
@@ -429,7 +428,7 @@ class WORKER(object):
 
         # logging
         if (current_step + 1) % self.RUN.print_every == 0 and self.global_rank == 0:
-            if self.MODEL.d_cond_mtd in ["AC", "2C", "D2DCE"]:
+            if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
                 cls_loss = real_cond_loss.item()
             else:
                 cls_loss = "N/A"
@@ -865,7 +864,8 @@ class WORKER(object):
                                      logging=False)
 
         if self.global_rank == 0 and self.logger:
-            print("Save figures to {}/*_Interpolated_images_{}.png".format(join(self.RUN.save_dir, "figures", self.run_name), flag))
+            print("Save figures to {}/*_Interpolated_images_{}.png".format(
+                join(self.RUN.save_dir, "figures", self.run_name), flag))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -1104,7 +1104,7 @@ class WORKER(object):
                                    dictionary=save_dict)
 
         if self.global_rank == 0 and self.logger:
-            self.logger.info("Average iFID score: {iFID}".format(iFID=sum(fids, 0.0)/len(fids)))
+            self.logger.info("Average iFID score: {iFID}".format(iFID=sum(fids, 0.0) / len(fids)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 

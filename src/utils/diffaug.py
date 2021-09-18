@@ -36,7 +36,7 @@ def apply_diffaug(x, policy="color,translation,cutout", channels_first=True):
     if policy:
         if not channels_first:
             x = x.permute(0, 3, 1, 2)
-        for p in policy.split(','):
+        for p in policy.split(","):
             for f in AUGMENT_FNS[p]:
                 x = f(x)
         if not channels_first:
@@ -96,7 +96,7 @@ def rand_cutout(x, ratio=0.5):
 
 
 AUGMENT_FNS = {
-    'color': [rand_brightness, rand_saturation, rand_contrast],
-    'translation': [rand_translation],
-    'cutout': [rand_cutout],
+    "color": [rand_brightness, rand_saturation, rand_contrast],
+    "translation": [rand_translation],
+    "cutout": [rand_cutout],
 }

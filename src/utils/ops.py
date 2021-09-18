@@ -51,55 +51,23 @@ class SelfAttention(nn.Module):
         self.in_channels = in_channels
 
         if is_generator:
-            self.conv1x1_theta = MODULES.g_conv2d(in_channels=in_channels,
-                                                  out_channels=in_channels // 8,
-                                                  kernel_size=1,
-                                                  stride=1,
-                                                  padding=0,
-                                                  bias=False)
-            self.conv1x1_phi = MODULES.g_conv2d(in_channels=in_channels,
-                                                out_channels=in_channels // 8,
-                                                kernel_size=1,
-                                                stride=1,
-                                                padding=0,
-                                                bias=False)
-            self.conv1x1_g = MODULES.g_conv2d(in_channels=in_channels,
-                                              out_channels=in_channels // 2,
-                                              kernel_size=1,
-                                              stride=1,
-                                              padding=0,
-                                              bias=False)
-            self.conv1x1_attn = MODULES.g_conv2d(in_channels=in_channels // 2,
-                                                 out_channels=in_channels,
-                                                 kernel_size=1,
-                                                 stride=1,
-                                                 padding=0,
-                                                 bias=False)
+            self.conv1x1_theta = MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels // 8, kernel_size=1,
+                                                  stride=1, padding=0, bias=False)
+            self.conv1x1_phi = MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels // 8, kernel_size=1,
+                                                stride=1, padding=0, bias=False)
+            self.conv1x1_g = MODULES.g_conv2d(in_channels=in_channels, out_channels=in_channels // 2, kernel_size=1,
+                                              stride=1, padding=0, bias=False)
+            self.conv1x1_attn = MODULES.g_conv2d(in_channels=in_channels // 2, out_channels=in_channels, kernel_size=1,
+                                                 stride=1, padding=0, bias=False)
         else:
-            self.conv1x1_theta = MODULES.d_conv2d(in_channels=in_channels,
-                                                  out_channels=in_channels // 8,
-                                                  kernel_size=1,
-                                                  stride=1,
-                                                  padding=0,
-                                                  bias=False)
-            self.conv1x1_phi = MODULES.d_conv2d(in_channels=in_channels,
-                                                out_channels=in_channels // 8,
-                                                kernel_size=1,
-                                                stride=1,
-                                                padding=0,
-                                                bias=False)
-            self.conv1x1_g = MODULES.d_conv2d(in_channels=in_channels,
-                                              out_channels=in_channels // 2,
-                                              kernel_size=1,
-                                              stride=1,
-                                              padding=0,
-                                              bias=False)
-            self.conv1x1_attn = MODULES.d_conv2d(in_channels=in_channels // 2,
-                                                 out_channels=in_channels,
-                                                 kernel_size=1,
-                                                 stride=1,
-                                                 padding=0,
-                                                 bias=False)
+            self.conv1x1_theta = MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels // 8, kernel_size=1,
+                                                  stride=1, padding=0, bias=False)
+            self.conv1x1_phi = MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels // 8, kernel_size=1,
+                                                stride=1, padding=0, bias=False)
+            self.conv1x1_g = MODULES.d_conv2d(in_channels=in_channels, out_channels=in_channels // 2, kernel_size=1,
+                                              stride=1, padding=0, bias=False)
+            self.conv1x1_attn = MODULES.d_conv2d(in_channels=in_channels // 2, out_channels=in_channels, kernel_size=1,
+                                                 stride=1, padding=0, bias=False)
 
         self.maxpool = nn.MaxPool2d(2, stride=2, padding=0)
         self.softmax = nn.Softmax(dim=-1)

@@ -17,11 +17,7 @@ class GenBlock(nn.Module):
         super(GenBlock, self).__init__()
         self.g_cond_mtd = g_cond_mtd
 
-        self.deconv0 = MODULES.g_deconv2d(in_channels=in_channels,
-                                          out_channels=out_channels,
-                                          kernel_size=4,
-                                          stride=2,
-                                          padding=1)
+        self.deconv0 = MODULES.g_deconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=4, stride=2, padding=1)
 
         if self.g_cond_mtd == "W/O":
             self.bn0 = MODULES.g_bn(in_features=out_channels)
@@ -45,8 +41,8 @@ class GenBlock(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_attn, attn_g_loc, g_cond_mtd, num_classes,
-                 g_init, g_depth, mixed_precision, MODULES):
+    def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_attn, attn_g_loc, g_cond_mtd, num_classes, g_init, g_depth,
+                 mixed_precision, MODULES):
         super(Generator, self).__init__()
         self.in_dims = [512, 256, 128]
         self.out_dims = [256, 128, 64]
@@ -73,7 +69,6 @@ class Generator(nn.Module):
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
         self.conv4 = MODULES.g_conv2d(in_channels=self.out_dims[-1], out_channels=3, kernel_size=3, stride=1, padding=1)
-
         self.tanh = nn.Tanh()
 
         ops.init_weights(self.modules, g_init)
@@ -99,17 +94,8 @@ class DiscBlock(nn.Module):
         super(DiscBlock, self).__init__()
         self.apply_d_sn = apply_d_sn
 
-        self.conv0 = MODULES.d_conv2d(in_channels=in_channels,
-                                      out_channels=out_channels,
-                                      kernel_size=3,
-                                      stride=1,
-                                      padding=1)
-
-        self.conv1 = MODULES.d_conv2d(in_channels=out_channels,
-                                      out_channels=out_channels,
-                                      kernel_size=4,
-                                      stride=2,
-                                      padding=1)
+        self.conv0 = MODULES.d_conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
+        self.conv1 = MODULES.d_conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=4, stride=2, padding=1)
 
         if not apply_d_sn:
             self.bn0 = MODULES.d_bn(in_features=out_channels)
@@ -131,8 +117,8 @@ class DiscBlock(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_cond_mtd, aux_cls_type, d_embed_dim,
-                 normalize_d_embed, num_classes, d_init, d_depth, mixed_precision, MODULES):
+    def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_cond_mtd, aux_cls_type, d_embed_dim, normalize_d_embed,
+                 num_classes, d_init, d_depth, mixed_precision, MODULES):
         super(Discriminator, self).__init__()
         self.in_dims = [3] + [64, 128]
         self.out_dims = [64, 128, 256]
@@ -147,10 +133,7 @@ class Discriminator(nn.Module):
         self.blocks = []
         for index in range(len(self.in_dims)):
             self.blocks += [[
-                DiscBlock(in_channels=self.in_dims[index],
-                          out_channels=self.out_dims[index],
-                          apply_d_sn=self.apply_d_sn,
-                          MODULES=MODULES)
+                DiscBlock(in_channels=self.in_dims[index], out_channels=self.out_dims[index], apply_d_sn=self.apply_d_sn, MODULES=MODULES)
             ]]
 
             if index + 1 in attn_d_loc and apply_attn:
@@ -159,7 +142,6 @@ class Discriminator(nn.Module):
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
         self.activation = MODULES.d_act_fn
-
         self.conv1 = MODULES.d_conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=1, padding=1)
 
         if not self.apply_d_sn:
@@ -175,7 +157,7 @@ class Discriminator(nn.Module):
 
         # double num_classes for Auxiliary Discriminative Classifier
         if self.aux_cls_type == "ADC":
-            num_classes = num_classes*2
+            num_classes = num_classes * 2
 
         # liner and embedding layers for discriminator conditioning
         if self.d_cond_mtd == "AC":
@@ -258,5 +240,14 @@ class Discriminator(nn.Module):
                     if self.normalize_d_embed:
                         mi_embed = F.normalize(mi_embed, dim=1)
                         mi_proxy = F.normalize(mi_proxy, dim=1)
-            return {"h": h, "adv_output": adv_output, "embed": embed, "proxy": proxy, "cls_output": cls_output,
-                    "label": label, "mi_embed": mi_embed, "mi_proxy": mi_proxy, "mi_cls_output": mi_cls_output}
+            return {
+                "h": h,
+                "adv_output": adv_output,
+                "embed": embed,
+                "proxy": proxy,
+                "cls_output": cls_output,
+                "label": label,
+                "mi_embed": mi_embed,
+                "mi_proxy": mi_proxy,
+                "mi_cls_output": mi_cls_output
+            }
