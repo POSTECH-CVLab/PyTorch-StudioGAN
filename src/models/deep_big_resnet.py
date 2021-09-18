@@ -174,7 +174,6 @@ class Generator(nn.Module):
 class DiscBlock(nn.Module):
     def __init__(self, in_channels, out_channels, MODULES, downsample=True, channel_ratio=4):
         super(DiscBlock, self).__init__()
-        self.apply_d_sn = self.apply_d_sn
         self.downsample = downsample
         hidden_channels = out_channels // channel_ratio
 

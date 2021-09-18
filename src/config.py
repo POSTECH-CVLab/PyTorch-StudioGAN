@@ -448,7 +448,7 @@ class Configurations(object):
             assert self.DATA.img_size == 32, "StudioGAN does not support the deep_conv backbone for the dataset whose spatial resolution is not 32."
 
         if self.MODEL.backbone == "deep_big_resnet":
-            assert self.g_cond_mtd and self.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
+            assert self.MODEL.g_cond_mtd and self.MODEL.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
                 without applying spectral normalization to the generator and discriminator."
 
         if self.RUN.langevin_sampling or self.LOSS.apply_lo:
