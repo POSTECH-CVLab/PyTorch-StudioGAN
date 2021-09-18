@@ -19,6 +19,7 @@ import utils.ops as ops
 import utils.diffaug as diffaug
 # import utils.simclr_aug as simclr_aug
 import utils.cr as cr
+import utils.simclr_aug as simclr_aug
 
 
 class make_empty_object(object):
@@ -228,10 +229,14 @@ class Configurations(object):
         # differentiable augmentation settings
         # -----------------------------------------------------------------------------
         self.AUG = misc.make_empty_object()
-        # whether to apply differentiable augmentation used in DiffAugmentGAN
+        # whether to apply differentiable augmentations for limited data training
         self.AUG.apply_diffaug = False
-        # whether to apply adaptive discriminator augmentation
-        self.AUG.apply_ada = False
+        # type of differentiable augmentation for cr, bcr, or limited data training
+        # \in ["N/A", "cr", "bcr", "diffaug", "ada" "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]
+        # cr (bcr, diffaugment, ada, simclr, byol) indicates differentiable augmenations used in the original paper
+        self.AUG.cr_aug_type = "N/A"
+        self.AUG.bcr_aug_type = "N/A"
+        self.AUG.diffaug_type = "N/A"
         # target probability for adaptive differentiable augmentation
         self.AUG.ada_target = "N/A"
         # augmentation probability = augmentation probability +/- (ada_target/ada_length)
@@ -402,12 +407,36 @@ class Configurations(object):
 
     def define_augments(self):
         if self.AUG.apply_diffaug:
-            self.AUG.series_augment = diffaug.apply_diffaug
-        else:
-            self.AUG.series_augment = misc.identity
+            if self.AUG.diffaug_type == "W/O":
+                self.AUG.series_augment = misc.identity
+            elif self.AUG.diffaug_type == "cr":
+                self.AUG.series_augment = cr.apply_cr_aug
+            elif self.AUG.diffaug_type == "diffaug":
+                self.AUG.series_augment = diffaug.apply_diffaug
+            elif self.AUG.diffaug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
+                self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+            else:
+                raise NotImplementedError
 
-        if self.LOSS.apply_cr or self.LOSS.apply_bcr:
-            self.AUG.parallel_augment = cr.apply_cr_aug
+        if self.LOSS.apply_cr:
+            if self.AUG.cr_aug_type == "cr":
+                self.AUG.parallel_augment = cr.apply_cr_aug
+            elif self.AUG.cr_aug_type == "diffaug":
+                self.AUG.parallel_augment = diffaug.apply_diffaug
+            elif self.AUG.cr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
+                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+            else:
+                raise NotImplementedError
+
+        if self.LOSS.apply_bcr:
+            if self.AUG.bcr_aug_type == "bcr":
+                self.AUG.parallel_augment = cr.apply_cr_aug
+            elif self.AUG.bcr_aug_type == "diffaug":
+                self.AUG.parallel_augment = diffaug.apply_diffaug
+            elif self.AUG.bcr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
+                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+            else:
+                raise NotImplementedError
 
     def check_compatability(self):
         if self.RUN.load_data_in_memory:
@@ -419,6 +448,10 @@ class Configurations(object):
         if self.MODEL.backbone == "deep_big_resnet":
             assert self.g_cond_mtd and self.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
                 without applying spectral normalization to the generator and discriminator."
+
+        if self.LOSS.apply_cr or self.LOSS.apply_bcr:
+            assert self.AUG.cr_aug_type != "N/A" or self.AUG.bcr_aug_type != "N/A", \
+                "Specify augmentation type for cr/bcr in AUG.cr_aug_type/AUG.bcr_aug_type."
 
         if self.RUN.langevin_sampling or self.LOSS.apply_lo:
             assert self.RUN.langevin_sampling * self.LOSS.apply_lo == 0, "Langevin sampling and latent optmization \

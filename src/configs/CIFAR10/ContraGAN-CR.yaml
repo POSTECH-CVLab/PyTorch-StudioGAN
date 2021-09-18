@@ -26,3 +26,5 @@ LOSS:
   temperature: 1.0
   apply_cr: True
   cr_lambda: 10.0
+AUG:
+  cr_aug_type: "cr"

@@ -27,3 +27,5 @@ LOSS:
   radius: 0.05
   g_lambda: 0.5
   d_lambda: 20.0
+AUG:
+  bcr_aug_type: "bcr"

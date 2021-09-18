@@ -22,3 +22,5 @@ LOSS:
   adv_loss: "hinge"
   apply_cr: True
   cr_lambda: 10.0
+AUG:
+  cr_aug_type: "cr"

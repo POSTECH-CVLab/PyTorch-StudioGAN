@@ -33,3 +33,4 @@ OPTIMIZATION:
   d_updates_per_step: 1
 AUG:
   apply_diffaug: True
+  diffaug_type: "diffaug"

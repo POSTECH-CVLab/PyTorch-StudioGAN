@@ -28,3 +28,4 @@ OPTIMIZATION:
   total_steps: 200000
 AUG:
   apply_diffaug: True
+  diffaug_type: "diffaug"
