@@ -274,6 +274,8 @@ class Discriminator(nn.Module):
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
+        self.activation = MODULES.d_act_fn
+
         # liner layer for adversarial training
         if self.d_cond_mtd == "MH":
             self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1 + num_classes, bias=True)
