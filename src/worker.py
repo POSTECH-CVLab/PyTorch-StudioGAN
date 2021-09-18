@@ -204,7 +204,7 @@ class WORKER(object):
                     if self.LOSS.apply_r1_reg:
                         real_images.requires_grad_()
 
-                    # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
+                    # apply differentiable augmentations if "apply_diffaug" is True
                     real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
 
@@ -367,7 +367,7 @@ class WORKER(object):
                         device=self.local_rank,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
-                    # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
+                    # apply differentiable augmentations if "apply_diffaug" is True
                     fake_images_ = self.AUG.series_augment(fake_images)
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator

@@ -232,11 +232,11 @@ class Configurations(object):
         # whether to apply differentiable augmentations for limited data training
         self.AUG.apply_diffaug = False
         # type of differentiable augmentation for cr, bcr, or limited data training
-        # \in ["N/A", "cr", "bcr", "diffaug", "ada" "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]
+        # \in ["W/O", "cr", "bcr", "diffaug", "ada" "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]
         # cr (bcr, diffaugment, ada, simclr, byol) indicates differentiable augmenations used in the original paper
-        self.AUG.cr_aug_type = "N/A"
-        self.AUG.bcr_aug_type = "N/A"
-        self.AUG.diffaug_type = "N/A"
+        self.AUG.cr_aug_type = "W/O"
+        self.AUG.bcr_aug_type = "W/O"
+        self.AUG.diffaug_type = "W/O"
         # target probability for adaptive differentiable augmentation
         self.AUG.ada_target = "N/A"
         # augmentation probability = augmentation probability +/- (ada_target/ada_length)
@@ -406,10 +406,10 @@ class Configurations(object):
             raise NotImplementedError
 
     def define_augments(self):
+        self.AUG.series_augment = misc.identity
         if self.AUG.apply_diffaug:
-            if self.AUG.diffaug_type == "W/O":
-                self.AUG.series_augment = misc.identity
-            elif self.AUG.diffaug_type == "cr":
+            assert self.AUG.diffaug_type != "W/O", "Please select diffentiable augmentation type!"
+            if self.AUG.diffaug_type == "cr":
                 self.AUG.series_augment = cr.apply_cr_aug
             elif self.AUG.diffaug_type == "diffaug":
                 self.AUG.series_augment = diffaug.apply_diffaug
@@ -419,6 +419,7 @@ class Configurations(object):
                 raise NotImplementedError
 
         if self.LOSS.apply_cr:
+            assert self.AUG.cr_aug_type != "W/O", "Please select augmentation type for cr!"
             if self.AUG.cr_aug_type == "cr":
                 self.AUG.parallel_augment = cr.apply_cr_aug
             elif self.AUG.cr_aug_type == "diffaug":
@@ -429,6 +430,7 @@ class Configurations(object):
                 raise NotImplementedError
 
         if self.LOSS.apply_bcr:
+            assert self.AUG.bcr_aug_type != "W/O", "Please select augmentation type for bcr!"
             if self.AUG.bcr_aug_type == "bcr":
                 self.AUG.parallel_augment = cr.apply_cr_aug
             elif self.AUG.bcr_aug_type == "diffaug":
@@ -448,10 +450,6 @@ class Configurations(object):
         if self.MODEL.backbone == "deep_big_resnet":
             assert self.g_cond_mtd and self.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
                 without applying spectral normalization to the generator and discriminator."
-
-        if self.LOSS.apply_cr or self.LOSS.apply_bcr:
-            assert self.AUG.cr_aug_type != "N/A" or self.AUG.bcr_aug_type != "N/A", \
-                "Specify augmentation type for cr/bcr in AUG.cr_aug_type/AUG.bcr_aug_type."
 
         if self.RUN.langevin_sampling or self.LOSS.apply_lo:
             assert self.RUN.langevin_sampling * self.LOSS.apply_lo == 0, "Langevin sampling and latent optmization \
@@ -550,18 +548,18 @@ class Configurations(object):
         assert self.OPTIMIZATION.batch_size % self.OPTIMIZATION.world_size == 0, \
             "Batch_size should be divided by the number of gpus."
 
-        assert int(self.AUG.apply_diffaug)*int(self.AUG.apply_ada) == 0, \
-            "You can't apply differentiable augmentation and adaptive discriminator augmentation simultaneously."
-
         assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_gp) == 0, \
             "You can't apply mixed precision training and gradient penalty regularization simultaneously."
 
         assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_dra) == 0, \
             "You can't simultaneously apply mixed precision training and deep regret analysis for training DRAGAN."
 
+        assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_maxgp) == 0, \
+            "You can't simultaneously apply mixed precision training and max gradient penalty simultaneously."
+
         assert int(self.LOSS.apply_cr)*int(self.LOSS.apply_bcr) == 0 and \
             int(self.LOSS.apply_cr)*int(self.LOSS.apply_zcr) == 0, \
             "You can't simultaneously turn on consistency reg. and improved consistency reg."
 
-        assert int(self.LOSS.apply_gp)*int(self.LOSS.apply_dra) == 0, \
-            "You can't simultaneously apply gradient penalty regularization and deep regret analysis."
+        assert int(self.LOSS.apply_gp)*int(self.LOSS.apply_dra)*(self.LOSS.apply_maxgp) == 0, \
+            "You can't simultaneously apply gradient penalty regularization, deep regret analysis, and max gradient penalty."
