@@ -24,15 +24,6 @@ class CrossEntropyLoss(torch.nn.Module):
         return self.ce_loss(cls_output, label).mean()
 
 
-class CrossEntropyLossMI(torch.nn.Module):
-    def __init__(self):
-        super(CrossEntropyLossMI, self).__init__()
-        self.ce_loss = torch.nn.CrossEntropyLoss()
-
-    def forward(self, mi_cls_output, label, **_):
-        return self.ce_loss(mi_cls_output, label).mean()
-
-
 class ConditionalContrastiveLoss(torch.nn.Module):
     def __init__(self, num_classes, temperature, master_rank, DDP):
         super(ConditionalContrastiveLoss, self).__init__()

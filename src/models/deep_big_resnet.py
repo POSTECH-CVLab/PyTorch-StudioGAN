@@ -292,7 +292,7 @@ class Discriminator(nn.Module):
             self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=False)
         elif self.d_cond_mtd == "PD":
             self.embedding = MODULES.d_embedding(num_classes, self.out_dims[-1])
-        elif self.d_cond_mtd == "2C":
+        elif self.d_cond_mtd in ["2C", "D2DCE"]:
             self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=d_embed_dim, bias=True)
             self.embedding = MODULES.d_embedding(num_classes, d_embed_dim)
         else:
@@ -302,7 +302,7 @@ class Discriminator(nn.Module):
         if self.aux_cls_type == "TAC":
             if self.d_cond_mtd == "AC":
                 self.linear_mi = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=False)
-            elif self.d_cond_mtd == "2C":
+            elif self.d_cond_mtd in ["2C", "D2DCE"]:
                 self.linear_mi = MODULES.d_linear(in_features=self.out_dims[-1], out_features=d_embed_dim, bias=True)
                 self.embedding_mi = MODULES.d_embedding(num_classes, d_embed_dim)
             else:
@@ -338,7 +338,7 @@ class Discriminator(nn.Module):
                 cls_output = self.linear2(h)
             elif self.d_cond_mtd == "PD":
                 adv_output = adv_output + torch.sum(torch.mul(self.embedding(label), h), 1)
-            elif self.d_cond_mtd == "2C":
+            elif self.d_cond_mtd in ["2C", "D2DCE"]:
                 embed = self.linear2(h)
                 proxy = self.embedding(label)
                 if self.normalize_d_embed:
@@ -359,7 +359,7 @@ class Discriminator(nn.Module):
                         for W in self.linear_mi.parameters():
                             W = F.normalize(W, dim=1)
                     mi_cls_output = self.linear_mi(h)
-                elif self.d_cond_mtd == "2C":
+                elif self.d_cond_mtd in ["2C", "D2DCE"]:
                     mi_embed = self.linear_mi(h)
                     mi_proxy = self.embedding_mi(label)
                     if self.normalize_d_embed:

@@ -123,8 +123,8 @@ class Configurations(object):
         self.LOSS.apply_r1_reg = False
         # strength of r1 regularization
         self.LOSS.r1_lambda = "N/A"
-        # margin hyperparameter for D2DCE
-        self.LOSS.margin = "N/A"
+        # positive margin for D2DCE
+        self.LOSS.m_p = "N/A"
         # temperature scalar for [2C, D2DCE]
         self.LOSS.temperature = "N/A"
         # whether to apply weight clipping regularization to let the discriminator satisfy Lipschitzness

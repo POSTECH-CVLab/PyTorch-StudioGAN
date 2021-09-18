@@ -92,28 +92,31 @@ class WORKER(object):
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
             self.lossy.data.fill_(self.DATA.num_classes)
 
+        if self.MODEL.aux_cls_type == "ADC":
+            num_classes = self.DATA.num_classes * 2
+        else:
+            num_classes = self.DATA.num_classes
+
         if self.MODEL.d_cond_mtd == "AC":
             self.cond_loss = losses.CrossEntropyLoss()
+            if self.MODEL.aux_cls_type == "TAC":
+                self.cond_loss_mi = losses.CrossEntropyLoss()
         elif self.MODEL.d_cond_mtd == "2C":
-            if self.MODEL.aux_cls_type == "ADC":
-                num_classes = self.DATA.num_classes * 2
-            else:
-                num_classes = self.DATA.num_classes
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
                                                                temperature=self.LOSS.temperature,
                                                                master_rank="cuda",
                                                                DDP=self.RUN.distributed_data_parallel)
-
-        if self.MODEL.aux_cls_type == "TAC":
-            if self.MODEL.d_cond_mtd == "AC":
-                self.cond_loss_mi = losses.CrossEntropyLossMI()
-            elif self.MODEL.d_cond_mtd == "2C":
-                self.cond_loss_mi = losses.ConditionalContrastiveLossMI(num_classes=self.DATA.num_classes,
-                                                                        temperature=self.LOSS.temperature,
-                                                                        master_rank="cuda",
-                                                                        DDP=self.RUN.distributed_data_parallel)
-            else:
+            if self.MODEL.aux_cls_type == "TAC":
+                self.cond_loss_mi = losses.ConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
+                                                                      temperature=self.LOSS.temperature,
+                                                                      master_rank="cuda",
+                                                                      DDP=self.RUN.distributed_data_parallel)
+        elif self.MODEL.d_cond_mtd == "D2DCE":
+            raise NotImplementedError
+            if self.MODEL.aux_cls_type == "TAC":
                 raise NotImplementedError
+        else:
+            raise NotImplementedError
 
         if self.RUN.distributed_data_parallel:
             self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
