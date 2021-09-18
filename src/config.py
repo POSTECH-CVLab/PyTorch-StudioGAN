@@ -246,7 +246,7 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.MISC = misc.make_empty_object()
         self.MISC.no_proc_data = ["CIFAR10", "CIFAR100", "Tiny_ImageNet"]
-        self.MISC.base_folders = ["checkpoints", "figures", "hdf5", "logs", "moments",
+        self.MISC.base_folders = ["checkpoints", "figures", "logs", "moments",
                                   "samples", "values"]
 
         # -----------------------------------------------------------------------------
