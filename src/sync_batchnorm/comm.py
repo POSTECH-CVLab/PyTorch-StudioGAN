@@ -32,7 +32,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import queue
 import collections
 import threading
@@ -42,7 +41,6 @@ __all__ = ['FutureResult', 'SlavePipe', 'SyncMaster']
 
 class FutureResult(object):
     """A thread-safe future implementation. Used only as one-to-one pipe."""
-
     def __init__(self):
         self._result = None
         self._lock = threading.Lock()
@@ -70,7 +68,6 @@ _SlavePipeBase = collections.namedtuple('_SlavePipeBase', ['identifier', 'queue'
 
 class SlavePipe(_SlavePipeBase):
     """Pipe for master-slave communication."""
-
     def run_slave(self, msg):
         self.queue.put((self.identifier, msg))
         ret = self.result.get()
@@ -88,7 +85,6 @@ class SyncMaster(object):
     - After receiving the messages, the master device should gather the information and determine to message passed
     back to each slave devices.
     """
-
     def __init__(self, master_callback):
         """
 

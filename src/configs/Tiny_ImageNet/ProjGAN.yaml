@@ -1,0 +1,16 @@
+DATA:
+  name: "Tiny_ImageNet"
+  img_size: 64
+  num_classes: 200
+MODEL:
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "PD"
+LOSS:
+  adv_loss: "hinge"
+OPTIMIZATION:
+  batch_size: 256
+  g_lr: 0.0001
+  d_lr: 0.0004
+  beta1: 0.0
+  beta2: 0.999
+  d_updates_per_step: 1

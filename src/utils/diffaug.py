@@ -24,17 +24,15 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+### Differentiable Augmentation for Data-Efficient GAN Training (https://arxiv.org/abs/2006.10738)
+### Shengyu Zhao, Zhijian Liu, Ji Lin, Jun-Yan Zhu, and Song Han
+### https://github.com/mit-han-lab/data-efficient-gans
 
 import torch
 import torch.nn.functional as F
 
 
-### Differentiable Augmentation for Data-Efficient GAN Training (https://arxiv.org/abs/2006.10738)
-### Shengyu Zhao, Zhijian Liu, Ji Lin, Jun-Yan Zhu, and Song Han
-### https://github.com/mit-han-lab/data-efficient-gans
-
-
-def DiffAugment(x, policy='', channels_first=True):
+def apply_diffaug(x, policy="color,translation,cutout", channels_first=True):
     if policy:
         if not channels_first:
             x = x.permute(0, 3, 1, 2)

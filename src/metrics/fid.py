@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 from os.path import dirname, abspath, exists, join
 import math
 import os
@@ -39,9 +38,9 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     sigma2 = np.atleast_2d(sigma2)
 
     assert mu1.shape == mu2.shape, \
-        "Training and test mean vectors have different lengths"
+        "Training and test mean vectors have different lengths."
     assert sigma1.shape == sigma2.shape, \
-        "Training and test covariances have different dimensions"
+        "Training and test covariances have different dimensions."
 
     diff = mu1 - mu2
 
@@ -55,14 +54,15 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     if np.iscomplexobj(covmean):
         if not np.allclose(np.diagonal(covmean).imag, 0, atol=1e-3):
             m = np.max(np.abs(covmean.imag))
-            raise ValueError('Imaginary component {}'.format(m))
+            raise ValueError("Imaginary component {}".format(m))
         covmean = covmean.real
 
     tr_covmean = np.trace(covmean)
     return (diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * tr_covmean)
 
-def calculate_moments(data_loader, Gen, eval_model, is_generate, num_generate, y_sampler, batch_size, z_prior,
-                      truncation_th, z_dim, num_classes, LOSS, local_rank, disable_tqdm=False):
+
+def calculate_moments(data_loader, generator, discriminator, eval_model, is_generate, num_generate, y_sampler,
+                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, device, disable_tqdm):
     if is_generate:
         total_instance = num_generate
     else:
@@ -72,25 +72,28 @@ def calculate_moments(data_loader, Gen, eval_model, is_generate, num_generate, y
 
     acts = np.empty((total_instance, 2048))
     for i in tqdm(range(0, num_batches), disable=disable_tqdm):
-        start = i*batch_size
+        start = i * batch_size
         end = start + batch_size
         if is_generate:
-            images, labels = sample.generate_images(z_prior=z_prior,
-                                                    truncation_th=truncation_th,
-                                                    batch_size=batch_size,
-                                                    z_dim=z_dim,
-                                                    num_classe=num_classes,
-                                                    y_sampler=y_sampler,
-                                                    radius="N/A",
-                                                    Gen=Gen,
-                                                    is_train=False,
-                                                    LOSS=LOSS,
-                                                    local_rank=local_rank)
-            images = images.to(local_rank)
+            images, labels, _, _ = sample.generate_images(z_prior=z_prior,
+                                                          truncation_th=truncation_th,
+                                                          batch_size=batch_size,
+                                                          z_dim=z_dim,
+                                                          num_classes=num_classes,
+                                                          y_sampler=y_sampler,
+                                                          radius="N/A",
+                                                          generator=generator,
+                                                          discriminator=discriminator,
+                                                          is_train=False,
+                                                          LOSS=LOSS,
+                                                          RUN=RUN,
+                                                          device=device,
+                                                          cal_trsp_cost=False)
+            images = images.to(device)
         else:
             try:
                 feed_list = next(data_iter)
-                images = feed_list[0].to(local_rank)
+                images = feed_list[0].to(device)
             except StopIteration:
                 break
 
@@ -107,40 +110,58 @@ def calculate_moments(data_loader, Gen, eval_model, is_generate, num_generate, y
     sigma = np.cov(acts, rowvar=False)
     return mu, sigma
 
-def calculate_fid(data_loader, Gen, eval_model, num_generate, y_sampler, cfgs, local_rank, logger,
-                  pre_cal_mean=None, pre_cal_std=None):
-    disable_tqdm = local_rank != 0
+
+def calculate_fid(data_loader,
+                  generator,
+                  discriminator,
+                  eval_model,
+                  num_generate,
+                  y_sampler,
+                  cfgs,
+                  device,
+                  logger,
+                  pre_cal_mean=None,
+                  pre_cal_std=None,
+                  disable_tqdm=False):
     eval_model.eval()
 
-    if local_rank == 0: logger.info("Calculating FID score....")
+    if device == 0 and not disable_tqdm:
+        logger.info("Calculate FID score of generated images ({} images).".format(num_generate))
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std
     else:
         m1, s1 = calculate_moments(data_loader=data_loader,
-                                   Gen="N/A",
+                                   generator="N/A",
+                                   discriminator="N/A",
                                    eval_model=eval_model,
                                    is_generate=False,
-                                   num_generate=False,
-                                   y_sampler=y_sampler,
-                                   DATA=cfgs.DATA,
-                                   MODEL=cfgs.MODEL,
-                                   LOSS=cfgs.LOSS,
-                                   OPTIMIZER=cfgs.OPTIMIZER,
-                                   RUN=cfgs.RUN,
-                                   local_rank=local_rank,
+                                   num_generate="N/A",
+                                   y_sampler="N/A",
+                                   batch_size=cfgs.OPTIMIZATION.batch_size,
+                                   z_prior="N/A",
+                                   truncation_th="N/A",
+                                   z_dim="N/A",
+                                   num_classes=cfgs.DATA.num_classes,
+                                   LOSS="N/A",
+                                   RUN="N/A",
+                                   device=device,
                                    disable_tqdm=disable_tqdm)
 
     m2, s2 = calculate_moments(data_loader="N/A",
-                               Gen=Gen,
+                               generator=generator,
+                               discriminator=discriminator,
                                eval_model=eval_model,
                                is_generate=True,
                                num_generate=num_generate,
-                               DATA=cfgs.DATA,
-                               MODEL=cfgs.MODEL,
+                               y_sampler=y_sampler,
+                               batch_size=cfgs.OPTIMIZATION.batch_size,
+                               z_prior=cfgs.MODEL.z_prior,
+                               truncation_th=cfgs.RUN.truncation_th,
+                               z_dim=cfgs.MODEL.z_dim,
+                               num_classes=cfgs.DATA.num_classes,
                                LOSS=cfgs.LOSS,
-                               OPTIMIZER=cfgs.OPTIMIZER,
                                RUN=cfgs.RUN,
-                               local_rank=local_rank,
+                               device=device,
                                disable_tqdm=disable_tqdm)
 
     fid_value = frechet_inception_distance(m1, s1, m2, s2)

@@ -32,7 +32,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import unittest
 import torch
 
@@ -45,10 +44,5 @@ class TorchTestCase(unittest.TestCase):
         else:
             rdiff = float((adiff / y).abs().max())
 
-        message = (
-            'Tensor close check failed\n'
-            'adiff={}\n'
-            'rdiff={}\n'
-        ).format(adiff, rdiff)
+        message = ('Tensor close check failed\n' 'adiff={}\n' 'rdiff={}\n').format(adiff, rdiff)
         self.assertTrue(torch.allclose(x, y), message)
-
