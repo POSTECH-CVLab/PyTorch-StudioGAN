@@ -37,9 +37,21 @@ class GenBlock(nn.Module):
         self.activation = MODULES.g_act_fn
 
         self.conv2d1 = MODULES.g_conv2d(in_channels=self.in_channels, out_channels=self.hidden_channels, kernel_size=1, stride=1, padding=0)
-        self.conv2d2 = MODULES.g_conv2d(in_channels=self.hidden_channels, out_channels=self.hidden_channels, kernel_size=3, stride=1, padding=1)
-        self.conv2d3 = MODULES.g_conv2d(in_channels=self.hidden_channels, out_channels=self.hidden_channels, kernel_size=3, stride=1, padding=1)
-        self.conv2d4 = MODULES.g_conv2d(in_channels=self.hidden_channels, out_channels=self.out_channels, kernel_size=1, stride=1, padding=0)
+        self.conv2d2 = MODULES.g_conv2d(in_channels=self.hidden_channels,
+                                        out_channels=self.hidden_channels,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1)
+        self.conv2d3 = MODULES.g_conv2d(in_channels=self.hidden_channels,
+                                        out_channels=self.hidden_channels,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1)
+        self.conv2d4 = MODULES.g_conv2d(in_channels=self.hidden_channels,
+                                        out_channels=self.out_channels,
+                                        kernel_size=1,
+                                        stride=1,
+                                        padding=0)
 
     def forward(self, x, label):
         if self.in_channels != self.out_channels:
@@ -235,7 +247,8 @@ class Discriminator(nn.Module):
             "64": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
             "128": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
             "256": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
-            "512": [d_conv_dim, d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16]
+            "512":
+            [d_conv_dim, d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16]
         }
 
         d_down = {
