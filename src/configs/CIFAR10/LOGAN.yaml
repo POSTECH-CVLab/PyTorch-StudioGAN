@@ -1,0 +1,16 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  apply_d_sn: True
+  z_prior: "uniform"
+LOSS:
+  adv_loss: "hinge"
+  apply_lo: True
+  lo_alpha: 0.9
+  lo_beta: 0.1
+  lo_lambda: 0.1
+  lo_rate: 0.8
+  lo_steps4train: 2
+  lo_steps4eval: 10

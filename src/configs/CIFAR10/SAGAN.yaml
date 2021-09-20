@@ -1,0 +1,14 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "PD"
+  apply_g_sn: True
+  apply_d_sn: True
+  apply_attn: True
+  attn_g_loc: [2]
+  attn_d_loc: [1]
+LOSS:
+  adv_loss: "hinge"

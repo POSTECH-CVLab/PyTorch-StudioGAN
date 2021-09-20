@@ -1,0 +1,9 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "PD"
+LOSS:
+  adv_loss: "hinge"
