@@ -355,6 +355,8 @@ class WORKER(object):
         if (current_step + 1) % self.RUN.print_every == 0 and self.MODEL.apply_d_sn:
             if self.global_rank == 0:
                 dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
+                if self.RUN.distributed_data_parallel:
+                    dist.barrier(self.group)
                 wandb.log(dis_sigmas, step=current_step)
 
         # -----------------------------------------------------------------------------
@@ -483,6 +485,8 @@ class WORKER(object):
             # calculate the spectral norms of all weights in the generator for monitoring purpose
             if self.MODEL.apply_g_sn:
                 gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
+                if self.RUN.distributed_data_parallel:
+                    dist.barrier(self.group)
                 wandb.log(gen_sigmas, step=current_step)
         return current_step + 1
 
