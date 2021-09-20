@@ -111,6 +111,18 @@ class WORKER(object):
                                                                       temperature=self.LOSS.temperature,
                                                                       master_rank="cuda",
                                                                       DDP=self.RUN.distributed_data_parallel)
+        elif self.MODEL.d_cond_mtd == "D2DCE":
+            self.cond_loss = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
+                                                              temperature=self.LOSS.temperature,
+                                                              m_p=self.LOSS.m_p,
+                                                              master_rank="cuda",
+                                                              DDP=self.RUN.distributed_data_parallel)
+            if self.MODEL.aux_cls_type == "TAC":
+                self.cond_loss_mi = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
+                                                                     temperature=self.LOSS.temperature,
+                                                                     m_p=self.LOSS.m_p,
+                                                                     master_rank="cuda",
+                                                                     DDP=self.RUN.distributed_data_parallel)
         else:
             pass
 
