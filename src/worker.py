@@ -147,6 +147,8 @@ class WORKER(object):
         if self.global_rank == 0:
             wandb.init(project=self.RUN.project,
                        entity=self.RUN.entity,
+                       name=self.run_name,
+                       dir=self.RUN.save_dir,
                        resume=False if self.RUN.freezeD > -1 or self.RUN.freezeG > -1 else True)
 
     def sample_data_basket(self):
@@ -340,7 +342,7 @@ class WORKER(object):
         # calculate the spectral norms of all weights in the discriminator for monitoring purpose
         if (current_step + 1) % self.RUN.print_every == 0 and self.MODEL.apply_d_sn:
             if self.global_rank == 0:
-                dis_sigmas = misc.calculate_all_sn(self.Dis)
+                dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
                 wandb.log(dis_sigmas, step=current_step)
 
         # -----------------------------------------------------------------------------
@@ -468,7 +470,7 @@ class WORKER(object):
 
             # calculate the spectral norms of all weights in the generator for monitoring purpose
             if self.MODEL.apply_g_sn:
-                gen_sigmas = misc.calculate_all_sn(self.Gen)
+                gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
                 wandb.log(gen_sigmas, step=current_step)
         return current_step + 1
 
@@ -507,6 +509,8 @@ class WORKER(object):
                              num_cols=num_cols,
                              logger=self.logger,
                              logging=self.global_rank == 0 and self.logger)
+
+        wandb.log({"generated_images": wandb.Image(fake_images)})
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 

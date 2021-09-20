@@ -258,7 +258,7 @@ def reshape_weight_to_matrix(weight):
     return weight_mat.reshape(height, -1)
 
 
-def calculate_all_sn(model):
+def calculate_all_sn(model, prefix):
     sigmas = {}
     with torch.no_grad():
         for name, param in model.named_parameters():
@@ -270,7 +270,7 @@ def calculate_all_sn(model):
                 weight_orig = reshape_weight_to_matrix(operations.weight_orig)
                 weight_u = operations.weight_u
                 weight_v = operations.weight_v
-                sigmas[name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
+                sigmas[prefix + "_" + name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
     return sigmas
 
 
