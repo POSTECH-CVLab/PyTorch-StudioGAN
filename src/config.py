@@ -563,3 +563,6 @@ class Configurations(object):
 
         assert int(self.LOSS.apply_gp)*int(self.LOSS.apply_dra)*(self.LOSS.apply_maxgp) == 0, \
             "You can't simultaneously apply gradient penalty regularization, deep regret analysis, and max gradient penalty."
+
+        assert self.RUN.save_every % self.RUN.print_every == 0, \
+            "RUN.save_every should be divided by RUN.print_every for wandb logging."

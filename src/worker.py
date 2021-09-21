@@ -354,10 +354,10 @@ class WORKER(object):
 
         # calculate the spectral norms of all weights in the discriminator for monitoring purpose
         if (current_step + 1) % self.RUN.print_every == 0:
-            wandb_step = current_step + 1
+            self.wandb_step = current_step + 1
             if self.MODEL.apply_d_sn and self.global_rank == 0:
                 dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
-                wandb.log(dis_sigmas, step=wandb_step)
+                wandb.log(dis_sigmas, step=self.wandb_step)
 
         # -----------------------------------------------------------------------------
         # train Generator.
@@ -474,7 +474,7 @@ class WORKER(object):
                     "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss
                 }
 
-                wandb.log(loss_dict, step=wandb_step)
+                wandb.log(loss_dict, step=self.wandb_step)
 
                 save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
                                                         value_dict=loss_dict,
@@ -487,7 +487,7 @@ class WORKER(object):
                 # calculate the spectral norms of all weights in the generator for monitoring purpose
                 if self.MODEL.apply_g_sn:
                     gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
-                    wandb.log(gen_sigmas, step=wandb_step)
+                    wandb.log(gen_sigmas, step=self.wandb_step)
 
                 ###############################################
                 # calculate_ACGAN's gradient will be deprecated.
@@ -497,7 +497,7 @@ class WORKER(object):
                                                             label=real_dict["label"].detach().cpu(),
                                                             num_classes=self.DATA.num_classes)
                     prob, fx_grad = probs.mean(), fx_grads.mean()
-                    wandb.log({"prob": prob, "fx_grad":fx_grad}, step=wandb_step)
+                    wandb.log({"prob": prob, "fx_grad":fx_grad}, step=self.wandb_step)
                 ###############################################
 
         return current_step + 1
@@ -609,14 +609,13 @@ class WORKER(object):
                     fid_score, step, True, rec, prc
 
             if self.global_rank == 0 and writing:
-                wandb_step = step
-                wandb.log({"IS score": kl_score}, step=wandb_step)
-                wandb.log({"FID score": fid_score}, step=wandb_step)
-                wandb.log({"F_beta_inv score": prc}, step=wandb_step)
-                wandb.log({"F_beta score": rec}, step=wandb_step)
+                wandb.log({"IS score": kl_score}, step=self.wandb_step)
+                wandb.log({"FID score": fid_score}, step=self.wandb_step)
+                wandb.log({"F_beta_inv score": prc}, step=self.wandb_step)
+                wandb.log({"F_beta score": rec}, step=self.wandb_step)
                 if is_acc:
-                    wandb.log({"Inception_V3 Top1 acc": top1}, step=wandb_step)
-                    wandb.log({"Inception_V3 Top5 acc":  top5}, step=wandb_step)
+                    wandb.log({"Inception_V3 Top1 acc": top1}, step=self.wandb_step)
+                    wandb.log({"Inception_V3 Top5 acc":  top5}, step=self.wandb_step)
 
             if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
