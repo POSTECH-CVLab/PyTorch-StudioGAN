@@ -32,6 +32,7 @@ import utils.sample as sample
 import utils.misc as misc
 import utils.losses as losses
 import utils.sefa as sefa
+import wandb
 
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
 
@@ -46,7 +47,7 @@ LOG_FORMAT = ("Step: {step:>6} "
 
 class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Dis, Gen_ema, ema, eval_model, train_dataloader, eval_dataloader,
-                 global_rank, local_rank, mu, sigma, logger, writer, ada_p, best_step, best_fid, best_ckpt_path,
+                 global_rank, local_rank, mu, sigma, logger, ada_p, best_step, best_fid, best_ckpt_path,
                  loss_list_dict, metric_list_dict):
         self.start_time = datetime.now()
         self.cfgs = cfgs
@@ -63,7 +64,6 @@ class WORKER(object):
         self.mu = mu
         self.sigma = sigma
         self.logger = logger
-        self.writer = writer
         self.ada_p = ada_p
         self.best_step = best_step
         self.best_fid = best_fid
@@ -112,11 +112,19 @@ class WORKER(object):
                                                                       master_rank="cuda",
                                                                       DDP=self.RUN.distributed_data_parallel)
         elif self.MODEL.d_cond_mtd == "D2DCE":
-            raise NotImplementedError
+            self.cond_loss = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
+                                                              temperature=self.LOSS.temperature,
+                                                              m_p=self.LOSS.m_p,
+                                                              master_rank="cuda",
+                                                              DDP=self.RUN.distributed_data_parallel)
             if self.MODEL.aux_cls_type == "TAC":
-                raise NotImplementedError
+                self.cond_loss_mi = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
+                                                                     temperature=self.LOSS.temperature,
+                                                                     m_p=self.LOSS.m_p,
+                                                                     master_rank="cuda",
+                                                                     DDP=self.RUN.distributed_data_parallel)
         else:
-            raise NotImplementedError
+            pass
 
         if self.RUN.distributed_data_parallel:
             self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
@@ -147,6 +155,13 @@ class WORKER(object):
                                                  global_rank=self.global_rank,
                                                  logger=self.logger,
                                                  std_stat_counter=0)
+
+        if self.global_rank == 0:
+            wandb.init(project=self.RUN.project,
+                       entity=self.RUN.entity,
+                       name=self.run_name,
+                       dir=self.RUN.save_dir,
+                       resume=False if self.RUN.freezeD > -1 or self.RUN.freezeG > -1 else True)
 
     def sample_data_basket(self):
         try:
@@ -338,9 +353,10 @@ class WORKER(object):
 
         # calculate the spectral norms of all weights in the discriminator for monitoring purpose
         if (current_step + 1) % self.RUN.print_every == 0 and self.MODEL.apply_d_sn:
+            if self.RUN.distributed_data_parallel: dist.barrier(self.group)
             if self.global_rank == 0:
-                dis_sigmas = misc.calculate_all_sn(self.Dis)
-                self.writer.add_scalars("SN_of_dis", dis_sigmas, current_step + 1)
+                dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
+                wandb.log(dis_sigmas, step=current_step+1)
 
         # -----------------------------------------------------------------------------
         # train Generator.
@@ -432,43 +448,58 @@ class WORKER(object):
                 self.ema.update(current_step)
 
         # logging
-        if (current_step + 1) % self.RUN.print_every == 0 and self.global_rank == 0:
-            if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
-                cls_loss = real_cond_loss.item()
-            else:
-                cls_loss = "N/A"
-            log_message = LOG_FORMAT.format(
-                step=current_step + 1,
-                progress=(current_step + 1) / self.OPTIMIZATION.total_steps,
-                elapsed=misc.elapsed_time(self.start_time),
-                gen_loss=gen_acml_loss.item(),
-                dis_loss=dis_acml_loss.item(),
-                cls_loss=cls_loss,
-                topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
-            )
-            self.logger.info(log_message)
+        if (current_step + 1) % self.RUN.print_every == 0:
+            if self.RUN.distributed_data_parallel: dist.barrier(self.group)
+            if self.global_rank == 0:
+                if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
+                    cls_loss = real_cond_loss.item()
+                else:
+                    cls_loss = "N/A"
 
-            # save loss values in tensorboard event file and .npz format
-            loss_dict = {
-                "gen_loss": gen_acml_loss.item(),
-                "dis_loss": dis_acml_loss.item(),
-                "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss
-            }
+                log_message = LOG_FORMAT.format(
+                    step=current_step + 1,
+                    progress=(current_step + 1) / self.OPTIMIZATION.total_steps,
+                    elapsed=misc.elapsed_time(self.start_time),
+                    gen_loss=gen_acml_loss.item(),
+                    dis_loss=dis_acml_loss.item(),
+                    cls_loss=cls_loss,
+                    topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
+                )
+                self.logger.info(log_message)
 
-            self.writer.add_scalars("Losses", loss_dict, current_step + 1)
+                # save loss values in tensorboard event file and .npz format
+                loss_dict = {
+                    "gen_loss": gen_acml_loss.item(),
+                    "dis_loss": dis_acml_loss.item(),
+                    "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss
+                }
 
-            save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
-                                                      value_dict=loss_dict,
-                                                      step=current_step + 1,
-                                                      interval=self.RUN.print_every)
-            misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
-                               name="losses",
-                               dictionary=save_dict)
+                wandb.log(loss_dict, step=current_step+1)
 
-            # calculate the spectral norms of all weights in the generator for monitoring purpose
-            if self.MODEL.apply_g_sn:
-                gen_sigmas = misc.calculate_all_sn(self.Gen)
-                self.writer.add_scalars("SN_of_gen", gen_sigmas, current_step + 1)
+                save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
+                                                        value_dict=loss_dict,
+                                                        step=current_step + 1,
+                                                        interval=self.RUN.print_every)
+                misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
+                                name="losses",
+                                dictionary=save_dict)
+
+                # calculate the spectral norms of all weights in the generator for monitoring purpose
+                if self.MODEL.apply_g_sn:
+                    gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
+                    wandb.log(gen_sigmas, step=current_step+1)
+
+                ###############################################
+                # calculate_ACGAN's gradient will be deprecated.
+                if self.MODEL.d_cond_mtd == "AC":
+                    probs, fx_grads = misc.compute_gradient(fx=real_dict["h"].detach().cpu(),
+                                                            logits=real_dict["cls_output"],
+                                                            label=real_dict["label"].detach().cpu(),
+                                                            num_classes=self.DATA.num_classes)
+                    prob, fx_grad = probs.mean(), fx_grads.mean()
+                    wandb.log({"prob": prob, "fx_grad":fx_grad}, step=current_step+1)
+                ###############################################
+
         return current_step + 1
 
     # -----------------------------------------------------------------------------
@@ -506,6 +537,8 @@ class WORKER(object):
                              num_cols=num_cols,
                              logger=self.logger,
                              logging=self.global_rank == 0 and self.logger)
+
+        wandb.log({"generated_images": wandb.Image(fake_images)})
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -576,25 +609,13 @@ class WORKER(object):
                     fid_score, step, True, rec, prc
 
             if self.global_rank == 0 and writing:
-                self.writer.add_scalars(
-                    "IS score",
-                    {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): kl_score}, step)
-                self.writer.add_scalars("FID score",
-                                        {"using {type} moments".format(type=self.RUN.ref_dataset): fid_score}, step)
-                self.writer.add_scalars(
-                    "F_beta_inv score",
-                    {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): prc}, step)
-                self.writer.add_scalars(
-                    "F_beta score",
-                    {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): rec}, step)
-
+                wandb.log({"IS score": kl_score}, step=step)
+                wandb.log({"FID score": fid_score}, step=step)
+                wandb.log({"F_beta_inv score": prc}, step=step)
+                wandb.log({"F_beta score": rec}, step=step)
                 if is_acc:
-                    self.writer.add_scalars(
-                        "Inception_V3 Top1 acc",
-                        {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): top1}, step)
-                    self.writer.add_scalars(
-                        "Inception_V3 Top5 acc",
-                        {"{num} generated images".format(num=str(self.num_eval[self.RUN.ref_dataset])): top5}, step)
+                    wandb.log({"Inception_V3 Top1 acc": top1}, step=step)
+                    wandb.log({"Inception_V3 Top5 acc":  top5}, step=step)
 
             if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(

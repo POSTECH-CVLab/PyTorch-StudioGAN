@@ -13,7 +13,6 @@ import warnings
 
 from torch.utils.data import DataLoader
 from torch.nn import DataParallel
-from torch.utils.tensorboard import SummaryWriter
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 import torch
@@ -55,11 +54,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     misc.fix_seed(cfgs.RUN.seed + global_rank)
 
     # -----------------------------------------------------------------------------
-    # define tensorflow writer and python logger.
+    # Intialize python logger.
     # -----------------------------------------------------------------------------
     if local_rank == 0:
         logger = log.make_logger(cfgs.RUN.save_dir, run_name, None)
-        writer = SummaryWriter(log_dir=join(cfgs.RUN.save_dir, "logs", run_name))
         if cfgs.RUN.ckpt_dir is not None:
             logger.info("Run name : {run_name}".format(run_name=cfgs.RUN.ckpt_dir.split("/")[-1]))
         else:
@@ -68,7 +66,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             logger.info("cfgs." + k + " =")
             logger.info(json.dumps(vars(v), indent=2))
     else:
-        writer, logger = None, None
+        logger = None
 
     # -----------------------------------------------------------------------------
     # load train and evaluation dataset.
@@ -159,9 +157,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # load the generator and the discriminator from a checkpoint if possible
     # -----------------------------------------------------------------------------
     if cfgs.RUN.ckpt_dir is None:
-        cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
+        if local_rank == 0:
+            cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
     else:
-        run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path, logger, writer =\
+        run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path, logger =\
             ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
                                       load_best=cfgs.RUN.load_best,
                                       Gen=Gen,
@@ -232,7 +231,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         mu=mu,
         sigma=sigma,
         logger=logger,
-        writer=writer,
         ada_p=ada_p,
         best_step=best_step,
         best_fid=best_fid,
@@ -258,7 +256,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
             if step % cfgs.RUN.save_every == 0:
                 # visuailize fake images
-                worker.visualize_fake_images(num_cols=num_cols)
+                if global_rank == 0:
+                   worker.visualize_fake_images(num_cols=num_cols)
 
                 # evaluate GAN for monitoring purpose
                 if cfgs.RUN.eval:
