@@ -356,7 +356,7 @@ class WORKER(object):
             if self.RUN.distributed_data_parallel: dist.barrier(self.group)
             if self.global_rank == 0:
                 dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
-                wandb.log(dis_sigmas)
+                wandb.log(dis_sigmas, step=current_step+1)
 
         # -----------------------------------------------------------------------------
         # train Generator.
@@ -473,7 +473,7 @@ class WORKER(object):
                     "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss
                 }
 
-                wandb.log(loss_dict)
+                wandb.log(loss_dict, step=current_step+1)
 
                 save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
                                                         value_dict=loss_dict,
@@ -486,7 +486,7 @@ class WORKER(object):
                 # calculate the spectral norms of all weights in the generator for monitoring purpose
                 if self.MODEL.apply_g_sn:
                     gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
-                    wandb.log(gen_sigmas)
+                    wandb.log(gen_sigmas, step=current_step+1)
         return current_step + 1
 
     # -----------------------------------------------------------------------------
@@ -596,13 +596,13 @@ class WORKER(object):
                     fid_score, step, True, rec, prc
 
             if self.global_rank == 0 and writing:
-                wandb.log({"IS score": kl_score})
-                wandb.log({"FID score": fid_score})
-                wandb.log({"F_beta_inv score": prc})
-                wandb.log({"F_beta score": rec})
+                wandb.log({"IS score": kl_score}, step=step)
+                wandb.log({"FID score": fid_score}, step=step)
+                wandb.log({"F_beta_inv score": prc}, step=step)
+                wandb.log({"F_beta score": rec}, step=step)
                 if is_acc:
-                    wandb.log({"Inception_V3 Top1 acc": top1})
-                    wandb.log({"Inception_V3 Top5 acc":  top5})
+                    wandb.log({"Inception_V3 Top1 acc": top1}, step=step)
+                    wandb.log({"Inception_V3 Top5 acc":  top5}, step=step)
 
             if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
