@@ -538,7 +538,7 @@ class WORKER(object):
                              logger=self.logger,
                              logging=self.global_rank == 0 and self.logger)
 
-        wandb.log({"generated_images": wandb.Image(fake_images)})
+        wandb.log({"generated_images": wandb.Image(fake_images)}, step=self.wandb_step)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
