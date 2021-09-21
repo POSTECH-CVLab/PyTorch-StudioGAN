@@ -157,11 +157,12 @@ class WORKER(object):
                                                  std_stat_counter=0)
 
         if self.global_rank == 0:
+            resume = False if self.RUN.freezeD > -1 or self.RUN.freezeG > -1 else True
             wandb.init(project=self.RUN.project,
                        entity=self.RUN.entity,
                        name=self.run_name,
                        dir=self.RUN.save_dir,
-                       resume=False if self.RUN.freezeD > -1 or self.RUN.freezeG > -1 else True)
+                       resume=self.best_step > 0 and resume)
 
     def sample_data_basket(self):
         try:
