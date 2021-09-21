@@ -106,7 +106,6 @@ dependencies:
     - jupyter-core==4.6.3
     - markdown==3.2.1
     - markupsafe==1.1.1
-    - minkowskiengine==0.4.1
     - mistune==0.8.4
     - nbconvert==5.6.1
     - nbformat==5.0.4
@@ -145,7 +144,6 @@ dependencies:
     - testpath==0.4.4
     - threadpoolctl==2.1.0
     - tifffile==2020.12.4
-    - torchlars==0.1.2
     - traitlets==4.3.3
     - urllib3==1.25.8
     - virtualenv==20.0.30
