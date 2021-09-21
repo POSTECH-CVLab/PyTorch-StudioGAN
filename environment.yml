@@ -1,5 +1,6 @@
 name: contra_gan
 channels:
+  - pytorch-nightly
   - pytorch
   - nvidia
   - defaults
@@ -171,7 +172,7 @@ dependencies:
   - mkl=2021.2.0=h06a4308_296
   - mkl-service=2.3.0=py37h27cfd23_1
   - mkl_fft=1.3.0=py37h42c9631_2
-  - mkl_random=1.2.1=py37ha9443f7_2
+  - mkl_random=1.2.2=py37h51133e4_0
   - mock=4.0.3=pyhd3eb1b0_0
   - more-itertools=8.7.0=pyhd3eb1b0_0
   - mpc=1.1.0=h10f8cd9_1
@@ -194,11 +195,13 @@ dependencies:
   - notebook=6.3.0=py37h06a4308_0
   - numba=0.53.1=py37ha9443f7_0
   - numexpr=2.7.3=py37h22e1b3c_1
+  - numpy-base=1.20.2=py37hfae3a4d_0
   - numpydoc=1.1.0=pyhd3eb1b0_1
   - olefile=0.46=py37_0
   - openh264=2.1.0=hd408876_0
+  - openjpeg=2.4.0=h3ad879b_0
   - openpyxl=3.0.7=pyhd3eb1b0_0
-  - openssl=1.1.1k=h27cfd23_0
+  - openssl=1.1.1l=h7f8727e_0
   - packaging=20.9=pyhd3eb1b0_0
   - pandas=1.2.4=py37h2531618_0
   - pandoc=2.12=h06a4308_0
@@ -254,7 +257,8 @@ dependencies:
   - python-jsonrpc-server=0.4.0=py_0
   - python-language-server=0.36.2=pyhd3eb1b0_0
   - python-libarchive-c=2.9=pyhd3eb1b0_1
-  - pytorch=1.9.0=py3.7_cuda11.1_cudnn8.0.5_0
+  - pytorch=1.10.0.dev20210921=py3.7_cuda11.1_cudnn8.0.5_0
+  - pytorch-mutex=1.0=cuda
   - pytz=2021.1=pyhd3eb1b0_0
   - pywavelets=1.1.1=py37h7b6447c_2
   - pyxdg=0.27=pyhd3eb1b0_0
@@ -314,8 +318,8 @@ dependencies:
   - tk=8.6.10=hbc83047_0
   - toml=0.10.2=pyhd3eb1b0_0
   - toolz=0.11.1=pyhd3eb1b0_0
-  - torchaudio=0.9.0=py37
-  - torchvision=0.10.0=py37_cu111
+  - torchaudio=0.10.0.dev20210921=py37_cu111
+  - torchvision=0.11.0.dev20210921=py37_cu111
   - tornado=6.1=py37h27cfd23_0
   - tqdm=4.59.0=pyhd3eb1b0_1
   - traitlets=5.0.5=pyhd3eb1b0_0
