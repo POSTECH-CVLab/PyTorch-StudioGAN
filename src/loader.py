@@ -28,7 +28,6 @@ import utils.ckpt as ckpt
 import utils.misc as misc
 import models.model as model
 import metrics.preparation as pp
-import wandb
 
 
 def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
@@ -55,7 +54,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     misc.fix_seed(cfgs.RUN.seed + global_rank)
 
     # -----------------------------------------------------------------------------
-    # Intialize wandb and python logger.
+    # Intialize python logger.
     # -----------------------------------------------------------------------------
     if local_rank == 0:
         logger = log.make_logger(cfgs.RUN.save_dir, run_name, None)
@@ -68,12 +67,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             logger.info(json.dumps(vars(v), indent=2))
     else:
         logger = None
-
-    if global_rank == 0:
-        if cfgs.RUN.ckpt_dir is not None:
-            wandb.init(project=cfgs.RUN.project,
-                       entity=cfgs.RUN.entity,
-                       resume=False if cfgs.RUN.freezeD > -1 or cfgs.RUN.freezeG > -1 else True)
 
     # -----------------------------------------------------------------------------
     # load train and evaluation dataset.

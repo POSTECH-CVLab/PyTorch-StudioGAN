@@ -270,7 +270,7 @@ def calculate_all_sn(model, prefix):
                 weight_orig = reshape_weight_to_matrix(operations.weight_orig)
                 weight_u = operations.weight_u
                 weight_v = operations.weight_v
-                sigmas[prefix + "_" + name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
+                sigmas[prefix + "_" + name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v)).item()
     return sigmas
 
 

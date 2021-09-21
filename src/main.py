@@ -5,11 +5,11 @@
 # src/main.py
 
 from argparse import ArgumentParser
+from warnings import simplefilter
 import json
 import os
 import random
 import sys
-import warnings
 
 from torch.backends import cudnn
 import torch
@@ -25,7 +25,7 @@ import utils.misc as misc
 RUN_NAME_FORMAT = ("{framework}-" "{phase}-" "{timestamp}")
 
 
-def main():
+def load_configs_initialize_training():
     parser = ArgumentParser(add_help=True)
     parser.add_argument("--entity", type=str, default=None, help="entity for wandb logging")
     parser.add_argument("--project", type=str, default=None, help="project name for wandb logging")
@@ -129,6 +129,9 @@ def main():
         hdf5_path = None
     cfgs.PRE.crop_long_edge, cfgs.PRE.resize_size = crop_long_edge, resize_size
 
+    misc.prepare_folder(names=cfgs.MISC.base_folders, save_dir=cfgs.RUN.save_dir)
+    misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
+
     if cfgs.RUN.seed == -1:
         cfgs.RUN.seed = random.randint(1, 4096)
         cudnn.benchmark, cudnn.deterministic = True, False
@@ -137,11 +140,14 @@ def main():
 
     if cfgs.OPTIMIZATION.world_size == 1:
         print("You have chosen a specific GPU. This will completely disable data parallelism.")
+    return cfgs, gpus_per_node, run_name, hdf5_path, rank
+
+
+if __name__ == "__main__":
+    cfgs, gpus_per_node, run_name, hdf5_path, rank = load_configs_initialize_training()
 
     if cfgs.RUN.distributed_data_parallel and cfgs.OPTIMIZATION.world_size > 1:
-        mp.set_start_method("spawn")
-        misc.prepare_folder(names=cfgs.MISC.base_folders, save_dir=cfgs.RUN.save_dir)
-        misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
+        mp.set_start_method("spawn", force=True)
         print("Train the models through DistributedDataParallel (DDP) mode.")
         try:
             processes = []
@@ -160,6 +166,3 @@ def main():
                            run_name=run_name,
                            hdf5_path=hdf5_path)
 
-
-if __name__ == "__main__":
-    main()
