@@ -584,3 +584,11 @@ def load_ImageNet_label_dict():
         label_dict[folder] = label
         label += 1
     return label_dict
+
+def compute_gradient(fx, logits, label, num_classes):
+    probs = torch.nn.Softmax(dim=1)(logits.detach().cpu())
+    gt_prob = F.one_hot(label, num_classes)
+    oneMp = gt_prob - probs
+    preds = (probs*gt_prob).sum(-1)
+    grad = torch.mean(fx.unsqueeze(1) * oneMp.unsqueeze(2), dim=0)
+    return preds, torch.norm(grad, dim=1)

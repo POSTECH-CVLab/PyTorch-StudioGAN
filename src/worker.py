@@ -455,6 +455,7 @@ class WORKER(object):
                     cls_loss = real_cond_loss.item()
                 else:
                     cls_loss = "N/A"
+
                 log_message = LOG_FORMAT.format(
                     step=current_step + 1,
                     progress=(current_step + 1) / self.OPTIMIZATION.total_steps,
@@ -487,6 +488,18 @@ class WORKER(object):
                 if self.MODEL.apply_g_sn:
                     gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
                     wandb.log(gen_sigmas, step=current_step+1)
+
+                ###############################################
+                # calculate_ACGAN's gradient will be deprecated.
+                if self.MODEL.d_cond_mtd == "AC":
+                    probs, fx_grads = misc.compute_gradient(fx=real_dict["h"].detach().cpu(),
+                                                            logits=real_dict["cls_output"],
+                                                            label=real_dict["label"].detach().cpu(),
+                                                            num_classes=self.DATA.num_classes)
+                    prob, fx_grad = probs.mean(), fx_grads.mean()
+                    wandb.log({"prob": prob, "fx_grad":fx_grad}, step=current_step+1)
+                ###############################################
+
         return current_step + 1
 
     # -----------------------------------------------------------------------------
