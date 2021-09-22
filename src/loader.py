@@ -69,7 +69,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         logger = None
 
     # -----------------------------------------------------------------------------
-    # load train and evaluation dataset.
+    # load train and evaluation datasets.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train or cfgs.RUN.intra_class_fid:
         if local_rank == 0:
