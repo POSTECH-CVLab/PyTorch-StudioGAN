@@ -82,10 +82,6 @@ class WORKER(object):
         self.RUN = cfgs.RUN
         self.MISC = cfgs.MISC
 
-        if self.RUN.train:
-            self.train_iter = iter(self.train_dataloader)
-            self.epoch_counter = 0
-
         self.l2_loss = torch.nn.MSELoss()
         self.fm_loss = losses.feature_matching_loss
         if self.LOSS.adv_loss == "MH":
@@ -126,15 +122,7 @@ class WORKER(object):
         else:
             pass
 
-        if self.RUN.distributed_data_parallel:
-            self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
-            if self.RUN.train:
-                self.train_dataloader.sampler.set_epoch(self.epoch_counter)
-
-        if self.RUN.mixed_precision:
-            self.scaler = torch.cuda.amp.GradScaler()
-
-        elif self.DATA.name == "CIFAR10":
+        if self.DATA.name == "CIFAR10":
             self.num_eval = {"train": 50000, "test": 10000}
         elif self.DATA.name == "CIFAR100":
             self.num_eval = {"train": 50000, "test": 10000}
@@ -156,6 +144,12 @@ class WORKER(object):
                                                  logger=self.logger,
                                                  std_stat_counter=0)
 
+        if self.RUN.distributed_data_parallel:
+            self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
+
+        if self.RUN.mixed_precision:
+            self.scaler = torch.cuda.amp.GradScaler()
+
         if self.global_rank == 0:
             resume = False if self.RUN.freezeD > -1 or self.RUN.freezeG > -1 else True
             wandb.init(project=self.RUN.project,
@@ -163,6 +157,12 @@ class WORKER(object):
                        name=self.run_name,
                        dir=self.RUN.save_dir,
                        resume=self.best_step > 0 and resume)
+
+    def prepare_train_iter(self, epoch_counter):
+        self.epoch_counter = epoch_counter
+        if self.RUN.distributed_data_parallel:
+            self.train_dataloader.sampler.set_epoch(self.epoch_counter)
+        self.train_iter = iter(self.train_dataloader)
 
     def sample_data_basket(self):
         try:
