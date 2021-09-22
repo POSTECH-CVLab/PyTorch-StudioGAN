@@ -69,7 +69,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         logger = None
 
     # -----------------------------------------------------------------------------
-    # load train and evaluation dataset.
+    # load train and evaluation datasets.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train or cfgs.RUN.intra_class_fid:
         if local_rank == 0:
@@ -244,7 +244,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
         if global_rank == 0: logger.info("Start training!")
-        worker.training, worker.epoch_counter, worker.topk = True, epoch, topk
+        worker.training, worker.topk = True, topk
+        worker.prepare_train_iter(epoch_counter=epoch)
         while step <= cfgs.OPTIMIZATION.total_steps:
             step = worker.train(current_step=step)
             if cfgs.LOSS.apply_topk:

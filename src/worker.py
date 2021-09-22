@@ -82,10 +82,6 @@ class WORKER(object):
         self.RUN = cfgs.RUN
         self.MISC = cfgs.MISC
 
-        if self.RUN.train:
-            self.train_iter = iter(self.train_dataloader)
-            self.epoch_counter = 0
-
         self.l2_loss = torch.nn.MSELoss()
         self.fm_loss = losses.feature_matching_loss
         if self.LOSS.adv_loss == "MH":
@@ -126,15 +122,7 @@ class WORKER(object):
         else:
             pass
 
-        if self.RUN.distributed_data_parallel:
-            self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
-            if self.RUN.train:
-                self.train_dataloader.sampler.set_epoch(self.epoch_counter)
-
-        if self.RUN.mixed_precision:
-            self.scaler = torch.cuda.amp.GradScaler()
-
-        elif self.DATA.name == "CIFAR10":
+        if self.DATA.name == "CIFAR10":
             self.num_eval = {"train": 50000, "test": 10000}
         elif self.DATA.name == "CIFAR100":
             self.num_eval = {"train": 50000, "test": 10000}
@@ -156,12 +144,25 @@ class WORKER(object):
                                                  logger=self.logger,
                                                  std_stat_counter=0)
 
+        if self.RUN.distributed_data_parallel:
+            self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
+
+        if self.RUN.mixed_precision:
+            self.scaler = torch.cuda.amp.GradScaler()
+
         if self.global_rank == 0:
+            resume = False if self.RUN.freezeD > -1 or self.RUN.freezeG > -1 else True
             wandb.init(project=self.RUN.project,
                        entity=self.RUN.entity,
                        name=self.run_name,
                        dir=self.RUN.save_dir,
-                       resume=False if self.RUN.freezeD > -1 or self.RUN.freezeG > -1 else True)
+                       resume=self.best_step > 0 and resume)
+
+    def prepare_train_iter(self, epoch_counter):
+        self.epoch_counter = epoch_counter
+        if self.RUN.distributed_data_parallel:
+            self.train_dataloader.sampler.set_epoch(self.epoch_counter)
+        self.train_iter = iter(self.train_dataloader)
 
     def sample_data_basket(self):
         try:
@@ -352,11 +353,11 @@ class WORKER(object):
                     p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
 
         # calculate the spectral norms of all weights in the discriminator for monitoring purpose
-        if (current_step + 1) % self.RUN.print_every == 0 and self.MODEL.apply_d_sn:
-            if self.RUN.distributed_data_parallel: dist.barrier(self.group)
-            if self.global_rank == 0:
+        if (current_step + 1) % self.RUN.print_every == 0:
+            self.wandb_step = current_step + 1
+            if self.MODEL.apply_d_sn and self.global_rank == 0:
                 dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
-                wandb.log(dis_sigmas, step=current_step+1)
+                wandb.log(dis_sigmas, step=self.wandb_step)
 
         # -----------------------------------------------------------------------------
         # train Generator.
@@ -449,7 +450,6 @@ class WORKER(object):
 
         # logging
         if (current_step + 1) % self.RUN.print_every == 0:
-            if self.RUN.distributed_data_parallel: dist.barrier(self.group)
             if self.global_rank == 0:
                 if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
                     cls_loss = real_cond_loss.item()
@@ -474,7 +474,7 @@ class WORKER(object):
                     "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss
                 }
 
-                wandb.log(loss_dict, step=current_step+1)
+                wandb.log(loss_dict, step=self.wandb_step)
 
                 save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
                                                         value_dict=loss_dict,
@@ -487,7 +487,7 @@ class WORKER(object):
                 # calculate the spectral norms of all weights in the generator for monitoring purpose
                 if self.MODEL.apply_g_sn:
                     gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
-                    wandb.log(gen_sigmas, step=current_step+1)
+                    wandb.log(gen_sigmas, step=self.wandb_step)
 
                 ###############################################
                 # calculate_ACGAN's gradient will be deprecated.
@@ -497,7 +497,7 @@ class WORKER(object):
                                                             label=real_dict["label"].detach().cpu(),
                                                             num_classes=self.DATA.num_classes)
                     prob, fx_grad = probs.mean(), fx_grads.mean()
-                    wandb.log({"prob": prob, "fx_grad":fx_grad}, step=current_step+1)
+                    wandb.log({"prob": prob, "fx_grad":fx_grad}, step=self.wandb_step)
                 ###############################################
 
         return current_step + 1
@@ -538,7 +538,7 @@ class WORKER(object):
                              logger=self.logger,
                              logging=self.global_rank == 0 and self.logger)
 
-        wandb.log({"generated_images": wandb.Image(fake_images)})
+        wandb.log({"generated_images": wandb.Image(fake_images)}, step=self.wandb_step)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
@@ -609,13 +609,13 @@ class WORKER(object):
                     fid_score, step, True, rec, prc
 
             if self.global_rank == 0 and writing:
-                wandb.log({"IS score": kl_score}, step=step)
-                wandb.log({"FID score": fid_score}, step=step)
-                wandb.log({"F_beta_inv score": prc}, step=step)
-                wandb.log({"F_beta score": rec}, step=step)
+                wandb.log({"IS score": kl_score}, step=self.wandb_step)
+                wandb.log({"FID score": fid_score}, step=self.wandb_step)
+                wandb.log({"F_beta_inv score": prc}, step=self.wandb_step)
+                wandb.log({"F_beta score": rec}, step=self.wandb_step)
                 if is_acc:
-                    wandb.log({"Inception_V3 Top1 acc": top1}, step=step)
-                    wandb.log({"Inception_V3 Top5 acc":  top5}, step=step)
+                    wandb.log({"Inception_V3 Top1 acc": top1}, step=self.wandb_step)
+                    wandb.log({"Inception_V3 Top5 acc":  top5}, step=self.wandb_step)
 
             if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
