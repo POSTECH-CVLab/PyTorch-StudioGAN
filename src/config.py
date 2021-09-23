@@ -17,7 +17,6 @@ import utils.misc as misc
 import utils.losses as losses
 import utils.ops as ops
 import utils.diffaug as diffaug
-# import utils.simclr_aug as simclr_aug
 import utils.cr as cr
 import utils.simclr_aug as simclr_aug
 
@@ -109,10 +108,10 @@ class Configurations(object):
         self.LOSS.adv_loss = "vanilla"
         # balancing hyperparameter for conditional image generation
         self.LOSS.cond_lambda = "N/A"
-        # strength of conditioning loss induced by twin auxiliary classifier for discriminator training
-        self.LOSS.tac_dis_lambda = "N/A"
         # strength of conditioning loss induced by twin auxiliary classifier for generator training
         self.LOSS.tac_gen_lambda = "N/A"
+        # strength of conditioning loss induced by twin auxiliary classifier for discriminator training
+        self.LOSS.tac_dis_lambda = "N/A"
         # strength of multi-hinge loss (MH) for the generator training
         self.LOSS.mh_lambda = "N/A"
         # whether to apply feature matching regularization
