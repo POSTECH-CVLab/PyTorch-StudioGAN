@@ -1,0 +1,33 @@
+DATA:
+  name: "ImageNet"
+  img_size: 128
+  num_classes: 1000
+MODEL:
+  backbone: "big_resnet"
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "MH"
+  apply_g_sn: True
+  apply_d_sn: True
+  apply_attn: True
+  attn_g_loc: [4]
+  attn_d_loc: [1]
+  z_dim: 120
+  g_shared_dim: 128
+  g_conv_dim: 96
+  d_conv_dim: 96
+  apply_g_ema: True
+  g_ema_decay: 0.9999
+  g_ema_start: 20000
+LOSS:
+  adv_loss: "MH"
+  mh_lambda: 0.05
+  apply_fm: True
+  fm_lambda: 1.0
+OPTIMIZATION:
+  batch_size: 256
+  g_lr: 0.00005
+  d_lr: 0.0002
+  beta1: 0.0
+  beta2: 0.999
+  d_updates_per_step: 2
+  total_steps: 200000
