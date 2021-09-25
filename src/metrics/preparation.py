@@ -88,6 +88,8 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
                                           num_classes=cfgs.DATA.num_classes,
                                           LOSS="N/A",
                                           RUN="N/A",
+                                          STYLEGAN2="N/A",
+                                          is_stylegan=False,
                                           device=device,
                                           disable_tqdm=disable_tqdm)
 

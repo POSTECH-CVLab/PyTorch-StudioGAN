@@ -50,6 +50,8 @@ class WORKER(object):
                  global_rank, local_rank, mu, sigma, logger, ada_p, best_step, best_fid, best_ckpt_path,
                  loss_list_dict, metric_list_dict):
         self.start_time = datetime.now()
+        self.is_stylegan = cfgs.MODEL.backbone == "style_gan2"
+        self.pl_reg = losses.pl_reg(self.local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
@@ -76,6 +78,7 @@ class WORKER(object):
         self.DATA = cfgs.DATA
         self.MODEL = cfgs.MODEL
         self.LOSS = cfgs.LOSS
+        self.STYLEGAN2 = cfgs.STYLEGAN2
         self.OPTIMIZATION = cfgs.OPTIMIZATION
         self.PRE = cfgs.PRE
         self.AUG = cfgs.AUG
@@ -84,6 +87,7 @@ class WORKER(object):
 
         self.l2_loss = torch.nn.MSELoss()
         self.fm_loss = losses.feature_matching_loss
+
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
             self.lossy.data.fill_(self.DATA.num_classes)
@@ -186,11 +190,12 @@ class WORKER(object):
         # -----------------------------------------------------------------------------
         batch_counter = 0
         adc_fake = self.MODEL.aux_cls_type == "ADC"
+        g_reg_interval = self.STYLEGAN2.g_reg_interval if self.is_stylegan else 1
         # make GAN be trainable before starting training
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
-        misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1)
-        misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD)
+        misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, is_stylegan=self.is_stylegan)
         # sample real images and labels from the true data distribution
         real_image_basket, real_label_basket = self.sample_data_basket()
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
@@ -201,7 +206,7 @@ class WORKER(object):
                     real_images = real_image_basket[batch_counter].to(self.local_rank, non_blocking=True)
                     real_labels = real_label_basket[batch_counter].to(self.local_rank, non_blocking=True)
                     # sample fake images and labels from p(G(z), y)
-                    fake_images, fake_labels, fake_images_eps, trsp_cost = sample.generate_images(
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
                         truncation_th=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size,
@@ -215,11 +220,13 @@ class WORKER(object):
                         LOSS=self.LOSS,
                         RUN=self.RUN,
                         device=self.local_rank,
+                        is_stylegan=self.is_stylegan,
+                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
-                    if self.LOSS.apply_r1_reg:
+                    if self.LOSS.apply_r1_reg and step_index % g_reg_interval == 0:
                         real_images.requires_grad_()
 
                     # apply differentiable augmentations if "apply_diffaug" is True
@@ -324,7 +331,7 @@ class WORKER(object):
                         dis_acml_loss += self.LOSS.maxgp_lambda * maxgp_loss
 
                     # if LOSS.apply_r1_reg is True, apply R1 reg. used in multiple discriminator (FUNIT, StarGAN_v2)
-                    if self.LOSS.apply_r1_reg:
+                    if self.LOSS.apply_r1_reg and step_index % g_reg_interval == 0:
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
                                                          images=real_images,
                                                          device=self.local_rank)
@@ -363,14 +370,14 @@ class WORKER(object):
         # train Generator.
         # -----------------------------------------------------------------------------
         # toggle gradients of the generator and discriminator
-        misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1)
-        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=self.RUN.freezeG)
+        misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=self.RUN.freezeG, is_stylegan=self.is_stylegan)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
             for acml_step in range(self.OPTIMIZATION.acml_steps):
                 with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
                     # sample fake images and labels from p(G(z), y)
-                    fake_images, fake_labels, fake_images_eps, trsp_cost = sample.generate_images(
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
                         truncation_th=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size,
@@ -384,6 +391,8 @@ class WORKER(object):
                         LOSS=self.LOSS,
                         RUN=self.RUN,
                         device=self.local_rank,
+                        is_stylegan=self.is_stylegan,
+                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
                     # apply differentiable augmentations if "apply_diffaug" is True
@@ -428,6 +437,26 @@ class WORKER(object):
                         fake_zcr_loss = -1 * self.l2_loss(fake_images, fake_images_eps)
                         gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
 
+                    # apply path length regularization
+                    if self.apply_pl_reg and step_index % self.STYLEGAN2.d_reg_interval == 0:
+                        fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
+                            z_prior=self.MODEL.z_prior,
+                            truncation_th=-1.0,
+                            batch_size=self.OPTIMIZATION.batch_size // 2,
+                            z_dim=self.MODEL.z_dim,
+                            num_classes=self.DATA.num_classes,
+                            y_sampler="totally_random",
+                            radius=self.LOSS.radius,
+                            generator=self.Gen,
+                            discriminator=self.Dis,
+                            is_train=True,
+                            LOSS=self.LOSS,
+                            RUN=self.RUN,
+                            device=self.local_rank,
+                            is_stylegan=self.is_stylegan,
+                            style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                            cal_trsp_cost=True if self.LOSS.apply_lo else False)
+                        gen_acml_loss += self.pl_reg.cal_pl_reg(fake_images, ws)
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
@@ -516,7 +545,7 @@ class WORKER(object):
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator = self.gen_ctlr.prepare_generator()
 
-            fake_images, fake_labels, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+            fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                     truncation_th=self.RUN.truncation_th,
                                                                     batch_size=self.OPTIMIZATION.batch_size,
                                                                     z_dim=self.MODEL.z_dim,
@@ -529,6 +558,8 @@ class WORKER(object):
                                                                     LOSS=self.LOSS,
                                                                     RUN=self.RUN,
                                                                     device=self.local_rank,
+                                                                    is_stylegan=self.is_stylegan,
+                                                                    style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                                                                     cal_trsp_cost=False)
 
         misc.plot_img_canvas(images=(fake_images.detach().cpu() + 1) / 2,
@@ -572,6 +603,8 @@ class WORKER(object):
                                                               num_classes=self.DATA.num_classes,
                                                               LOSS=self.LOSS,
                                                               RUN=self.RUN,
+                                                              STYLEGAN2=self.STYLEGAN2,
+                                                              is_stylegan=self.is_stylegan,
                                                               is_acc=is_acc,
                                                               device=self.local_rank,
                                                               logger=self.logger,
@@ -734,6 +767,8 @@ class WORKER(object):
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
                                      RUN=self.RUN,
+                                     STYLEGAN2=self.STYLEGAN2,
+                                     is_style_gan=self.is_stylegan,
                                      directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
             if npz:
@@ -750,6 +785,8 @@ class WORKER(object):
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
                                      RUN=self.RUN,
+                                     STYLEGAN2=self.STYLEGAN2,
+                                     is_stylegan=self.is_stylegan,
                                      directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
 
@@ -777,7 +814,7 @@ class WORKER(object):
             resnet50_conv.eval()
 
             for c in tqdm(range(self.DATA.num_classes)):
-                fake_images, fake_labels, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                         truncation_th=self.RUN.truncation_th,
                                                                         batch_size=self.OPTIMIZATION.batch_size,
                                                                         z_dim=self.MODEL.z_dim,
@@ -790,6 +827,8 @@ class WORKER(object):
                                                                         LOSS=self.LOSS,
                                                                         RUN=self.RUN,
                                                                         device=self.local_rank,
+                                                                        is_stylegan=self.is_stylegan,
+                                                                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                                                                         cal_trsp_cost=False)
 
                 fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
@@ -914,7 +953,7 @@ class WORKER(object):
             num_batches = len(dataloader) // self.OPTIMIZATION.batch_size
             for i in range(num_batches):
                 real_images, real_labels = next(data_iter)
-                fake_images, fake_labels, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                         truncation_th=self.RUN.truncation_th,
                                                                         batch_size=self.OPTIMIZATION.batch_size,
                                                                         z_dim=self.MODEL.z_dim,
@@ -927,6 +966,8 @@ class WORKER(object):
                                                                         LOSS=self.LOSS,
                                                                         RUN=self.RUN,
                                                                         device=self.local_rank,
+                                                                        is_stylegan=self.is_stylegan,
+                                                                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                                                                         cal_trsp_cost=False)
                 fake_images = fake_images.detach().cpu().numpy()
 
@@ -1006,7 +1047,7 @@ class WORKER(object):
 
                 save_output.clear()
 
-                fake_images, fake_labels, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                         truncation_th=self.RUN.truncation_th,
                                                                         batch_size=self.OPTIMIZATION.batch_size,
                                                                         z_dim=self.MODEL.z_dim,
@@ -1019,6 +1060,8 @@ class WORKER(object):
                                                                         LOSS=self.LOSS,
                                                                         RUN=self.RUN,
                                                                         device=self.local_rank,
+                                                                        is_stylegan=self.is_stylegan,
+                                                                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                                                                         cal_trsp_cost=False)
 
                 fake_dict = self.Dis(fake_images, fake_labels)
@@ -1100,6 +1143,8 @@ class WORKER(object):
                                                   num_classes=1,
                                                   LOSS="N/A",
                                                   RUN=self.RUN,
+                                                  STYLEGAN2="N/A",
+                                                  is_stylegan=False,
                                                   device=self.local_rank,
                                                   disable_tqdm=True)
 
