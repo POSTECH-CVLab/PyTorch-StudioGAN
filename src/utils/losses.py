@@ -234,8 +234,7 @@ def adjust_k(current_k, topk_gamma, sup_k):
     return current_k
 
 class pl_reg:
-    def __init__(self, device, pl_batch_shrink=2, pl_decay=0.01, pl_weight=2):
-        self.pl_batch_shrink=2
+    def __init__(self, device, pl_decay=0.01, pl_weight=2):
         self.pl_decay = 0.01
         self.pl_weight = 2
         self.pl_mean = torch.zeros([], device=device)
@@ -250,5 +249,5 @@ class pl_reg:
         pl_mean = self.pl_mean.lerp(pl_lengths.mean(), self.pl_decay)
         self.pl_mean.copy_(pl_mean.detach())
         pl_penalty = (pl_lengths - pl_mean).square()
-        loss_Gpl = pl_penalty * self.pl_weight
+        loss_Gpl = (pl_penalty * self.pl_weight).mean(0)
         return loss_Gpl
