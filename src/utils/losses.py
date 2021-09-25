@@ -13,7 +13,7 @@ import numpy as np
 
 import utils.ops as ops
 import utils.misc as misc
-from utils.ops import conv2d_gradfix
+from utils.style_ops import conv2d_gradfix
 
 class CrossEntropyLoss(torch.nn.Module):
     def __init__(self):

@@ -303,6 +303,7 @@ class Configurations(object):
             "PRE": self.PRE,
             "AUG": self.AUG,
             "RUN": self.RUN,
+            "STYLEGAN2": self.STYLEGAN2
         }
 
     def update_cfgs(self, cfgs, super="RUN"):
@@ -367,6 +368,8 @@ class Configurations(object):
             self.MODULES.g_bn = ops.ConditionalBatchNorm2d
         elif self.MODEL.g_cond_mtd == "W/O":
             self.MODULES.g_bn = ops.batchnorm_2d
+        elif self.MODEL.g_cond_mtd == "c_style_gen":
+            pass
         else:
             raise NotImplementedError
 

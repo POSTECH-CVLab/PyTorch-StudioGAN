@@ -55,7 +55,6 @@ def _conv2d_wrapper(x, w, stride=1, padding=0, groups=1, transpose=False, flip_w
 
 #----------------------------------------------------------------------------
 
-@misc.profiled_function
 def conv2d_resample(x, w, f=None, up=1, down=1, padding=0, groups=1, flip_weight=True, flip_filter=False):
     r"""2D convolution with optional up/downsampling.
 

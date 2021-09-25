@@ -12,8 +12,8 @@ import random
 import sys
 
 from torch.backends import cudnn
-from utils.ops import grid_sample_gradfix
-from utils.ops import conv2d_gradfix
+from utils.style_ops import grid_sample_gradfix
+from utils.style_ops import conv2d_gradfix
 import torch
 import torch.multiprocessing as mp
 from torch.multiprocessing import Process

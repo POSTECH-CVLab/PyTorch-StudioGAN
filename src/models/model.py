@@ -39,7 +39,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                             img_channels=DATA.img_channels,
                             mapping_kwargs={"num_layers": STYLEGAN2.mapping_network},
                             synthesis_kwargs={'channel_base':channel_base_, "channel_max":512, \
-                            "num_fp_16_res":num_fp16_res_, "conv_clamp": conv_clamp_,}).to(device)
+                            "num_fp16_res":num_fp16_res_, "conv_clamp": conv_clamp_,}).to(device)
 
         Dis = module.Discriminator(c_dim=dis_c_dim,
                                    img_resolution=DATA.img_size,
@@ -66,7 +66,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                 img_channels=DATA.img_channels,
                                 mapping_kwargs={"num_layers": STYLEGAN2.mapping_network},
                                 synthesis_kwargs={"channel_base":channel_base_, "channel_max":512, \
-                            "num_fp_16_res":num_fp16_res_, "conv_clamp": conv_clamp_,}).to(device)
+                            "num_fp16_res":num_fp16_res_, "conv_clamp": conv_clamp_,}).to(device)
 
             ema = Ema_stylegan(source=Gen,
                                target=Gen_ema,

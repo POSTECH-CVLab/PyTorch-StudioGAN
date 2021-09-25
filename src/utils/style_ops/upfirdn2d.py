@@ -165,7 +165,6 @@ def upfirdn2d(x, f, up=1, down=1, padding=0, flip_filter=False, gain=1, impl='cu
 
 #----------------------------------------------------------------------------
 
-@misc.profiled_function
 def _upfirdn2d_ref(x, f, up=1, down=1, padding=0, flip_filter=False, gain=1):
     """Slow reference implementation of `upfirdn2d()` using standard PyTorch ops.
     """

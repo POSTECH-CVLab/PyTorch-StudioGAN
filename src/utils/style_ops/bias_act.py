@@ -12,7 +12,7 @@ import os
 import warnings
 import numpy as np
 import torch
-import dnnlib
+import utils.style_ops.dnnlib as dnnlib
 import traceback
 
 from .. import custom_ops
@@ -90,7 +90,6 @@ def bias_act(x, b=None, dim=1, act='linear', alpha=None, gain=None, clamp=None, 
 
 #----------------------------------------------------------------------------
 
-@misc.profiled_function
 def _bias_act_ref(x, b=None, dim=1, act='linear', alpha=None, gain=None, clamp=None):
     """Slow reference implementation of `bias_act()` using standard TensorFlow ops.
     """
