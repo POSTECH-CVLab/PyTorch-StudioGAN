@@ -108,6 +108,7 @@ class GeneratorController(object):
                                           LOSS=self.cfgs.LOSS,
                                           OPTIMIZATION=self.cfgs.OPTIMIZATION,
                                           RUN=self.cfgs.RUN,
+                                          STYLEGAN2=self.STYLEGAN2,
                                           device=self.device,
                                           global_rank=self.global_rank,
                                           logger=self.logger)
@@ -170,26 +171,30 @@ def count_parameters(module):
     return "Number of parameters: {num}".format(num=sum([p.data.nelement() for p in module.parameters()]))
 
 
-def toggle_grad(model, grad, num_freeze_layers=-1):
+def toggle_grad(model, grad, num_freeze_layers=-1, is_stylegan=False):
     if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
         model = model.module
 
-    num_blocks = len(model.in_dims)
-    assert num_freeze_layers < num_blocks,\
-        "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
-                                                                      nb=num_blocks)
-
-    if num_freeze_layers == -1:
+    if is_stylegan:
         for name, param in model.named_parameters():
             param.requires_grad = grad
-    else:
-        assert grad, "cannot freeze the model when grad is False"
-        for name, param in model.named_parameters():
-            param.requires_grad = True
-            for layer in range(num_freeze_layers):
-                block_name = "blocks.{layer}".format(layer=layer)
-                if block_name in name:
-                    param.requires_grad = False
+    else: 
+        num_blocks = len(model.in_dims)
+        assert num_freeze_layers < num_blocks,\
+            "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
+                                                                        nb=num_blocks)
+
+        if num_freeze_layers == -1:
+            for name, param in model.named_parameters():
+                param.requires_grad = grad
+        else:
+            assert grad, "cannot freeze the model when grad is False"
+            for name, param in model.named_parameters():
+                param.requires_grad = True
+                for layer in range(num_freeze_layers):
+                    block_name = "blocks.{layer}".format(layer=layer)
+                    if block_name in name:
+                        param.requires_grad = False
 
 
 def load_log_dicts(directory, file_name, ph):
@@ -274,7 +279,7 @@ def calculate_all_sn(model, prefix):
     return sigmas
 
 
-def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN,
+def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN, STYLEGAN2,
                               device, global_rank, logger):
     generator.train()
     generator.apply(reset_bn_statistics)
@@ -286,7 +291,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
             rand_batch_size = random.randint(1, batch_size_per_gpu)
         else:
             rand_batch_size = random.randint(1, batch_size_per_gpu) * OPTIMIZATION.world_size
-        fake_images, fake_labels, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
+        fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
                                                                 truncation_th=-1,
                                                                 batch_size=rand_batch_size,
                                                                 z_dim=MODEL.z_dim,
@@ -298,6 +303,8 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                 is_train=True,
                                                                 LOSS=LOSS,
                                                                 RUN=RUN,
+                                                                is_stylegan=MODEL.backbone=="style_gan2",
+                                                                style_mixing_p=STYLEGAN2.style_mixing_p,
                                                                 device=device,
                                                                 cal_trsp_cost=False)
     generator.eval()
@@ -431,7 +438,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=Tr
 
 
 def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, directory, device):
+                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -453,7 +460,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
             start = i * batch_size
             end = start + batch_size
             if is_generate:
-                images, labels, _, _ = sample.generate_images(z_prior=z_prior,
+                images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
                                                               truncation_th=truncation_th,
                                                               batch_size=batch_size,
                                                               z_dim=z_dim,
@@ -465,6 +472,8 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
                                                               is_train=False,
                                                               LOSS=LOSS,
                                                               RUN=RUN,
+                                                              is_stylegan=is_stylegan,
+                                                              style_mixing_p=STYLEGAN2.style_mixing_p,
                                                               device=device,
                                                               cal_trsp_cost=False)
             else:
@@ -485,7 +494,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
 
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, directory, device):
+                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_style_gan, directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -507,7 +516,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
             start = i * batch_size
             end = start + batch_size
             if is_generate:
-                images, labels, _, _ = sample.generate_images(z_prior=z_prior,
+                images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
                                                               truncation_th=truncation_th,
                                                               batch_size=batch_size,
                                                               z_dim=z_dim,
@@ -519,6 +528,8 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                               is_train=False,
                                                               LOSS=LOSS,
                                                               RUN=RUN,
+                                                              is_stylegan=is_style_gan,
+                                                              style_mixing_p=STYLEGAN2.style_mixing_p,
                                                               device=device,
                                                               cal_trsp_cost=False)
             else:

@@ -62,7 +62,7 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 
 def calculate_moments(data_loader, generator, discriminator, eval_model, is_generate, num_generate, y_sampler,
-                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, device, disable_tqdm):
+                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, device, disable_tqdm):
     if is_generate:
         total_instance = num_generate
     else:
@@ -75,7 +75,7 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
         start = i * batch_size
         end = start + batch_size
         if is_generate:
-            images, labels, _, _ = sample.generate_images(z_prior=z_prior,
+            images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
                                                           truncation_th=truncation_th,
                                                           batch_size=batch_size,
                                                           z_dim=z_dim,
@@ -88,6 +88,8 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
                                                           LOSS=LOSS,
                                                           RUN=RUN,
                                                           device=device,
+                                                          is_stylegan=is_stylegan,
+                                                          style_mixing_p=STYLEGAN2.style_mixing_p,
                                                           cal_trsp_cost=False)
             images = images.to(device)
         else:
@@ -144,6 +146,8 @@ def calculate_fid(data_loader,
                                    num_classes=cfgs.DATA.num_classes,
                                    LOSS="N/A",
                                    RUN="N/A",
+                                   STYLEGAN2="N/A",
+                                   is_stylegan=False,
                                    device=device,
                                    disable_tqdm=disable_tqdm)
 
@@ -161,6 +165,8 @@ def calculate_fid(data_loader,
                                num_classes=cfgs.DATA.num_classes,
                                LOSS=cfgs.LOSS,
                                RUN=cfgs.RUN,
+                               STYLEGAN2=cfgs.STYLEGAN2,
+                               is_stylegan=(cfgs.MODEL.backbone == "style_gan2"),
                                device=device,
                                disable_tqdm=disable_tqdm)
 

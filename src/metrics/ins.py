@@ -40,7 +40,7 @@ def calculate_kl_div(ps, splits):
 
 
 def eval_generator(data_loader, generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size,
-                   z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, is_acc, device, logger, disable_tqdm):
+                   z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, is_acc, device, logger, disable_tqdm):
     eval_model.eval()
     ps_holder = []
     if is_acc:
@@ -54,7 +54,7 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
         logger.info("Calculate Inception score of generated images ({} images).".format(num_generate))
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
-        fake_images, fake_labels, _, _ = sample.generate_images(z_prior=z_prior,
+        fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=z_prior,
                                                                 truncation_th=truncation_th,
                                                                 batch_size=batch_size,
                                                                 z_dim=z_dim,
@@ -66,6 +66,8 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
                                                                 is_train=False,
                                                                 LOSS=LOSS,
                                                                 RUN=RUN,
+                                                                is_style_gan=is_stylegan,
+                                                                style_mixing_p=STYLEGAN2.style_mixing_p,
                                                                 device=device,
                                                                 cal_trsp_cost=False)
         ps = inception_softmax(eval_model, fake_images)

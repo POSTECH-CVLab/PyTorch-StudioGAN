@@ -82,7 +82,7 @@ def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_th, y_sampler,
 
 
 def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sampler, radius, generator, discriminator,
-                    is_train, LOSS, RUN, device, cal_trsp_cost):
+                    is_train, LOSS, RUN, device, is_stylegan, style_mixing_p, cal_trsp_cost):
     if is_train:
         truncation_th = -1.0
         lo_steps = LOSS.lo_steps4train
@@ -125,14 +125,22 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
                                langevin_decay_steps=RUN.langevin_decay_steps,
                                langevin_steps=RUN.langevin_steps,
                                device=device)
-
-    fake_images = generator(zs, fake_labels, eval=not is_train)
+    if is_stylegan:
+        one_hot_fake_labels = F.one_hot(fake_labels, classes=num_classes)
+        ws = generator.mapping(zs, one_hot_fake_labels)
+        if style_mixing_p > 0:
+            cutoff = torch.empty([], dtype=torch.int64, device=ws.device).random_(1, ws.shape[1])
+            cutoff = torch.where(torch.rand([], device=ws.device) < style_mixing_p, cutoff, torch.full_like(cutoff, ws.shape[1]))
+            ws[:, cutoff:] = generator.mapping(torch.randn_like(zs), one_hot_fake_labels, skip_w_avg_update=True)[:, cutoff:]
+        fake_images = generator.synthesis(ws)
+    else: 
+        fake_images = generator(zs, fake_labels, eval=not is_train)
 
     if zs_eps is not None:
         fake_images_eps = generator(zs_eps, fake_labels, eval=not is_train)
     else:
         fake_images_eps = None
-    return fake_images, fake_labels, fake_images_eps, trsp_cost
+    return fake_images, fake_labels, fake_images_eps, trsp_cost, ws
 
 
 def langevin_sampling(zs, z_dim, fake_labels, generator, discriminator, batch_size, langevin_rate, langevin_noise_std,
