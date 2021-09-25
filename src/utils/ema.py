@@ -35,10 +35,33 @@ class Ema(object):
         self.target = target
         self.decay = decay
         self.start_iter = start_iter
+        self.source_dict = self.source.state_dict()
+        self.target_dict = self.target.state_dict()
         print("Initialize the copied generator's parameters to be source parameters.")
         with torch.no_grad():
-            for key in self.source.state_dict():
-                self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)
+            for key in self.source_dict:
+                self.target_dict[key].data.copy_(self.source_dict[key].data)
+
+    def update(self, iter=None):
+        if iter >= 0 and iter < self.start_iter:
+            decay = 0.0
+        else:
+            decay = self.decay
+
+        with torch.no_grad():
+            for key in self.source_dict:
+                self.target_dict[key].data.copy_(self.target_dict[key].data*decay + \
+                                                 self.source_dict[key].data*(1. - decay))
+
+
+class Ema_stylegan(object):
+    def __init__(self, source, target, ema_kimg, ema_rampup, effective_batch_size, d_updates_per_step):
+        self.source = source
+        self.target = target
+        self.ema_n_img = ema_kimg * 1000
+        self.ema_ramup = ema_rampup
+        self.batch_size = effective_batch_size
+        self.d_updates_per_step = d_updates_per_step
 
     def update(self, iter=None):
         cur_nimg = self.batch_size * self.d_updates_per_step * iter

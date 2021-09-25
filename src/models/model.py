@@ -11,6 +11,7 @@ import torch
 
 from sync_batchnorm.batchnorm import convert_model
 from utils.ema import Ema
+from utils.ema import Ema_stylegan
 import utils.misc as misc
 
 
@@ -68,11 +69,11 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                             "num_fp_16_res":num_fp16_res_, "conv_clamp": conv_clamp_,}).to(device)
 
             ema = Ema_stylegan(source=Gen,
-                                target=Gen_ema,
-                                ema_kimg=STYLEGAN2.g_ema_kimg,
-                                ema_rampup=STYLEGAN2.g_ema_rampup,
-                                effective_batch_size=OPTIMIZATION.batch_size * OPTIMIZATION.acml_steps,
-                                d_updates_per_step=OPTIMIZATION.d_updates_per_step)
+                               target=Gen_ema,
+                               ema_kimg=STYLEGAN2.g_ema_kimg,
+                               ema_rampup=STYLEGAN2.g_ema_rampup,
+                               effective_batch_size=OPTIMIZATION.batch_size * OPTIMIZATION.acml_steps,
+                               d_updates_per_step=OPTIMIZATION.d_updates_per_step)
         else:
             Gen_ema, ema = None, None
 
@@ -89,14 +90,10 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                g_depth=MODEL.g_depth,
                                mixed_precision=RUN.mixed_precision,
                                MODULES=MODULES).to(device)
-    if MODEL.apply_g_ema:
-        if device == 0:
-            logger.info("Prepare exponential moving average generator with decay rate of {decay}."\
-                        .format(decay=MODEL.g_ema_decay))
-        Gen_ema = module.Generator(z_dim=MODEL.z_dim,
-                                   g_shared_dim=MODEL.g_shared_dim,
-                                   img_size=DATA.img_size,
-                                   g_conv_dim=MODEL.g_conv_dim,
+
+        Dis = module.Discriminator(img_size=DATA.img_size,
+                                   d_conv_dim=MODEL.d_conv_dim,
+                                   apply_d_sn=MODEL.apply_d_sn,
                                    apply_attn=MODEL.apply_attn,
                                    attn_d_loc=MODEL.attn_d_loc,
                                    d_cond_mtd=MODEL.d_cond_mtd,
@@ -125,9 +122,9 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                        mixed_precision=RUN.mixed_precision,
                                        MODULES=MODULES).to(device)
 
-        ema = Ema(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
-    else:
-        Gen_ema, ema = None, None
+            ema = Ema(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
+        else:
+            Gen_ema, ema = None, None
 
     if device == 0:
         logger.info(misc.count_parameters(Gen))
