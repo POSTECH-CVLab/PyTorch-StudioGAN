@@ -494,7 +494,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
 
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_style_gan, directory, device):
+                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -528,7 +528,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                               is_train=False,
                                                               LOSS=LOSS,
                                                               RUN=RUN,
-                                                              is_stylegan=is_style_gan,
+                                                              is_stylegan=is_stylegan,
                                                               style_mixing_p=STYLEGAN2.style_mixing_p,
                                                               device=device,
                                                               cal_trsp_cost=False)

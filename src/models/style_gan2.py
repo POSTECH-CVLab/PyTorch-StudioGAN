@@ -784,4 +784,4 @@ class Discriminator(torch.nn.Module):
         if self.c_dim > 0:
             cmap = self.mapping(None, c)
         x = self.b4(x, img, cmap)
-        return x
+        return {"adv_output": x}

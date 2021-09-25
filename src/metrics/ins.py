@@ -66,7 +66,7 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
                                                                 is_train=False,
                                                                 LOSS=LOSS,
                                                                 RUN=RUN,
-                                                                is_style_gan=is_stylegan,
+                                                                is_stylegan=is_stylegan,
                                                                 style_mixing_p=STYLEGAN2.style_mixing_p,
                                                                 device=device,
                                                                 cal_trsp_cost=False)

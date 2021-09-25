@@ -58,8 +58,8 @@ class Ema_stylegan(object):
     def __init__(self, source, target, ema_kimg, ema_rampup, effective_batch_size, d_updates_per_step):
         self.source = source
         self.target = target
-        self.ema_n_img = ema_kimg * 1000
-        self.ema_ramup = ema_rampup
+        self.ema_nimg = ema_kimg * 1000
+        self.ema_rampup = ema_rampup
         self.batch_size = effective_batch_size
         self.d_updates_per_step = d_updates_per_step
 
@@ -68,7 +68,8 @@ class Ema_stylegan(object):
         if self.ema_rampup is not None:
             ema_nimg = min(self.ema_nimg, cur_nimg * self.ema_rampup)
         ema_beta = 0.5 ** (self.batch_size / max(ema_nimg, 1e-8))
-        for p_ema, p in zip(self.target.parameters(), self.source.parameters()):
-            p_ema.copy_(p.lerp(p_ema, ema_beta))
-        for b_ema, b in zip(self.target.buffers(), self.source.buffers()):
-            b_ema.copy_(b)
+        with torch.no_grad():
+            for p_ema, p in zip(self.target.parameters(), self.source.parameters()):
+                p_ema.copy_(p.lerp(p_ema, ema_beta))
+            for b_ema, b in zip(self.target.buffers(), self.source.buffers()):
+                b_ema.copy_(b)

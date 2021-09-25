@@ -10,7 +10,7 @@
 
 import torch
 
-from .. import misc
+from .. import style_misc as misc
 from . import conv2d_gradfix
 from . import upfirdn2d
 from .upfirdn2d import _parse_padding

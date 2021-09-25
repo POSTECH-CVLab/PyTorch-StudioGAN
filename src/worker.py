@@ -51,7 +51,7 @@ class WORKER(object):
                  loss_list_dict, metric_list_dict):
         self.start_time = datetime.now()
         self.is_stylegan = cfgs.MODEL.backbone == "style_gan2"
-        self.pl_reg = losses.pl_reg(self.local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
+        self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
@@ -224,6 +224,10 @@ class WORKER(object):
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
+                    if self.is_stylegan:
+                        real_labels = F.one_hot(real_labels, self.DATA.num_classes)
+                        fake_labels = F.one_hot(fake_labels, self.DATA.num_classes)
+
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
                     if self.LOSS.apply_r1_reg and step_index % g_reg_interval == 0:
@@ -395,6 +399,9 @@ class WORKER(object):
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
+                    if self.is_stylegan:
+                        fake_labels = F.one_hot(fake_labels, self.DATA.num_classes)
+
                     # apply differentiable augmentations if "apply_diffaug" is True
                     fake_images_ = self.AUG.series_augment(fake_images)
 
@@ -438,7 +445,7 @@ class WORKER(object):
                         gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
 
                     # apply path length regularization
-                    if self.apply_pl_reg and step_index % self.STYLEGAN2.d_reg_interval == 0:
+                    if self.STYLEGAN2.apply_pl_reg and step_index % self.STYLEGAN2.d_reg_interval == 0:
                         fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                             z_prior=self.MODEL.z_prior,
                             truncation_th=-1.0,
@@ -776,7 +783,7 @@ class WORKER(object):
                                      LOSS=self.LOSS,
                                      RUN=self.RUN,
                                      STYLEGAN2=self.STYLEGAN2,
-                                     is_style_gan=self.is_stylegan,
+                                     is_stylegan=self.is_stylegan,
                                      directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
             if npz:

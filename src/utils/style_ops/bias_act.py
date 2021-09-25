@@ -16,7 +16,7 @@ import utils.style_ops.dnnlib as dnnlib
 import traceback
 
 from .. import custom_ops
-from .. import misc
+from .. import style_misc as misc
 
 #----------------------------------------------------------------------------
 

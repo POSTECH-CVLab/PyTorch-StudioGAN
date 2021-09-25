@@ -78,7 +78,7 @@ class precision_recall(object):
         for i in tqdm(range(num_batches), disable=self.disable_tqdm):
             real_images, real_labels = next(data_iter)
             real_images, real_labels = real_images.to(self.device), real_labels.to(self.device)
-            fake_images, _, _, _ = sample.generate_images(z_prior=z_prior,
+            fake_images, _, _, _, _= sample.generate_images(z_prior=z_prior,
                                                           truncation_th=truncation_th,
                                                           batch_size=batch_size,
                                                           z_dim=z_dim,
@@ -146,7 +146,7 @@ def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, dis
                                                       num_runs=num_runs,
                                                       num_clusters=num_clusters,
                                                       num_angles=num_angles,
-                                                      is_stylegan=(cfgs.MODEL.backbone == style_gan2),
+                                                      is_stylegan=(cfgs.MODEL.backbone == "style_gan2"),
                                                       device=device)
 
     if not ((precisions >= 0).all() and (precisions <= 1).all()):

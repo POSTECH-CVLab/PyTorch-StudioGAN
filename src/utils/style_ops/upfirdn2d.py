@@ -15,7 +15,7 @@ import torch
 import traceback
 
 from .. import custom_ops
-from .. import misc
+from .. import style_misc as misc
 from . import conv2d_gradfix
 
 #----------------------------------------------------------------------------

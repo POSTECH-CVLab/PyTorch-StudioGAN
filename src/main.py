@@ -89,7 +89,7 @@ def load_configs_initialize_training():
                         help="iterpolate between z and z + maximum_variations*eigen-vector")
 
     parser.add_argument("--print_every", type=int, default=100, help="logging interval")
-    parser.add_argument("-every", "--save_every", type=int, default=2000, help="save interval")
+    parser.add_argument("-every", "--save_every", type=int, default=100, help="save interval")
     parser.add_argument('--eval_backbone', type=str, default='Inception_V3', help="[SwAV, Inception_V3]")
     parser.add_argument("-ref", "--ref_dataset", type=str, default="train", help="reference dataset for evaluation[train/valid/test]")
     args = parser.parse_args()
