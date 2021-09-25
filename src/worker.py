@@ -502,8 +502,8 @@ class WORKER(object):
 
                     wandb.log({"mean_feat_norms": mean_feat_norms,
                                "mean_probs": mean_probs,
-                               "mean_w_grads": mean_w_grads}, step=self.wandb_step)
-                    wandb.log({"std_feat_norms": std_feat_norms,
+                               "mean_w_grads": mean_w_grads,
+                               "std_feat_norms": std_feat_norms,
                                "std_probs": std_probs,
                                "std_w_grads": std_w_grads}, step=self.wandb_step)
                 ###############################################
