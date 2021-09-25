@@ -52,7 +52,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, MODULES, RUN, device
     if MODEL.apply_g_ema:
         if device == 0:
             logger.info("Prepare exponential moving average generator with decay rate of {decay}."\
-.format(decay=MODEL.g_ema_decay))
+                        .format(decay=MODEL.g_ema_decay))
         Gen_ema = module.Generator(z_dim=MODEL.z_dim,
                                    g_shared_dim=MODEL.g_shared_dim,
                                    img_size=DATA.img_size,

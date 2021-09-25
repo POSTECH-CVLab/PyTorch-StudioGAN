@@ -591,4 +591,4 @@ def compute_gradient(fx, logits, label, num_classes):
     oneMp = gt_prob - probs
     preds = (probs*gt_prob).sum(-1)
     grad = torch.mean(fx.unsqueeze(1) * oneMp.unsqueeze(2), dim=0)
-    return fx.norm(dim=1).mean(), preds, torch.norm(grad, dim=1)
+    return fx.norm(dim=1), preds, torch.norm(grad, dim=1)
