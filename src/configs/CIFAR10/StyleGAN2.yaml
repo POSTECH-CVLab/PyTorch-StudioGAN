@@ -1,0 +1,33 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  backbone: "style_gan2"
+  g_cond_mtd: "c_style_gen"
+  d_cond_mtd: "c_style_dis"
+  z_dim: 512
+  w_dim: 512
+  apply_g_ema: True
+LOSS:
+  adv_loss: "vanilla"
+  apply_r1_reg: True
+  r1_lambda: 0.01
+OPTIMIZATION:
+  g_lr: 0.0025
+  d_lr: 0.0025
+  beta1: 0
+  beta2: 0.99
+  g_updates_per_step: 1
+  d_updates_per_step: 1
+STYLEGAN2:
+  g_reg_interval: 4
+  d_reg_interval: 16
+  mapping_network: 2
+  style_mixing_p: 0
+  g_ema_kimg: 500
+  g_ema_rampup: 0.05
+  apply_pl_reg: False 
+  pl_weight: 0
+  d_architecture: 'orig'
+  d_epilogue_mbstd_group_size: 32

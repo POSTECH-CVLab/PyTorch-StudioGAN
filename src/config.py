@@ -43,18 +43,20 @@ class Configurations(object):
         self.DATA.img_size = 32
         # number of classes in training dataset, if there is no explicit class label, DATA.num_classes = 1
         self.DATA.num_classes = 10
+        # number of image channels in dataset. //image_shape[0]
+        self.DATA.img_channels = 3
 
         # -----------------------------------------------------------------------------
         # Model settings
         # -----------------------------------------------------------------------------
         self.MODEL = misc.make_empty_object()
-        # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet"]
+        # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet", "style_gan2"]
         self.MODEL.backbone = "resnet"
         # conditioning method of the generator \in ["W/O", "cBN"]
         self.MODEL.g_cond_mtd = "W/O"
-        # conditioning method of the discriminator \in ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE"]
+        # conditioning method of the discriminator \in ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE", "c_style_gen"]
         self.MODEL.d_cond_mtd = "W/O"
-        # type of auxiliary classifier \in ["W/O", "TAC", "ADC"]
+        # type of auxiliary classifier \in ["W/O", "TAC", "ADC", c_style_dis]
         self.MODEL.aux_cls_type = "W/O"
         # whether to normalize feature maps from the discriminator or not
         self.MODEL.normalize_d_embed = False
@@ -79,6 +81,8 @@ class Configurations(object):
         self.MODEL.z_prior = "gaussian"
         # dimension of noise vectors
         self.MODEL.z_dim = 128
+        # dimension of latent intermediate latent (W) dimensionality used only for StyleGAN
+        self.MODEL.w_dim = "N/A"
         # dimension of a shared latent embedding
         self.MODEL.g_shared_dim = "N/A"
         # base channel for the resnet style generator architecture
@@ -255,9 +259,36 @@ class Configurations(object):
         self.MISC.classifier_based_GAN = ["AC", "2C", "D2DCE"]
 
         # -----------------------------------------------------------------------------
-        # StyleGAN_v2 settings
+        # StyleGAN_v2 settings regarding regularization and style mixing
+        # selected configurations by official implementation is given below. 
+        # 'auto':      dict(ref_gpus=-1, kimg=25000,  mb=-1, mbstd=-1, fmaps=-1,  lrate=-1,     gamma=-1,   ema=-1,  ramp=0.05, map=2),
+        # 'stylegan2': dict(ref_gpus=8,  kimg=25000,  mb=32, mbstd=4,  fmaps=1,   lrate=0.002,  gamma=10,   ema=10,  ramp=None, map=8),
+        # 'paper256':  dict(ref_gpus=8,  kimg=25000,  mb=64, mbstd=8,  fmaps=0.5, lrate=0.0025, gamma=1,    ema=20,  ramp=None, map=8),
+        # 'paper512':  dict(ref_gpus=8,  kimg=25000,  mb=64, mbstd=8,  fmaps=1,   lrate=0.0025, gamma=0.5,  ema=20,  ramp=None, map=8),
+        # 'paper1024': dict(ref_gpus=8,  kimg=25000,  mb=32, mbstd=4,  fmaps=1,   lrate=0.002,  gamma=2,    ema=10,  ramp=None, map=8),
+        # 'cifar':     dict(ref_gpus=2,  kimg=100000, mb=64, mbstd=32, fmaps=1,   lrate=0.0025, gamma=0.01, ema=500, ramp=0.05, map=2),
         # -----------------------------------------------------------------------------
         self.STYLEGAN2 = misc.make_empty_object()
+        # lazy regularization interval for generator
+        self.STYLEGAN2.g_reg_interval = "N/A"
+        # lazy regularization interval for discriminator
+        self.STYLEGAN2.d_reg_interval = "N/A"
+        # number of layers for the mapping network
+        self.STYLEGAN2.mapping_network = "N/A"
+        # style_mixing_p in stylegan generator
+        self.STYLEGAN2.style_mixing_p = "N/A"
+        # half-life of the exponential moving average (EMA) of generator weights.
+        self.STYLEGAN2.g_ema_kimg = "N/A"
+        # EMA ramp-up coefficient.
+        self.STYLEGAN2.g_ema_rampup = "N/A"
+        # whether to apply path length regularization
+        self.STYLEGAN2.apply_pl_reg = False
+        # pl regularization strength
+        self.STYLEGAN2.pl_weight = "N/A"
+        # discriminator architecture for STYLEGAN2. 'resnet' except for cifar10 ('orig')
+        self.STYLEGAN2.d_architecture = 'N/A'
+        # group size for the minibatch standard deviation layer, None = entire minibatch.
+        self.STYLEGAN2.d_epilogue_mbstd_group_size = 'N/A'
 
         # -----------------------------------------------------------------------------
         # Module settings
