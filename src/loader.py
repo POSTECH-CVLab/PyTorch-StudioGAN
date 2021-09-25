@@ -143,6 +143,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     Gen, Dis, Gen_ema, ema = model.load_generator_discriminator(DATA=cfgs.DATA,
                                                                 OPTIMIZATION=cfgs.OPTIMIZATION,
                                                                 MODEL=cfgs.MODEL,
+                                                                STYLEGAN2=cfgs.STYLEGAN2,
                                                                 MODULES=cfgs.MODULES,
                                                                 RUN=cfgs.RUN,
                                                                 device=local_rank,
