@@ -54,30 +54,6 @@ class Ema(object):
                                                  self.source_dict[key].data*(1. - decay))
 
 
-
-class EmaDpSyncBN(object):
-    def __init__(self, source, target, decay=0.9999, start_iter=0):
-        self.source = source
-        self.target = target
-        self.decay = decay
-        self.start_iter = start_iter
-        print("Initialize the copied generator's parameters to be source parameters.")
-        with torch.no_grad():
-            for key in self.source.state_dict():
-                self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)
-
-    def update(self, iter=None):
-        if iter >= 0 and iter < self.start_iter:
-            decay = 0.0
-        else:
-            decay = self.decay
-
-        with torch.no_grad():
-            for key in self.source.state_dict():
-                data = self.target.state_dict()[key].data * decay + self.source.state_dict()[key].data * (1. - decay)
-                self.target.state_dict()[key].data.copy_(data)
-
-
 class Ema_stylegan(object):
     def __init__(self, source, target, ema_kimg, ema_rampup, effective_batch_size, d_updates_per_step):
         self.source = source

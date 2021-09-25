@@ -11,7 +11,6 @@ import torch
 
 from sync_batchnorm.batchnorm import convert_model
 from utils.ema import Ema
-from utils.ema import EmaDpSyncBN
 from utils.ema import Ema_stylegan
 import utils.misc as misc
 
@@ -69,20 +68,12 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                 synthesis_kwargs={"channel_base":channel_base_, "channel_max":512, \
                             "num_fp_16_res":num_fp16_res_, "conv_clamp": conv_clamp_,}).to(device)
 
-            if not RUN.distributed_data_parallel and OPTIMIZATION.world_size > 1 and RUN.synchronized_bn:
-                ema = Ema_stylegan(source=Gen,
-                                   target=Gen_ema,
-                                   ema_kimg=STYLEGAN2.g_ema_kimg,
-                                   ema_rampup=STYLEGAN2.g_ema_rampup,
-                                   effective_batch_size=OPTIMIZATION.batch_size * OPTIMIZATION.acml_steps,
-                                   d_updates_per_step=OPTIMIZATION.d_updates_per_step)
-            else:
-                ema = Ema_stylegan(source=Gen,
-                                   target=Gen_ema,
-                                   ema_kimg=STYLEGAN2.g_ema_kimg,
-                                   ema_rampup=STYLEGAN2.g_ema_rampup,
-                                   effective_batch_size=OPTIMIZATION.batch_size * OPTIMIZATION.acml_steps,
-                                   d_updates_per_step=OPTIMIZATION.d_updates_per_step)
+            ema = Ema_stylegan(source=Gen,
+                                target=Gen_ema,
+                                ema_kimg=STYLEGAN2.g_ema_kimg,
+                                ema_rampup=STYLEGAN2.g_ema_rampup,
+                                effective_batch_size=OPTIMIZATION.batch_size * OPTIMIZATION.acml_steps,
+                                d_updates_per_step=OPTIMIZATION.d_updates_per_step)
         else:
             Gen_ema, ema = None, None
 
@@ -131,10 +122,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                        mixed_precision=RUN.mixed_precision,
                                        MODULES=MODULES).to(device)
 
-            if not RUN.distributed_data_parallel and OPTIMIZATION.world_size > 1 and RUN.synchronized_bn:
-                ema = EmaDpSyncBN(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
-            else:
-                ema = Ema(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
+            ema = Ema(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
         else:
             Gen_ema, ema = None, None
 
