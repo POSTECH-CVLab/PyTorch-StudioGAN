@@ -492,12 +492,20 @@ class WORKER(object):
                 ###############################################
                 # calculate_ACGAN's gradient will be deprecated.
                 if self.MODEL.d_cond_mtd == "AC":
-                    probs, fx_grads = misc.compute_gradient(fx=real_dict["h"].detach().cpu(),
-                                                            logits=real_dict["cls_output"],
-                                                            label=real_dict["label"].detach().cpu(),
-                                                            num_classes=self.DATA.num_classes)
-                    prob, fx_grad = probs.mean(), fx_grads.mean()
-                    wandb.log({"prob": prob, "fx_grad":fx_grad}, step=self.wandb_step)
+                    feat_norms, probs, w_grads = misc.compute_gradient(fx=real_dict["h"].detach().cpu(),
+                                                                       logits=real_dict["cls_output"],
+                                                                       label=real_dict["label"].detach().cpu(),
+                                                                       num_classes=self.DATA.num_classes)
+
+                    mean_feat_norms, mean_probs, mean_w_grads = feat_norms.mean(), probs.mean(), w_grads.mean()
+                    std_feat_norms, std_probs, std_w_grads = feat_norms.std(), probs.std(), w_grads.std()
+
+                    wandb.log({"mean_feat_norms": mean_feat_norms,
+                               "mean_probs": mean_probs,
+                               "mean_w_grads": mean_w_grads}, step=self.wandb_step)
+                    wandb.log({"std_feat_norms": std_feat_norms,
+                               "std_probs": std_probs,
+                               "std_w_grads": std_w_grads}, step=self.wandb_step)
                 ###############################################
 
         return current_step + 1
