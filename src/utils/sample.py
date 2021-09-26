@@ -7,6 +7,7 @@
 import random
 
 from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 from torch import autograd
 from numpy import linalg
 from math import sin, cos, sqrt
@@ -127,6 +128,8 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
                                device=device)
     if is_stylegan:
         one_hot_fake_labels = F.one_hot(fake_labels, num_classes=num_classes)
+        if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel):
+            generator = generator.module
         ws = generator.mapping(zs, one_hot_fake_labels)
         if style_mixing_p > 0:
             cutoff = torch.empty([], dtype=torch.int64, device=ws.device).random_(1, ws.shape[1])
