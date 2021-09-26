@@ -71,14 +71,14 @@ class precision_recall(object):
         return precision, recall
 
     def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim,
-                                 num_classes, generator, discriminator, LOSS, RUN, num_runs, num_clusters, num_angles,
-                                 device):
+                                 num_classes, generator, discriminator, LOSS, RUN, STYLEGAN2, num_runs, num_clusters, num_angles,
+                                 is_stylegan, device):
         data_iter = iter(data_loader)
         num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
         for i in tqdm(range(num_batches), disable=self.disable_tqdm):
             real_images, real_labels = next(data_iter)
             real_images, real_labels = real_images.to(self.device), real_labels.to(self.device)
-            fake_images, _, _, _ = sample.generate_images(z_prior=z_prior,
+            fake_images, _, _, _, _= sample.generate_images(z_prior=z_prior,
                                                           truncation_th=truncation_th,
                                                           batch_size=batch_size,
                                                           z_dim=z_dim,
@@ -91,6 +91,8 @@ class precision_recall(object):
                                                           LOSS=LOSS,
                                                           RUN=RUN,
                                                           device=device,
+                                                          is_stylegan=is_stylegan,
+                                                          style_mixing_p=STYLEGAN2.style_mixing_p,
                                                           cal_trsp_cost=False)
 
             real_embeddings, _ = self.eval_model.get_outputs(real_images)
@@ -140,9 +142,11 @@ def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, dis
                                                       discriminator=discriminator,
                                                       LOSS=cfgs.LOSS,
                                                       RUN=cfgs.RUN,
+                                                      STYLEGAN2=cfgs.STYLEGAN2,
                                                       num_runs=num_runs,
                                                       num_clusters=num_clusters,
                                                       num_angles=num_angles,
+                                                      is_stylegan=(cfgs.MODEL.backbone == "style_gan2"),
                                                       device=device)
 
     if not ((precisions >= 0).all() and (precisions <= 1).all()):

@@ -1,5 +1,5 @@
 """
-this code is brought from https://github.com/jh-jeong/ContraD with few modifications
+this code is borrowed from https://github.com/jh-jeong/ContraD with few modifications
 
 MIT License
 

@@ -35,10 +35,12 @@ class Ema(object):
         self.target = target
         self.decay = decay
         self.start_iter = start_iter
+        self.source_dict = self.source.state_dict()
+        self.target_dict = self.target.state_dict()
         print("Initialize the copied generator's parameters to be source parameters.")
         with torch.no_grad():
-            for key in self.source.state_dict():
-                self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)
+            for key in self.source_dict:
+                self.target_dict[key].data.copy_(self.source_dict[key].data)
 
     def update(self, iter=None):
         if iter >= 0 and iter < self.start_iter:
@@ -47,6 +49,27 @@ class Ema(object):
             decay = self.decay
 
         with torch.no_grad():
-            for key in self.source.state_dict():
-                data = self.target.state_dict()[key].data * decay + self.source.state_dict()[key].data * (1. - decay)
-                self.target.state_dict()[key].data.copy_(data)
+            for key in self.source_dict:
+                self.target_dict[key].data.copy_(self.target_dict[key].data*decay + \
+                                                 self.source_dict[key].data*(1. - decay))
+
+
+class Ema_stylegan(object):
+    def __init__(self, source, target, ema_kimg, ema_rampup, effective_batch_size, d_updates_per_step):
+        self.source = source
+        self.target = target
+        self.ema_nimg = ema_kimg * 1000
+        self.ema_rampup = ema_rampup
+        self.batch_size = effective_batch_size
+        self.d_updates_per_step = d_updates_per_step
+
+    def update(self, iter=None):
+        cur_nimg = self.batch_size * self.d_updates_per_step * iter
+        if self.ema_rampup is not None:
+            ema_nimg = min(self.ema_nimg, cur_nimg * self.ema_rampup)
+        ema_beta = 0.5 ** (self.batch_size / max(ema_nimg, 1e-8))
+        with torch.no_grad():
+            for p_ema, p in zip(self.target.parameters(), self.source.parameters()):
+                p_ema.copy_(p.lerp(p_ema, ema_beta))
+            for b_ema, b in zip(self.target.buffers(), self.source.buffers()):
+                b_ema.copy_(b)
