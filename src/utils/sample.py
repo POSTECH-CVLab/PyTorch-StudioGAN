@@ -7,7 +7,7 @@
 import random
 
 from torch.nn import DataParallel
-from torch.nn import DistributedDataParallel
+from torch.nn.parallel import DistributedDataParallel
 from torch import autograd
 from numpy import linalg
 from math import sin, cos, sqrt
