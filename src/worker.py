@@ -190,7 +190,7 @@ class WORKER(object):
         # -----------------------------------------------------------------------------
         batch_counter = 0
         adc_fake = self.MODEL.aux_cls_type == "ADC"
-        g_reg_interval = self.STYLEGAN2.g_reg_interval if self.is_stylegan else 1
+        d_reg_interval = self.STYLEGAN2.d_reg_interval if self.is_stylegan else 1
         # make GAN be trainable before starting training
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
@@ -200,7 +200,7 @@ class WORKER(object):
         real_image_basket, real_label_basket = self.sample_data_basket()
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
             self.OPTIMIZATION.d_optimizer.zero_grad()
-            with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
+            with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     # load real images and labels onto the GPU memory
                     real_images = real_image_basket[batch_counter].to(self.local_rank, non_blocking=True)
@@ -230,7 +230,7 @@ class WORKER(object):
 
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
-                    if self.LOSS.apply_r1_reg and step_index % g_reg_interval == 0:
+                    if self.LOSS.apply_r1_reg and step_index % d_reg_interval == 0:
                         real_images.requires_grad_()
 
                     # apply differentiable augmentations if "apply_diffaug" is True
@@ -335,11 +335,11 @@ class WORKER(object):
                         dis_acml_loss += self.LOSS.maxgp_lambda * maxgp_loss
 
                     # if LOSS.apply_r1_reg is True, apply R1 reg. used in multiple discriminator (FUNIT, StarGAN_v2)
-                    if self.LOSS.apply_r1_reg and step_index % g_reg_interval == 0:
+                    if self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps + acml_index) % d_reg_interval == 0:
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
                                                          images=real_images,
                                                          device=self.local_rank)
-                        dis_acml_loss += self.LOSS.r1_lambda * real_r1_loss
+                        dis_acml_loss += d_reg_interval * self.LOSS.r1_lambda * real_r1_loss
 
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
@@ -379,7 +379,7 @@ class WORKER(object):
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
             for acml_step in range(self.OPTIMIZATION.acml_steps):
-                with torch.cuda.amp.autocast() if self.RUN.mixed_precision else misc.dummy_context_mgr() as mpc:
+                with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
                     # sample fake images and labels from p(G(z), y)
                     fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
@@ -445,7 +445,7 @@ class WORKER(object):
                         gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
 
                     # apply path length regularization
-                    if self.STYLEGAN2.apply_pl_reg and step_index % self.STYLEGAN2.d_reg_interval == 0:
+                    if self.STYLEGAN2.apply_pl_reg and (step_index * self.OPTIMIZATION.acml_steps + acml_index) % self.STYLEGAN2.g_reg_interval == 0:
                         fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                             z_prior=self.MODEL.z_prior,
                             truncation_th=-1.0,
@@ -463,7 +463,7 @@ class WORKER(object):
                             is_stylegan=self.is_stylegan,
                             style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                             cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                        gen_acml_loss += self.pl_reg.cal_pl_reg(fake_images, ws)
+                        gen_acml_loss += self.STYLGAN2.g_reg_interval * self.pl_reg.cal_pl_reg(fake_images, ws)
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
