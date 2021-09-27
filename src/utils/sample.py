@@ -19,6 +19,7 @@ import numpy as np
 
 import utils.ops as ops
 import utils.losses as losses
+import utils.misc as misc
 
 
 def truncated_normal(size, threshold=1.):
@@ -128,15 +129,14 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
                                device=device)
     if is_stylegan:
         one_hot_fake_labels = F.one_hot(fake_labels, num_classes=num_classes)
-        if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel):
-            generator = generator.module
+        generator = misc.peel_model(generator)
         ws = generator.mapping(zs, one_hot_fake_labels)
         if style_mixing_p > 0:
             cutoff = torch.empty([], dtype=torch.int64, device=ws.device).random_(1, ws.shape[1])
             cutoff = torch.where(torch.rand([], device=ws.device) < style_mixing_p, cutoff, torch.full_like(cutoff, ws.shape[1]))
             ws[:, cutoff:] = generator.mapping(torch.randn_like(zs), one_hot_fake_labels, skip_w_avg_update=True)[:, cutoff:]
         fake_images = generator.synthesis(ws)
-    else: 
+    else:
         fake_images = generator(zs, fake_labels, eval=not is_train)
         ws = None
 

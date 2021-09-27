@@ -6,8 +6,13 @@ MODEL:
   backbone: "stylegan2"
   g_cond_mtd: "cAdaIN"
   d_cond_mtd: "SPD"
+  g_act_fn: "Auto"
+  d_act_fn: "Auto"
+  z_prior: "constant"
   z_dim: 512
   w_dim: 512
+  g_cond_mtd: "N/A"
+  d_cond_mtd: "N/A"
   apply_g_ema: True
 LOSS:
   adv_loss: "vanilla"
@@ -20,6 +25,7 @@ OPTIMIZATION:
   beta2: 0.99
   g_updates_per_step: 1
   d_updates_per_step: 1
+  total_steps: 1562500
 STYLEGAN2:
   g_reg_interval: 4
   d_reg_interval: 16
@@ -27,7 +33,7 @@ STYLEGAN2:
   style_mixing_p: 0
   g_ema_kimg: 500
   g_ema_rampup: 0.05
-  apply_pl_reg: False 
+  apply_pl_reg: False
   pl_weight: 0
   d_architecture: "orig"
   d_epilogue_mbstd_group_size: 32

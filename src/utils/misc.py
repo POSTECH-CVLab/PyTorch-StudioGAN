@@ -172,8 +172,7 @@ def count_parameters(module):
 
 
 def toggle_grad(model, grad, num_freeze_layers=-1, is_stylegan=False):
-    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
-        model = model.module
+    model = peel_model(model)
 
     if is_stylegan:
         for name, param in model.named_parameters():

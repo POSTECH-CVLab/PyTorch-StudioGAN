@@ -254,12 +254,14 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings regarding regularization and style mixing
         # selected configurations by official implementation is given below.
-        # 'auto':      dict(ref_gpus=-1, kimg=25000,  mb=-1, mbstd=-1, fmaps=-1,  lrate=-1,     gamma=-1,   ema=-1,  ramp=0.05, map=2),
-        # 'stylegan2': dict(ref_gpus=8,  kimg=25000,  mb=32, mbstd=4,  fmaps=1,   lrate=0.002,  gamma=10,   ema=10,  ramp=None, map=8),
-        # 'paper256':  dict(ref_gpus=8,  kimg=25000,  mb=64, mbstd=8,  fmaps=0.5, lrate=0.0025, gamma=1,    ema=20,  ramp=None, map=8),
-        # 'paper512':  dict(ref_gpus=8,  kimg=25000,  mb=64, mbstd=8,  fmaps=1,   lrate=0.0025, gamma=0.5,  ema=20,  ramp=None, map=8),
-        # 'paper1024': dict(ref_gpus=8,  kimg=25000,  mb=32, mbstd=4,  fmaps=1,   lrate=0.002,  gamma=2,    ema=10,  ramp=None, map=8),
-        # 'cifar':     dict(ref_gpus=2,  kimg=100000, mb=64, mbstd=32, fmaps=1,   lrate=0.0025, gamma=0.01, ema=500, ramp=0.05, map=2),
+        # 'paper256':  dict(gpus=8,  total_steps=390,625,   batch_size=64, d_epilogue_mbstd_group_size=8,  g/d_lr=0.0025,
+        #                   r1_lambda=1,    g_ema_kimg=20,  g_ema_rampup=None, mapping_network=8),
+        # 'paper512':  dict(gpus=8,  total_steps=390,625,   batch_size=64, d_epilogue_mbstd_group_size=8,  g/d_lr=0.0025,
+        #                   r1_lambda=0.5,  g_ema_kimg=20,  g_ema_rampup=None, mapping_network=8),
+        # 'paper1024': dict(gpus=8,  total_steps=781,250,   batch_size=32, d_epilogue_mbstd_group_size=4,  g/d_lr=0.002,
+        #                   r1_lambda=2,    g_ema_kimg=10,  g_ema_rampup=None, mapping_network=8),
+        # 'cifar':     dict(gpus=2,  total_steps=1,562,500, batch_size=64, d_epilogue_mbstd_group_size=32, g/d_lr=0.0025,
+        #                   r1_lambda=0.01, g_ema_kimg=500, g_ema_rampup=0.05, mapping_network=2),
         # -----------------------------------------------------------------------------
         self.STYLEGAN2 = misc.make_empty_object()
 
@@ -374,10 +376,10 @@ class Configurations(object):
             self.MODULES.g_bn = ops.BigGANConditionalBatchNorm2d
         elif self.MODEL.g_cond_mtd == "cBN":
             self.MODULES.g_bn = ops.ConditionalBatchNorm2d
-        elif self.MODEL.g_cond_mtd == "cAdaIN":
-            pass
         elif self.MODEL.g_cond_mtd == "W/O":
             self.MODULES.g_bn = ops.batchnorm_2d
+        elif self.MODEL.g_cond_mtd == "cAdaIN":
+            pass
         else:
             raise NotImplementedError
 
@@ -392,6 +394,8 @@ class Configurations(object):
             self.MODULES.g_act_fn = nn.ELU(alpha=1.0, inplace=True)
         elif self.MODLE.g_act_fn == "GELU":
             self.MODULES.g_act_fn = nn.GELU()
+        elif self.MODLE.g_act_fn == "Auto":
+            pass
         else:
             raise NotImplementedError
 
@@ -403,6 +407,8 @@ class Configurations(object):
             self.MODULES.d_act_fn = nn.ELU(alpha=1.0, inplace=True)
         elif self.MODLE.d_act_fn == "GELU":
             self.MODULES.d_act_fn = nn.GELU()
+        elif self.MODLE.g_act_fn == "Auto":
+            pass
         else:
             raise NotImplementedError
         return self.MODULES
@@ -578,6 +584,50 @@ class Configurations(object):
 
         if self.OPTIMIZATION.world_size == 1:
             assert not self.RUN.distributed_data_parallel, "Cannot perform distributed training with a single gpu"
+
+        if self.MODEL.g_cond_mtd == "cAdaIN":
+            assert self.MODEL.backbone == "stylegan2", "cAdaIN is only applicable to stylegan2."
+
+        if self.MODEL.backbone == "stylegan2":
+            assert self.MODEL.g_act_fn == "Auto" and self.MODEL.d_act_fn == "Auto", \
+                "g_act_fn and d_act_fn should be 'Auto' to build StyleGAN2 generator and discriminator"
+
+        if self.MODEL.backbone == "stylegan2":
+            assert self.MODEL.g_cond_mtd == "N/A" or self.MODEL.g_cond_mtd == "cAdaIN", \
+                "stylegan2 only supports 'N/A' or 'cAdaIN' as g_cond_mtd."
+
+        if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
+            assert self.MODEL.backbone == "stylegan2", \
+                "StudioGAN does not support the act_fn auto selection options except for stylegan2."
+
+        if self.MODEL.z_prior == "constant":
+            assert self.MODEL.backbone == "stylegan2", \
+                "StudioGAN does not support generating images from constant latent vectors except for stylegan2."
+
+        if self.MODEL.backbone == "stylegan2":
+            assert self.MODEL.z_prior == "constant", "stylegan2 should generate images from a constant canvas."
+
+        if self.MODEL.backbone == "stylegan2" and self.MODEL.apply_g_ema:
+            assert self.MODEL.g_ema_decay == "N/A" and self.MODEL.g_ema_start == "N/A",\
+                "Please specify g_ema parameters to STYLEGAN2.g_ema_kimg and STYLEGAN2.g_ema_rampup \
+                instead of MODEL.g_ema_decay and MODEL.g_ema_start."
+
+        if self.MODEL.backbone == "stylegan2":
+            assert self.LOSS.apply_fm + \
+                self.LOSS.apply_gp + \
+                self.LOSS.apply_dra + \
+                self.LOSS.apply_maxgp + \
+                self.LOSS.apply_zcr + \
+                self.LOSS.apply_lo + \
+                self.RUN.synchronized_bn + \
+                self.RUN.batch_statistics + \
+                self.RUN.standing_statistics + \
+                self.RUN.freezeG + \
+                self.RUN.langevin_sampling + \
+                self.RUN.interpolation + \
+                self.RUN.inter_class_fid + \
+                self.RUN.sefa == 0, \
+                "StudioGAN does not support some options for stylegan2."
 
         assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
             \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \

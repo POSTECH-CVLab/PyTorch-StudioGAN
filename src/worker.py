@@ -49,9 +49,6 @@ class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Dis, Gen_ema, ema, eval_model, train_dataloader, eval_dataloader,
                  global_rank, local_rank, mu, sigma, logger, ada_p, best_step, best_fid, best_ckpt_path,
                  loss_list_dict, metric_list_dict):
-        self.start_time = datetime.now()
-        self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
-        self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
@@ -85,6 +82,8 @@ class WORKER(object):
         self.RUN = cfgs.RUN
         self.MISC = cfgs.MISC
 
+        self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
+        self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.fm_loss = losses.feature_matching_loss
 
@@ -161,6 +160,8 @@ class WORKER(object):
                        name=self.run_name,
                        dir=self.RUN.save_dir,
                        resume=self.best_step > 0 and resume)
+
+        self.start_time = datetime.now()
 
     def prepare_train_iter(self, epoch_counter):
         self.epoch_counter = epoch_counter
