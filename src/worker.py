@@ -50,7 +50,7 @@ class WORKER(object):
                  global_rank, local_rank, mu, sigma, logger, ada_p, best_step, best_fid, best_ckpt_path,
                  loss_list_dict, metric_list_dict):
         self.start_time = datetime.now()
-        self.is_stylegan = cfgs.MODEL.backbone == "style_gan2"
+        self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
         self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.cfgs = cfgs
         self.run_name = run_name

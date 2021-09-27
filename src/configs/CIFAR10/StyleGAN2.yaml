@@ -3,9 +3,9 @@ DATA:
   img_size: 32
   num_classes: 10
 MODEL:
-  backbone: "style_gan2"
-  g_cond_mtd: "c_style_gen"
-  d_cond_mtd: "c_style_dis"
+  backbone: "stylegan2"
+  g_cond_mtd: "cAdaIN"
+  d_cond_mtd: "SPD"
   z_dim: 512
   w_dim: 512
   apply_g_ema: True

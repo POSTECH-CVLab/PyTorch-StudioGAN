@@ -178,7 +178,7 @@ def toggle_grad(model, grad, num_freeze_layers=-1, is_stylegan=False):
     if is_stylegan:
         for name, param in model.named_parameters():
             param.requires_grad = grad
-    else: 
+    else:
         num_blocks = len(model.in_dims)
         assert num_freeze_layers < num_blocks,\
             "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
@@ -303,7 +303,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                 is_train=True,
                                                                 LOSS=LOSS,
                                                                 RUN=RUN,
-                                                                is_stylegan=MODEL.backbone=="style_gan2",
+                                                                is_stylegan=MODEL.backbone=="stylegan2",
                                                                 style_mixing_p=STYLEGAN2.style_mixing_p,
                                                                 device=device,
                                                                 cal_trsp_cost=False)

@@ -374,10 +374,10 @@ class Configurations(object):
             self.MODULES.g_bn = ops.BigGANConditionalBatchNorm2d
         elif self.MODEL.g_cond_mtd == "cBN":
             self.MODULES.g_bn = ops.ConditionalBatchNorm2d
+        elif self.MODEL.g_cond_mtd == "cAdaIN":
+            pass
         elif self.MODEL.g_cond_mtd == "W/O":
             self.MODULES.g_bn = ops.batchnorm_2d
-        elif self.MODEL.g_cond_mtd == "c_style_gen":
-            pass
         else:
             raise NotImplementedError
 
