@@ -77,8 +77,6 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
 
         ema.source, ema.target = Gen, Gen_ema
 
-    writer = SummaryWriter(log_dir=join(RUN.save_dir, 'logs', prev_run_name)) if global_rank == 0 else None
-
     if is_train and RUN.seed != seed:
         RUN.seed = seed + global_rank
         misc.fix_seed(RUN.seed)
@@ -93,7 +91,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
     if RUN.freezeD > -1 or RUN.freezeG > -1:
         prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path = \
             run_name, 0, 0, "initialize", None, 0, None, None
-    return prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path, logger, writer
+    return prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path, logger
 
 
 def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
