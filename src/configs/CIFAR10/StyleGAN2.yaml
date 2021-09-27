@@ -29,5 +29,5 @@ STYLEGAN2:
   g_ema_rampup: 0.05
   apply_pl_reg: False 
   pl_weight: 0
-  d_architecture: 'orig'
+  d_architecture: "orig"
   d_epilogue_mbstd_group_size: 32

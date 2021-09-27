@@ -252,20 +252,6 @@ class Configurations(object):
         self.AUG.ada_length = "N/A"
 
         # -----------------------------------------------------------------------------
-        # run settings
-        # -----------------------------------------------------------------------------
-        self.RUN = misc.make_empty_object()
-
-        # -----------------------------------------------------------------------------
-        # run settings
-        # -----------------------------------------------------------------------------
-        self.MISC = misc.make_empty_object()
-
-        self.MISC.no_proc_data = ["CIFAR10", "CIFAR100", "Tiny_ImageNet"]
-        self.MISC.base_folders = ["checkpoints", "figures", "logs", "moments", "samples", "values"]
-        self.MISC.classifier_based_GAN = ["AC", "2C", "D2DCE"]
-
-        # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings regarding regularization and style mixing
         # selected configurations by official implementation is given below.
         # 'auto':      dict(ref_gpus=-1, kimg=25000,  mb=-1, mbstd=-1, fmaps=-1,  lrate=-1,     gamma=-1,   ema=-1,  ramp=0.05, map=2),
@@ -297,6 +283,20 @@ class Configurations(object):
         self.STYLEGAN2.d_architecture = 'N/A'
         # group size for the minibatch standard deviation layer, None = entire minibatch.
         self.STYLEGAN2.d_epilogue_mbstd_group_size = 'N/A'
+
+        # -----------------------------------------------------------------------------
+        # run settings
+        # -----------------------------------------------------------------------------
+        self.RUN = misc.make_empty_object()
+
+        # -----------------------------------------------------------------------------
+        # run settings
+        # -----------------------------------------------------------------------------
+        self.MISC = misc.make_empty_object()
+
+        self.MISC.no_proc_data = ["CIFAR10", "CIFAR100", "Tiny_ImageNet"]
+        self.MISC.base_folders = ["checkpoints", "figures", "logs", "moments", "samples", "values"]
+        self.MISC.classifier_based_GAN = ["AC", "2C", "D2DCE"]
 
         # -----------------------------------------------------------------------------
         # Module settings

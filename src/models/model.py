@@ -23,36 +23,38 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
         logger.info("Modules are located on './src/models.{backbone}'.".format(backbone=MODEL.backbone))
 
     if MODEL.backbone == "stylegan2":
-        channel_base_ = 32768 if DATA.img_size >= 512 or DATA.name == "CIFAR10" else 16384
+        channel_base = 32768 if DATA.img_size >= 512 or DATA.name == "CIFAR10" else 16384
         gen_c_dim = DATA.num_classes if MODEL.g_cond_mtd == "cAdaIN" else 0
         dis_c_dim = DATA.num_classes if MODEL.d_cond_mtd == "SPD" else 0
         if RUN.mixed_precision:
-            num_fp16_res_ = 4
-            conv_clamp_ = 256
+            num_fp16_res = 4
+            conv_clamp = 256
         else:
-            num_fp16_res_ = 0
-            conv_clamp_ = None
+            num_fp16_res = 0
+            conv_clamp = None
         Gen = module.Generator(z_dim=MODEL.z_dim,
                                c_dim=gen_c_dim,
                                w_dim=MODEL.w_dim,
                                img_resolution=DATA.img_size,
                                img_channels=DATA.img_channels,
                                mapping_kwargs={"num_layers": STYLEGAN2.mapping_network},
-                               synthesis_kwargs={"channel_base":channel_base_, "channel_max":512, \
-                               "num_fp16_res":num_fp16_res_, "conv_clamp": conv_clamp_,}).to(device)
+                               synthesis_kwargs={"channel_base": channel_base, "channel_max": 512, \
+                               "num_fp16_res": num_fp16_res, "conv_clamp": conv_clamp,}).to(device)
 
         Dis = module.Discriminator(c_dim=dis_c_dim,
                                    img_resolution=DATA.img_size,
                                    img_channels=DATA.img_channels,
                                    architecture=STYLEGAN2.d_architecture,
-                                   channel_base=channel_base_,
+                                   channel_base=channel_base,
                                    channel_max=512,
-                                   num_fp16_res=num_fp16_res_,
-                                   conv_clamp=conv_clamp_,
+                                   num_fp16_res=num_fp16_res,
+                                   conv_clamp=conv_clamp,
                                    cmap_dim=None,
                                    block_kwargs={},
                                    mapping_kwargs={},
-                                   epilogue_kwargs={"mbstd_group_size": STYLEGAN2.d_epilogue_mbstd_group_size}).to(device)
+                                   epilogue_kwargs={
+                                       "mbstd_group_size": STYLEGAN2.d_epilogue_mbstd_group_size
+                                   }).to(device)
         if MODEL.apply_g_ema:
             if device == 0:
                 logger.info("Prepare exponential moving average generator with decay rate of {decay}."\
@@ -63,8 +65,8 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                        img_resolution=DATA.img_size,
                                        img_channels=DATA.img_channels,
                                        mapping_kwargs={"num_layers": STYLEGAN2.mapping_network},
-                                       synthesis_kwargs={"channel_base":channel_base_, "channel_max":512, \
-                                       "num_fp16_res":num_fp16_res_, "conv_clamp": conv_clamp_,}).to(device)
+                                       synthesis_kwargs={"channel_base": channel_base, "channel_max": 512, \
+                                       "num_fp16_res": num_fp16_res, "conv_clamp": conv_clamp,}).to(device)
 
             ema = Ema_stylegan(source=Gen,
                                target=Gen_ema,
