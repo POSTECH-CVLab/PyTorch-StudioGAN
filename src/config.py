@@ -37,6 +37,7 @@ class Configurations(object):
         # Data settings
         # -----------------------------------------------------------------------------
         self.DATA = misc.make_empty_object()
+
         # dataset name \in ["CIFAR10", "CIFAR100", "Tiny_ImageNet", "CUB200", "ImageNet", "MY_DATASET"]
         self.DATA.name = "CIFAR10"
         # image size for training
@@ -50,13 +51,14 @@ class Configurations(object):
         # Model settings
         # -----------------------------------------------------------------------------
         self.MODEL = misc.make_empty_object()
-        # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet", "style_gan2"]
+
+        # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet", "stylegan2"]
         self.MODEL.backbone = "resnet"
-        # conditioning method of the generator \in ["W/O", "cBN"]
+        # conditioning method of the generator \in ["W/O", "cBN", "cAdaIN"]
         self.MODEL.g_cond_mtd = "W/O"
-        # conditioning method of the discriminator \in ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE", "c_style_gen"]
+        # conditioning method of the discriminator \in ["W/O", "AC", "PD", "MH", "MD", "2C","D2DCE", "SPD"]
         self.MODEL.d_cond_mtd = "W/O"
-        # type of auxiliary classifier \in ["W/O", "TAC", "ADC", c_style_dis]
+        # type of auxiliary classifier \in ["W/O", "TAC", "ADC"]
         self.MODEL.aux_cls_type = "W/O"
         # whether to normalize feature maps from the discriminator or not
         self.MODEL.normalize_d_embed = False
@@ -81,7 +83,7 @@ class Configurations(object):
         self.MODEL.z_prior = "gaussian"
         # dimension of noise vectors
         self.MODEL.z_dim = 128
-        # dimension of latent intermediate latent (W) dimensionality used only for StyleGAN
+        # dimension of intermediate latent (W) dimensionality used only for StyleGAN
         self.MODEL.w_dim = "N/A"
         # dimension of a shared latent embedding
         self.MODEL.g_shared_dim = "N/A"
@@ -108,6 +110,7 @@ class Configurations(object):
         # loss settings
         # -----------------------------------------------------------------------------
         self.LOSS = misc.make_empty_object()
+
         # type of adversarial loss \in ["vanilla", "least_squere", "wasserstein", "hinge", "MH"]
         self.LOSS.adv_loss = "vanilla"
         # balancing hyperparameter for conditional image generation
@@ -190,6 +193,7 @@ class Configurations(object):
         # optimizer settings
         # -----------------------------------------------------------------------------
         self.OPTIMIZATION = misc.make_empty_object()
+
         # type of the optimizer for GAN training \in ["SGD", RMSprop, "Adam"]
         self.OPTIMIZATION.type_ = "Adam"
         # number of batch size for GAN training,
@@ -225,6 +229,7 @@ class Configurations(object):
         # preprocessing settings
         # -----------------------------------------------------------------------------
         self.PRE = misc.make_empty_object()
+
         # whether to apply random flip preprocessing before training
         self.PRE.apply_rflip = True
 
@@ -232,6 +237,7 @@ class Configurations(object):
         # differentiable augmentation settings
         # -----------------------------------------------------------------------------
         self.AUG = misc.make_empty_object()
+
         # whether to apply differentiable augmentations for limited data training
         self.AUG.apply_diffaug = False
         # type of differentiable augmentation for cr, bcr, or limited data training
@@ -240,7 +246,7 @@ class Configurations(object):
         self.AUG.cr_aug_type = "W/O"
         self.AUG.bcr_aug_type = "W/O"
         self.AUG.diffaug_type = "W/O"
-        # target probability for adaptive differentiable augmentation
+        # target probability for adaptive differentiable augmentations
         self.AUG.ada_target = "N/A"
         # augmentation probability = augmentation probability +/- (ada_target/ada_length)
         self.AUG.ada_length = "N/A"
@@ -254,13 +260,14 @@ class Configurations(object):
         # run settings
         # -----------------------------------------------------------------------------
         self.MISC = misc.make_empty_object()
+
         self.MISC.no_proc_data = ["CIFAR10", "CIFAR100", "Tiny_ImageNet"]
         self.MISC.base_folders = ["checkpoints", "figures", "logs", "moments", "samples", "values"]
         self.MISC.classifier_based_GAN = ["AC", "2C", "D2DCE"]
 
         # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings regarding regularization and style mixing
-        # selected configurations by official implementation is given below. 
+        # selected configurations by official implementation is given below.
         # 'auto':      dict(ref_gpus=-1, kimg=25000,  mb=-1, mbstd=-1, fmaps=-1,  lrate=-1,     gamma=-1,   ema=-1,  ramp=0.05, map=2),
         # 'stylegan2': dict(ref_gpus=8,  kimg=25000,  mb=32, mbstd=4,  fmaps=1,   lrate=0.002,  gamma=10,   ema=10,  ramp=None, map=8),
         # 'paper256':  dict(ref_gpus=8,  kimg=25000,  mb=64, mbstd=8,  fmaps=0.5, lrate=0.0025, gamma=1,    ema=20,  ramp=None, map=8),
@@ -269,6 +276,7 @@ class Configurations(object):
         # 'cifar':     dict(ref_gpus=2,  kimg=100000, mb=64, mbstd=32, fmaps=1,   lrate=0.0025, gamma=0.01, ema=500, ramp=0.05, map=2),
         # -----------------------------------------------------------------------------
         self.STYLEGAN2 = misc.make_empty_object()
+
         # lazy regularization interval for generator
         self.STYLEGAN2.g_reg_interval = "N/A"
         # lazy regularization interval for discriminator
@@ -279,7 +287,7 @@ class Configurations(object):
         self.STYLEGAN2.style_mixing_p = "N/A"
         # half-life of the exponential moving average (EMA) of generator weights.
         self.STYLEGAN2.g_ema_kimg = "N/A"
-        # EMA ramp-up coefficient.
+        # EMA ramp-up coefficient
         self.STYLEGAN2.g_ema_rampup = "N/A"
         # whether to apply path length regularization
         self.STYLEGAN2.apply_pl_reg = False
