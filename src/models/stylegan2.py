@@ -774,7 +774,7 @@ class Discriminator(torch.nn.Module):
             self.mapping = MappingNetwork(z_dim=0, c_dim=c_dim, w_dim=cmap_dim, num_ws=None, w_avg_beta=None, **mapping_kwargs)
         self.b4 = DiscriminatorEpilogue(channels_dict[4], cmap_dim=cmap_dim, resolution=4, **epilogue_kwargs, **common_kwargs)
 
-    def forward(self, img, c, eval=False, adc_fake=False, **block_kwargs):
+    def forward(self, img, c, adc_fake=False, **block_kwargs):
         x = None
         for res in self.block_resolutions:
             block = getattr(self, f"b{res}")

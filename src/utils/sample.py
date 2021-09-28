@@ -137,11 +137,11 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
             ws[:, cutoff:] = generator.mapping(torch.randn_like(zs), one_hot_fake_labels, skip_w_avg_update=True)[:, cutoff:]
         fake_images = generator.synthesis(ws)
     else:
-        fake_images = generator(zs, fake_labels, eval=not is_train)
+        fake_images = generator(zs, fake_labels)
         ws = None
 
     if zs_eps is not None:
-        fake_images_eps = generator(zs_eps, fake_labels, eval=not is_train)
+        fake_images_eps = generator(zs_eps, fake_labels)
     else:
         fake_images_eps = None
     return fake_images, fake_labels, fake_images_eps, trsp_cost, ws
@@ -158,7 +158,7 @@ def langevin_sampling(zs, z_dim, fake_labels, generator, discriminator, batch_si
     lgv_prior = MN.MultivariateNormal(loc=mean, covariance_matrix=lgv_std)
     for i in range(langevin_steps):
         zs = autograd.Variable(zs, requires_grad=True)
-        fake_images = generator(zs, fake_labels, eval=True)
+        fake_images = generator(zs, fake_labels)
         fake_dict = discriminator(fake_images, fake_labels, eval=True)
 
         energy = -prior.log_prob(zs) - fake_dict["adv_output"]

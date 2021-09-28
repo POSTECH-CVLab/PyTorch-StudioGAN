@@ -238,7 +238,7 @@ class pl_reg:
         self.pl_decay = 0.01
         self.pl_weight = 2
         self.pl_mean = torch.zeros([], device=device)
-    
+
     def cal_pl_reg(self, fake_images, ws):
         #ws refers to weight style
         #receives new fake_images of original batch (in original implementation, fakes_images used for calculating g_loss and pl_loss is generated independently)

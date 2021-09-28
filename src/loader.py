@@ -273,6 +273,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                 if cfgs.RUN.distributed_data_parallel:
                     dist.barrier(worker.group)
 
+        if global_rank == 0: logger.info("End training!")
+
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
     # -----------------------------------------------------------------------------

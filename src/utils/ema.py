@@ -51,6 +51,7 @@ class Ema(object):
             decay = self.decay
 
         with torch.no_grad():
+            import pdb;pdb.set_trace()
             for p_ema, p in zip(self.target.parameters(), self.source.parameters()):
                 p_ema.copy_(p.lerp(p_ema, decay))
             for b_ema, b in zip(self.target.buffers(), self.source.buffers()):

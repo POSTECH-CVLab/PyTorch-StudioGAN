@@ -79,7 +79,7 @@ class Configurations(object):
         self.MODEL.attn_g_loc = ["N/A"]
         # locations of the self-attention layer in the discriminator (should be list type)
         self.MODEL.attn_d_loc = ["N/A"]
-        # prior distribution for noise sampling \in ["gaussian", "uniform"]
+        # prior distribution for noise sampling \in ["constant", "gaussian", "uniform"]
         self.MODEL.z_prior = "gaussian"
         # dimension of noise vectors
         self.MODEL.z_dim = 128
@@ -93,7 +93,7 @@ class Configurations(object):
         self.MODEL.d_conv_dim = 64
         # generator's depth for deep_big_resnet
         self.MODEL.g_depth = "N/A"
-        # discriminator's depth for deep_big_resnet self.MODEL.d_depth = "N/A"
+        # discriminator's depth for deep_big_resnet
         self.MODEL.d_depth = "N/A"
         # whether to apply moving average update for the generator
         self.MODEL.apply_g_ema = False
@@ -282,9 +282,9 @@ class Configurations(object):
         # pl regularization strength
         self.STYLEGAN2.pl_weight = "N/A"
         # discriminator architecture for STYLEGAN2. 'resnet' except for cifar10 ('orig')
-        self.STYLEGAN2.d_architecture = 'N/A'
+        self.STYLEGAN2.d_architecture = "N/A"
         # group size for the minibatch standard deviation layer, None = entire minibatch.
-        self.STYLEGAN2.d_epilogue_mbstd_group_size = 'N/A'
+        self.STYLEGAN2.d_epilogue_mbstd_group_size = "N/A"
 
         # -----------------------------------------------------------------------------
         # run settings
@@ -502,6 +502,10 @@ class Configurations(object):
             assert self.RUN.langevin_sampling * self.LOSS.apply_lo == 0, "Langevin sampling and latent optmization \
                 cannot be used simultaneously."
 
+        if isinstance(self.MODEL.g_depth, int) or isinstance(self.MODEL.d_depth, int):
+            assert self.MODEL.backbone == "deep_big_resnet", \
+                "MODEL.g_depth and MODEL.d_depth are hyperparameters for deep_big_resnet backbone."
+
         if self.RUN.langevin_sampling:
             msg = "Langevin sampling cannot be used for training only."
             assert self.RUN.eval + \
@@ -515,7 +519,7 @@ class Configurations(object):
             msg
 
         if self.RUN.langevin_sampling:
-            assert self.MODEL.z_prior == "gaussian", "Langevin sampling is defined only if z_prior is gaussian"
+            assert self.MODEL.z_prior == "gaussian", "Langevin sampling is defined only if z_prior is gaussian."
 
         if self.RUN.freezeG > -1:
             assert self.RUN.ckpt_dir is not None, "Freezing generator needs a pre-trained model.\
@@ -583,17 +587,21 @@ class Configurations(object):
             "To apply sefa, please set num_semantic_axis to a natual number greater than 0."
 
         if self.OPTIMIZATION.world_size == 1:
-            assert not self.RUN.distributed_data_parallel, "Cannot perform distributed training with a single gpu"
+            assert not self.RUN.distributed_data_parallel, "Cannot perform distributed training with a single gpu."
 
         if self.MODEL.g_cond_mtd == "cAdaIN":
             assert self.MODEL.backbone == "stylegan2", "cAdaIN is only applicable to stylegan2."
 
         if self.MODEL.backbone == "stylegan2":
             assert self.MODEL.g_act_fn == "Auto" and self.MODEL.d_act_fn == "Auto", \
-                "g_act_fn and d_act_fn should be 'Auto' to build StyleGAN2 generator and discriminator"
+                "g_act_fn and d_act_fn should be 'Auto' to build StyleGAN2 generator and discriminator."
 
         if self.MODEL.backbone == "stylegan2":
-            assert self.MODEL.g_cond_mtd == "N/A" or self.MODEL.g_cond_mtd == "cAdaIN", \
+            assert not self.MODEL.apply_g_sn and not self.MODEL.apply_d_sn, \
+                "StudioGAN does not support spectral normalization on stylegan2."
+
+        if self.MODEL.backbone == "stylegan2":
+            assert self.MODEL.g_cond_mtd in ["N/A", "cAdaIN"], \
                 "stylegan2 only supports 'N/A' or 'cAdaIN' as g_cond_mtd."
 
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
@@ -612,6 +620,20 @@ class Configurations(object):
                 "Please specify g_ema parameters to STYLEGAN2.g_ema_kimg and STYLEGAN2.g_ema_rampup \
                 instead of MODEL.g_ema_decay and MODEL.g_ema_start."
 
+        if self.MODEL.backbone != "stylegan2" and self.MODEL.apply_g_ema:
+            assert isinstance(self.MODEL.g_ema_decay, float) and isinstance(self.MODEL.g_ema_start, int), \
+                "Please specify g_ema parameters to MODEL.g_ema_decay and MODEL.g_ema_start."
+            assert self.STYLEGAN2.g_ema_kimg == "N/A" and self.STYLEGAN2.g_ema_rampup == "N/A", \
+                "g_ema_kimg, g_ema_rampup hyperparameters are only valid for stylegan2 backbone."
+
+        if isinstance(self.MODEL.g_shared_dim, int):
+            assert self.MODEL.backbone in ["big_resnet", "deep_big_resnet"], \
+            "hierarchical embedding is only applicable to big_resnet or deep_big_resnet."
+
+        if isinstance(self.MODEL.g_conv_dim, int) or isinstance(self.MODEL.d_conv_dim, int):
+            assert self.MODEL.backbone in ["resnet", "big_resnet", "deep_big_resnet"], \
+            "g_conv_dim and d_conv_dim are hyperparameters for controlling dimensions of resnet, big_resnet, and deep_big_resnet."
+
         if self.MODEL.backbone == "stylegan2":
             assert self.LOSS.apply_fm + \
                 self.LOSS.apply_gp + \
@@ -628,6 +650,9 @@ class Configurations(object):
                 self.RUN.inter_class_fid + \
                 self.RUN.sefa == 0, \
                 "StudioGAN does not support some options for stylegan2."
+
+        if self.MODEL.backbone == "stylegan2":
+            assert not self.MODEL.apply_attn, "cannot apply attention layers to the stylegan2 generator."
 
         assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
             \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \

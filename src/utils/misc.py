@@ -108,7 +108,7 @@ class GeneratorController(object):
                                           LOSS=self.cfgs.LOSS,
                                           OPTIMIZATION=self.cfgs.OPTIMIZATION,
                                           RUN=self.cfgs.RUN,
-                                          STYLEGAN2=self.STYLEGAN2,
+                                          STYLEGAN2=self.cfgs.STYLEGAN2,
                                           device=self.device,
                                           global_rank=self.global_rank,
                                           logger=self.logger)
@@ -172,22 +172,24 @@ def count_parameters(module):
 
 
 def toggle_grad(model, grad, num_freeze_layers=-1, is_stylegan=False):
-    model = peel_model(model)
-
     if is_stylegan:
-        for name, param in model.named_parameters():
-            param.requires_grad = grad
+        if grad:
+            model.train()
+        else:
+            model.eval()
     else:
-        num_blocks = len(model.in_dims)
-        assert num_freeze_layers < num_blocks,\
-            "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
-                                                                        nb=num_blocks)
-
         if num_freeze_layers == -1:
-            for name, param in model.named_parameters():
-                param.requires_grad = grad
+            if grad:
+                model.train()
+            else:
+                model.eval()
         else:
             assert grad, "cannot freeze the model when grad is False"
+            model = peel_model(model)
+            num_blocks = len(model.in_dims)
+            assert num_freeze_layers < num_blocks,\
+                "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers, nb=num_blocks)
+
             for name, param in model.named_parameters():
                 param.requires_grad = True
                 for layer in range(num_freeze_layers):

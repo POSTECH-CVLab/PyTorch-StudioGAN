@@ -139,8 +139,11 @@ def load_configs_initialize_training():
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
         cudnn.benchmark, cudnn.deterministic = False, True
-    conv2d_gradfix.enabled = True                       # Improves training speed.
-    grid_sample_gradfix.enabled = True                  # Avoids errors with the augmentation pipe.
+
+    # Improves training speed
+    conv2d_gradfix.enabled = True
+    # Avoids errors with the augmentation pipe
+    grid_sample_gradfix.enabled = True
 
     if cfgs.OPTIMIZATION.world_size == 1:
         print("You have chosen a specific GPU. This will completely disable data parallelism.")
@@ -169,4 +172,3 @@ if __name__ == "__main__":
                            gpus_per_node=gpus_per_node,
                            run_name=run_name,
                            hdf5_path=hdf5_path)
-
