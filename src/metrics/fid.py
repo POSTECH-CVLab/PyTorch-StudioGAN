@@ -166,7 +166,7 @@ def calculate_fid(data_loader,
                                LOSS=cfgs.LOSS,
                                RUN=cfgs.RUN,
                                STYLEGAN2=cfgs.STYLEGAN2,
-                               is_stylegan=(cfgs.MODEL.backbone == "style_gan2"),
+                               is_stylegan=(cfgs.MODEL.backbone == "stylegan2"),
                                device=device,
                                disable_tqdm=disable_tqdm)
 

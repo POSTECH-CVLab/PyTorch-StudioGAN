@@ -146,7 +146,7 @@ def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, dis
                                                       num_runs=num_runs,
                                                       num_clusters=num_clusters,
                                                       num_angles=num_angles,
-                                                      is_stylegan=(cfgs.MODEL.backbone == "style_gan2"),
+                                                      is_stylegan=(cfgs.MODEL.backbone == "stylegan2"),
                                                       device=device)
 
     if not ((precisions >= 0).all() and (precisions <= 1).all()):
