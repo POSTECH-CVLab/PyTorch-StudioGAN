@@ -5,7 +5,6 @@
 # src/models/model.py
 
 from torch.nn import DataParallel
-from torch.utils.tensorboard import SummaryWriter
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch
 
