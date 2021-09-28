@@ -265,6 +265,8 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.STYLEGAN2 = misc.make_empty_object()
 
+        # conditioning types that utilize embedding proxies for conditional stylegan2
+        self.STYLEGAN2.cond_type = ["PD", "SPD", "2C", "D2DCE"]
         # lazy regularization interval for generator
         self.STYLEGAN2.g_reg_interval = "N/A"
         # lazy regularization interval for discriminator

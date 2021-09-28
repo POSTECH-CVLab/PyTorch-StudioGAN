@@ -790,7 +790,7 @@ class Discriminator(torch.nn.Module):
 
         # double num_classes for Auxiliary Discriminative Classifier
         if self.aux_cls_type == "ADC":
-            num_classes = num_classes * 2
+            num_classes, c_dim = num_classes * 2, c_dim * 2
 
         # linear and embedding layers for discriminator conditioning
         if self.d_cond_mtd == "AC":
@@ -801,7 +801,8 @@ class Discriminator(torch.nn.Module):
             self.mapping = MappingNetwork(z_dim=0, c_dim=c_dim, w_dim=self.cmap_dim, num_ws=None, w_avg_beta=None, **mapping_kwargs)
         elif self.d_cond_mtd in ["2C", "D2DCE"]:
             self.linear2 = FullyConnectedLayer(channels_dict[4], d_embed_dim, bias=True)
-            self.embedding = FullyConnectedLayer(num_classes, d_embed_dim, bias=False)
+            self.embedding = MappingNetwork(z_dim=0, c_dim=c_dim, w_dim=d_embed_dim, num_ws=None, w_avg_beta=None, num_layers=1, **mapping_kwargs)
+        else:
             pass
 
         # linear and embedding layers for evolved classifier-based GAN
@@ -810,7 +811,7 @@ class Discriminator(torch.nn.Module):
                 self.linear_mi = FullyConnectedLayer(channels_dict[4], num_classes, bias=False)
             elif self.d_cond_mtd in ["2C", "D2DCE"]:
                 self.linear_mi = FullyConnectedLayer(channels_dict[4], d_embed_dim, bias=True)
-                self.embedding_mi = FullyConnectedLayer(num_classes, d_embed_dim, bias=False)
+                self.embedding_mi = MappingNetwork(z_dim=0, c_dim=c_dim, w_dim=d_embed_dim, num_ws=None, w_avg_beta=None, num_layers=1, **mapping_kwargs)
             else:
                 raise NotImplementedError
 
@@ -829,7 +830,7 @@ class Discriminator(torch.nn.Module):
         # add num_classes for discrminating fake images using ADC
         if adc_fake:
             label = label + self.num_classes
-        label = F.one_hot(label, self.num_classes * 2 if self.aux_cls_type=="ADC" else self.num_classes)
+        oh_label = F.one_hot(label, self.num_classes * 2 if self.aux_cls_type=="ADC" else self.num_classes)
 
         # class conditioning
         if self.d_cond_mtd == "AC":
@@ -839,14 +840,14 @@ class Discriminator(torch.nn.Module):
                 h = F.normalize(h, dim=1)
             cls_output = self.linear2(h)
         elif self.d_cond_mtd == "PD":
-            adv_output = adv_output + torch.sum(torch.mul(self.embedding(label), h), 1)
+            adv_output = adv_output + torch.sum(torch.mul(self.embedding(None, oh_label), h), 1)
         elif self.d_cond_mtd == "SPD":
-            h = self.linear1(h)
-            cmap = self.mapping(None, label)
-            adv_output = (h * cmap).sum(dim=1, keepdim=True) * (1 / np.sqrt(self.cmap_dim))
+            embed = self.linear1(h)
+            cmap = self.mapping(None, oh_label)
+            adv_output = (embed * cmap).sum(dim=1, keepdim=True) * (1 / np.sqrt(self.cmap_dim))
         elif self.d_cond_mtd in ["2C", "D2DCE"]:
             embed = self.linear2(h)
-            proxy = self.embedding(label)
+            proxy = self.embedding(None, oh_label)
             if self.normalize_d_embed:
                 embed = F.normalize(embed, dim=1)
                 proxy = F.normalize(proxy, dim=1)
@@ -867,7 +868,7 @@ class Discriminator(torch.nn.Module):
                 mi_cls_output = self.linear_mi(h)
             elif self.d_cond_mtd in ["2C", "D2DCE"]:
                 mi_embed = self.linear_mi(h)
-                mi_proxy = self.embedding_mi(label)
+                mi_proxy = self.embedding_mi(None, oh_label)
                 if self.normalize_d_embed:
                     mi_embed = F.normalize(mi_embed, dim=1)
                     mi_proxy = F.normalize(mi_proxy, dim=1)
