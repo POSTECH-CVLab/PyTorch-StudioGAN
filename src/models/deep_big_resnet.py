@@ -288,7 +288,7 @@ class Discriminator(nn.Module):
 
         self.activation = MODULES.d_act_fn
 
-        # liner layer for adversarial training
+        # linear layer for adversarial training
         if self.d_cond_mtd == "MH":
             self.linear1 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=1 + num_classes, bias=True)
         elif self.d_cond_mtd == "MD":
@@ -300,7 +300,7 @@ class Discriminator(nn.Module):
         if self.aux_cls_type == "ADC":
             num_classes = num_classes * 2
 
-        # liner and embedding layers for discriminator conditioning
+        # linear and embedding layers for discriminator conditioning
         if self.d_cond_mtd == "AC":
             self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=False)
         elif self.d_cond_mtd == "PD":
@@ -311,7 +311,7 @@ class Discriminator(nn.Module):
         else:
             pass
 
-        # liner and embedding layers for evolved classifier-based GAN
+        # linear and embedding layers for evolved classifier-based GAN
         if self.aux_cls_type == "TAC":
             if self.d_cond_mtd == "AC":
                 self.linear_mi = MODULES.d_linear(in_features=self.out_dims[-1], out_features=num_classes, bias=False)

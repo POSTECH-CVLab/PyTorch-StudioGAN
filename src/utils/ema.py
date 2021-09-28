@@ -51,14 +51,13 @@ class Ema(object):
             decay = self.decay
 
         with torch.no_grad():
-            import pdb;pdb.set_trace()
             for p_ema, p in zip(self.target.parameters(), self.source.parameters()):
                 p_ema.copy_(p.lerp(p_ema, decay))
             for b_ema, b in zip(self.target.buffers(), self.source.buffers()):
                 b_ema.copy_(b)
 
 
-class Ema_stylegan(object):
+class EmaStylegan2(object):
     def __init__(self, source, target, ema_kimg, ema_rampup, effective_batch_size, d_updates_per_step):
         self.source = source
         self.target = target

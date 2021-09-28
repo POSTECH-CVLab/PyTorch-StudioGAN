@@ -10,10 +10,11 @@ distribution of this software and related documentation without an express
 license agreement from NVIDIA CORPORATION is strictly prohibited.
 """
 
-import numpy as np
 import torch
-import utils.style_misc as misc
+import torch.nn.functional as F
+import numpy as np
 
+import utils.style_misc as misc
 from utils.style_ops import conv2d_resample
 from utils.style_ops import upfirdn2d
 from utils.style_ops import bias_act
@@ -694,7 +695,7 @@ class DiscriminatorEpilogue(torch.nn.Module):
         self.fc = FullyConnectedLayer(in_channels * (resolution**2), in_channels, activation=activation)
         self.out = FullyConnectedLayer(in_channels, 1 if cmap_dim == 0 else cmap_dim)
 
-    def forward(self, x, img, cmap, force_fp32=False):
+    def forward(self, x, img, force_fp32=False):
         misc.assert_shape(x, [None, self.in_channels, self.resolution, self.resolution])  # [NCHW]
         _ = force_fp32  # unused
         dtype = torch.float32
@@ -712,14 +713,8 @@ class DiscriminatorEpilogue(torch.nn.Module):
             x = self.mbstd(x)
         x = self.conv(x)
         x = self.fc(x.flatten(1))
-        x = self.out(x)
+        # x = self.out(x)
 
-        # Conditioning.
-        if self.cmap_dim > 0:
-            misc.assert_shape(cmap, [None, self.cmap_dim])
-            x = (x * cmap).sum(dim=1, keepdim=True) * (1 / np.sqrt(self.cmap_dim))
-
-        assert x.dtype == dtype
         return x
 
 
@@ -735,6 +730,11 @@ class Discriminator(torch.nn.Module):
             num_fp16_res=0,  # Use FP16 for the N highest resolutions.
             conv_clamp=None,  # Clamp the output of convolution layers to +-X, None = disable clamping.
             cmap_dim=None,  # Dimensionality of mapped conditioning label, None = default.
+            d_cond_mtd=None,  # conditioning method of the discriminator
+            aux_cls_type=None,  # type of auxiliary classifier
+            d_embed_dim=None,  # dimension of feature maps after convolution operations
+            num_classes=None,  # number of classes
+            normalize_d_embed=None,  # whether to normalize the feature maps or not
             block_kwargs={},  # Arguments for DiscriminatorBlock.
             mapping_kwargs={},  # Arguments for MappingNetwork.
             epilogue_kwargs={},  # Arguments for DiscriminatorEpilogue.
@@ -742,16 +742,21 @@ class Discriminator(torch.nn.Module):
         super().__init__()
         self.c_dim = c_dim
         self.img_resolution = img_resolution
-        self.img_resolution_log2 = int(np.log2(img_resolution))
         self.img_channels = img_channels
+        self.cmap_dim = cmap_dim
+        self.d_cond_mtd = d_cond_mtd
+        self.aux_cls_type = aux_cls_type
+        self.num_classes = num_classes
+        self.normalize_d_embed = normalize_d_embed
+        self.img_resolution_log2 = int(np.log2(img_resolution))
         self.block_resolutions = [2**i for i in range(self.img_resolution_log2, 2, -1)]
         channels_dict = {res: min(channel_base // res, channel_max) for res in self.block_resolutions + [4]}
         fp16_resolution = max(2**(self.img_resolution_log2 + 1 - num_fp16_res), 8)
 
-        if cmap_dim is None:
-            cmap_dim = channels_dict[4]
+        if self.cmap_dim is None:
+            self.cmap_dim = channels_dict[4]
         if c_dim == 0:
-            cmap_dim = 0
+            self.cmap_dim = 0
 
         common_kwargs = dict(img_channels=img_channels, architecture=architecture, conv_clamp=conv_clamp)
         cur_layer_idx = 0
@@ -770,18 +775,110 @@ class Discriminator(torch.nn.Module):
                                        **common_kwargs)
             setattr(self, f"b{res}", block)
             cur_layer_idx += block.num_layers
-        if c_dim > 0:
-            self.mapping = MappingNetwork(z_dim=0, c_dim=c_dim, w_dim=cmap_dim, num_ws=None, w_avg_beta=None, **mapping_kwargs)
-        self.b4 = DiscriminatorEpilogue(channels_dict[4], cmap_dim=cmap_dim, resolution=4, **epilogue_kwargs, **common_kwargs)
 
-    def forward(self, img, c, adc_fake=False, **block_kwargs):
-        x = None
+        self.b4 = DiscriminatorEpilogue(channels_dict[4], cmap_dim=self.cmap_dim, resolution=4, **epilogue_kwargs, **common_kwargs)
+
+       # linear layer for adversarial training
+        if self.d_cond_mtd == "MH":
+            self.linear1 = FullyConnectedLayer(channels_dict[4], 1 + self.num_classes, bias=True)
+        elif self.d_cond_mtd == "MD":
+            self.linear1 = FullyConnectedLayer(channels_dict[4], self.num_classes, bias=True)
+        elif self.d_cond_mtd == "SPD":
+            self.linear1 = FullyConnectedLayer(channels_dict[4], 1 if self.cmap_dim == 0 else self.cmap_dim, bias=True)
+        else:
+            self.linear1 = FullyConnectedLayer(channels_dict[4], 1, bias=True)
+
+        # double num_classes for Auxiliary Discriminative Classifier
+        if self.aux_cls_type == "ADC":
+            num_classes = num_classes * 2
+
+        # linear and embedding layers for discriminator conditioning
+        if self.d_cond_mtd == "AC":
+            self.linear2 = FullyConnectedLayer(channels_dict[4], num_classes, bias=False)
+        elif self.d_cond_mtd == "PD":
+            self.linear2 = FullyConnectedLayer(channels_dict[4], self.cmap_dim, bias=True)
+        elif self.d_cond_mtd == "SPD":
+            self.mapping = MappingNetwork(z_dim=0, c_dim=c_dim, w_dim=self.cmap_dim, num_ws=None, w_avg_beta=None, **mapping_kwargs)
+        elif self.d_cond_mtd in ["2C", "D2DCE"]:
+            self.linear2 = FullyConnectedLayer(channels_dict[4], d_embed_dim, bias=True)
+            self.embedding = FullyConnectedLayer(num_classes, d_embed_dim, bias=False)
+            pass
+
+        # linear and embedding layers for evolved classifier-based GAN
+        if self.aux_cls_type == "TAC":
+            if self.d_cond_mtd == "AC":
+                self.linear_mi = FullyConnectedLayer(channels_dict[4], num_classes, bias=False)
+            elif self.d_cond_mtd in ["2C", "D2DCE"]:
+                self.linear_mi = FullyConnectedLayer(channels_dict[4], d_embed_dim, bias=True)
+                self.embedding_mi = FullyConnectedLayer(num_classes, d_embed_dim, bias=False)
+            else:
+                raise NotImplementedError
+
+    def forward(self, img, label, adc_fake=False, **block_kwargs):
+        x, embed, proxy, cls_output = None, None, None, None
+        mi_embed, mi_proxy, mi_cls_output = None, None, None
         for res in self.block_resolutions:
             block = getattr(self, f"b{res}")
             x, img = block(x, img, **block_kwargs)
+        h = self.b4(x, img)
 
-        cmap = None
-        if self.c_dim > 0:
-            cmap = self.mapping(None, c)
-        x = self.b4(x, img, cmap)
-        return {"adv_output": x}
+        # adversarial training
+        if self.d_cond_mtd != "SPD":
+            adv_output = torch.squeeze(self.linear1(h))
+
+        # add num_classes for discrminating fake images using ADC
+        if adc_fake:
+            label = label + self.num_classes
+        label = F.one_hot(label, self.num_classes * 2 if self.aux_cls_type=="ADC" else self.num_classes)
+
+        # class conditioning
+        if self.d_cond_mtd == "AC":
+            if self.normalize_d_embed:
+                for W in self.linear2.parameters():
+                    W = F.normalize(W, dim=1)
+                h = F.normalize(h, dim=1)
+            cls_output = self.linear2(h)
+        elif self.d_cond_mtd == "PD":
+            adv_output = adv_output + torch.sum(torch.mul(self.embedding(label), h), 1)
+        elif self.d_cond_mtd == "SPD":
+            h = self.linear1(h)
+            cmap = self.mapping(None, label)
+            adv_output = (h * cmap).sum(dim=1, keepdim=True) * (1 / np.sqrt(self.cmap_dim))
+        elif self.d_cond_mtd in ["2C", "D2DCE"]:
+            embed = self.linear2(h)
+            proxy = self.embedding(label)
+            if self.normalize_d_embed:
+                embed = F.normalize(embed, dim=1)
+                proxy = F.normalize(proxy, dim=1)
+        elif self.d_cond_mtd == "MD":
+            idx = torch.LongTensor(range(label.size(0))).to(label.device)
+            adv_output = adv_output[idx, label]
+        elif self.d_cond_mtd in ["W/O", "MH"]:
+            pass
+        else:
+            raise NotImplementedError
+
+        # extra conditioning for TACGAN and ADCGAN
+        if self.aux_cls_type == "TAC":
+            if self.d_cond_mtd == "AC":
+                if self.normalize_d_embed:
+                    for W in self.linear_mi.parameters():
+                        W = F.normalize(W, dim=1)
+                mi_cls_output = self.linear_mi(h)
+            elif self.d_cond_mtd in ["2C", "D2DCE"]:
+                mi_embed = self.linear_mi(h)
+                mi_proxy = self.embedding_mi(label)
+                if self.normalize_d_embed:
+                    mi_embed = F.normalize(mi_embed, dim=1)
+                    mi_proxy = F.normalize(mi_proxy, dim=1)
+        return {
+            "h": h,
+            "adv_output": adv_output,
+            "embed": embed,
+            "proxy": proxy,
+            "cls_output": cls_output,
+            "label": label,
+            "mi_embed": mi_embed,
+            "mi_proxy": mi_proxy,
+            "mi_cls_output": mi_cls_output
+        }

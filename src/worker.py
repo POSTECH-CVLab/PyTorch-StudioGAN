@@ -197,6 +197,7 @@ class WORKER(object):
         # toggle gradients of the generator and discriminator
         misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
         misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, is_stylegan=self.is_stylegan)
+        self.Gen.apply(misc.untrack_bn_statistics)
         # sample real images and labels from the true data distribution
         real_image_basket, real_label_basket = self.sample_data_basket()
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
@@ -224,10 +225,6 @@ class WORKER(object):
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
-
-                    if self.is_stylegan:
-                        real_labels = F.one_hot(real_labels, self.DATA.num_classes)
-                        fake_labels = F.one_hot(fake_labels, self.DATA.num_classes)
 
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
@@ -377,6 +374,7 @@ class WORKER(object):
         # toggle gradients of the generator and discriminator
         misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
         misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=self.RUN.freezeG, is_stylegan=self.is_stylegan)
+        self.Gen.apply(misc.track_bn_statistics)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
             for acml_step in range(self.OPTIMIZATION.acml_steps):
@@ -399,9 +397,6 @@ class WORKER(object):
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
-
-                    if self.is_stylegan:
-                        fake_labels = F.one_hot(fake_labels, self.DATA.num_classes)
 
                     # apply differentiable augmentations if "apply_diffaug" is True
                     fake_images_ = self.AUG.series_augment(fake_images)
@@ -935,7 +930,7 @@ class WORKER(object):
                         shared(sample.sample_onehot(num_rows, self.DATA.num_classes)).view(num_rows, 1, -1),
                         num_cols - 2).view(num_rows * (num_cols), -1)
 
-                interpolated_images = generator(zs, None, shared_label=ys, eval=True)
+                interpolated_images = generator(zs, None, shared_label=ys)
 
                 misc.plot_img_canvas(images=(interpolated_images.detach().cpu()+1)/2,
                                      save_path=join(self.RUN.save_dir, "figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\

@@ -79,7 +79,7 @@ class Configurations(object):
         self.MODEL.attn_g_loc = ["N/A"]
         # locations of the self-attention layer in the discriminator (should be list type)
         self.MODEL.attn_d_loc = ["N/A"]
-        # prior distribution for noise sampling \in ["constant", "gaussian", "uniform"]
+        # prior distribution for noise sampling \in ["gaussian", "uniform"]
         self.MODEL.z_prior = "gaussian"
         # dimension of noise vectors
         self.MODEL.z_dim = 128
@@ -392,9 +392,9 @@ class Configurations(object):
             self.MODULES.g_act_fn = nn.LeakyReLU(negative_slope=0.1, inplace=True)
         elif self.MODEL.g_act_fn == "ELU":
             self.MODULES.g_act_fn = nn.ELU(alpha=1.0, inplace=True)
-        elif self.MODLE.g_act_fn == "GELU":
+        elif self.MODEL.g_act_fn == "GELU":
             self.MODULES.g_act_fn = nn.GELU()
-        elif self.MODLE.g_act_fn == "Auto":
+        elif self.MODEL.g_act_fn == "Auto":
             pass
         else:
             raise NotImplementedError
@@ -405,9 +405,9 @@ class Configurations(object):
             self.MODULES.d_act_fn = nn.LeakyReLU(negative_slope=0.1, inplace=True)
         elif self.MODEL.d_act_fn == "ELU":
             self.MODULES.d_act_fn = nn.ELU(alpha=1.0, inplace=True)
-        elif self.MODLE.d_act_fn == "GELU":
+        elif self.MODEL.d_act_fn == "GELU":
             self.MODULES.d_act_fn = nn.GELU()
-        elif self.MODLE.g_act_fn == "Auto":
+        elif self.MODEL.g_act_fn == "Auto":
             pass
         else:
             raise NotImplementedError
@@ -592,6 +592,10 @@ class Configurations(object):
         if self.MODEL.g_cond_mtd == "cAdaIN":
             assert self.MODEL.backbone == "stylegan2", "cAdaIN is only applicable to stylegan2."
 
+        if self.MODEL.d_cond_mtd == "SPD":
+            assert self.MODEL.backbone == "stylegan2", \
+                "SytleGAN Projection Discriminator (SPD) is only applicable to stylegan2."
+
         if self.MODEL.backbone == "stylegan2":
             assert self.MODEL.g_act_fn == "Auto" and self.MODEL.d_act_fn == "Auto", \
                 "g_act_fn and d_act_fn should be 'Auto' to build StyleGAN2 generator and discriminator."
@@ -607,13 +611,6 @@ class Configurations(object):
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
             assert self.MODEL.backbone == "stylegan2", \
                 "StudioGAN does not support the act_fn auto selection options except for stylegan2."
-
-        if self.MODEL.z_prior == "constant":
-            assert self.MODEL.backbone == "stylegan2", \
-                "StudioGAN does not support generating images from constant latent vectors except for stylegan2."
-
-        if self.MODEL.backbone == "stylegan2":
-            assert self.MODEL.z_prior == "constant", "stylegan2 should generate images from a constant canvas."
 
         if self.MODEL.backbone == "stylegan2" and self.MODEL.apply_g_ema:
             assert self.MODEL.g_ema_decay == "N/A" and self.MODEL.g_ema_start == "N/A",\
@@ -645,10 +642,10 @@ class Configurations(object):
                 self.RUN.batch_statistics + \
                 self.RUN.standing_statistics + \
                 self.RUN.freezeG + \
+                self.RUN.freezeD + \
                 self.RUN.langevin_sampling + \
                 self.RUN.interpolation + \
-                self.RUN.inter_class_fid + \
-                self.RUN.sefa == 0, \
+                self.RUN.semantic_factorization == -2, \
                 "StudioGAN does not support some options for stylegan2."
 
         if self.MODEL.backbone == "stylegan2":

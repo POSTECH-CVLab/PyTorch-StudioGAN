@@ -11,7 +11,7 @@ import torch
 
 from sync_batchnorm.batchnorm import convert_model
 from utils.ema import Ema
-from utils.ema import Ema_stylegan
+from utils.ema import EmaStylegan2
 import utils.misc as misc
 
 
@@ -55,7 +55,6 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                    d_embed_dim=MODEL.d_embed_dim,
                                    num_classes=DATA.num_classes,
                                    normalize_d_embed=MODEL.normalize_d_embed,
-                                   MODULES=MODULES,
                                    block_kwargs={},
                                    mapping_kwargs={},
                                    epilogue_kwargs={
@@ -74,7 +73,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                        synthesis_kwargs={"channel_base": channel_base, "channel_max": 512, \
                                        "num_fp16_res": num_fp16_res, "conv_clamp": conv_clamp,}).to(device)
 
-            ema = Ema_stylegan(source=Gen,
+            ema = EmaStylegan2(source=Gen,
                                target=Gen_ema,
                                ema_kimg=STYLEGAN2.g_ema_kimg,
                                ema_rampup=STYLEGAN2.g_ema_rampup,

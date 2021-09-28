@@ -8,11 +8,11 @@ MODEL:
   d_cond_mtd: "SPD"
   g_act_fn: "Auto"
   d_act_fn: "Auto"
-  z_prior: "constant"
+  z_prior: "gaussian"
   z_dim: 512
   w_dim: 512
-  g_cond_mtd: "N/A"
-  d_cond_mtd: "N/A"
+  g_conv_dim: "N/A"
+  d_conv_dim: "N/A"
   apply_g_ema: True
 LOSS:
   adv_loss: "vanilla"

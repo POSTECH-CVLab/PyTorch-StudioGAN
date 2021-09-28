@@ -150,7 +150,7 @@ def latent_optimise(zs, fake_labels, generator, discriminator, batch_size, lo_ra
 
         zs = autograd.Variable(zs, requires_grad=True)
         fake_images = generator(zs, fake_labels)
-        fake_dict = discriminator(fake_images, fake_labels, eval=eval)
+        fake_dict = discriminator(fake_images, fake_labels)
         z_grads = cal_deriv(inputs=zs, outputs=fake_dict["adv_output"], device=device)
         z_grads_norm = torch.unsqueeze((z_grads.norm(2, dim=1)**2), dim=1)
         delta_z = lo_alpha * z_grads / (lo_beta + z_grads_norm)
@@ -176,7 +176,7 @@ def cal_grad_penalty(real_images, real_labels, fake_images, discriminator, devic
     interpolates = alpha * real_images + ((1 - alpha) * fake_images)
     interpolates = interpolates.to(device)
     interpolates = autograd.Variable(interpolates, requires_grad=True)
-    fake_dict = discriminator(interpolates, real_labels, eval=False)
+    fake_dict = discriminator(interpolates, real_labels)
     grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
     grads = grads.view(grads.size(0), -1)
 
@@ -194,7 +194,7 @@ def cal_dra_penalty(real_images, real_labels, discriminator, device):
     interpolates = real_images + (alpha * differences)
     interpolates = interpolates.to(device)
     interpolates = autograd.Variable(interpolates, requires_grad=True)
-    fake_dict = discriminator(interpolates, real_labels, eval=False)
+    fake_dict = discriminator(interpolates, real_labels)
     grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
     grads = grads.view(grads.size(0), -1)
 
@@ -212,7 +212,7 @@ def cal_maxgrad_penalty(real_images, real_labels, fake_images, discriminator, de
     interpolates = alpha * real_images + ((1 - alpha) * fake_images)
     interpolates = interpolates.to(device)
     interpolates = autograd.Variable(interpolates, requires_grad=True)
-    fake_dict = discriminator(interpolates, real_labels, eval=False)
+    fake_dict = discriminator(interpolates, real_labels)
     grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
     grads = grads.view(grads.size(0), -1)
 

@@ -96,7 +96,7 @@ def generate_images(z_prior, truncation_th, batch_size, z_dim, num_classes, y_sa
                                         batch_size=batch_size,
                                         z_dim=z_dim,
                                         num_classes=num_classes,
-                                        truncation_th=truncation_th,
+                                        truncation_th=-1 if is_stylegan else truncation_th,
                                         y_sampler=y_sampler,
                                         radius=radius,
                                         device=device)
@@ -159,7 +159,7 @@ def langevin_sampling(zs, z_dim, fake_labels, generator, discriminator, batch_si
     for i in range(langevin_steps):
         zs = autograd.Variable(zs, requires_grad=True)
         fake_images = generator(zs, fake_labels)
-        fake_dict = discriminator(fake_images, fake_labels, eval=True)
+        fake_dict = discriminator(fake_images, fake_labels)
 
         energy = -prior.log_prob(zs) - fake_dict["adv_output"]
         z_grads = losses.cal_deriv(inputs=zs, outputs=energy, device=device)

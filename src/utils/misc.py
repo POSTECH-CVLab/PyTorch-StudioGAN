@@ -173,23 +173,19 @@ def count_parameters(module):
 
 def toggle_grad(model, grad, num_freeze_layers=-1, is_stylegan=False):
     if is_stylegan:
-        if grad:
-            model.train()
-        else:
-            model.eval()
+        for name, param in model.named_parameters():
+            param.requires_grad = grad
     else:
+        num_blocks = len(model.in_dims)
+        assert num_freeze_layers < num_blocks,\
+            "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
+                                                                          nb=num_blocks)
+
         if num_freeze_layers == -1:
-            if grad:
-                model.train()
-            else:
-                model.eval()
+            for name, param in model.named_parameters():
+                param.requires_grad = grad
         else:
             assert grad, "cannot freeze the model when grad is False"
-            model = peel_model(model)
-            num_blocks = len(model.in_dims)
-            assert num_freeze_layers < num_blocks,\
-                "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers, nb=num_blocks)
-
             for name, param in model.named_parameters():
                 param.requires_grad = True
                 for layer in range(num_freeze_layers):
