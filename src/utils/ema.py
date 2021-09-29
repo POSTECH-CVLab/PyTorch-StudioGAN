@@ -30,13 +30,11 @@ import torch
 
 
 class Ema(object):
-  def __init__(self, source, target, decay=0.9999, start_itr=0):
+  def __init__(self, source, target, decay=0.9999, start_iter=0):
     self.source = source
     self.target = target
     self.decay = decay
-    # Optional parameter indicating what iteration to start the decay at
-    self.start_itr = start_itr
-    # Initialize target's params to be source's
+    self.start_iter = start_iter
     self.source_dict = self.source.state_dict()
     self.target_dict = self.target.state_dict()
     print("Initializing EMA parameters to be source parameters.")
@@ -45,9 +43,7 @@ class Ema(object):
         self.target_dict[key].data.copy_(self.source_dict[key].data)
 
   def update(self, itr=None):
-    # If an iteration counter is provided and itr is less than the start itr,
-    # peg the ema weights to the underlying weights.
-    if itr >= 0 and itr < self.start_itr:
+    if itr >= 0 and itr < self.start_iter:
       decay = 0.0
     else:
       decay = self.decay
@@ -57,21 +53,18 @@ class Ema(object):
 
 
 class EmaDpSyncBN(object):
-  def __init__(self, source, target, decay=0.9999, start_itr=0):
+  def __init__(self, source, target, decay=0.9999, start_iter=0):
     self.source = source
     self.target = target
     self.decay = decay
-    self.start_itr = start_itr
-    # Initialize target's params to be source's
+    self.start_iter = start_iter
     print("Initializing EMA parameters to be source parameters.")
     with torch.no_grad():
       for key in self.source.state_dict():
         self.target.state_dict()[key].data.copy_(self.source.state_dict()[key].data)
 
   def update(self, itr=None):
-    # If an iteration counter is provided and itr is less than the start itr,
-    # peg the ema weights to the underlying weights.
-    if itr >= 0 and itr < self.start_itr:
+    if itr >= 0 and itr < self.start_iter:
       decay = 0.0
     else:
       decay = self.decay
