@@ -150,7 +150,7 @@ class WORKER(object):
         if self.RUN.distributed_data_parallel:
             self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
 
-        if self.RUN.mixed_precision:
+        if self.RUN.mixed_precision and not self.is_stylegan:
             self.scaler = torch.cuda.amp.GradScaler()
 
         if self.global_rank == 0:
@@ -344,13 +344,13 @@ class WORKER(object):
                     batch_counter += 1
 
                 # accumulate gradients of the discriminator
-                if self.RUN.mixed_precision:
+                if self.RUN.mixed_precision and not self.is_stylegan:
                     self.scaler.scale(dis_acml_loss).backward()
                 else:
                     dis_acml_loss.backward()
 
             # update the discriminator using the pre-defined optimizer
-            if self.RUN.mixed_precision:
+            if self.RUN.mixed_precision and not self.is_stylegan:
                 self.scaler.step(self.OPTIMIZATION.d_optimizer)
                 self.scaler.update()
             else:
@@ -464,13 +464,13 @@ class WORKER(object):
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
                 # accumulate gradients of the generator
-                if self.RUN.mixed_precision:
+                if self.RUN.mixed_precision and not self.is_stylegan:
                     self.scaler.scale(gen_acml_loss).backward()
                 else:
                     gen_acml_loss.backward()
 
             # update the generator using the pre-defined optimizer
-            if self.RUN.mixed_precision:
+            if self.RUN.mixed_precision and not self.is_stylegan:
                 self.scaler.step(self.OPTIMIZATION.g_optimizer)
                 self.scaler.update()
             else:
