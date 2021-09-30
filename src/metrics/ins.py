@@ -34,8 +34,8 @@ def calculate_kl_div(ps, splits):
             kl = torch.exp(kl)
             scores.append(kl.unsqueeze(0))
         scores = torch.cat(scores, 0)
-        m_scores = torch.mean(scores).detach().cpu().numpy().item()
-        m_std = torch.std(scores).detach().cpu().numpy().item()
+        m_scores = torch.mean(scores).detach().cpu().numpy()
+        m_std = torch.std(scores).detach().cpu().numpy()
     return m_scores, m_std
 
 

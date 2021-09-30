@@ -10,7 +10,6 @@ import torch
 
 from sync_batchnorm.batchnorm import convert_model
 from utils.ema import Ema
-from utils.ema import EmaDpSyncBN
 from utils.ema import EmaStylegan2
 import utils.misc as misc
 
@@ -128,10 +127,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                        MODULES=MODULES).to(device)
 
 
-            if not RUN.distributed_data_parallel and OPTIMIZATION.world_size > 1 and RUN.synchronized_bn:
-                ema = EmaDpSyncBN(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
-            else:
-                ema = Ema(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
+            ema = Ema(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
         else:
             Gen_ema, ema = None, None
 

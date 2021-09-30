@@ -327,7 +327,11 @@ class Configurations(object):
             yaml_cfg = yaml.load(f, Loader=yaml.FullLoader)
             for super_cfg_name, attr_value in yaml_cfg.items():
                 for attr, value in attr_value.items():
-                    setattr(self.super_cfgs[super_cfg_name], attr, value)
+                    if hasattr(self.super_cfgs[super_cfg_name], attr):
+                        setattr(self.super_cfgs[super_cfg_name], attr, value)
+                    else:
+                        raise AttributeError("There does not exist '{cls}.{attr}' attribute in the config.py.". \
+                                             format(cls=super_cfg_name, attr=attr))
 
     def define_losses(self):
         if self.MODEL.d_cond_mtd == "MH" and self.LOSS.adv_loss == "MH":
