@@ -7,3 +7,5 @@ res/
 logs/
 .vscode/
 save/
+data/
+wandb/

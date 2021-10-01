@@ -19,6 +19,7 @@ LOSS:
   apply_r1_reg: True
   r1_lambda: 0.01
 OPTIMIZATION:
+  # These values will be slightly changed if lazy regularization is applied.
   g_lr: 0.0025
   d_lr: 0.0025
   beta1: 0
