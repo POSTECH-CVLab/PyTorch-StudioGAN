@@ -54,7 +54,10 @@ class Ema(object):
             for p_ema, p in zip(self.target.parameters(), self.source.parameters()):
                 p_ema.copy_(p.lerp(p_ema, decay))
             for b_ema, b in zip(self.target.buffers(), self.source.buffers()):
-                b_ema.copy_(b)
+                if isinstance(b.item(), int):
+                    b_ema.copy_(b)
+                else:
+                    b_ema.copy_(b.lerp(b_ema, decay))
 
 
 class EmaStylegan2(object):
