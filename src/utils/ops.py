@@ -112,7 +112,7 @@ def init_weights(modules, initialize):
                 if module.bias is not None:
                     module.bias.data.fill_(0.)
             else:
-                print("Init style not recognized...")
+                pass
         elif isinstance(module, nn.Embedding):
             if initialize == "ortho":
                 init.orthogonal_(module.weight)
@@ -121,7 +121,7 @@ def init_weights(modules, initialize):
             elif initialize in ["glorot", "xavier"]:
                 init.xavier_uniform_(module.weight)
             else:
-                print("Init style not recognized...")
+                pass
         else:
             pass
 
