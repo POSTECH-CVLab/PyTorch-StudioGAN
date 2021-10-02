@@ -27,7 +27,7 @@ import numpy as np
 
 import metrics.ins as ins
 import metrics.fid as fid
-import metrics.f_beta as f_beta
+import metrics.prdc_trained as prdc_trained
 import utils.sample as sample
 import utils.misc as misc
 import utils.losses as losses
@@ -588,7 +588,7 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        is_best, num_split, num_runs4PR, num_clusters4PR, num_angles, beta4PR = False, 1, 10, 20, 1001, 8
+        is_best, num_split, nearest_k= False, 1, 4
         is_acc = True if self.DATA.name == "ImageNet" else False
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
@@ -629,48 +629,51 @@ class WORKER(object):
                                                   pre_cal_std=self.sigma,
                                                   disable_tqdm=self.global_rank != 0)
 
-            prc, rec, _ = f_beta.calculate_f_beta(data_loader=self.eval_dataloader,
-                                                  eval_model=self.eval_model,
-                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                  cfgs=self.cfgs,
-                                                  generator=generator,
-                                                  discriminator=self.Dis,
-                                                  num_runs=num_runs4PR,
-                                                  num_clusters=num_clusters4PR,
-                                                  num_angles=num_angles,
-                                                  beta=beta4PR,
-                                                  device=self.local_rank,
-                                                  logger=self.logger,
-                                                  disable_tqdm=self.global_rank != 0)
+            prc, rec, dns, cvg = prdc_trained.calculate_prdc(data_loader=self.eval_dataloader,
+                                                             eval_model=self.eval_model,
+                                                             num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                             cfgs=self.cfgs,
+                                                             generator=generator,
+                                                             discriminator=self.Dis,
+                                                             nearest_k=nearest_k,
+                                                             device=self.local_rank,
+                                                             logger=self.logger,
+                                                             disable_tqdm=self.global_rank != 0)
 
             if self.best_fid is None or fid_score <= self.best_fid:
-                self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best =\
-                    fid_score, step, True, rec, prc
+                self.best_fid, self.best_step, is_best, prc_best, rec_best, dns_best, cvg_best =\
+                    fid_score, step, True, prc, rec, dns, cvg
 
             if self.global_rank == 0 and writing:
                 wandb.log({"IS score": kl_score}, step=self.wandb_step)
                 wandb.log({"FID score": fid_score}, step=self.wandb_step)
-                wandb.log({"F_beta_inv score": prc}, step=self.wandb_step)
-                wandb.log({"F_beta score": rec}, step=self.wandb_step)
+                wandb.log({"Improved Precision": prc}, step=self.wandb_step)
+                wandb.log({"Improved Recall": rec}, step=self.wandb_step)
+                wandb.log({"Density": dns}, step=self.wandb_step)
+                wandb.log({"Coverage": cvg}, step=self.wandb_step)
                 if is_acc:
-                    wandb.log({"Inception_V3 Top1 acc": top1}, step=self.wandb_step)
-                    wandb.log({"Inception_V3 Top5 acc":  top5}, step=self.wandb_step)
+                    wandb.log({"{eval_model} Top1 acc": top1}, eval_model=self.RUN.eval_backbone, step=self.wandb_step)
+                    wandb.log({"{eval_model} Top5 acc": top5}, eval_model=self.RUN.eval_backbone, step=self.wandb_step)
 
             if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
                     step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
                 self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(
                     step=step, type=self.RUN.ref_dataset, FID=fid_score))
-                self.logger.info("F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}".format(
-                    beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta_inv=prc))
-                self.logger.info("F_{beta} score (Step: {step}, Using {type} images): {F_beta}".format(
-                    beta=beta4PR, step=step, type=self.RUN.ref_dataset, F_beta=rec))
+                self.logger.info("Improved Precision (Step: {step}, Using {type} images): {prc}".format(
+                    step=step, type=self.RUN.ref_dataset, prc=prc))
+                self.logger.info("Improved Recall (Step: {step}, Using {type} images): {rec}".format(
+                    step=step, type=self.RUN.ref_dataset, rec=rec))
+                self.logger.info("Density (Step: {step}, Using {type} images): {dns}".format(
+                    step=step, type=self.RUN.ref_dataset, dns=dns))
+                self.logger.info("Coverage (Step: {step}, Using {type} images): {cvg}".format(
+                    step=step, type=self.RUN.ref_dataset, cvg=cvg))
 
                 if is_acc:
-                    self.logger.info("Inception_V3 Top1 acc: (Step: {step}, {num} generated images): {Top1}".format(
-                        step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top1=top1))
-                    self.logger.info("Inception_V3 Top5 acc: (Step: {step}, {num} generated images): {Top5}".format(
-                        step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top5=top5))
+                    self.logger.info("{eval_model} Top1 acc: (Step: {step}, {num} generated images): {Top1}".format(
+                        eval_model=self.RUN.eval_backbone ,step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top1=top1))
+                    self.logger.info("{eval_model} Top5 acc: (Step: {step}, {num} generated images): {Top5}".format(
+                        eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top5=top5))
 
                 if self.training:
                     self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
@@ -680,8 +683,10 @@ class WORKER(object):
                     metric_dict = {
                         "IS": kl_score,
                         "FID": fid_score,
-                        "F_beta_inv": prc,
-                        "F_beta": rec,
+                        "Improved_Precision": prc,
+                        "Improved_Recall": rec,
+                        "Density": dns,
+                        "Coverage": cvg,
                         "Top1": top1,
                         "Top5": top5
                     }

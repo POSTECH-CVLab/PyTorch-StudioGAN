@@ -38,7 +38,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         None, 0, 0, cfgs.OPTIMIZATION.batch_size, 0, None, None, False
     mu, sigma, eval_model, num_rows, num_cols = None, None, None, 10, 8
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
-    metric_list_dict = {"IS": [], "FID": [], "F_beta_inv": [], "F_beta": []}
+    metric_list_dict = {"IS": [], "FID": [], "Improved_Precision": [], "Improved_Recall": [],
+                        "Density": [], "Coverage": []}
 
     # -----------------------------------------------------------------------------
     # initialize all processes and fix seed of each process
