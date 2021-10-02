@@ -89,7 +89,6 @@ class Data2DataCrossEntropyLoss(torch.nn.Module):
         self.num_classes = num_classes
         self.temperature = temperature
         self.m_p = m_p
-        self.m_n = 1 - m_p
         self.master_rank = master_rank
         self.DDP = DDP
         self.calculate_similarity_matrix = self._calculate_similarity_matrix()
@@ -128,7 +127,7 @@ class Data2DataCrossEntropyLoss(torch.nn.Module):
             label = torch.cat(misc.GatherLayer.apply(label), dim=0)
 
         # calculate similarities between sample embeddings
-        sim_matrix = self.calculate_similarity_matrix(embed, embed) - self.m_n
+        sim_matrix = self.calculate_similarity_matrix(embed, embed) + self.m_p - 1
         # remove diagonal terms
         sim_matrix = self.remove_diag(sim_matrix/self.temperature)
         # for numerical stability
