@@ -169,9 +169,9 @@ class WORKER(object):
             self.train_dataloader.sampler.set_epoch(self.epoch_counter)
         self.train_iter = iter(self.train_dataloader)
 
-    def sample_data_basket(self):
+    def sample_data(self):
         try:
-            real_image_basket, real_label_basket = next(self.train_iter)
+            real_images, real_labels = next(self.train_iter)
         except StopIteration:
             self.epoch_counter += 1
             if self.RUN.train and self.RUN.distributed_data_parallel:
@@ -179,17 +179,16 @@ class WORKER(object):
             else:
                 pass
             self.train_iter = iter(self.train_dataloader)
-            real_image_basket, real_label_basket = next(self.train_iter)
+            real_images, real_labels = next(self.train_iter)
 
-        real_image_basket = torch.split(real_image_basket, self.OPTIMIZATION.batch_size)
-        real_label_basket = torch.split(real_label_basket, self.OPTIMIZATION.batch_size)
-        return real_image_basket, real_label_basket
+        real_images = real_images.to(self.local_rank, non_blocking=True)
+        real_labels = real_labels.to(self.local_rank, non_blocking=True)
+        return real_images, real_labels
 
     def train(self, current_step):
         # -----------------------------------------------------------------------------
         # train Discriminator.
         # -----------------------------------------------------------------------------
-        batch_counter = 0
         adc_fake = self.MODEL.aux_cls_type == "ADC"
         d_reg_interval = self.STYLEGAN2.d_reg_interval if self.is_stylegan else 1
         # make GAN be trainable before starting training
@@ -198,15 +197,12 @@ class WORKER(object):
         misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
         misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, is_stylegan=self.is_stylegan)
         self.Gen.apply(misc.untrack_bn_statistics)
-        # sample real images and labels from the true data distribution
-        real_image_basket, real_label_basket = self.sample_data_basket()
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
             self.OPTIMIZATION.d_optimizer.zero_grad()
             with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     # load real images and labels onto the GPU memory
-                    real_images = real_image_basket[batch_counter].to(self.local_rank, non_blocking=True)
-                    real_labels = real_label_basket[batch_counter].to(self.local_rank, non_blocking=True)
+                    real_images, real_labels = self.sample_data()
                     # sample fake images and labels from p(G(z), y)
                     fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
@@ -341,7 +337,6 @@ class WORKER(object):
 
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
-                    batch_counter += 1
 
                 # accumulate gradients of the discriminator
                 if self.RUN.mixed_precision:

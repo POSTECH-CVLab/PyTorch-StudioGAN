@@ -113,11 +113,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         topk = cfgs.OPTIMIZATION.batch_size
     else:
         train_sampler = None
-    cfgs.OPTIMIZATION.basket_size = cfgs.OPTIMIZATION.batch_size * cfgs.OPTIMIZATION.acml_steps * cfgs.OPTIMIZATION.d_updates_per_step
 
     if cfgs.RUN.train:
         train_dataloader = DataLoader(dataset=train_dataset,
-                                      batch_size=cfgs.OPTIMIZATION.basket_size,
+                                      batch_size=cfgs.OPTIMIZATION.batch_size,
                                       shuffle=(train_sampler is None),
                                       pin_memory=True,
                                       num_workers=cfgs.RUN.num_workers,
