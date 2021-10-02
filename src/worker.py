@@ -337,7 +337,7 @@ class WORKER(object):
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
                                                          images=real_images,
                                                          device=self.local_rank)
-                        dis_acml_loss += d_reg_interval * self.LOSS.r1_lambda * real_r1_loss
+                        dis_acml_loss = d_reg_interval * (self.LOSS.r1_lambda * real_r1_loss + dis_acml_loss)
 
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
@@ -459,7 +459,7 @@ class WORKER(object):
                             is_stylegan=self.is_stylegan,
                             style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                             cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                        gen_acml_loss += self.STYLGAN2.g_reg_interval * self.pl_reg.cal_pl_reg(fake_images, ws)
+                        gen_acml_loss = self.STYLEGAN2.g_reg_interval * (self.pl_reg.cal_pl_reg(fake_images, ws) + gen_acml_loss)
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
