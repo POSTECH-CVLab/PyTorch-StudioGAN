@@ -150,7 +150,7 @@ class WORKER(object):
         if self.RUN.distributed_data_parallel:
             self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
 
-        if self.RUN.mixed_precision:
+        if self.RUN.mixed_precision and not self.is_stylegan:
             self.scaler = torch.cuda.amp.GradScaler()
 
         if self.global_rank == 0:
@@ -333,19 +333,19 @@ class WORKER(object):
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
                                                          images=real_images,
                                                          device=self.local_rank)
-                        dis_acml_loss += d_reg_interval * self.LOSS.r1_lambda * real_r1_loss
+                        dis_acml_loss = d_reg_interval * (self.LOSS.r1_lambda * real_r1_loss + dis_acml_loss)
 
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
 
                 # accumulate gradients of the discriminator
-                if self.RUN.mixed_precision:
+                if self.RUN.mixed_precision and not self.is_stylegan:
                     self.scaler.scale(dis_acml_loss).backward()
                 else:
                     dis_acml_loss.backward()
 
             # update the discriminator using the pre-defined optimizer
-            if self.RUN.mixed_precision:
+            if self.RUN.mixed_precision and not self.is_stylegan:
                 self.scaler.step(self.OPTIMIZATION.d_optimizer)
                 self.scaler.update()
             else:
@@ -454,18 +454,18 @@ class WORKER(object):
                             is_stylegan=self.is_stylegan,
                             style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                             cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                        gen_acml_loss += self.STYLGAN2.g_reg_interval * self.pl_reg.cal_pl_reg(fake_images, ws)
+                        gen_acml_loss = self.STYLEGAN2.g_reg_interval * (self.pl_reg.cal_pl_reg(fake_images, ws) + gen_acml_loss)
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
                 # accumulate gradients of the generator
-                if self.RUN.mixed_precision:
+                if self.RUN.mixed_precision and not self.is_stylegan:
                     self.scaler.scale(gen_acml_loss).backward()
                 else:
                     gen_acml_loss.backward()
 
             # update the generator using the pre-defined optimizer
-            if self.RUN.mixed_precision:
+            if self.RUN.mixed_precision and not self.is_stylegan:
                 self.scaler.step(self.OPTIMIZATION.g_optimizer)
                 self.scaler.update()
             else:
