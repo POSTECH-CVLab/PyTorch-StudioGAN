@@ -529,7 +529,7 @@ class Generator(torch.nn.Module):
         self.num_ws = self.synthesis.num_ws
         self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
 
-    def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, **synthesis_kwargs):
+    def forward(self, z, c, eval=False, truncation_psi=1, truncation_cutoff=None, **synthesis_kwargs):
         ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
         img = self.synthesis(ws, **synthesis_kwargs)
         return img
@@ -815,7 +815,7 @@ class Discriminator(torch.nn.Module):
             else:
                 raise NotImplementedError
 
-    def forward(self, img, label, adc_fake=False, **block_kwargs):
+    def forward(self, img, label, eval=False, adc_fake=False, **block_kwargs):
         x, embed, proxy, cls_output = None, None, None, None
         mi_embed, mi_proxy, mi_cls_output = None, None, None
         for res in self.block_resolutions:

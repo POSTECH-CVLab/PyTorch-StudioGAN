@@ -79,21 +79,21 @@ class precision_recall(object):
             real_images, real_labels = next(data_iter)
             real_images, real_labels = real_images.to(self.device), real_labels.to(self.device)
             fake_images, _, _, _, _= sample.generate_images(z_prior=z_prior,
-                                                          truncation_th=truncation_th,
-                                                          batch_size=batch_size,
-                                                          z_dim=z_dim,
-                                                          num_classes=num_classes,
-                                                          y_sampler="totally_random",
-                                                          radius="N/A",
-                                                          generator=generator,
-                                                          discriminator=discriminator,
-                                                          is_train=False,
-                                                          LOSS=LOSS,
-                                                          RUN=RUN,
-                                                          device=device,
-                                                          is_stylegan=is_stylegan,
-                                                          style_mixing_p=STYLEGAN2.style_mixing_p,
-                                                          cal_trsp_cost=False)
+                                                            truncation_th=truncation_th,
+                                                            batch_size=batch_size,
+                                                            z_dim=z_dim,
+                                                            num_classes=num_classes,
+                                                            y_sampler="totally_random",
+                                                            radius="N/A",
+                                                            generator=generator,
+                                                            discriminator=discriminator,
+                                                            is_train=False,
+                                                            LOSS=LOSS,
+                                                            RUN=RUN,
+                                                            device=device,
+                                                            is_stylegan=is_stylegan,
+                                                            style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                            cal_trsp_cost=False)
 
             real_embeddings, _ = self.eval_model.get_outputs(real_images)
             fake_embeddings, _ = self.eval_model.get_outputs(fake_images)

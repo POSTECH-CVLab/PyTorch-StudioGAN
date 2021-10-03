@@ -667,15 +667,6 @@ class Configurations(object):
         assert self.OPTIMIZATION.batch_size % self.OPTIMIZATION.world_size == 0, \
             "Batch_size should be divided by the number of gpus."
 
-        assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_gp) == 0, \
-            "You can't apply mixed precision training and gradient penalty regularization simultaneously."
-
-        assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_dra) == 0, \
-            "You can't simultaneously apply mixed precision training and deep regret analysis for training DRAGAN."
-
-        assert int(self.RUN.mixed_precision)*int(self.LOSS.apply_maxgp) == 0, \
-            "You can't simultaneously apply mixed precision training and max gradient penalty simultaneously."
-
         assert int(self.LOSS.apply_cr)*int(self.LOSS.apply_bcr) == 0 and \
             int(self.LOSS.apply_cr)*int(self.LOSS.apply_zcr) == 0, \
             "You can't simultaneously turn on consistency reg. and improved consistency reg."

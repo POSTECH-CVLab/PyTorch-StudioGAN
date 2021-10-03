@@ -126,7 +126,6 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                        mixed_precision=RUN.mixed_precision,
                                        MODULES=MODULES).to(device)
 
-
             ema = Ema(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
         else:
             Gen_ema, ema = None, None
