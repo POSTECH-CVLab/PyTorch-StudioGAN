@@ -454,7 +454,7 @@ class Configurations(object):
                 betas_d = [self.OPTIMIZATION.beta1 ** d_ratio, self.OPTIMIZATION.beta2 ** d_ratio]
             else:
                 betas_g = betas_d = [self.OPTIMIZATION.beta1, self.OPTIMIZATION.beta2]
-            
+
             self.OPTIMIZATION.g_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Gen.parameters()),
                                                              lr=self.OPTIMIZATION.g_lr,
                                                              betas=betas_g,

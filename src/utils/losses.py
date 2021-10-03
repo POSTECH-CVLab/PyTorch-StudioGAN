@@ -76,13 +76,6 @@ class ConditionalContrastiveLoss(torch.nn.Module):
         return -torch.log(numerator / denomerator).mean()
 
 
-def d_vanilla(d_logit_real, d_logit_fake):
-    device = d_logit_real.get_device()
-    ones = torch.ones_like(d_logit_real, device=device, requires_grad=False)
-    d_loss = -torch.mean(nn.LogSigmoid()(d_logit_real) + nn.LogSigmoid()(ones - d_logit_fake))
-    return d_loss
-
-
 class Data2DataCrossEntropyLoss(torch.nn.Module):
     def __init__(self, num_classes, temperature, m_p, master_rank, DDP):
         super(Data2DataCrossEntropyLoss, self).__init__()
@@ -148,6 +141,33 @@ class Data2DataCrossEntropyLoss(torch.nn.Module):
         # compute data to data cross-entropy criterion
         criterion = pos_attr + neg_repul
         return criterion.mean()
+
+
+class pl_reg:
+    def __init__(self, device, pl_decay=0.01, pl_weight=2):
+        self.pl_decay = 0.01
+        self.pl_weight = 2
+        self.pl_mean = torch.zeros([], device=device)
+
+    def cal_pl_reg(self, fake_images, ws):
+        #ws refers to weight style
+        #receives new fake_images of original batch (in original implementation, fakes_images used for calculating g_loss and pl_loss is generated independently)
+        pl_noise = torch.randn_like(fake_images) / np.sqrt(fake_images.shape[2] * fake_images.shape[3])
+        with conv2d_gradfix.no_weight_gradients():
+            pl_grads = torch.autograd.grad(outputs=[(fake_images * pl_noise).sum()], inputs=[ws], create_graph=True, only_inputs=True)[0]
+        pl_lengths = pl_grads.square().sum(2).mean(1).sqrt()
+        pl_mean = self.pl_mean.lerp(pl_lengths.mean(), self.pl_decay)
+        self.pl_mean.copy_(pl_mean.detach())
+        pl_penalty = (pl_lengths - pl_mean).square()
+        loss_Gpl = (pl_penalty * self.pl_weight).mean(0)
+        return loss_Gpl
+
+
+def d_vanilla(d_logit_real, d_logit_fake):
+    device = d_logit_real.get_device()
+    ones = torch.ones_like(d_logit_real, device=device, requires_grad=False)
+    d_loss = -torch.mean(nn.LogSigmoid()(d_logit_real) + nn.LogSigmoid()(ones - d_logit_fake))
+    return d_loss
 
 
 def g_vanilla(g_logit_fake):
@@ -299,22 +319,3 @@ def cal_r1_reg(adv_output, images, device):
 def adjust_k(current_k, topk_gamma, sup_k):
     current_k = max(current_k * topk_gamma, sup_k)
     return current_k
-
-class pl_reg:
-    def __init__(self, device, pl_decay=0.01, pl_weight=2):
-        self.pl_decay = 0.01
-        self.pl_weight = 2
-        self.pl_mean = torch.zeros([], device=device)
-
-    def cal_pl_reg(self, fake_images, ws):
-        #ws refers to weight style
-        #receives new fake_images of original batch (in original implementation, fakes_images used for calculating g_loss and pl_loss is generated independently)
-        pl_noise = torch.randn_like(fake_images) / np.sqrt(fake_images.shape[2] * fake_images.shape[3])
-        with conv2d_gradfix.no_weight_gradients():
-            pl_grads = torch.autograd.grad(outputs=[(fake_images * pl_noise).sum()], inputs=[ws], create_graph=True, only_inputs=True)[0]
-        pl_lengths = pl_grads.square().sum(2).mean(1).sqrt()
-        pl_mean = self.pl_mean.lerp(pl_lengths.mean(), self.pl_decay)
-        self.pl_mean.copy_(pl_mean.detach())
-        pl_penalty = (pl_lengths - pl_mean).square()
-        loss_Gpl = (pl_penalty * self.pl_weight).mean(0)
-        return loss_Gpl
