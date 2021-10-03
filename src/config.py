@@ -445,14 +445,24 @@ class Configurations(object):
                                                                 momentum=self.OPTIMIZATION.momentum,
                                                                 alpha=self.OPTIMIZATION.alpha)
         elif self.OPTIMIZATION.type_ == "Adam":
+            if self.MODEL.backbone == "stylegan2":
+                g_ratio = (self.STYLEGAN2.g_reg_interval / (self.STYLEGAN2.g_reg_interval + 1))
+                d_ratio = (self.STYLEGAN2.d_reg_interval / (self.STYLEGAN2.d_reg_interval + 1))
+                self.OPTIMIZATION.g_lr *= g_ratio
+                self.OPTIMIZATION.d_lr *= d_ratio
+                betas_g = [self.OPTIMIZATION.beta1 ** g_ratio, self.OPTIMIZATION.beta2 ** g_ratio]
+                betas_d = [self.OPTIMIZATION.beta1 ** d_ratio, self.OPTIMIZATION.beta2 ** d_ratio]
+            else:
+                betas_g = betas_d = [self.OPTIMIZATION.beta1, self.OPTIMIZATION.beta2]
+            
             self.OPTIMIZATION.g_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Gen.parameters()),
                                                              lr=self.OPTIMIZATION.g_lr,
-                                                             betas=[self.OPTIMIZATION.beta1, self.OPTIMIZATION.beta2],
+                                                             betas=betas_g,
                                                              weight_decay=self.OPTIMIZATION.g_weight_decay,
                                                              eps=1e-6)
             self.OPTIMIZATION.d_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Dis.parameters()),
                                                              lr=self.OPTIMIZATION.d_lr,
-                                                             betas=[self.OPTIMIZATION.beta1, self.OPTIMIZATION.beta2],
+                                                             betas=betas_d,
                                                              weight_decay=self.OPTIMIZATION.d_weight_decay,
                                                              eps=1e-6)
         else:
