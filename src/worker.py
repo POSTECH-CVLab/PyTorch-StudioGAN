@@ -588,7 +588,7 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        is_best, num_split, nearest_k= False, 1, 4
+        is_best, num_split, nearest_k= False, 1, 5
         is_acc = True if self.DATA.name == "ImageNet" else False
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
