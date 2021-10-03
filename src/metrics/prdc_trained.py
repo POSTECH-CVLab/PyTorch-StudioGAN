@@ -31,30 +31,29 @@ import prdc
 import utils.sample as sample
 
 
-def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes,
-                                 generator, discriminator, eval_model, LOSS, RUN, STYLEGAN2, is_stylegan, device,
-                                 disable_tqdm):
+def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes, generator,
+                                 discriminator, eval_model, LOSS, RUN, STYLEGAN2, is_stylegan, device, disable_tqdm):
     data_iter = iter(data_loader)
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         real_images, real_labels = next(data_iter)
         real_images, real_labels = real_images.to(device), real_labels.to(device)
-        fake_images, _, _, _, _= sample.generate_images(z_prior=z_prior,
-                                                        truncation_th=truncation_th,
-                                                        batch_size=batch_size,
-                                                        z_dim=z_dim,
-                                                        num_classes=num_classes,
-                                                        y_sampler="totally_random",
-                                                        radius="N/A",
-                                                        generator=generator,
-                                                        discriminator=discriminator,
-                                                        is_train=False,
-                                                        LOSS=LOSS,
-                                                        RUN=RUN,
-                                                        device=device,
-                                                        is_stylegan=is_stylegan,
-                                                        style_mixing_p=STYLEGAN2.style_mixing_p,
-                                                        cal_trsp_cost=False)
+        fake_images, _, _, _, _ = sample.generate_images(z_prior=z_prior,
+                                                         truncation_th=truncation_th,
+                                                         batch_size=batch_size,
+                                                         z_dim=z_dim,
+                                                         num_classes=num_classes,
+                                                         y_sampler="totally_random",
+                                                         radius="N/A",
+                                                         generator=generator,
+                                                         discriminator=discriminator,
+                                                         is_train=False,
+                                                         LOSS=LOSS,
+                                                         RUN=RUN,
+                                                         device=device,
+                                                         is_stylegan=is_stylegan,
+                                                         style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                         cal_trsp_cost=False)
 
         real_embeddings, _ = eval_model.get_outputs(real_images)
         fake_embeddings, _ = eval_model.get_outputs(fake_images)
@@ -92,9 +91,7 @@ def calculate_prdc(data_loader, eval_model, num_generate, cfgs, generator, discr
                                                             is_stylegan=(cfgs.MODEL.backbone == "stylegan2"),
                                                             device=device,
                                                             disable_tqdm=disable_tqdm)
-    metrics = prdc.compute_prdc(real_features=real_embeds,
-                                fake_features=fake_embeds,
-                                nearest_k=nearest_k)
+    metrics = prdc.compute_prdc(real_features=real_embeds, fake_features=fake_embeds, nearest_k=nearest_k)
 
     prc, rec, dns, cvg = metrics["precision"], metrics["recall"], metrics["density"], metrics["coverage"]
     return prc, rec, dns, cvg
