@@ -29,6 +29,7 @@ import utils.log as log
 import utils.losses as losses
 import utils.ckpt as ckpt
 import utils.misc as misc
+import utils.custom_ops as custom_ops
 import models.model as model
 import metrics.preparation as pp
 
@@ -170,6 +171,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                                                 RUN=cfgs.RUN,
                                                                 device=local_rank,
                                                                 logger=logger)
+
+    if local_rank != 0 and cfgs.MODEL.backbone == "stylegan2":
+        custom_ops.verbosity = 'none'
 
     # -----------------------------------------------------------------------------
     # define optimizers for adversarial training
