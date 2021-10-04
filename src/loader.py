@@ -173,7 +173,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                                                 logger=logger)
 
     if local_rank != 0 and cfgs.MODEL.backbone == "stylegan2":
-        custom_ops.verbosity = 'none'
+        custom_ops.verbosity = "none"
 
     # -----------------------------------------------------------------------------
     # define optimizers for adversarial training
