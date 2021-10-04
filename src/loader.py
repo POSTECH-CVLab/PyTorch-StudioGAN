@@ -11,6 +11,7 @@ import os
 import random
 import warnings
 
+from torch.backends import cudnn
 from torch.utils.data import DataLoader
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -19,6 +20,8 @@ import torch
 import torch.distributed as dist
 
 from data_util import Dataset_
+from utils.style_ops import grid_sample_gradfix
+from utils.style_ops import conv2d_gradfix
 from metrics.inception_net import InceptionV3
 from sync_batchnorm.batchnorm import convert_model
 from worker import WORKER
@@ -40,6 +43,25 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
     metric_list_dict = {"IS": [], "FID": [], "Improved_Precision": [], "Improved_Recall": [],
                         "Density": [], "Coverage": []}
+
+    # -----------------------------------------------------------------------------
+    # determine cuda, cudnn, and backends settings.
+    # -----------------------------------------------------------------------------
+    if cfgs.RUN.seed == -1:
+        cudnn.benchmark, cudnn.deterministic = True, False
+    else:
+        cudnn.benchmark, cudnn.deterministic = False, True
+
+    if cfgs.MODEL.backbone == "stylegan2":
+        # Improves training speed
+        conv2d_gradfix.enabled = True
+        # Avoids errors with the augmentation pipe
+        grid_sample_gradfix.enabled = True
+        if cfgs.RUN.mixed_precision:
+            # Allow PyTorch to internally use tf32 for matmul
+            torch.backends.cuda.matmul.allow_tf32 = False
+            # Allow PyTorch to internally use tf32 for convolutions
+            torch.backends.cudnn.alllow_tf32 = False
 
     # -----------------------------------------------------------------------------
     # initialize all processes and fix seed of each process
@@ -188,14 +210,16 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # prepare parallel training
     # -----------------------------------------------------------------------------
-    Gen, Dis, Gen_ema = model.prepare_parallel_training(Gen=Gen,
-                                                        Dis=Dis,
-                                                        Gen_ema=Gen_ema,
-                                                        world_size=cfgs.OPTIMIZATION.world_size,
-                                                        distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
-                                                        synchronized_bn=cfgs.RUN.synchronized_bn,
-                                                        apply_g_ema=cfgs.MODEL.apply_g_ema,
-                                                        device=local_rank)
+    Gen, Dis, Gen_ema, Gen_mapping, Gen_synthesis, Gen_ema_mapping, Gen_ema_synthesis = \
+        model.prepare_parallel_training(Gen=Gen,
+                                        Dis=Dis,
+                                        Gen_ema=Gen_ema,
+                                        MODEL=cfgs.MODEL,
+                                        world_size=cfgs.OPTIMIZATION.world_size,
+                                        distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
+                                        synchronized_bn=cfgs.RUN.synchronized_bn,
+                                        apply_g_ema=cfgs.MODEL.apply_g_ema,
+                                        device=local_rank)
 
     # -----------------------------------------------------------------------------
     # load a pre-trained network (InceptionV3 or ResNet50 trained using SwAV)
@@ -221,8 +245,12 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         cfgs=cfgs,
         run_name=run_name,
         Gen=Gen,
+        Gen_mapping=Gen_mapping,
+        Gen_synthesis=Gen_synthesis,
         Dis=Dis,
         Gen_ema=Gen_ema,
+        Gen_ema_mapping=Gen_ema_mapping,
+        Gen_ema_synthesis=Gen_ema_synthesis,
         ema=ema,
         eval_model=eval_model,
         train_dataloader=train_dataloader,

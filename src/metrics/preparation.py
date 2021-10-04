@@ -90,6 +90,8 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
                                           RUN="N/A",
                                           STYLEGAN2="N/A",
                                           is_stylegan=False,
+                                          generator_mapping=None,
+                                          generator_synthesis=None,
                                           device=device,
                                           disable_tqdm=disable_tqdm)
 

@@ -11,9 +11,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+from utils.style_ops import conv2d_gradfix
 import utils.ops as ops
 import utils.misc as misc
-from utils.style_ops import conv2d_gradfix
+
 
 class CrossEntropyLoss(torch.nn.Module):
     def __init__(self):
@@ -163,46 +164,76 @@ class pl_reg:
         return loss_Gpl
 
 
-def d_vanilla(d_logit_real, d_logit_fake):
+def d_vanilla(d_logit_real, d_logit_fake, DDP):
+    if DDP:
+        d_logit_real = torch.cat(misc.GatherLayer.apply(d_logit_real), dim=0)
+        d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
     device = d_logit_real.get_device()
     ones = torch.ones_like(d_logit_real, device=device, requires_grad=False)
     d_loss = -torch.mean(nn.LogSigmoid()(d_logit_real) + nn.LogSigmoid()(ones - d_logit_fake))
     return d_loss
 
 
-def g_vanilla(g_logit_fake):
-    return -torch.mean(nn.LogSigmoid()(g_logit_fake))
+def g_vanilla(d_logit_fake, DDP):
+    if DDP:
+        d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
+
+    return -torch.mean(nn.LogSigmoid()(d_logit_fake))
 
 
-def d_ls(d_logit_real, d_logit_fake):
+def d_ls(d_logit_real, d_logit_fake, DDP):
+    if DDP:
+        d_logit_real = torch.cat(misc.GatherLayer.apply(d_logit_real), dim=0)
+        d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
+
     d_loss = 0.5 * (d_logit_real - torch.ones_like(d_logit_real))**2 + 0.5 * (d_logit_fake)**2
     return d_loss.mean()
 
 
-def g_ls(d_logit_fake):
+def g_ls(d_logit_fake, DDP):
+    if DDP:
+        d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
+
     gen_loss = 0.5 * (d_logit_fake - torch.ones_like(d_logit_fake))**2
     return gen_loss.mean()
 
 
-def d_hinge(d_logit_real, d_logit_fake):
+def d_hinge(d_logit_real, d_logit_fake, DDP):
+    if DDP:
+        d_logit_real = torch.cat(misc.GatherLayer.apply(d_logit_real), dim=0)
+        d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
+
     return torch.mean(F.relu(1. - d_logit_real)) + torch.mean(F.relu(1. + d_logit_fake))
 
 
-def g_hinge(g_logit_fake):
-    return -torch.mean(g_logit_fake)
+def g_hinge(d_logit_fake, DDP):
+    if DDP:
+        d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
+
+    return -torch.mean(d_logit_fake)
 
 
-def d_wasserstein(d_logit_real, d_logit_fake):
+def d_wasserstein(d_logit_real, d_logit_fake, DDP):
+    if DDP:
+        d_logit_real = torch.cat(misc.GatherLayer.apply(d_logit_real), dim=0)
+        d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
+
     return torch.mean(d_logit_fake - d_logit_real)
 
 
-def g_wasserstein(g_logit_fake):
-    return -torch.mean(g_logit_fake)
+def g_wasserstein(d_logit_fake, DDP):
+    if DDP:
+        d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
+
+    return -torch.mean(d_logit_fake)
 
 
-def crammer_singer_loss(adv_output, label, **_):
+def crammer_singer_loss(adv_output, label, DDP, **_):
     # https://github.com/ilyakava/BigGAN-PyTorch/blob/master/train_fns.py
     # crammer singer criterion
+    if DDP:
+        adv_output = torch.cat(misc.GatherLayer.apply(adv_output), dim=0)
+
     num_real_classes = adv_output.shape[1] - 1
     mask = torch.ones_like(adv_output).to(adv_output.device)
     mask.scatter_(1, label.unsqueeze(-1), 0)

@@ -46,14 +46,18 @@ LOG_FORMAT = ("Step: {step:>6} "
 
 
 class WORKER(object):
-    def __init__(self, cfgs, run_name, Gen, Dis, Gen_ema, ema, eval_model, train_dataloader, eval_dataloader,
-                 global_rank, local_rank, mu, sigma, logger, ada_p, best_step, best_fid, best_ckpt_path,
-                 loss_list_dict, metric_list_dict):
+    def __init__(self, cfgs, run_name, Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis,
+                 ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, logger, ada_p,
+                 best_step, best_fid, best_ckpt_path, loss_list_dict, metric_list_dict):
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
+        self.Gen_mapping = Gen_mapping
+        self.Gen_synthesis = Gen_synthesis
         self.Dis = Dis
         self.Gen_ema = Gen_ema
+        self.Gen_ema_mapping = Gen_ema_mapping
+        self.Gen_ema_synthesis = Gen_ema_synthesis
         self.ema = ema
         self.eval_model = eval_model
         self.train_dataloader = train_dataloader
@@ -83,6 +87,7 @@ class WORKER(object):
         self.MISC = cfgs.MISC
 
         self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
+        self.DDP = self.RUN.distributed_data_parallel
         self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.fm_loss = losses.feature_matching_loss
@@ -104,24 +109,24 @@ class WORKER(object):
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
                                                                temperature=self.LOSS.temperature,
                                                                master_rank="cuda",
-                                                               DDP=self.RUN.distributed_data_parallel)
+                                                               DDP=self.DDP)
             if self.MODEL.aux_cls_type == "TAC":
                 self.cond_loss_mi = losses.ConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
                                                                       temperature=self.LOSS.temperature,
                                                                       master_rank="cuda",
-                                                                      DDP=self.RUN.distributed_data_parallel)
+                                                                      DDP=self.DDP)
         elif self.MODEL.d_cond_mtd == "D2DCE":
             self.cond_loss = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
                                                               temperature=self.LOSS.temperature,
                                                               m_p=self.LOSS.m_p,
                                                               master_rank="cuda",
-                                                              DDP=self.RUN.distributed_data_parallel)
+                                                              DDP=self.DDP)
             if self.MODEL.aux_cls_type == "TAC":
                 self.cond_loss_mi = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
                                                                      temperature=self.LOSS.temperature,
                                                                      m_p=self.LOSS.m_p,
                                                                      master_rank="cuda",
-                                                                     DDP=self.RUN.distributed_data_parallel)
+                                                                     DDP=self.DDP)
         else:
             pass
 
@@ -137,6 +142,8 @@ class WORKER(object):
             self.num_eval = {"train": len(self.train_dataloader.dataset), "valid": len(self.eval_dataset.dataset)}
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
+                                                 generator_mapping=self.Gen_ema_mapping,
+                                                 generator_synthesis=self.Gen_ema_synthesis,
                                                  batch_statistics=self.RUN.batch_statistics,
                                                  standing_statistics=False,
                                                  standing_max_batch="N/A",
@@ -147,7 +154,7 @@ class WORKER(object):
                                                  logger=self.logger,
                                                  std_stat_counter=0)
 
-        if self.RUN.distributed_data_parallel:
+        if self.DDP:
             self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
 
         if self.RUN.mixed_precision and not self.is_stylegan:
@@ -165,7 +172,7 @@ class WORKER(object):
 
     def prepare_train_iter(self, epoch_counter):
         self.epoch_counter = epoch_counter
-        if self.RUN.distributed_data_parallel:
+        if self.DDP:
             self.train_dataloader.sampler.set_epoch(self.epoch_counter)
         self.train_iter = iter(self.train_dataloader)
 
@@ -174,7 +181,7 @@ class WORKER(object):
             real_images, real_labels = next(self.train_iter)
         except StopIteration:
             self.epoch_counter += 1
-            if self.RUN.train and self.RUN.distributed_data_parallel:
+            if self.RUN.train and self.DDP:
                 self.train_dataloader.sampler.set_epoch(self.epoch_counter)
             else:
                 pass
@@ -218,6 +225,8 @@ class WORKER(object):
                         LOSS=self.LOSS,
                         RUN=self.RUN,
                         device=self.local_rank,
+                        generator_mapping=self.Gen_mapping,
+                        generator_synthesis=self.Gen_synthesis,
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
@@ -237,10 +246,10 @@ class WORKER(object):
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
-                        dis_acml_loss = self.LOSS.d_loss(**real_dict)
-                        dis_acml_loss += self.LOSS.d_loss(fake_dict["adv_output"], self.lossy)
+                        dis_acml_loss = self.LOSS.d_loss(DDP=self.DDP, **real_dict)
+                        dis_acml_loss += self.LOSS.d_loss(fake_dict["adv_output"], self.lossy, DDP=self.DDP)
                     else:
-                        dis_acml_loss = self.LOSS.d_loss(real_dict["adv_output"], fake_dict["adv_output"])
+                        dis_acml_loss = self.LOSS.d_loss(real_dict["adv_output"], fake_dict["adv_output"], DDP=self.DDP)
 
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
@@ -389,6 +398,8 @@ class WORKER(object):
                         LOSS=self.LOSS,
                         RUN=self.RUN,
                         device=self.local_rank,
+                        generator_mapping=self.Gen_mapping,
+                        generator_synthesis=self.Gen_synthesis,
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
@@ -405,9 +416,9 @@ class WORKER(object):
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
-                        gen_acml_loss = self.LOSS.mh_lambda * self.LOSS.g_loss(**fake_dict)
+                        gen_acml_loss = self.LOSS.mh_lambda * self.LOSS.g_loss(DDP=self.DDP, **fake_dict, )
                     else:
-                        gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"])
+                        gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"], DDP=self.DDP)
 
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
@@ -451,6 +462,8 @@ class WORKER(object):
                             LOSS=self.LOSS,
                             RUN=self.RUN,
                             device=self.local_rank,
+                            generator_mapping=self.Gen_mapping,
+                            generator_synthesis=self.Gen_synthesis,
                             is_stylegan=self.is_stylegan,
                             style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                             cal_trsp_cost=True if self.LOSS.apply_lo else False)
@@ -549,24 +562,26 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                    truncation_th=self.RUN.truncation_th,
-                                                                    batch_size=self.OPTIMIZATION.batch_size,
-                                                                    z_dim=self.MODEL.z_dim,
-                                                                    num_classes=self.DATA.num_classes,
-                                                                    y_sampler="totally_random",
-                                                                    radius="N/A",
-                                                                    generator=generator,
-                                                                    discriminator=self.Dis,
-                                                                    is_train=False,
-                                                                    LOSS=self.LOSS,
-                                                                    RUN=self.RUN,
-                                                                    device=self.local_rank,
-                                                                    is_stylegan=self.is_stylegan,
-                                                                    style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
-                                                                    cal_trsp_cost=False)
+                                                                       truncation_th=self.RUN.truncation_th,
+                                                                       batch_size=self.OPTIMIZATION.batch_size,
+                                                                       z_dim=self.MODEL.z_dim,
+                                                                       num_classes=self.DATA.num_classes,
+                                                                       y_sampler="totally_random",
+                                                                       radius="N/A",
+                                                                       generator=generator,
+                                                                       discriminator=self.Dis,
+                                                                       is_train=False,
+                                                                       LOSS=self.LOSS,
+                                                                       RUN=self.RUN,
+                                                                       device=self.local_rank,
+                                                                       is_stylegan=self.is_stylegan,
+                                                                       generator_mapping=generator_mapping,
+                                                                       generator_synthesis=generator_synthesis,
+                                                                       style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                                                                       cal_trsp_cost=False)
 
         misc.plot_img_canvas(images=(fake_images.detach().cpu() + 1) / 2,
                              save_path=join(self.RUN.save_dir,
@@ -593,7 +608,7 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             kl_score, kl_std, top1, top5 = ins.eval_generator(data_loader=self.eval_dataloader,
                                                               generator=generator,
@@ -611,6 +626,8 @@ class WORKER(object):
                                                               RUN=self.RUN,
                                                               STYLEGAN2=self.STYLEGAN2,
                                                               is_stylegan=self.is_stylegan,
+                                                              generator_mapping=generator_mapping,
+                                                              generator_synthesis=generator_synthesis,
                                                               is_acc=is_acc,
                                                               device=self.local_rank,
                                                               logger=self.logger,
@@ -618,6 +635,8 @@ class WORKER(object):
 
             fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
                                                   generator=generator,
+                                                  generator_mapping=generator_mapping,
+                                                  generator_synthesis=generator_synthesis,
                                                   discriminator=self.Dis,
                                                   eval_model=self.eval_model,
                                                   num_generate=self.num_eval[self.RUN.ref_dataset],
@@ -634,6 +653,8 @@ class WORKER(object):
                                                              num_generate=self.num_eval[self.RUN.ref_dataset],
                                                              cfgs=self.cfgs,
                                                              generator=generator,
+                                                             generator_mapping=generator_mapping,
+                                                             generator_synthesis=generator_synthesis,
                                                              discriminator=self.Dis,
                                                              nearest_k=nearest_k,
                                                              device=self.local_rank,
@@ -762,7 +783,7 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             if png:
                 misc.save_images_png(data_loader=self.eval_dataloader,
@@ -780,6 +801,8 @@ class WORKER(object):
                                      RUN=self.RUN,
                                      STYLEGAN2=self.STYLEGAN2,
                                      is_stylegan=self.is_stylegan,
+                                     generator_mapping=generator_mapping,
+                                     generator_synthesis=generator_synthesis,
                                      directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
             if npz:
@@ -798,6 +821,8 @@ class WORKER(object):
                                      RUN=self.RUN,
                                      STYLEGAN2=self.STYLEGAN2,
                                      is_stylegan=self.is_stylegan,
+                                     generator_mapping=generator_mapping,
+                                     generator_synthesis=generator_synthesis,
                                      directory=join(self.RUN.save_dir, "samples", self.run_name),
                                      device=self.local_rank)
 
@@ -816,7 +841,7 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             resnet50_model = torch.hub.load("pytorch/vision:v0.6.0", "resnet50", pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.local_rank)
@@ -839,6 +864,8 @@ class WORKER(object):
                                                                         RUN=self.RUN,
                                                                         device=self.local_rank,
                                                                         is_stylegan=self.is_stylegan,
+                                                                        generator_mapping=generator_mapping,
+                                                                        generator_synthesis=generator_synthesis,
                                                                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                                                                         cal_trsp_cost=False)
 
@@ -904,7 +931,7 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             shared = misc.peel_model(generator).shared
             for ns in tqdm(range(num_saves)):
@@ -958,7 +985,7 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             data_iter = iter(dataloader)
             num_batches = len(dataloader) // self.OPTIMIZATION.batch_size
@@ -978,6 +1005,8 @@ class WORKER(object):
                                                                         RUN=self.RUN,
                                                                         device=self.local_rank,
                                                                         is_stylegan=self.is_stylegan,
+                                                                        generator_mapping=generator_mapping,
+                                                                        generator_synthesis=generator_synthesis,
                                                                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                                                                         cal_trsp_cost=False)
                 fake_images = fake_images.detach().cpu().numpy()
@@ -1033,7 +1062,7 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             save_output, real, fake, hook_handles = misc.SaveOutput(), {}, {}, []
             for name, layer in misc.peel_model(self.Dis).named_children():
@@ -1072,6 +1101,8 @@ class WORKER(object):
                                                                         RUN=self.RUN,
                                                                         device=self.local_rank,
                                                                         is_stylegan=self.is_stylegan,
+                                                                        generator_mapping=generator_mapping,
+                                                                        generator_synthesis=generator_synthesis,
                                                                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                                                                         cal_trsp_cost=False)
 
@@ -1127,7 +1158,7 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             for c in tqdm(range(self.DATA.num_classes)):
                 num_samples, target_sampler = sample.make_target_cls_sampler(dataset, c)
@@ -1142,6 +1173,8 @@ class WORKER(object):
 
                 mu, sigma = fid.calculate_moments(data_loader=dataloader,
                                                   generator="N/A",
+                                                  generator_mapping="N/A",
+                                                  generator_synthesis="N/A",
                                                   discriminator="N/A",
                                                   eval_model=self.eval_model,
                                                   is_generate=False,
@@ -1161,6 +1194,8 @@ class WORKER(object):
 
                 ifid_score, _, _ = fid.calculate_fid(data_loader="N/A",
                                                      generator=generator,
+                                                     generator_mapping=generator_mapping,
+                                                     generator_synthesis=generator_synthesis,
                                                      discriminator=self.Dis,
                                                      eval_model=self.eval_model,
                                                      num_generate=self.num_eval[self.RUN.ref_dataset],
@@ -1203,7 +1238,7 @@ class WORKER(object):
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
-            generator = self.gen_ctlr.prepare_generator()
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             zs, fake_labels, _ = sample.sample_zy(z_prior=self.MODEL.z_prior,
                                                   batch_size=self.OPTIMIZATION.batch_size,

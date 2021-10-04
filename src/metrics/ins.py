@@ -40,7 +40,8 @@ def calculate_kl_div(ps, splits):
 
 
 def eval_generator(data_loader, generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size,
-                   z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, is_acc, device, logger, disable_tqdm):
+                   z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, generator_mapping,
+                   generator_synthesis, is_acc, device, logger, disable_tqdm):
     eval_model.eval()
     ps_holder = []
     if is_acc:
@@ -55,21 +56,23 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                                truncation_th=truncation_th,
-                                                                batch_size=batch_size,
-                                                                z_dim=z_dim,
-                                                                num_classes=num_classes,
-                                                                y_sampler=y_sampler,
-                                                                radius="N/A",
-                                                                generator=generator,
-                                                                discriminator=discriminator,
-                                                                is_train=False,
-                                                                LOSS=LOSS,
-                                                                RUN=RUN,
-                                                                is_stylegan=is_stylegan,
-                                                                style_mixing_p=STYLEGAN2.style_mixing_p,
-                                                                device=device,
-                                                                cal_trsp_cost=False)
+                                                                   truncation_th=truncation_th,
+                                                                   batch_size=batch_size,
+                                                                   z_dim=z_dim,
+                                                                   num_classes=num_classes,
+                                                                   y_sampler=y_sampler,
+                                                                   radius="N/A",
+                                                                   generator=generator,
+                                                                   discriminator=discriminator,
+                                                                   is_train=False,
+                                                                   LOSS=LOSS,
+                                                                   RUN=RUN,
+                                                                   is_stylegan=is_stylegan,
+                                                                   generator_mapping=generator_mapping,
+                                                                   generator_synthesis=generator_synthesis,
+                                                                   style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                                   device=device,
+                                                                   cal_trsp_cost=False)
         ps = inception_softmax(eval_model, fake_images)
         ps_holder.append(ps)
         if is_acc:

@@ -80,9 +80,11 @@ class GatherLayer(torch.autograd.Function):
 
 
 class GeneratorController(object):
-    def __init__(self, generator, batch_statistics, standing_statistics, standing_max_batch, standing_step, cfgs,
-                 device, global_rank, logger, std_stat_counter):
+    def __init__(self, generator, generator_mapping, generator_synthesis, batch_statistics, standing_statistics,
+                 standing_max_batch, standing_step, cfgs, device, global_rank, logger, std_stat_counter):
         self.generator = generator
+        self.generator_mapping = generator_mapping
+        self.generator_synthesis = generator_synthesis
         self.batch_statistics = batch_statistics
         self.standing_statistics = standing_statistics
         self.standing_max_batch = standing_max_batch
@@ -120,7 +122,7 @@ class GeneratorController(object):
                 self.generator.apply(set_bn_trainable)
                 self.generator.apply(untrack_bn_statistics)
             self.generator.apply(set_deterministic_op_trainable)
-        return self.generator
+        return self.generator, self.generator_mapping, self.generator_synthesis
 
 
 def prepare_folder(names, save_dir):
@@ -290,21 +292,23 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
         else:
             rand_batch_size = random.randint(1, batch_size_per_gpu) * OPTIMIZATION.world_size
         fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
-                                                                truncation_th=-1,
-                                                                batch_size=rand_batch_size,
-                                                                z_dim=MODEL.z_dim,
-                                                                num_classes=DATA.num_classes,
-                                                                y_sampler="totally_random",
-                                                                radius="N/A",
-                                                                generator=generator,
-                                                                discriminator=None,
-                                                                is_train=True,
-                                                                LOSS=LOSS,
-                                                                RUN=RUN,
-                                                                is_stylegan=MODEL.backbone=="stylegan2",
-                                                                style_mixing_p=STYLEGAN2.style_mixing_p,
-                                                                device=device,
-                                                                cal_trsp_cost=False)
+                                                                   truncation_th=-1,
+                                                                   batch_size=rand_batch_size,
+                                                                   z_dim=MODEL.z_dim,
+                                                                   num_classes=DATA.num_classes,
+                                                                   y_sampler="totally_random",
+                                                                   radius="N/A",
+                                                                   generator=generator,
+                                                                   discriminator=None,
+                                                                   is_train=True,
+                                                                   LOSS=LOSS,
+                                                                   RUN=RUN,
+                                                                   is_stylegan=MODEL.backbone=="stylegan2",
+                                                                   generator_mapping=None,
+                                                                   generator_synthesis=None,
+                                                                   style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                                   device=device,
+                                                                   cal_trsp_cost=False)
     generator.eval()
 
 
@@ -436,7 +440,8 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=Tr
 
 
 def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, directory, device):
+                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, generator_mapping, generator_synthesis,
+                    directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -459,21 +464,23 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
             end = start + batch_size
             if is_generate:
                 images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                              truncation_th=truncation_th,
-                                                              batch_size=batch_size,
-                                                              z_dim=z_dim,
-                                                              num_classes=num_classes,
-                                                              y_sampler=y_sampler,
-                                                              radius="N/A",
-                                                              generator=generator,
-                                                              discriminator=discriminator,
-                                                              is_train=False,
-                                                              LOSS=LOSS,
-                                                              RUN=RUN,
-                                                              is_stylegan=is_stylegan,
-                                                              style_mixing_p=STYLEGAN2.style_mixing_p,
-                                                              device=device,
-                                                              cal_trsp_cost=False)
+                                                                 truncation_th=truncation_th,
+                                                                 batch_size=batch_size,
+                                                                 z_dim=z_dim,
+                                                                 num_classes=num_classes,
+                                                                 y_sampler=y_sampler,
+                                                                 radius="N/A",
+                                                                 generator=generator,
+                                                                 discriminator=discriminator,
+                                                                 is_train=False,
+                                                                 LOSS=LOSS,
+                                                                 RUN=RUN,
+                                                                 is_stylegan=is_stylegan,
+                                                                 generator_mapping=generator_mapping,
+                                                                 generator_synthesis=generator_synthesis,
+                                                                 style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                                 device=device,
+                                                                 cal_trsp_cost=False)
             else:
                 try:
                     images, labels = next(data_iter)
@@ -492,7 +499,8 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
 
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, directory, device):
+                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, generator_mapping, generator_synthesis,
+                    directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
         image_type = "fake"
@@ -515,21 +523,23 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
             end = start + batch_size
             if is_generate:
                 images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                              truncation_th=truncation_th,
-                                                              batch_size=batch_size,
-                                                              z_dim=z_dim,
-                                                              num_classes=num_classes,
-                                                              y_sampler=y_sampler,
-                                                              radius="N/A",
-                                                              generator=generator,
-                                                              discriminator=discriminator,
-                                                              is_train=False,
-                                                              LOSS=LOSS,
-                                                              RUN=RUN,
-                                                              is_stylegan=is_stylegan,
-                                                              style_mixing_p=STYLEGAN2.style_mixing_p,
-                                                              device=device,
-                                                              cal_trsp_cost=False)
+                                                                 truncation_th=truncation_th,
+                                                                 batch_size=batch_size,
+                                                                 z_dim=z_dim,
+                                                                 num_classes=num_classes,
+                                                                 y_sampler=y_sampler,
+                                                                 radius="N/A",
+                                                                 generator=generator,
+                                                                 discriminator=discriminator,
+                                                                 is_train=False,
+                                                                 LOSS=LOSS,
+                                                                 RUN=RUN,
+                                                                 is_stylegan=is_stylegan,
+                                                                 generator_mapping=generator_mapping,
+                                                                 generator_synthesis=generator_synthesis,
+                                                                 style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                                 device=device,
+                                                                 cal_trsp_cost=False)
             else:
                 try:
                     images, labels = next(data_iter)

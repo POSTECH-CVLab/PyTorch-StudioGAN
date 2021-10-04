@@ -4,6 +4,8 @@
 
 # src/models/model.py
 
+import copy
+
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch
@@ -63,14 +65,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
             if device == 0:
                 logger.info("Prepare exponential moving average generator with decay rate of {decay}."\
                             .format(decay=MODEL.g_ema_decay))
-            Gen_ema = module.Generator(z_dim=MODEL.z_dim,
-                                       c_dim=DATA.num_classes,
-                                       w_dim=MODEL.w_dim,
-                                       img_resolution=DATA.img_size,
-                                       img_channels=DATA.img_channels,
-                                       mapping_kwargs={"num_layers": STYLEGAN2.mapping_network},
-                                       synthesis_kwargs={"channel_base": channel_base, "channel_max": 512, \
-                                       "num_fp16_res": num_fp16_res, "conv_clamp": conv_clamp,}).to(device)
+            Gen_ema = copy.deepcopy(Gen)
 
             ema = EmaStylegan2(source=Gen,
                                target=Gen_ema,
@@ -113,18 +108,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
             if device == 0:
                 logger.info("Prepare exponential moving average generator with decay rate of {decay}."\
                             .format(decay=MODEL.g_ema_decay))
-            Gen_ema = module.Generator(z_dim=MODEL.z_dim,
-                                       g_shared_dim=MODEL.g_shared_dim,
-                                       img_size=DATA.img_size,
-                                       g_conv_dim=MODEL.g_conv_dim,
-                                       apply_attn=MODEL.apply_attn,
-                                       attn_g_loc=MODEL.attn_g_loc,
-                                       g_cond_mtd=MODEL.g_cond_mtd,
-                                       num_classes=DATA.num_classes,
-                                       g_init=False,
-                                       g_depth=MODEL.g_depth,
-                                       mixed_precision=RUN.mixed_precision,
-                                       MODULES=MODULES).to(device)
+            Gen_ema = copy.deepcopy(Gen)
 
             ema = Ema(source=Gen, target=Gen_ema, decay=MODEL.g_ema_decay, start_iter=MODEL.g_ema_start)
         else:
@@ -142,7 +126,8 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
     return Gen, Dis, Gen_ema, ema
 
 
-def prepare_parallel_training(Gen, Dis, Gen_ema, world_size, distributed_data_parallel, synchronized_bn, apply_g_ema, device):
+def prepare_parallel_training(Gen, Dis, Gen_ema, MODEL, world_size, distributed_data_parallel, synchronized_bn, apply_g_ema, device):
+    Gen_mapping, Gen_synthesis, Gen_ema_mapping, Gen_ema_synthesis = None, None, None, None
     if world_size > 1:
         if distributed_data_parallel:
             if synchronized_bn:
@@ -152,19 +137,35 @@ def prepare_parallel_training(Gen, Dis, Gen_ema, world_size, distributed_data_pa
                 if apply_g_ema:
                     Gen_ema = torch.nn.SyncBatchNorm.convert_sync_batchnorm(Gen_ema, process_group)
 
-            Gen = DDP(Gen, device_ids=[device], broadcast_buffers=synchronized_bn)
-            Dis = DDP(Dis, device_ids=[device], broadcast_buffers=synchronized_bn)
+            if MODEL.backbone == "stylegan2":
+                Gen_mapping = DDP(Gen.mapping, device_ids=[device], broadcast_buffers=False)
+                Gen_synthesis = DDP(Gen.synthesis, device_ids=[device], broadcast_buffers=False)
+            else:
+                Gen = DDP(Gen, device_ids=[device], broadcast_buffers=synchronized_bn)
+            Dis = DDP(Dis, device_ids=[device], broadcast_buffers=False if MODEL.backbone=="stylegan2" else synchronized_bn)
             if apply_g_ema:
-                Gen_ema = DDP(Gen_ema, device_ids=[device], broadcast_buffers=synchronized_bn)
+                if MODEL.backbone == "stylegan2":
+                    Gen_ema_mapping = DDP(Gen_ema.mapping, device_ids=[device], broadcast_buffers=False)
+                    Gen_ema_synthesis = DDP(Gen_ema.synthesis, device_ids=[device], broadcast_buffers=False)
+                else:
+                    Gen_ema = DDP(Gen_ema, device_ids=[device], broadcast_buffers=synchronized_bn)
         else:
-            Gen = DataParallel(Gen, output_device=device)
+            if MODEL.backbone == "stylegan2":
+                Gen_mapping = DataParallel(Gen.mapping, output_device=device)
+                Gen_synthesis = DataParallel(Gen.synthesis, output_device=device)
+            else:
+                Gen = DataParallel(Gen, output_device=device)
             Dis = DataParallel(Dis, output_device=device)
             if apply_g_ema:
-                Gen_ema = DataParallel(Gen_ema, output_device=device)
+                if MODEL.backbone == "stylegan2":
+                    Gen_ema_mapping = DataParallel(Gen_ema.mapping, output_device=device)
+                    Gen_ema_synthesis = DataParallel(Gen_ema.synthesis, output_device=device)
+                else:
+                    Gen_ema = DataParallel(Gen_ema, output_device=device)
 
             if synchronized_bn:
                 Gen = convert_model(Gen).to(device)
                 Dis = convert_model(Dis).to(device)
                 if apply_g_ema:
                     Gen_ema = convert_model(Gen_ema).to(device)
-    return Gen, Dis, Gen_ema
+    return Gen, Dis, Gen_ema, Gen_mapping, Gen_synthesis, Gen_ema_mapping, Gen_ema_synthesis

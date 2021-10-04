@@ -32,7 +32,8 @@ import utils.sample as sample
 
 
 def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes, generator,
-                                 discriminator, eval_model, LOSS, RUN, STYLEGAN2, is_stylegan, device, disable_tqdm):
+                                 discriminator, eval_model, LOSS, RUN, STYLEGAN2, is_stylegan, generator_mapping, generator_synthesis,
+                                 device, disable_tqdm):
     data_iter = iter(data_loader)
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
@@ -52,6 +53,8 @@ def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior,
                                                          RUN=RUN,
                                                          device=device,
                                                          is_stylegan=is_stylegan,
+                                                         generator_mapping=generator_mapping,
+                                                         generator_synthesis=generator_synthesis,
                                                          style_mixing_p=STYLEGAN2.style_mixing_p,
                                                          cal_trsp_cost=False)
 
@@ -70,7 +73,8 @@ def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior,
     return real_embeds, fake_embeds
 
 
-def calculate_prdc(data_loader, eval_model, num_generate, cfgs, generator, discriminator, nearest_k, device, logger, disable_tqdm):
+def calculate_prdc(data_loader, eval_model, num_generate, cfgs, generator, generator_mapping, generator_synthesis, discriminator,
+                   nearest_k, device, logger, disable_tqdm):
     eval_model.eval()
 
     if device == 0 and not disable_tqdm:
@@ -88,7 +92,9 @@ def calculate_prdc(data_loader, eval_model, num_generate, cfgs, generator, discr
                                                             LOSS=cfgs.LOSS,
                                                             RUN=cfgs.RUN,
                                                             STYLEGAN2=cfgs.STYLEGAN2,
-                                                            is_stylegan=(cfgs.MODEL.backbone == "stylegan2"),
+                                                            is_stylegan=(cfgs.MODEL.backbone=="stylegan2"),
+                                                            generator_mapping=generator_mapping,
+                                                            generator_synthesis=generator_synthesis,
                                                             device=device,
                                                             disable_tqdm=disable_tqdm)
     metrics = prdc.compute_prdc(real_features=real_embeds, fake_features=fake_embeds, nearest_k=nearest_k)

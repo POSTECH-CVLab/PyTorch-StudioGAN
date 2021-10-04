@@ -11,12 +11,9 @@ import os
 import random
 import sys
 
-from torch.backends import cudnn
-from utils.style_ops import grid_sample_gradfix
-from utils.style_ops import conv2d_gradfix
+from torch.multiprocessing import Process
 import torch
 import torch.multiprocessing as mp
-from torch.multiprocessing import Process
 
 import config
 import loader
@@ -136,14 +133,6 @@ def load_configs_initialize_training():
 
     if cfgs.RUN.seed == -1:
         cfgs.RUN.seed = random.randint(1, 4096)
-        cudnn.benchmark, cudnn.deterministic = True, False
-    else:
-        cudnn.benchmark, cudnn.deterministic = False, True
-
-    # Improves training speed
-    conv2d_gradfix.enabled = True
-    # Avoids errors with the augmentation pipe
-    grid_sample_gradfix.enabled = True
 
     if cfgs.OPTIMIZATION.world_size == 1:
         print("You have chosen a specific GPU. This will completely disable data parallelism.")

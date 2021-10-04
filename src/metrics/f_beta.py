@@ -70,9 +70,9 @@ class precision_recall(object):
         recall = np.clip(recall, 0, 1)
         return precision, recall
 
-    def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim,
-                                 num_classes, generator, discriminator, LOSS, RUN, STYLEGAN2, num_runs, num_clusters, num_angles,
-                                 is_stylegan, device):
+    def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes,
+                                 generator, discriminator, LOSS, RUN, STYLEGAN2, num_runs, num_clusters, num_angles,
+                                 is_stylegan, generator_mapping, generator_synthesis, device):
         data_iter = iter(data_loader)
         num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
         for i in tqdm(range(num_batches), disable=self.disable_tqdm):
@@ -92,6 +92,8 @@ class precision_recall(object):
                                                             RUN=RUN,
                                                             device=device,
                                                             is_stylegan=is_stylegan,
+                                                            generator_mapping=generator_mapping,
+                                                            generator_synthesis=generator_synthesis,
                                                             style_mixing_p=STYLEGAN2.style_mixing_p,
                                                             cal_trsp_cost=False)
 
@@ -124,8 +126,8 @@ class precision_recall(object):
         return (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall + epsilon)
 
 
-def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, discriminator, num_runs, num_clusters,
-                     num_angles, beta, device, logger, disable_tqdm):
+def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, generator_mapping, generator_synthesis,
+                     discriminator, num_runs, num_clusters, num_angles, beta, device, logger, disable_tqdm):
     eval_model.eval()
     PR = precision_recall(eval_model, device, disable_tqdm)
 
@@ -147,6 +149,8 @@ def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, dis
                                                       num_clusters=num_clusters,
                                                       num_angles=num_angles,
                                                       is_stylegan=(cfgs.MODEL.backbone == "stylegan2"),
+                                                      generator_mapping=generator_mapping,
+                                                      generator_synthesis=generator_synthesis,
                                                       device=device)
 
     if not ((precisions >= 0).all() and (precisions <= 1).all()):
