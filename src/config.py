@@ -19,7 +19,7 @@ import utils.ops as ops
 import utils.diffaug as diffaug
 import utils.cr as cr
 import utils.simclr_aug as simclr_aug
-
+import utils.ada_aug as ada_aug
 
 class make_empty_object(object):
     pass
@@ -240,16 +240,26 @@ class Configurations(object):
 
         # whether to apply differentiable augmentations for limited data training
         self.AUG.apply_diffaug = False
+        # whether to apply adaptive discriminator augmentation (ADA)
+        self.AUG.apply_ada = False
         # type of differentiable augmentation for cr, bcr, or limited data training
-        # \in ["W/O", "cr", "bcr", "diffaug", "ada" "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]
+        # \in ["W/O", "cr", "bcr", "diffaug", "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"
+        # \ "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]
+        # "blit", "geon", ... "bgcfnc" augmentations details are available at <https://github.com/NVlabs/stylegan2-ada-pytorch>
+        # for ada default aug_type is bgc, ada_target is 0.6, ada_kimg is 500.
         # cr (bcr, diffaugment, ada, simclr, byol) indicates differentiable augmenations used in the original paper
         self.AUG.cr_aug_type = "W/O"
         self.AUG.bcr_aug_type = "W/O"
         self.AUG.diffaug_type = "W/O"
-        # target probability for adaptive differentiable augmentations
+        self.AUG.ada_aug_type = "W/O"
+        # initial value of augmentation probability. 
+        self.AUG.ada_initial_augment_p = "N/A" 
+        # target probability for adaptive differentiable augmentations, None = fixed p (as ada_initial_augment_p)
         self.AUG.ada_target = "N/A"
-        # augmentation probability = augmentation probability +/- (ada_target/ada_length)
-        self.AUG.ada_length = "N/A"
+        # ADA adjustment speed, measured in how many kimg it takes for p to increase/decrease by one unit.
+        self.AUG.ada_kimg = "N/A"
+        # how often to perform ada adjustment
+        self.AUG.ada_interval = "N/A"
 
         # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings regarding regularization and style mixing
@@ -470,6 +480,19 @@ class Configurations(object):
 
     def define_augments(self):
         self.AUG.series_augment = misc.identity
+        ada_augpipe = {
+            'blit':   dict(xflip=1, rotate90=1, xint=1),
+            'geom':   dict(scale=1, rotate=1, aniso=1, xfrac=1),
+            'color':  dict(brightness=1, contrast=1, lumaflip=1, hue=1, saturation=1),
+            'filter': dict(imgfilter=1),
+            'noise':  dict(noise=1),
+            'cutout': dict(cutout=1),
+            'bg':     dict(xflip=1, rotate90=1, xint=1, scale=1, rotate=1, aniso=1, xfrac=1),
+            'bgc':    dict(xflip=1, rotate90=1, xint=1, scale=1, rotate=1, aniso=1, xfrac=1, brightness=1, contrast=1, lumaflip=1, hue=1, saturation=1),
+            'bgcf':   dict(xflip=1, rotate90=1, xint=1, scale=1, rotate=1, aniso=1, xfrac=1, brightness=1, contrast=1, lumaflip=1, hue=1, saturation=1, imgfilter=1),
+            'bgcfn':  dict(xflip=1, rotate90=1, xint=1, scale=1, rotate=1, aniso=1, xfrac=1, brightness=1, contrast=1, lumaflip=1, hue=1, saturation=1, imgfilter=1, noise=1),
+            'bgcfnc': dict(xflip=1, rotate90=1, xint=1, scale=1, rotate=1, aniso=1, xfrac=1, brightness=1, contrast=1, lumaflip=1, hue=1, saturation=1, imgfilter=1, noise=1, cutout=1),
+        }
         if self.AUG.apply_diffaug:
             assert self.AUG.diffaug_type != "W/O", "Please select diffentiable augmentation type!"
             if self.AUG.diffaug_type == "cr":
@@ -478,6 +501,21 @@ class Configurations(object):
                 self.AUG.series_augment = diffaug.apply_diffaug
             elif self.AUG.diffaug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
                 self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+            elif self.AUG.diffaug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
+                self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.diffaug_type])
+            else:
+                raise NotImplementedError
+
+        if self.AUG.apply_ada:
+            assert self.AUG.ada_aug_type != "W/O", "Please select diffentiable augmentation type!"
+            if self.AUG.ada_aug_type == "cr":
+                self.AUG.series_augment = cr.apply_cr_aug
+            elif self.AUG.ada_aug_type == "diffaug":
+                self.AUG.series_augment = diffaug.apply_diffaug
+            elif self.AUG.ada_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
+                self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.ada_aug_type)
+            elif self.AUG.ada_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
+                self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.ada_aug_type])
             else:
                 raise NotImplementedError
 
@@ -489,6 +527,8 @@ class Configurations(object):
                 self.AUG.parallel_augment = diffaug.apply_diffaug
             elif self.AUG.cr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
                 self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+            elif self.AUG.cr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
+                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.cr_aug_type])
             else:
                 raise NotImplementedError
 
@@ -500,6 +540,8 @@ class Configurations(object):
                 self.AUG.parallel_augment = diffaug.apply_diffaug
             elif self.AUG.bcr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
                 self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+            elif self.AUG.bcr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
+                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.bcr_aug_type])
             else:
                 raise NotImplementedError
 
