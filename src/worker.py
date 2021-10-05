@@ -42,7 +42,8 @@ LOG_FORMAT = ("Step: {step:>6} "
               "Gen_loss: {gen_loss:<.4} "
               "Dis_loss: {dis_loss:<.4} "
               "Cls_loss: {cls_loss:<.4} "
-              "Topk: {topk:>4} ")
+              "Topk: {topk:>4} "
+              "ada_p: {ada_p:<.4} ")
 
 
 class WORKER(object):
@@ -501,7 +502,7 @@ class WORKER(object):
             if dist.is_available() and dist.is_initialized() and self.DDP:
                 dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
             heuristic = float(self.ada_stat[0] / self.ada_stat[1])
-            adjust = np.sign(heuristic - self.AUG.ada_target) * (self.OPTIMIZATION.batch_size * self.OPTIMIZATION.world_size * self.OPTIMIZATION.acml_steps) / (self.AUG.ada_kimg * 1000)
+            adjust = np.sign(heuristic - self.AUG.ada_target) * (self.OPTIMIZATION.batch_size * self.OPTIMIZATION.world_size * self.OPTIMIZATION.acml_steps * self.AUG.ada_interval) / (self.AUG.ada_kimg * 1000)
             self.ada_p = max(self.ada_p + adjust, 0)
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat.mul_(0)
@@ -522,14 +523,15 @@ class WORKER(object):
                     dis_loss=dis_acml_loss.item(),
                     cls_loss=cls_loss,
                     topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
+                    ada_p=self.ada_p if self.AUG.apply_ada else "N/A",
                 )
                 self.logger.info(log_message)
 
-                # save loss values in tensorboard event file and .npz format
+                # save loss values in wandb event file and .npz format
                 loss_dict = {
                     "gen_loss": gen_acml_loss.item(),
                     "dis_loss": dis_acml_loss.item(),
-                    "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss
+                    "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss,
                 }
 
                 wandb.log(loss_dict, step=self.wandb_step)
@@ -541,6 +543,14 @@ class WORKER(object):
                 misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
                                 name="losses",
                                 dictionary=save_dict)
+
+                # log ada stats
+                if self.AUG.apply_ada:
+                    ada_dict = {
+                        "ada_p": self.ada_p,
+                        "Dis_logits_real": float(self.ada_stat[0] / self.ada_stat[1]),
+                    }
+                    wandb.log(ada_dict, step=self.wandb_step)
 
                 # calculate the spectral norms of all weights in the generator for monitoring purpose
                 if self.MODEL.apply_g_sn:
