@@ -335,18 +335,23 @@ def make_GAN_untrainable(Gen, Gen_ema, Dis):
 
 
 def peel_models(Gen, Gen_ema, Dis):
+    if isinstance(Dis, DataParallel) or isinstance(Dis, DistributedDataParallel):
+        dis = Dis.module
+    else:
+        dis = Dis
+
     if isinstance(Gen, DataParallel) or isinstance(Gen, DistributedDataParallel):
-        gen, dis = Gen.module, Dis.module
-        if Gen_ema is not None:
+        gen = Gen.module
+    else:
+        gen = Gen
+
+    if Gen_ema is not None:
+        if isinstance(Gen_ema, DataParallel) or isinstance(Gen_ema, DistributedDataParallel):
             gen_ema = Gen_ema.module
         else:
-            gen_ema = None
-    else:
-        gen, dis = Gen, Dis
-        if Gen_ema is not None:
             gen_ema = Gen_ema
-        else:
-            gen_ema = None
+    else:
+        gen_ema = None
     return gen, gen_ema, dis
 
 
