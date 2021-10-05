@@ -254,7 +254,7 @@ class Configurations(object):
         self.AUG.ada_aug_type = "W/O"
         # initial value of augmentation probability. 
         self.AUG.ada_initial_augment_p = "N/A" 
-        # target probability for adaptive differentiable augmentations, None = fixed p (as ada_initial_augment_p)
+        # target probability for adaptive differentiable augmentations, None = fixed p (keep ada_initial_augment_p)
         self.AUG.ada_target = "N/A"
         # ADA adjustment speed, measured in how many kimg it takes for p to increase/decrease by one unit.
         self.AUG.ada_kimg = "N/A"
@@ -478,7 +478,7 @@ class Configurations(object):
         else:
             raise NotImplementedError
 
-    def define_augments(self):
+    def define_augments(self, device, DDP):
         self.AUG.series_augment = misc.identity
         ada_augpipe = {
             'blit':   dict(xflip=1, rotate90=1, xint=1),
@@ -500,24 +500,15 @@ class Configurations(object):
             elif self.AUG.diffaug_type == "diffaug":
                 self.AUG.series_augment = diffaug.apply_diffaug
             elif self.AUG.diffaug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
-                self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+                self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device)
             elif self.AUG.diffaug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
-                self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.diffaug_type])
+                self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.diffaug_type]).train().to(device)
             else:
                 raise NotImplementedError
 
         if self.AUG.apply_ada:
-            assert self.AUG.ada_aug_type != "W/O", "Please select diffentiable augmentation type!"
-            if self.AUG.ada_aug_type == "cr":
-                self.AUG.series_augment = cr.apply_cr_aug
-            elif self.AUG.ada_aug_type == "diffaug":
-                self.AUG.series_augment = diffaug.apply_diffaug
-            elif self.AUG.ada_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
-                self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.ada_aug_type)
-            elif self.AUG.ada_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
-                self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.ada_aug_type])
-            else:
-                raise NotImplementedError
+            assert self.AUG.ada_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"], "Please choose ada supported augmentations"
+            self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.ada_aug_type]).train().to(device)
 
         if self.LOSS.apply_cr:
             assert self.AUG.cr_aug_type != "W/O", "Please select augmentation type for cr!"
@@ -526,9 +517,9 @@ class Configurations(object):
             elif self.AUG.cr_aug_type == "diffaug":
                 self.AUG.parallel_augment = diffaug.apply_diffaug
             elif self.AUG.cr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
-                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device)
             elif self.AUG.cr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
-                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.cr_aug_type])
+                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.cr_aug_type]).train().to(device)
             else:
                 raise NotImplementedError
 
@@ -539,11 +530,20 @@ class Configurations(object):
             elif self.AUG.bcr_aug_type == "diffaug":
                 self.AUG.parallel_augment = diffaug.apply_diffaug
             elif self.AUG.bcr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
-                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug)
+                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device)
             elif self.AUG.bcr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
-                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.bcr_aug_type])
+                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.bcr_aug_type]).train().to(device)
             else:
                 raise NotImplementedError
+
+        if self.AUG.series_augment in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol", \
+            "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"] and DDP:
+            self.AUG.series_augment = DDP(self.AUG.series_augment, device_ids=[device], broadcast_buffers=False)
+            self.AUG.series_augment.requires_grad_(False)
+        if self.AUG.parallel_augment in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol", \
+            "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"] and DDP:
+            self.AUG.parallel_augment = DDP(self.AUG.parallel_augment, device_ids=[device], broadcast_buffers=False)
+            self.AUG.parallel_augment.requires_grad_(False)
 
     def check_compatability(self):
         if self.RUN.load_data_in_memory:

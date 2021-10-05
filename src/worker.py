@@ -74,7 +74,7 @@ class WORKER(object):
         self.loss_list_dict = loss_list_dict
         self.metric_list_dict = metric_list_dict
 
-        self.cfgs.define_augments()
+        self.cfgs.define_augments(local_rank, self.RUN.distributed_data_parallel)
         self.cfgs.define_losses()
         self.DATA = cfgs.DATA
         self.MODEL = cfgs.MODEL
@@ -91,6 +91,10 @@ class WORKER(object):
         self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.fm_loss = losses.feature_matching_loss
+
+        if self.AUG.apply_ada:
+            self.AUG.series_augment.p.copy_(torch.as_tensor(ada_p))
+            self.ada_stat = torch.zeros(2, device=self.local_rank).requires_grad_(False)
 
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
@@ -236,13 +240,17 @@ class WORKER(object):
                     if self.LOSS.apply_r1_reg and step_index % d_reg_interval == 0:
                         real_images.requires_grad_()
 
-                    # apply differentiable augmentations if "apply_diffaug" is True
+                    # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     real_dict = self.Dis(real_images_, real_labels)
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=adc_fake)
+
+                    # keep real_dict["adv_output"] signs for ada
+                    if self.AUG.apply_ada:
+                        self.ada_sta += torch.tensor(((torch.sign(real_dict["adv_output"]).sum().item()), real_dict["adv_output"].shape), device=self.local_rank).requires_grad_(False)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -487,6 +495,16 @@ class WORKER(object):
             # if ema is True: update parameters of the Gen_ema in adaptive way
             if self.MODEL.apply_g_ema:
                 self.ema.update(current_step)
+
+        # apply ada_heuristic
+        if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
+            if dist.is_available() and dist.is_initialized() and self.DDP:
+                dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
+            heuristic = float(self.ada_stat[0] / self.ada_stat[1])
+            adjust = np.sign(heuristic) * (self.OPTIMIZATION.batch_size * self.OPTIMIZATION.world_size * self.OPTIMIZATION.acml_steps) / (self.AUG.ada_kimg * 1000)
+            ada_p = max(self.ada_p + adjust, 0)
+            self.AUG.series_augment.p.copy_(ada_p)
+            self.ada_stat.mul_(0)
 
         # logging
         if (current_step + 1) % self.RUN.print_every == 0:
