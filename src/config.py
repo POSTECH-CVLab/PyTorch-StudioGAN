@@ -536,11 +536,11 @@ class Configurations(object):
             else:
                 raise NotImplementedError
 
-        if self.AUG.series_augment in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol", \
+        if (self.AUG.apply_diffaug or self.AUG.apply_ada) and self.AUG.series_augment in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol", \
             "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"] and DDP:
             self.AUG.series_augment = DDP(self.AUG.series_augment, device_ids=[device], broadcast_buffers=False)
             self.AUG.series_augment.requires_grad_(False)
-        if self.AUG.parallel_augment in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol", \
+        if  (self.LOSS.apply_cr or self.LOSS.apply_bcr) and self.AUG.parallel_augment in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol", \
             "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"] and DDP:
             self.AUG.parallel_augment = DDP(self.AUG.parallel_augment, device_ids=[device], broadcast_buffers=False)
             self.AUG.parallel_augment.requires_grad_(False)

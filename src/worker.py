@@ -74,7 +74,7 @@ class WORKER(object):
         self.loss_list_dict = loss_list_dict
         self.metric_list_dict = metric_list_dict
 
-        self.cfgs.define_augments(local_rank, self.RUN.distributed_data_parallel)
+        self.cfgs.define_augments(local_rank, cfgs.RUN.distributed_data_parallel)
         self.cfgs.define_losses()
         self.DATA = cfgs.DATA
         self.MODEL = cfgs.MODEL
@@ -93,7 +93,7 @@ class WORKER(object):
         self.fm_loss = losses.feature_matching_loss
 
         if self.AUG.apply_ada:
-            self.AUG.series_augment.p.copy_(torch.as_tensor(ada_p))
+            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat = torch.zeros(2, device=self.local_rank).requires_grad_(False)
 
         if self.LOSS.adv_loss == "MH":
@@ -250,7 +250,7 @@ class WORKER(object):
 
                     # keep real_dict["adv_output"] signs for ada
                     if self.AUG.apply_ada:
-                        self.ada_sta += torch.tensor(((torch.sign(real_dict["adv_output"]).sum().item()), real_dict["adv_output"].shape), device=self.local_rank).requires_grad_(False)
+                        self.ada_stat += torch.tensor(((torch.sign(real_dict["adv_output"]).sum().item()), real_dict["adv_output"].shape[0]), device=self.local_rank).requires_grad_(False)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -496,14 +496,14 @@ class WORKER(object):
             if self.MODEL.apply_g_ema:
                 self.ema.update(current_step)
 
-        # apply ada_heuristic
+        # apply ada heuristic
         if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
             if dist.is_available() and dist.is_initialized() and self.DDP:
                 dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
             heuristic = float(self.ada_stat[0] / self.ada_stat[1])
-            adjust = np.sign(heuristic) * (self.OPTIMIZATION.batch_size * self.OPTIMIZATION.world_size * self.OPTIMIZATION.acml_steps) / (self.AUG.ada_kimg * 1000)
-            ada_p = max(self.ada_p + adjust, 0)
-            self.AUG.series_augment.p.copy_(ada_p)
+            adjust = np.sign(heuristic - self.AUG.ada_target) * (self.OPTIMIZATION.batch_size * self.OPTIMIZATION.world_size * self.OPTIMIZATION.acml_steps) / (self.AUG.ada_kimg * 1000)
+            self.ada_p = max(self.ada_p + adjust, 0)
+            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat.mul_(0)
 
         # logging
