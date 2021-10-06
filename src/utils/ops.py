@@ -190,3 +190,23 @@ def sn_embedding(num_embeddings, embedding_dim):
 
 def batchnorm_2d(in_features, eps=1e-4, momentum=0.1, affine=True):
     return nn.BatchNorm2d(in_features, eps=eps, momentum=momentum, affine=affine, track_running_stats=True)
+
+
+def conv3x3(in_planes, out_planes, stride=1):
+    "3x3 convolution with padding"
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                     padding=1, bias=False)
+
+
+def adjust_learning_rate(optimizer, lr_org, epoch, total_epoch, dataset):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    if dataset in ["CIFAR10", "CIFAR100"]:
+        lr = lr_org * (0.1 ** (epoch // (total_epoch * 0.5))) * (0.1 ** (epoch // (total_epoch * 0.75)))
+    elif dataset in ["Tiny_ImageNet", "ImageNet"]:
+        if total_epoch == 300:
+            lr = lr_org * (0.1 ** (epoch // 75))
+        else:
+            lr = lr_org * (0.1 ** (epoch // 30))
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr

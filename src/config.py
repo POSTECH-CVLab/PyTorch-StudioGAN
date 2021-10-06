@@ -311,6 +311,15 @@ class Configurations(object):
         self.MISC.no_proc_data = ["CIFAR10", "CIFAR100", "Tiny_ImageNet"]
         self.MISC.base_folders = ["checkpoints", "figures", "logs", "moments", "samples", "values"]
         self.MISC.classifier_based_GAN = ["AC", "2C", "D2DCE"]
+        self.MISC.cas_setting = {
+            "CIFAR10": {"batch_size": 128, "epochs": 90, "depth": 32, "lr": 0.1, "momentum": 0.9,
+                        "weight_decay": 1e-4, "print_freq": 1, "bottleneck": True},
+            "Tiny_ImageNet": {"batch_size": 128, "epochs": 90, "depth": 34, "lr": 0.1, "momentum": 0.9,
+                              "weight_decay": 1e-4, "print_freq": 1, "bottleneck": True},
+            "ImageNet": {"batch_size": 128, "epochs": 90, "depth": 34, "lr": 0.1, "momentum": 0.9,
+                         "weight_decay": 1e-4, "print_freq": 1, "bottleneck": True},
+        }
+
 
         # -----------------------------------------------------------------------------
         # Module settings
@@ -564,7 +573,9 @@ class Configurations(object):
                 self.RUN.frequency_analysis + \
                 self.RUN.tsne_analysis + \
                 self.RUN.intra_class_fid + \
-                self.RUN.semantic_factorization != 0, \
+                self.RUN.semantic_factorization + \
+                self.RUN.GAN_train + \
+                self.RUN.GAN_test != 0, \
             msg
 
         if self.RUN.langevin_sampling:
@@ -581,8 +592,12 @@ class Configurations(object):
         if not self.RUN.train and self.RUN.eval:
             assert self.RUN.ckpt_dir is not None, "Specify -ckpt CHECKPOINT_FOLDER to evaluate GAN without training."
 
+        if self.RUN.GAN_train + self.RUN.GAN_test > 1:
+            assert not self.RUN.distributed_data_parallel, "Please turn off -DDP option to calculate CAS. \
+                It is possible to train a GAN using the DDP option and then compute CAS using DP."
+
         if self.RUN.distributed_data_parallel:
-            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, and tsne analysis with DDP. \
+            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, tsne analysis, and CAS with DDP. \
                 Please change DDP with a single GPU training or DataParallel instead."
             assert self.RUN.vis_fake_images + \
                 self.RUN.k_nearest_neighbor + \
@@ -590,14 +605,17 @@ class Configurations(object):
                 self.RUN.frequency_analysis + \
                 self.RUN.tsne_analysis + \
                 self.RUN.intra_class_fid + \
-                self.RUN.semantic_factorization == 0, \
+                self.RUN.semantic_factorization + \
+                self.RUN.GAN_train + \
+                self.RUN.GAN_test == 0, \
             msg
 
         if self.RUN.intra_class_fid:
             assert self.RUN.load_data_in_memory*self.RUN.load_train_hdf5 or not self.RUN.load_train_hdf5, \
             "StudioGAN does not support calculating iFID using hdf5 data format without load_data_in_memory option."
 
-        if self.RUN.vis_fake_images + self.RUN.k_nearest_neighbor + self.RUN.interpolation + self.RUN.intra_class_fid >= 1:
+        if self.RUN.vis_fake_images + self.RUN.k_nearest_neighbor + self.RUN.interpolation + self.RUN.intra_class_fid + \
+                self.RUN.GAN_train + self.RUN.GAN_test >= 1:
             assert self.OPTIMIZATION.batch_size % 8 == 0, "batch_size should be divided by 8."
 
         if self.MODEL.aux_cls_type != "W/O":
@@ -699,6 +717,10 @@ class Configurations(object):
 
         if self.MODEL.backbone == "stylegan2":
             assert not self.MODEL.apply_attn, "cannot apply attention layers to the stylegan2 generator."
+
+        if self.RUN.GAN_train or self.RUN.GAN_test:
+            assert not self.MODEL.d_cond_mtd == "W/O", \
+                "Classifier Accuracy Score (CAS) is defined only when the GAN is trained by a class-conditioned way."
 
         assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
             \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \

@@ -80,6 +80,9 @@ def load_configs_initialize_training():
     parser.add_argument("-fa", "--frequency_analysis", action="store_true", help="conduct frequency analysis")
     parser.add_argument("-tsne", "--tsne_analysis", action="store_true", help="conduct tsne analysis")
     parser.add_argument("-ifid", "--intra_class_fid", action="store_true", help="calculate intra-class fid")
+    parser.add_argument('--GAN_train', action='store_true', help="whether to calculate CAS (Recall)")
+    parser.add_argument('--GAN_test', action='store_true', help="whether to calculate CAS (Precision)")
+    parser.add_argument('-resume_ct', '--resume_classifier_train', action='store_true', help="whether to resume classifier traning for CAS")
     parser.add_argument("-sefa", "--semantic_factorization", action="store_true", help="perform semantic (closed-form) factorization")
     parser.add_argument("-sefa_axis", "--num_semantic_axis", type=int, default=-1, help="number of semantic axis for sefa")
     parser.add_argument("-sefa_max", "--maximum_variations", type=float, default=-1,
@@ -101,6 +104,8 @@ def load_configs_initialize_training():
             not args.frequency_analysis and \
             not args.tsne_analysis and \
             not args.intra_class_fid and \
+            not args.GAN_train and \
+            not args.GAN_test and \
             not args.semantic_factorization:
         parser.print_help(sys.stderr)
         sys.exit(1)
