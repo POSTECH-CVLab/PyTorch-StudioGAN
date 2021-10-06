@@ -536,18 +536,6 @@ class Configurations(object):
             else:
                 raise NotImplementedError
 
-        tmp = ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"] + list(ada_augpipe.keys())
-        if (self.AUG.apply_diffaug and self.AUG.diffaug_type in tmp) or (self.AUG.apply_ada and self.AUG.ada_aug_type in tmp):
-            if DDP:
-                self.AUG.series_augment.requires_grad_(True)
-                self.AUG.series_augment = torch.nn.parallel.DistributedDataParallel(self.AUG.series_augment, device_ids=[device], broadcast_buffers=False)
-                self.AUG.series_augment.requires_grad_(False)
-        if (self.LOSS.apply_cr and self.AUG.cr_aug_type in tmp) or (self.LOSS.apply_bcr and self.AUG.bcr_aug_type in tmp):
-            if DDP:
-                self.AUG.parallel_augment.requires_grad_(True)
-                self.AUG.parallel_augment = torch.nn.parallel.DistributedDataParallel(self.AUG.parallel_augment, device_ids=[device], broadcast_buffers=False)
-                self.AUG.parallel_augment.requires_grad_(False)
-
     def check_compatability(self):
         if self.RUN.load_data_in_memory:
             assert self.RUN.load_train_hdf5, "load_data_in_memory option is appliable with the load_train_hdf5 (-hdf5) option."
