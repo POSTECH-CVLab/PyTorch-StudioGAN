@@ -89,13 +89,14 @@ class WORKER(object):
 
         self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
         self.DDP = self.RUN.distributed_data_parallel
-        self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
+        self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.fm_loss = losses.feature_matching_loss
 
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat = torch.zeros(2, device=self.local_rank).requires_grad_(False)
+            self.ada_stat_prev = torch.zeros(2, device=self.local_rank).requires_grad_(False)
 
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
@@ -351,7 +352,7 @@ class WORKER(object):
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
                                                          images=real_images,
                                                          device=self.local_rank)
-                        dis_acml_loss = d_reg_interval * (self.LOSS.r1_lambda * real_r1_loss + dis_acml_loss)
+                        dis_acml_loss += d_reg_interval * (self.LOSS.r1_lambda * real_r1_loss)
 
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
@@ -457,26 +458,7 @@ class WORKER(object):
 
                     # apply path length regularization
                     if self.STYLEGAN2.apply_pl_reg and (step_index * self.OPTIMIZATION.acml_steps + acml_index) % self.STYLEGAN2.g_reg_interval == 0:
-                        fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
-                            z_prior=self.MODEL.z_prior,
-                            truncation_th=-1.0,
-                            batch_size=self.OPTIMIZATION.batch_size // 2,
-                            z_dim=self.MODEL.z_dim,
-                            num_classes=self.DATA.num_classes,
-                            y_sampler="totally_random",
-                            radius=self.LOSS.radius,
-                            generator=self.Gen,
-                            discriminator=self.Dis,
-                            is_train=True,
-                            LOSS=self.LOSS,
-                            RUN=self.RUN,
-                            device=self.local_rank,
-                            generator_mapping=self.Gen_mapping,
-                            generator_synthesis=self.Gen_synthesis,
-                            is_stylegan=self.is_stylegan,
-                            style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
-                            cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                        gen_acml_loss = self.STYLEGAN2.g_reg_interval * (self.pl_reg.cal_pl_reg(fake_images, ws) + gen_acml_loss)
+                        gen_acml_loss += self.STYLEGAN2.g_reg_interval * self.pl_reg.cal_pl_reg(fake_images[:self.OPTIMIZATION.batch_size // 2], ws[:self.OPTIMIZATION.batch_size // 2])
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
@@ -501,11 +483,12 @@ class WORKER(object):
         if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
             if dist.is_available() and dist.is_initialized() and self.DDP:
                 dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
-            heuristic = float(self.ada_stat[0] / self.ada_stat[1])
+            delta = self.ada_stat - self.ada_stat_prev
+            heuristic = float(delta[0] / delta[1])
             adjust = np.sign(heuristic - self.AUG.ada_target) * (self.OPTIMIZATION.batch_size * self.OPTIMIZATION.world_size * self.OPTIMIZATION.acml_steps * self.AUG.ada_interval) / (self.AUG.ada_kimg * 1000)
             self.ada_p = min(1, max(self.ada_p + adjust, 0))
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-            self.ada_stat.mul_(0)
+            self.ada_stat_prev = self.ada_stat
 
         # logging
         if (current_step + 1) % self.RUN.print_every == 0:

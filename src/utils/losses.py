@@ -144,7 +144,7 @@ class Data2DataCrossEntropyLoss(torch.nn.Module):
         return criterion.mean()
 
 
-class pl_reg:
+class PathLengthRegularizer:
     def __init__(self, device, pl_decay=0.01, pl_weight=2):
         self.pl_decay = 0.01
         self.pl_weight = 2
