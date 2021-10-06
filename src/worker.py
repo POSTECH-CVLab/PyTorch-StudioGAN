@@ -487,7 +487,7 @@ class WORKER(object):
             if self.DDP:
                 dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
             heuristic = float(self.ada_stat[0] / self.ada_stat[1])
-            adjust = np.sign(heuristic - self.AUG.ada_target) * self.ada_stat[1] / (self.AUG.ada_kimg * 1000)
+            adjust = np.sign(heuristic - self.AUG.ada_target) * float(self.ada_stat[1]) / (self.AUG.ada_kimg * 1000)
             self.ada_p = min(1., max(self.ada_p + adjust, 0.))
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat.mul_(0)

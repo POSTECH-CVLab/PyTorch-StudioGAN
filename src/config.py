@@ -359,6 +359,7 @@ class Configurations(object):
         else:
             g_losses = {
                 "vanilla": losses.g_vanilla,
+                "logistic": losses.g_vanilla,
                 "least_square": losses.g_ls,
                 "hinge": losses.g_hinge,
                 "wasserstein": losses.g_wasserstein,
@@ -366,6 +367,7 @@ class Configurations(object):
 
             d_losses = {
                 "vanilla": losses.d_vanilla,
+                "logistic": losses.d_logistic,
                 "least_square": losses.d_ls,
                 "hinge": losses.d_hinge,
                 "wasserstein": losses.d_wasserstein,

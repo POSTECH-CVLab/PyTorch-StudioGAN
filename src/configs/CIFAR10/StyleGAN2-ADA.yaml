@@ -30,7 +30,7 @@ MODEL:
   d_conv_dim: "N/A"
   apply_g_ema: True
 LOSS:
-  adv_loss: "vanilla"
+  adv_loss: "logistic"
   apply_r1_reg: True
   r1_lambda: 0.01
 OPTIMIZATION:
