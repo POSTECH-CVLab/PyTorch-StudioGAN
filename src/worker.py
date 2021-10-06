@@ -96,7 +96,6 @@ class WORKER(object):
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat = torch.zeros(2, device=self.local_rank).requires_grad_(False)
-            self.ada_stat_prev = torch.zeros(2, device=self.local_rank).requires_grad_(False)
 
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
@@ -252,7 +251,7 @@ class WORKER(object):
 
                     # keep real_dict["adv_output"] signs for ada
                     if self.AUG.apply_ada:
-                        self.ada_stat += torch.tensor(((torch.sign(real_dict["adv_output"]).sum().item()), real_dict["adv_output"].shape[0]), device=self.local_rank).requires_grad_(False)
+                        self.ada_stat += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank).requires_grad_(False)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -481,14 +480,13 @@ class WORKER(object):
 
         # apply ada heuristic
         if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
-            if dist.is_available() and dist.is_initialized() and self.DDP:
+            if self.DDP:
                 dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
-            delta = self.ada_stat - self.ada_stat_prev
-            heuristic = float(delta[0] / delta[1])
-            adjust = np.sign(heuristic - self.AUG.ada_target) * (self.OPTIMIZATION.batch_size * self.OPTIMIZATION.world_size * self.OPTIMIZATION.acml_steps * self.AUG.ada_interval) / (self.AUG.ada_kimg * 1000)
-            self.ada_p = min(1, max(self.ada_p + adjust, 0))
+            heuristic = float(self.ada_stat[0] / self.ada_stat[1])
+            adjust = np.sign(heuristic - self.AUG.ada_target) * self.ada_stat[1] / (self.AUG.ada_kimg * 1000)
+            self.ada_p = min(1., max(self.ada_p + adjust, 0.))
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-            self.ada_stat_prev = self.ada_stat
+            self.ada_stat.mul_(0)
 
         # logging
         if (current_step + 1) % self.RUN.print_every == 0:

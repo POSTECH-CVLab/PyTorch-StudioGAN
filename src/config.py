@@ -500,15 +500,15 @@ class Configurations(object):
             elif self.AUG.diffaug_type == "diffaug":
                 self.AUG.series_augment = diffaug.apply_diffaug
             elif self.AUG.diffaug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
-                self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device)
+                self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device).requires_grad_(False)
             elif self.AUG.diffaug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
-                self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.diffaug_type]).train().to(device)
+                self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.diffaug_type]).train().to(device).requires_grad_(False)
             else:
                 raise NotImplementedError
 
         if self.AUG.apply_ada:
             assert self.AUG.ada_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"], "Please choose ada supported augmentations"
-            self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.ada_aug_type]).train().to(device)
+            self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.ada_aug_type]).train().to(device).requires_grad_(False)
 
         if self.LOSS.apply_cr:
             assert self.AUG.cr_aug_type != "W/O", "Please select augmentation type for cr!"
@@ -517,9 +517,9 @@ class Configurations(object):
             elif self.AUG.cr_aug_type == "diffaug":
                 self.AUG.parallel_augment = diffaug.apply_diffaug
             elif self.AUG.cr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
-                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device)
+                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device).requires_grad_(False)
             elif self.AUG.cr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
-                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.cr_aug_type]).train().to(device)
+                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.cr_aug_type]).train().to(device).requires_grad_(False)
             else:
                 raise NotImplementedError
 
@@ -530,20 +530,23 @@ class Configurations(object):
             elif self.AUG.bcr_aug_type == "diffaug":
                 self.AUG.parallel_augment = diffaug.apply_diffaug
             elif self.AUG.bcr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
-                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device)
+                self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device).requires_grad_(False)
             elif self.AUG.bcr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
-                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.bcr_aug_type]).train().to(device)
+                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.bcr_aug_type]).train().to(device).requires_grad_(False)
             else:
                 raise NotImplementedError
 
-        if (self.AUG.apply_diffaug or self.AUG.apply_ada) and self.AUG.series_augment in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol", \
-            "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"] and DDP:
-            self.AUG.series_augment = DDP(self.AUG.series_augment, device_ids=[device], broadcast_buffers=False)
-            self.AUG.series_augment.requires_grad_(False)
-        if  (self.LOSS.apply_cr or self.LOSS.apply_bcr) and self.AUG.parallel_augment in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol", \
-            "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"] and DDP:
-            self.AUG.parallel_augment = DDP(self.AUG.parallel_augment, device_ids=[device], broadcast_buffers=False)
-            self.AUG.parallel_augment.requires_grad_(False)
+        tmp = ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"] + list(ada_augpipe.keys())
+        if (self.AUG.apply_diffaug and self.AUG.diffaug_type in tmp) or (self.AUG.apply_ada and self.AUG.ada_aug_type in tmp):
+            if DDP:
+                self.AUG.series_augment._requires_grad_(True)
+                self.AUG.series_augment = DDP(self.AUG.series_augment, device_ids=[device], broadcast_buffers=False)
+                self.AUG.series_augment._requires_grad_(False)
+        if (self.LOSS.apply_cr and self.AUG.cr_aug_type in tmp) or (self.LOSS.apply_bcr and self.AUG.bcr_aug_type in tmp):
+            if DDP:
+                self.AUG.parallel_augment._requires_grad_(True)
+                self.AUG.parallel_augment = DDP(self.AUG.parallel_augment, device_ids=[device], broadcast_buffers=False)
+                self.AUG.parallel_augment._requires_grad_(False)
 
     def check_compatability(self):
         if self.RUN.load_data_in_memory:
