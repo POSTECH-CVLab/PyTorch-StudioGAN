@@ -168,4 +168,9 @@ def prepare_parallel_training(Gen, Dis, Gen_ema, MODEL, world_size, distributed_
                 Dis = convert_model(Dis).to(device)
                 if apply_g_ema:
                     Gen_ema = convert_model(Gen_ema).to(device)
+    else:
+        if MODEL.backbone == "stylegan2":
+            Gen_mapping, Gen_synthesis = Gen.mapping, Gen.synthesis
+            if apply_g_ema:
+                Gen_ema_mapping, Gen_ema_synthesis = Gen_ema.mapping, Gen_ema.synthesis
     return Gen, Dis, Gen_ema, Gen_mapping, Gen_synthesis, Gen_ema_mapping, Gen_ema_synthesis

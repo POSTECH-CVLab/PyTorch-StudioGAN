@@ -95,7 +95,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # load train and evaluation datasets.
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.train or cfgs.RUN.intra_class_fid:
+    if cfgs.RUN.train or cfgs.RUN.intra_class_fid or cfgs.RUN.GAN_train or cfgs.RUN.GAN_test:
         if local_rank == 0:
             logger.info("Load {name} train dataset.".format(name=cfgs.DATA.name))
         train_dataset = Dataset_(data_name=cfgs.DATA.name,
@@ -138,7 +138,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         train_sampler = None
 
-    if cfgs.RUN.train:
+    if cfgs.RUN.train or cfgs.RUN.intra_class_fid or cfgs.RUN.GAN_train or cfgs.RUN.GAN_test:
         train_dataloader = DataLoader(dataset=train_dataset,
                                       batch_size=cfgs.OPTIMIZATION.batch_size,
                                       shuffle=(train_sampler is None),
@@ -362,7 +362,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.intra_class_fid:
         if global_rank == 0:
             print(""), logger.info("-" * 80)
-        worker.cal_intra_class_fid(dataset=train_dataset)
+        worker.calulate_intra_class_fid(dataset=train_dataset)
 
     if cfgs.RUN.semantic_factorization:
         if global_rank == 0:
@@ -370,3 +370,14 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.run_semantic_factorization(num_rows=cfgs.RUN.num_semantic_axis,
                                           num_cols=num_cols,
                                           maximum_variations=cfgs.RUN.maximum_variations)
+
+    if cfgs.RUN.GAN_train:
+        if global_rank == 0:
+            print(""), logger.info("-" * 80)
+        worker.compute_GAN_train_or_test_classifier_accuracy_score(GAN_train=True, GAN_test=False)
+
+    if cfgs.RUN.GAN_test:
+        if global_rank == 0:
+            print(""), logger.info("-" * 80)
+        worker.compute_GAN_train_or_test_classifier_accuracy_score(GAN_train=False, GAN_test=True)
+

@@ -71,8 +71,8 @@ class precision_recall(object):
         return precision, recall
 
     def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes,
-                                 generator, discriminator, LOSS, RUN, STYLEGAN2, num_runs, num_clusters, num_angles,
-                                 is_stylegan, generator_mapping, generator_synthesis, device):
+                                 generator, discriminator, LOSS, RUN, num_runs, num_clusters, num_angles, is_stylegan,
+                                 generator_mapping, generator_synthesis, device):
         data_iter = iter(data_loader)
         num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
         for i in tqdm(range(num_batches), disable=self.disable_tqdm):
@@ -94,7 +94,7 @@ class precision_recall(object):
                                                             is_stylegan=is_stylegan,
                                                             generator_mapping=generator_mapping,
                                                             generator_synthesis=generator_synthesis,
-                                                            style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                            style_mixing_p=0.0,
                                                             cal_trsp_cost=False)
 
             real_embeddings, _ = self.eval_model.get_outputs(real_images)
@@ -144,7 +144,6 @@ def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, gen
                                                       discriminator=discriminator,
                                                       LOSS=cfgs.LOSS,
                                                       RUN=cfgs.RUN,
-                                                      STYLEGAN2=cfgs.STYLEGAN2,
                                                       num_runs=num_runs,
                                                       num_clusters=num_clusters,
                                                       num_angles=num_angles,

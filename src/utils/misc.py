@@ -125,6 +125,41 @@ class GeneratorController(object):
         return self.generator, self.generator_mapping, self.generator_synthesis
 
 
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
+def accuracy(output, target, topk=(1,)):
+    """Computes the precision@k for the specified values of k"""
+    maxk = max(topk)
+    batch_size = target.size(0)
+
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+    res = []
+    for k in topk:
+        correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+        wrong_k = batch_size - correct_k
+        res.append(100 - wrong_k.mul_(100.0 / batch_size))
+    return res
+
+
 def prepare_folder(names, save_dir):
     for name in names:
         folder_path = join(save_dir, name)
@@ -306,7 +341,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                    is_stylegan=MODEL.backbone=="stylegan2",
                                                                    generator_mapping=None,
                                                                    generator_synthesis=None,
-                                                                   style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                                   style_mixing_p=0.0,
                                                                    device=device,
                                                                    cal_trsp_cost=False)
     generator.eval()
@@ -368,6 +403,11 @@ def save_model(model, when, step, ckpt_dir, states):
         find_and_remove(model_ckpt_list[0])
 
     torch.save(states, join(ckpt_dir, model_tpl.format(model=model, when=when, step=step)))
+
+
+def save_model_c(states, mode, RUN):
+    ckpt_path = join(RUN.ckpt_dir, "model=C-{mode}-best-weights.pth".format(mode=mode))
+    torch.save(states, ckpt_path)
 
 
 def find_string(list_, string):
@@ -445,7 +485,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=Tr
 
 
 def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, generator_mapping, generator_synthesis,
+                    truncation_th, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
                     directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
@@ -483,7 +523,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
                                                                  is_stylegan=is_stylegan,
                                                                  generator_mapping=generator_mapping,
                                                                  generator_synthesis=generator_synthesis,
-                                                                 style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                                 style_mixing_p=0.0,
                                                                  device=device,
                                                                  cal_trsp_cost=False)
             else:
@@ -504,7 +544,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
 
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan, generator_mapping, generator_synthesis,
+                    truncation_th, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
                     directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
@@ -542,7 +582,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                                  is_stylegan=is_stylegan,
                                                                  generator_mapping=generator_mapping,
                                                                  generator_synthesis=generator_synthesis,
-                                                                 style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                                 style_mixing_p=0.0,
                                                                  device=device,
                                                                  cal_trsp_cost=False)
             else:

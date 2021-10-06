@@ -28,10 +28,13 @@ import numpy as np
 import metrics.ins as ins
 import metrics.fid as fid
 import metrics.prdc_trained as prdc_trained
+import metrics.resnet as resnet
+import utils.ckpt as ckpt
 import utils.sample as sample
 import utils.misc as misc
 import utils.losses as losses
 import utils.sefa as sefa
+import utils.ops as ops
 import wandb
 
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
@@ -90,6 +93,7 @@ class WORKER(object):
         self.DDP = self.RUN.distributed_data_parallel
         self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
+        self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
 
         if self.LOSS.adv_loss == "MH":
@@ -580,7 +584,7 @@ class WORKER(object):
                                                                        is_stylegan=self.is_stylegan,
                                                                        generator_mapping=generator_mapping,
                                                                        generator_synthesis=generator_synthesis,
-                                                                       style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                                                                       style_mixing_p=0.0,
                                                                        cal_trsp_cost=False)
 
         misc.plot_img_canvas(images=(fake_images.detach().cpu() + 1) / 2,
@@ -624,7 +628,6 @@ class WORKER(object):
                                                               num_classes=self.DATA.num_classes,
                                                               LOSS=self.LOSS,
                                                               RUN=self.RUN,
-                                                              STYLEGAN2=self.STYLEGAN2,
                                                               is_stylegan=self.is_stylegan,
                                                               generator_mapping=generator_mapping,
                                                               generator_synthesis=generator_synthesis,
@@ -799,7 +802,6 @@ class WORKER(object):
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
                                      RUN=self.RUN,
-                                     STYLEGAN2=self.STYLEGAN2,
                                      is_stylegan=self.is_stylegan,
                                      generator_mapping=generator_mapping,
                                      generator_synthesis=generator_synthesis,
@@ -819,7 +821,6 @@ class WORKER(object):
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
                                      RUN=self.RUN,
-                                     STYLEGAN2=self.STYLEGAN2,
                                      is_stylegan=self.is_stylegan,
                                      generator_mapping=generator_mapping,
                                      generator_synthesis=generator_synthesis,
@@ -866,7 +867,7 @@ class WORKER(object):
                                                                         is_stylegan=self.is_stylegan,
                                                                         generator_mapping=generator_mapping,
                                                                         generator_synthesis=generator_synthesis,
-                                                                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                                                                        style_mixing_p=0.0,
                                                                         cal_trsp_cost=False)
 
                 fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
@@ -1007,7 +1008,7 @@ class WORKER(object):
                                                                         is_stylegan=self.is_stylegan,
                                                                         generator_mapping=generator_mapping,
                                                                         generator_synthesis=generator_synthesis,
-                                                                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                                                                        style_mixing_p=0.0,
                                                                         cal_trsp_cost=False)
                 fake_images = fake_images.detach().cpu().numpy()
 
@@ -1088,23 +1089,23 @@ class WORKER(object):
                 save_output.clear()
 
                 fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                        truncation_th=self.RUN.truncation_th,
-                                                                        batch_size=self.OPTIMIZATION.batch_size,
-                                                                        z_dim=self.MODEL.z_dim,
-                                                                        num_classes=self.DATA.num_classes,
-                                                                        y_sampler="totally_random",
-                                                                        radius="N/A",
-                                                                        generator=generator,
-                                                                        discriminator=self.Dis,
-                                                                        is_train=False,
-                                                                        LOSS=self.LOSS,
-                                                                        RUN=self.RUN,
-                                                                        device=self.local_rank,
-                                                                        is_stylegan=self.is_stylegan,
-                                                                        generator_mapping=generator_mapping,
-                                                                        generator_synthesis=generator_synthesis,
-                                                                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
-                                                                        cal_trsp_cost=False)
+                                                                           truncation_th=self.RUN.truncation_th,
+                                                                           batch_size=self.OPTIMIZATION.batch_size,
+                                                                           z_dim=self.MODEL.z_dim,
+                                                                           num_classes=self.DATA.num_classes,
+                                                                           y_sampler="totally_random",
+                                                                           radius="N/A",
+                                                                           generator=generator,
+                                                                           discriminator=self.Dis,
+                                                                           is_train=False,
+                                                                           LOSS=self.LOSS,
+                                                                           RUN=self.RUN,
+                                                                           device=self.local_rank,
+                                                                           is_stylegan=self.is_stylegan,
+                                                                           generator_mapping=generator_mapping,
+                                                                           generator_synthesis=generator_synthesis,
+                                                                           style_mixing_p=0.0,
+                                                                           cal_trsp_cost=False)
 
                 fake_dict = self.Dis(fake_images, fake_labels)
                 if i == 0:
@@ -1146,7 +1147,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # calculate intra-class FID (iFID) to identify intra-class diversity
     # -----------------------------------------------------------------------------
-    def cal_intra_class_fid(self, dataset):
+    def calulate_intra_class_fid(self, dataset):
         if self.global_rank == 0:
             self.logger.info("Start calculating iFID (use {num} fake images per class and train images as the reference).".\
                              format(num=self.num_eval[self.RUN.ref_dataset]))
@@ -1187,7 +1188,6 @@ class WORKER(object):
                                                   num_classes=1,
                                                   LOSS="N/A",
                                                   RUN=self.RUN,
-                                                  STYLEGAN2="N/A",
                                                   is_stylegan=False,
                                                   device=self.local_rank,
                                                   disable_tqdm=True)
@@ -1269,3 +1269,157 @@ class WORKER(object):
             print("Save figures to {}/*_sefa_images.png".format(join(self.RUN.save_dir, "figures", self.run_name)))
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+
+    # -----------------------------------------------------------------------------
+    # compute classifier accuracy score (CAS) to identify class-conditional precision and recall
+    # -----------------------------------------------------------------------------
+    def compute_GAN_train_or_test_classifier_accuracy_score(self, GAN_train=False, GAN_test=False):
+        assert GAN_train*GAN_test == 0, "cannot conduct GAN_train and GAN_test togather."
+        if self.global_rank == 0:
+            if GAN_train:
+                phase, metric = "train", "recall"
+            else:
+                phase, metric = "test", "precision"
+            self.logger.info("compute GAN_{phase} Classifier Accuracy Score (CAS) to identify class-conditional {metric}.". \
+                             format(phase=phase, metric=metric))
+
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+        generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+
+        best_top1, best_top5, cas_setting = 0.0, 0.0, self.MISC.cas_setting[self.DATA.name]
+        model = resnet.ResNet(dataset=self.DATA.name,
+                              depth=cas_setting["depth"],
+                              num_classes=self.DATA.num_classes,
+                              bottleneck=cas_setting["bottleneck"]).to("cuda")
+
+        optimizer = torch.optim.SGD(params=model.parameters(),
+                                    lr=cas_setting["lr"],
+                                    momentum=cas_setting["momentum"],
+                                    weight_decay=cas_setting["weight_decay"],
+                                    nesterov=True)
+
+        if self.OPTIMIZATION.world_size > 1:
+            model = DataParallel(model, output_device=self.local_rank)
+
+        epoch_trained = 0
+        if self.RUN.ckpt_dir is not None and self.RUN.resume_classifier_train:
+            is_pre_trained_model, mode = ckpt.check_is_pre_trained_model(ckpt_dir=self.RUN.ckpt_dir,
+                                                                         GAN_train=GAN_train,
+                                                                         GAN_test=GAN_test)
+            if is_pre_trained_model:
+                epoch_trained, best_top1, best_top5, best_epoch = ckpt.load_GAN_train_test_model(model=model,
+                                                                                                 mode=mode,
+                                                                                                 optimizer=optimizer,
+                                                                                                 RUN=self.RUN)
+
+        for current_epoch in tqdm(range(epoch_trained, cas_setting["epochs"])):
+            model.train()
+            optimizer.zero_grad()
+            ops.adjust_learning_rate(optimizer=optimizer,
+                                     lr_org=cas_setting["lr"],
+                                     epoch=current_epoch,
+                                     total_epoch=cas_setting["epochs"],
+                                     dataset=self.DATA.name)
+
+            train_top1_acc, train_top5_acc, train_loss = misc.AverageMeter(), misc.AverageMeter(), misc.AverageMeter()
+            for i, (images, labels) in enumerate(self.train_dataloader):
+                if GAN_train:
+                    images, labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                     truncation_th=self.RUN.truncation_th,
+                                                                     batch_size=self.OPTIMIZATION.batch_size,
+                                                                     z_dim=self.MODEL.z_dim,
+                                                                     num_classes=self.DATA.num_classes,
+                                                                     y_sampler="totally_random",
+                                                                     radius="N/A",
+                                                                     generator=generator,
+                                                                     discriminator=self.Dis,
+                                                                     is_train=False,
+                                                                     LOSS=self.LOSS,
+                                                                     RUN=self.RUN,
+                                                                     device=self.local_rank,
+                                                                     is_stylegan=self.is_stylegan,
+                                                                     generator_mapping=generator_mapping,
+                                                                     generator_synthesis=generator_synthesis,
+                                                                     style_mixing_p=0.0,
+                                                                     cal_trsp_cost=False)
+                else:
+                    images, labels = images.to(self.local_rank), labels.to(self.local_rank)
+
+                logits = model(images)
+                ce_loss = self.ce_loss(logits, labels)
+
+                train_acc1, train_acc5 = misc.accuracy(logits.data, labels, topk=(1, 5))
+
+                train_loss.update(ce_loss.item(), images.size(0))
+                train_top1_acc.update(train_acc1.item(), images.size(0))
+                train_top5_acc.update(train_acc5.item(), images.size(0))
+
+                ce_loss.backward()
+                optimizer.step()
+
+            valid_acc1, valid_acc5, valid_loss = self.validate_classifier(model=model,
+                                                                          generator=generator,
+                                                                          generator_mapping=generator_mapping,
+                                                                          generator_synthesis=generator_synthesis,
+                                                                          epoch=current_epoch,
+                                                                          GAN_test=GAN_test,
+                                                                          setting=cas_setting)
+
+            is_best = valid_acc1 > best_top1
+            best_top1 = max(valid_acc1, best_top1)
+            if is_best:
+                best_top5, best_epoch = valid_acc5, current_epoch
+                model_ = misc.peel_model(model)
+                states = {"state_dict": model_.state_dict(), "optimizer": optimizer.state_dict(), "epoch": current_epoch+1,
+                          "best_top1": best_top1, "best_top5": best_top5, "best_epoch": best_epoch}
+                misc.save_model_c(states, mode, self.RUN)
+
+            if self.local_rank == 0:
+                self.logger.info("Current best accuracy: Top-1: {top1:.4f}% and Top-5 {top5:.4f}%".format(top1=best_top1, top5=best_top5))
+                self.logger.info("Save model to {}".format(self.RUN.ckpt_dir))
+
+    # -----------------------------------------------------------------------------
+    # validate GAN_train or GAN_test classifier using generated or training dataset
+    # -----------------------------------------------------------------------------
+    def validate_classifier(self,model, generator, generator_mapping, generator_synthesis, epoch, GAN_test, setting):
+        model.eval()
+        valid_top1_acc, valid_top5_acc, valid_loss = misc.AverageMeter(), misc.AverageMeter(), misc.AverageMeter()
+        for i, (images, labels) in enumerate(self.train_dataloader):
+            if GAN_test:
+                images, labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                 truncation_th=self.RUN.truncation_th,
+                                                                 batch_size=self.OPTIMIZATION.batch_size,
+                                                                 z_dim=self.MODEL.z_dim,
+                                                                 num_classes=self.DATA.num_classes,
+                                                                 y_sampler="totally_random",
+                                                                 radius="N/A",
+                                                                 generator=generator,
+                                                                 discriminator=self.Dis,
+                                                                 is_train=False,
+                                                                 LOSS=self.LOSS,
+                                                                 RUN=self.RUN,
+                                                                 device=self.local_rank,
+                                                                 is_stylegan=self.is_stylegan,
+                                                                 generator_mapping=generator_mapping,
+                                                                 generator_synthesis=generator_synthesis,
+                                                                 style_mixing_p=0.0,
+                                                                 cal_trsp_cost=False)
+            else:
+                images, labels = images.to(self.local_rank), labels.to(self.local_rank)
+
+            output = model(images)
+            ce_loss = self.ce_loss(output, labels)
+
+            valid_acc1, valid_acc5 = misc.accuracy(output.data, labels, topk=(1, 5))
+
+            valid_loss.update(ce_loss.item(), images.size(0))
+            valid_top1_acc.update(valid_acc1.item(), images.size(0))
+            valid_top5_acc.update(valid_acc5.item(), images.size(0))
+
+        if self.local_rank == 0:
+            self.logger.info("Top 1-acc {top1.val:.4f} ({top1.avg:.4f})\t"
+                             "Top 5-acc {top5.val:.4f} ({top5.avg:.4f})".format(top1=valid_top1_acc, top5=valid_top5_acc))
+        return valid_top1_acc.avg, valid_top5_acc.avg, valid_loss.avg
