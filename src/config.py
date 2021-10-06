@@ -518,7 +518,7 @@ class Configurations(object):
                 raise NotImplementedError
 
         if self.AUG.apply_ada:
-            assert self.AUG.ada_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"], "Please choose ada supported augmentations"
+            assert self.AUG.ada_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"], "Please select ada supported augmentations"
             self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.ada_aug_type]).train().to(device).requires_grad_(False)
 
         if self.LOSS.apply_cr:

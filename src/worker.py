@@ -533,7 +533,7 @@ class WORKER(object):
                 if self.AUG.apply_ada:
                     ada_dict = {
                         "ada_p": self.ada_p,
-                        "dis_logits_real": float(self.ada_stat[0] / self.ada_stat[1]),
+                        "dis_sign_real": float(self.ada_stat[0] / self.ada_stat[1]),
                     }
                     wandb.log(ada_dict, step=self.wandb_step)
 
