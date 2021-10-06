@@ -503,7 +503,7 @@ class WORKER(object):
                 dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
             heuristic = float(self.ada_stat[0] / self.ada_stat[1])
             adjust = np.sign(heuristic - self.AUG.ada_target) * (self.OPTIMIZATION.batch_size * self.OPTIMIZATION.world_size * self.OPTIMIZATION.acml_steps * self.AUG.ada_interval) / (self.AUG.ada_kimg * 1000)
-            self.ada_p = max(self.ada_p + adjust, 0)
+            self.ada_p = min(1, max(self.ada_p + adjust, 0))
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat.mul_(0)
 
@@ -548,7 +548,7 @@ class WORKER(object):
                 if self.AUG.apply_ada:
                     ada_dict = {
                         "ada_p": self.ada_p,
-                        "Dis_logits_real": float(self.ada_stat[0] / self.ada_stat[1]),
+                        "dis_logits_real": float(self.ada_stat[0] / self.ada_stat[1]),
                     }
                     wandb.log(ada_dict, step=self.wandb_step)
 
