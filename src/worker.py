@@ -75,7 +75,7 @@ class WORKER(object):
         self.loss_list_dict = loss_list_dict
         self.metric_list_dict = metric_list_dict
 
-        self.cfgs.define_augments(local_rank, cfgs.RUN.distributed_data_parallel)
+        self.cfgs.define_augments(local_rank)
         self.cfgs.define_losses()
         self.DATA = cfgs.DATA
         self.MODEL = cfgs.MODEL

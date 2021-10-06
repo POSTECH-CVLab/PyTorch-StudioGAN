@@ -478,7 +478,7 @@ class Configurations(object):
         else:
             raise NotImplementedError
 
-    def define_augments(self, device, DDP):
+    def define_augments(self, device):
         self.AUG.series_augment = misc.identity
         ada_augpipe = {
             'blit':   dict(xflip=1, rotate90=1, xint=1),
