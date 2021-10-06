@@ -32,7 +32,7 @@ import utils.sample as sample
 
 
 def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes, generator,
-                                 discriminator, eval_model, LOSS, RUN, STYLEGAN2, is_stylegan, generator_mapping, generator_synthesis,
+                                 discriminator, eval_model, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
                                  device, disable_tqdm):
     data_iter = iter(data_loader)
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
@@ -55,7 +55,7 @@ def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior,
                                                          is_stylegan=is_stylegan,
                                                          generator_mapping=generator_mapping,
                                                          generator_synthesis=generator_synthesis,
-                                                         style_mixing_p=STYLEGAN2.style_mixing_p,
+                                                         style_mixing_p=0.0,
                                                          cal_trsp_cost=False)
 
         real_embeddings, _ = eval_model.get_outputs(real_images)
@@ -91,7 +91,6 @@ def calculate_prdc(data_loader, eval_model, num_generate, cfgs, generator, gener
                                                             eval_model=eval_model,
                                                             LOSS=cfgs.LOSS,
                                                             RUN=cfgs.RUN,
-                                                            STYLEGAN2=cfgs.STYLEGAN2,
                                                             is_stylegan=(cfgs.MODEL.backbone=="stylegan2"),
                                                             generator_mapping=generator_mapping,
                                                             generator_synthesis=generator_synthesis,

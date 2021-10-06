@@ -62,8 +62,8 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 
 def calculate_moments(data_loader, generator, discriminator, eval_model, is_generate, num_generate, y_sampler,
-                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, STYLEGAN2, is_stylegan,
-                      generator_mapping, generator_synthesis, device, disable_tqdm):
+                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping,
+                      generator_synthesis, device, disable_tqdm):
     if is_generate:
         total_instance = num_generate
     else:
@@ -77,23 +77,23 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
         end = start + batch_size
         if is_generate:
             images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                          truncation_th=truncation_th,
-                                                          batch_size=batch_size,
-                                                          z_dim=z_dim,
-                                                          num_classes=num_classes,
-                                                          y_sampler=y_sampler,
-                                                          radius="N/A",
-                                                          generator=generator,
-                                                          discriminator=discriminator,
-                                                          is_train=False,
-                                                          LOSS=LOSS,
-                                                          RUN=RUN,
-                                                          device=device,
-                                                          is_stylegan=is_stylegan,
-                                                          generator_mapping=generator_mapping,
-                                                          generator_synthesis=generator_synthesis,
-                                                          style_mixing_p=STYLEGAN2.style_mixing_p,
-                                                          cal_trsp_cost=False)
+                                                             truncation_th=truncation_th,
+                                                             batch_size=batch_size,
+                                                             z_dim=z_dim,
+                                                             num_classes=num_classes,
+                                                             y_sampler=y_sampler,
+                                                             radius="N/A",
+                                                             generator=generator,
+                                                             discriminator=discriminator,
+                                                             is_train=False,
+                                                             LOSS=LOSS,
+                                                             RUN=RUN,
+                                                             device=device,
+                                                             is_stylegan=is_stylegan,
+                                                             generator_mapping=generator_mapping,
+                                                             generator_synthesis=generator_synthesis,
+                                                             style_mixing_p=0.0,
+                                                             cal_trsp_cost=False)
             images = images.to(device)
         else:
             try:
@@ -151,7 +151,6 @@ def calculate_fid(data_loader,
                                    num_classes=cfgs.DATA.num_classes,
                                    LOSS="N/A",
                                    RUN="N/A",
-                                   STYLEGAN2="N/A",
                                    is_stylegan=False,
                                    generator_mapping=None,
                                    generator_synthesis=None,
@@ -172,7 +171,6 @@ def calculate_fid(data_loader,
                                num_classes=cfgs.DATA.num_classes,
                                LOSS=cfgs.LOSS,
                                RUN=cfgs.RUN,
-                               STYLEGAN2=cfgs.STYLEGAN2,
                                is_stylegan=(cfgs.MODEL.backbone=="stylegan2"),
                                generator_mapping=generator_mapping,
                                generator_synthesis=generator_synthesis,
