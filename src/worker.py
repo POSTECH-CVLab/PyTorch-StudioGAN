@@ -95,7 +95,7 @@ class WORKER(object):
 
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-            self.ada_stat = torch.zeros(2, device=self.local_rank).requires_grad_(False)
+            self.ada_stat = torch.zeros(2, device=self.local_rank)
 
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
@@ -251,7 +251,7 @@ class WORKER(object):
 
                     # keep real_dict["adv_output"] signs for ada
                     if self.AUG.apply_ada:
-                        self.ada_stat += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank).requires_grad_(False)
+                        self.ada_stat += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
