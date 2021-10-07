@@ -5,7 +5,7 @@ DATA:
 MODEL:
   backbone: "big_resnet"
   g_cond_mtd: "cBN"
-  d_cond_mtd: "AC"
+  d_cond_mtd: "PD"
   apply_g_sn: true
   apply_d_sn: true
   apply_attn: true
@@ -20,7 +20,6 @@ MODEL:
   g_ema_start: 20000
 LOSS:
   adv_loss: "hinge"
-  cond_lambda: 0.1
 OPTIMIZATION:
   batch_size: 1024
   g_lr: 0.0001
