@@ -342,20 +342,20 @@ class SimclrAugment(nn.Module):
         if aug_type == "simclr_basic":
             self.pipeline = nn.Sequential(RandomResizeCropLayer(scale=(0.2, 1.0)), HorizontalFlipLayer(),
                                           RandomApply(ColorJitterLayer(ColorJitterLayer(0.4, 0.4, 0.4, 0.1)), p=0.8),
-                                          RandomApply(RandomColorGrayLayer(), p=0.2)).cuda()
+                                          RandomApply(RandomColorGrayLayer(), p=0.2))
         elif aug_type == "simclr_hq":
             self.pipeline = nn.Sequential(RandomResizeCropLayer(scale=(0.2, 1.0)), HorizontalFlipLayer(),
                                           RandomApply(ColorJitterLayer(0.4, 0.4, 0.4, 0.1), p=0.8),
-                                          RandomApply(RandomColorGrayLayer(), p=0.2), RandomApply(GaussianBlur((0.1, 2.0)), p=0.5)).cuda()
+                                          RandomApply(RandomColorGrayLayer(), p=0.2), RandomApply(GaussianBlur((0.1, 2.0)), p=0.5))
         elif aug_type == "simclr_hq_cutout":
             self.pipeline = nn.Sequential(RandomResizeCropLayer(scale=(0.2, 1.0)), HorizontalFlipLayer(),
                                           RandomApply(ColorJitterLayer(0.4, 0.4, 0.4, 0.1), p=0.8),
                                           RandomApply(RandomColorGrayLayer(), p=0.2), RandomApply(GaussianBlur((0.1, 2.0)), p=0.5),
-                                          RandomApply(CutOut(15), p=0.5)).cuda()
+                                          RandomApply(CutOut(15), p=0.5))
         elif aug_type == "byol":
             self.pipeline = nn.Sequential(RandomResizeCropLayer(scale=(0.2, 1.0)), HorizontalFlipLayer(),
                                           RandomApply(ColorJitterLayer(0.4, 0.4, 0.2, 0.1), p=0.8),
-                                          RandomApply(RandomColorGrayLayer(), p=0.2), RandomApply(GaussianBlur((0.1, 2.0)), p=0.5)).cuda()
+                                          RandomApply(RandomColorGrayLayer(), p=0.2), RandomApply(GaussianBlur((0.1, 2.0)), p=0.5))
 
     def forward(self, images):
         return self.pipeline(images)

@@ -9,7 +9,7 @@
 import numpy as np
 import scipy.signal
 import torch
-from utils.style_misc import misc
+import utils.style_misc as misc
 from utils.style_ops import upfirdn2d
 from utils.style_ops import grid_sample_gradfix
 from utils.style_ops import conv2d_gradfix

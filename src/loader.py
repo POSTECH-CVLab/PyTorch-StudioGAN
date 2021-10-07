@@ -39,7 +39,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define default variables for loading ckpt or evaluating the trained GAN model.
     # -----------------------------------------------------------------------------
     ada_p, step, epoch, topk, best_step, best_fid, best_ckpt_path, is_best = \
-        None, 0, 0, cfgs.OPTIMIZATION.batch_size, 0, None, None, False
+        cfgs.AUG.ada_initial_augment_p, 0, 0, cfgs.OPTIMIZATION.batch_size, 0, None, None, False
     mu, sigma, eval_model, num_rows, num_cols = None, None, None, 10, 8
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
     metric_list_dict = {"IS": [], "FID": [], "Improved_Precision": [], "Improved_Recall": [],
@@ -172,7 +172,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                                                 device=local_rank,
                                                                 logger=logger)
 
-    if local_rank != 0 and cfgs.MODEL.backbone == "stylegan2":
+    if local_rank != 0:
         custom_ops.verbosity = "none"
 
     # -----------------------------------------------------------------------------
@@ -206,6 +206,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
         if topk == "initialize":
             topk == cfgs.OPTIMIZATION.batch_size
+        if cfgs.MODEL.backbone == "stylegan2":
+            ema.ema_rampup = None # disable EMA rampup
+            cfgs.AUG.ada_kimg = 100 # make ADA react faster at the beginning
 
         dict_dir = join(cfgs.RUN.save_dir, "values", run_name)
         loss_list_dict = misc.load_log_dicts(directory=dict_dir, file_name="losses.npy", ph=loss_list_dict)

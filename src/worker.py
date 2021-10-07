@@ -45,7 +45,8 @@ LOG_FORMAT = ("Step: {step:>6} "
               "Gen_loss: {gen_loss:<.4} "
               "Dis_loss: {dis_loss:<.4} "
               "Cls_loss: {cls_loss:<.4} "
-              "Topk: {topk:>4} ")
+              "Topk: {topk:>4} "
+              "ada_p: {ada_p:<.4} ")
 
 
 class WORKER(object):
@@ -77,7 +78,7 @@ class WORKER(object):
         self.loss_list_dict = loss_list_dict
         self.metric_list_dict = metric_list_dict
 
-        self.cfgs.define_augments()
+        self.cfgs.define_augments(local_rank)
         self.cfgs.define_losses()
         self.DATA = cfgs.DATA
         self.MODEL = cfgs.MODEL
@@ -91,10 +92,14 @@ class WORKER(object):
 
         self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
         self.DDP = self.RUN.distributed_data_parallel
-        self.pl_reg = losses.pl_reg(local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
+        self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
+
+        if self.AUG.apply_ada:
+            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
+            self.ada_stat = torch.zeros(2, device=self.local_rank)
 
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
@@ -240,13 +245,17 @@ class WORKER(object):
                     if self.LOSS.apply_r1_reg and step_index % d_reg_interval == 0:
                         real_images.requires_grad_()
 
-                    # apply differentiable augmentations if "apply_diffaug" is True
+                    # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     real_dict = self.Dis(real_images_, real_labels)
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=adc_fake)
+
+                    # keep real_dict["adv_output"] signs for ada
+                    if self.AUG.apply_ada:
+                        self.ada_stat += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -346,7 +355,7 @@ class WORKER(object):
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
                                                          images=real_images,
                                                          device=self.local_rank)
-                        dis_acml_loss = d_reg_interval * (self.LOSS.r1_lambda * real_r1_loss + dis_acml_loss)
+                        dis_acml_loss += d_reg_interval * (self.LOSS.r1_lambda * real_r1_loss)
 
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
@@ -452,26 +461,7 @@ class WORKER(object):
 
                     # apply path length regularization
                     if self.STYLEGAN2.apply_pl_reg and (step_index * self.OPTIMIZATION.acml_steps + acml_index) % self.STYLEGAN2.g_reg_interval == 0:
-                        fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
-                            z_prior=self.MODEL.z_prior,
-                            truncation_th=-1.0,
-                            batch_size=self.OPTIMIZATION.batch_size // 2,
-                            z_dim=self.MODEL.z_dim,
-                            num_classes=self.DATA.num_classes,
-                            y_sampler="totally_random",
-                            radius=self.LOSS.radius,
-                            generator=self.Gen,
-                            discriminator=self.Dis,
-                            is_train=True,
-                            LOSS=self.LOSS,
-                            RUN=self.RUN,
-                            device=self.local_rank,
-                            generator_mapping=self.Gen_mapping,
-                            generator_synthesis=self.Gen_synthesis,
-                            is_stylegan=self.is_stylegan,
-                            style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
-                            cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                        gen_acml_loss = self.STYLEGAN2.g_reg_interval * (self.pl_reg.cal_pl_reg(fake_images, ws) + gen_acml_loss)
+                        gen_acml_loss += self.STYLEGAN2.g_reg_interval * self.pl_reg.cal_pl_reg(fake_images[:self.OPTIMIZATION.batch_size // 2], ws[:self.OPTIMIZATION.batch_size // 2])
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
@@ -492,6 +482,16 @@ class WORKER(object):
             if self.MODEL.apply_g_ema:
                 self.ema.update(current_step)
 
+        # apply ada heuristic
+        if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
+            if self.DDP:
+                dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
+            heuristic = float(self.ada_stat[0] / self.ada_stat[1])
+            adjust = np.sign(heuristic - self.AUG.ada_target) * float(self.ada_stat[1]) / (self.AUG.ada_kimg * 1000)
+            self.ada_p = min(1., max(self.ada_p + adjust, 0.))
+            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
+            self.ada_stat.mul_(0)
+
         # logging
         if (current_step + 1) % self.RUN.print_every == 0:
             if self.global_rank == 0:
@@ -508,14 +508,15 @@ class WORKER(object):
                     dis_loss=dis_acml_loss.item(),
                     cls_loss=cls_loss,
                     topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
+                    ada_p=self.ada_p if self.AUG.apply_ada else "N/A",
                 )
                 self.logger.info(log_message)
 
-                # save loss values in tensorboard event file and .npz format
+                # save loss values in wandb event file and .npz format
                 loss_dict = {
                     "gen_loss": gen_acml_loss.item(),
                     "dis_loss": dis_acml_loss.item(),
-                    "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss
+                    "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss,
                 }
 
                 wandb.log(loss_dict, step=self.wandb_step)
@@ -527,6 +528,14 @@ class WORKER(object):
                 misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
                                 name="losses",
                                 dictionary=save_dict)
+
+                # log ada stats
+                if self.AUG.apply_ada:
+                    ada_dict = {
+                        "ada_p": self.ada_p,
+                        "dis_sign_real": float(self.ada_stat[0] / self.ada_stat[1]),
+                    }
+                    wandb.log(ada_dict, step=self.wandb_step)
 
                 # calculate the spectral norms of all weights in the generator for monitoring purpose
                 if self.MODEL.apply_g_sn:
