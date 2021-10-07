@@ -183,7 +183,7 @@ def d_logistic(d_logit_real, d_logit_fake, DDP):
     if DDP:
         d_logit_real = torch.cat(misc.GatherLayer.apply(d_logit_real), dim=0)
         d_logit_fake = torch.cat(misc.GatherLayer.apply(d_logit_fake), dim=0)
-    d_loss = F.softplus(-d_logit_real)+ F.softplus(d_logit_fake)
+    d_loss = F.softplus(-d_logit_real) + F.softplus(d_logit_fake)
     return d_loss.mean()
 
 
