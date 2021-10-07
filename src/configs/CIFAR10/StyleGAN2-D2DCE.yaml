@@ -1,8 +1,5 @@
-# Guidelines for StyleGAN2-ADA config
-# Don't change cfgs except for the explained below as comment.
-# Changing other cfgs will cause it to deviate from original StyleGAN paper settings.
+# Guidelines for StyleGAN2-D2DCE config
 # g_cond_mtd can be changed btw ["N/A", "cAdaIN"]
-# d_cond_mtd can be changed btw ["N/A", "SPD"]
 # z_dim, w_dim should be fixed to 512 regardless of image size.
 # apply_g_ema should be true for stable results.
 # apply_r1_reg should be true.
@@ -20,7 +17,9 @@ DATA:
 MODEL:
   backbone: "stylegan2"
   g_cond_mtd: "cAdaIN"
-  d_cond_mtd: "SPD"
+  d_cond_mtd: "D2DCE"
+  normalize_d_embed: True
+  d_embed_dim: 512
   g_act_fn: "Auto"
   d_act_fn: "Auto"
   z_prior: "gaussian"
@@ -31,6 +30,9 @@ MODEL:
   apply_g_ema: True
 LOSS:
   adv_loss: "logistic"
+  cond_lambda: 0.25
+  m_p: 0.98
+  temperature: 0.25
   apply_r1_reg: True
   r1_lambda: 0.01
 OPTIMIZATION:
@@ -40,21 +42,13 @@ OPTIMIZATION:
   beta1: 0
   beta2: 0.99
   g_updates_per_step: 1
-  d_updates_per_step: 1
+  d_updates_per_step: 2
   total_steps: 200000
-AUG:
-  apply_ada: True
-  ada_aug_type: "bgc"
-  ada_initial_augment_p: 0
-  ada_target: 0.6
-  ada_kimg: 500
-  ada_interval: 4
-
 STYLEGAN2:
   g_reg_interval: 4
   d_reg_interval: 16
   mapping_network: 2
-  style_mixing_p: 0
+  style_mixing_p: 0.0
   g_ema_kimg: 500
   g_ema_rampup: 0.05
   apply_pl_reg: False

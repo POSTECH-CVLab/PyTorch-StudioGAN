@@ -1,13 +1,10 @@
-# Guidelines for StyleGAN2 config
-# Don't change cfgs except for the explained below as comment.
-# Changing other cfgs will cause it to deviate from original StyleGAN paper settings.
+# Guidelines for StyleGAN2-D2DCE-ADA config
 # g_cond_mtd can be changed btw ["N/A", "cAdaIN"]
-# d_cond_mtd can be changed btw ["N/A", "SPD"]
 # z_dim, w_dim should be fixed to 512 regardless of image size.
 # apply_g_ema should be true for stable results.
 # apply_r1_reg should be true.
 # g_reg_interval, d_reg_interval is fixed to 4, 16 regardless of image size.
-# pl_reg is disabled only for cifar10. 
+# pl_reg is disabled only for cifar10.
 # d_architecture is 'orig' for cifar10.
 # style_mixing_p should be 0.9 for all settings except for cifar10 (0)
 # for total_step, batch_size, d_epilogue_mbstd_group_size, g/d_lr, r1_lambda, g_ema_kimg
@@ -47,11 +44,19 @@ OPTIMIZATION:
   g_updates_per_step: 1
   d_updates_per_step: 2
   total_steps: 200000
+AUG:
+  apply_ada: True
+  ada_aug_type: "bgc"
+  ada_initial_augment_p: 0
+  ada_target: 0.6
+  ada_kimg: 500
+  ada_interval: 4
+
 STYLEGAN2:
   g_reg_interval: 4
   d_reg_interval: 16
   mapping_network: 2
-  style_mixing_p: 0.0
+  style_mixing_p: 0
   g_ema_kimg: 500
   g_ema_rampup: 0.05
   apply_pl_reg: False
