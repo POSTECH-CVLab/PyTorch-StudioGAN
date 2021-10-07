@@ -62,7 +62,7 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 
 def calculate_moments(data_loader, generator, discriminator, eval_model, is_generate, num_generate, y_sampler,
-                      batch_size, z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping,
+                      batch_size, z_prior, truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping,
                       generator_synthesis, device, disable_tqdm):
     if is_generate:
         total_instance = num_generate
@@ -77,7 +77,7 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
         end = start + batch_size
         if is_generate:
             images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                             truncation_th=truncation_th,
+                                                             truncation_factor=truncation_factor,
                                                              batch_size=batch_size,
                                                              z_dim=z_dim,
                                                              num_classes=num_classes,
@@ -146,7 +146,7 @@ def calculate_fid(data_loader,
                                    y_sampler="N/A",
                                    batch_size=cfgs.OPTIMIZATION.batch_size,
                                    z_prior="N/A",
-                                   truncation_th="N/A",
+                                   truncation_factor="N/A",
                                    z_dim="N/A",
                                    num_classes=cfgs.DATA.num_classes,
                                    LOSS="N/A",
@@ -166,7 +166,7 @@ def calculate_fid(data_loader,
                                y_sampler=y_sampler,
                                batch_size=cfgs.OPTIMIZATION.batch_size,
                                z_prior=cfgs.MODEL.z_prior,
-                               truncation_th=cfgs.RUN.truncation_th,
+                               truncation_factor=cfgs.RUN.truncation_factor,
                                z_dim=cfgs.MODEL.z_dim,
                                num_classes=cfgs.DATA.num_classes,
                                LOSS=cfgs.LOSS,

@@ -222,7 +222,7 @@ class WORKER(object):
                     # sample fake images and labels from p(G(z), y)
                     fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
-                        truncation_th=-1.0,
+                        truncation_factor=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size,
                         z_dim=self.MODEL.z_dim,
                         num_classes=self.DATA.num_classes,
@@ -399,7 +399,7 @@ class WORKER(object):
                     # sample fake images and labels from p(G(z), y)
                     fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
-                        truncation_th=-1.0,
+                        truncation_factor=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size,
                         z_dim=self.MODEL.z_dim,
                         num_classes=self.DATA.num_classes,
@@ -581,7 +581,7 @@ class WORKER(object):
             generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                       truncation_th=self.RUN.truncation_th,
+                                                                       truncation_factor=self.RUN.truncation_factor,
                                                                        batch_size=self.OPTIMIZATION.batch_size,
                                                                        z_dim=self.MODEL.z_dim,
                                                                        num_classes=self.DATA.num_classes,
@@ -635,7 +635,7 @@ class WORKER(object):
                                                               split=num_split,
                                                               batch_size=self.OPTIMIZATION.batch_size,
                                                               z_prior=self.MODEL.z_prior,
-                                                              truncation_th=self.RUN.truncation_th,
+                                                              truncation_factor=self.RUN.truncation_factor,
                                                               z_dim=self.MODEL.z_dim,
                                                               num_classes=self.DATA.num_classes,
                                                               LOSS=self.LOSS,
@@ -809,7 +809,7 @@ class WORKER(object):
                                      y_sampler="totally_random",
                                      batch_size=self.OPTIMIZATION.batch_size,
                                      z_prior=self.MODEL.z_prior,
-                                     truncation_th=self.RUN.truncation_th,
+                                     truncation_factor=self.RUN.truncation_factor,
                                      z_dim=self.MODEL.z_dim,
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
@@ -828,7 +828,7 @@ class WORKER(object):
                                      y_sampler="totally_random",
                                      batch_size=self.OPTIMIZATION.batch_size,
                                      z_prior=self.MODEL.z_prior,
-                                     truncation_th=self.RUN.truncation_th,
+                                     truncation_factor=self.RUN.truncation_factor,
                                      z_dim=self.MODEL.z_dim,
                                      num_classes=self.DATA.num_classes,
                                      LOSS=self.LOSS,
@@ -864,7 +864,7 @@ class WORKER(object):
 
             for c in tqdm(range(self.DATA.num_classes)):
                 fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                        truncation_th=self.RUN.truncation_th,
+                                                                        truncation_factor=self.RUN.truncation_factor,
                                                                         batch_size=self.OPTIMIZATION.batch_size,
                                                                         z_dim=self.MODEL.z_dim,
                                                                         num_classes=self.DATA.num_classes,
@@ -1005,7 +1005,7 @@ class WORKER(object):
             for i in range(num_batches):
                 real_images, real_labels = next(data_iter)
                 fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                        truncation_th=self.RUN.truncation_th,
+                                                                        truncation_factor=self.RUN.truncation_factor,
                                                                         batch_size=self.OPTIMIZATION.batch_size,
                                                                         z_dim=self.MODEL.z_dim,
                                                                         num_classes=self.DATA.num_classes,
@@ -1101,7 +1101,7 @@ class WORKER(object):
                 save_output.clear()
 
                 fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                           truncation_th=self.RUN.truncation_th,
+                                                                           truncation_factor=self.RUN.truncation_factor,
                                                                            batch_size=self.OPTIMIZATION.batch_size,
                                                                            z_dim=self.MODEL.z_dim,
                                                                            num_classes=self.DATA.num_classes,
@@ -1195,7 +1195,7 @@ class WORKER(object):
                                                   y_sampler="N/A",
                                                   batch_size=batch_size,
                                                   z_prior="N/A",
-                                                  truncation_th="N/A",
+                                                  truncation_factor="N/A",
                                                   z_dim="N/A",
                                                   num_classes=1,
                                                   LOSS="N/A",
@@ -1256,7 +1256,7 @@ class WORKER(object):
                                                   batch_size=self.OPTIMIZATION.batch_size,
                                                   z_dim=self.MODEL.z_dim,
                                                   num_classes=self.DATA.num_classes,
-                                                  truncation_th=self.RUN.truncation_th,
+                                                  truncation_factor=self.RUN.truncation_factor,
                                                   y_sampler="totally_random",
                                                   radius="N/A",
                                                   device=self.local_rank)
@@ -1340,7 +1340,7 @@ class WORKER(object):
             for i, (images, labels) in enumerate(self.train_dataloader):
                 if GAN_train:
                     images, labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                     truncation_th=self.RUN.truncation_th,
+                                                                     truncation_factor=self.RUN.truncation_factor,
                                                                      batch_size=self.OPTIMIZATION.batch_size,
                                                                      z_dim=self.MODEL.z_dim,
                                                                      num_classes=self.DATA.num_classes,
@@ -1402,7 +1402,7 @@ class WORKER(object):
         for i, (images, labels) in enumerate(self.train_dataloader):
             if GAN_test:
                 images, labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
-                                                                 truncation_th=self.RUN.truncation_th,
+                                                                 truncation_factor=self.RUN.truncation_factor,
                                                                  batch_size=self.OPTIMIZATION.batch_size,
                                                                  z_dim=self.MODEL.z_dim,
                                                                  num_classes=self.DATA.num_classes,

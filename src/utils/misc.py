@@ -327,7 +327,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
         else:
             rand_batch_size = random.randint(1, batch_size_per_gpu) * OPTIMIZATION.world_size
         fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
-                                                                   truncation_th=-1,
+                                                                   truncation_factor=-1,
                                                                    batch_size=rand_batch_size,
                                                                    z_dim=MODEL.z_dim,
                                                                    num_classes=DATA.num_classes,
@@ -485,7 +485,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=Tr
 
 
 def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
+                    truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
                     directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
@@ -509,7 +509,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
             end = start + batch_size
             if is_generate:
                 images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                                 truncation_th=truncation_th,
+                                                                 truncation_factor=truncation_factor,
                                                                  batch_size=batch_size,
                                                                  z_dim=z_dim,
                                                                  num_classes=num_classes,
@@ -544,7 +544,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
 
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_th, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
+                    truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
                     directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if is_generate:
@@ -568,7 +568,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
             end = start + batch_size
             if is_generate:
                 images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                                 truncation_th=truncation_th,
+                                                                 truncation_factor=truncation_factor,
                                                                  batch_size=batch_size,
                                                                  z_dim=z_dim,
                                                                  num_classes=num_classes,
