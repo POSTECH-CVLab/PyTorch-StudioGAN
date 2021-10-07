@@ -38,7 +38,7 @@ def sample_normal(batch_size, z_dim, truncation_factor, device):
 
 
 def sample_y(y_sampler, batch_size, num_classes, device):
-    if y_sampler == "totaㄷlly_random":
+    if y_sampler == "totally_random":
         y_fake = torch.randint(low=0, high=num_classes, size=(batch_size, ), dtype=torch.long, device=device)
 
     elif y_sampler == "acending_some":
@@ -172,10 +172,7 @@ def stylegan_generate_images(zs, fake_labels, num_classes, style_mixing_p, gener
         cutoff = torch.empty([], dtype=torch.int64, device=ws.device).random_(1, ws.shape[1])
         cutoff = torch.where(torch.rand([], device=ws.device) < style_mixing_p, cutoff, torch.full_like(cutoff, ws.shape[1]))
         ws[:, cutoff:] = generator_mapping(torch.randn_like(zs), one_hot_fake_labels, skip_w_avg_update=True)[:, cutoff:]
-    if truncation_psi == -1:
-        fake_images = generator_synthesis(ws)
-    else:
-        fake_images = generator_synthesis(ws, noise_mode='const')
+    fake_images = generator_synthesis(ws)
     return ws, fake_images
 
 
