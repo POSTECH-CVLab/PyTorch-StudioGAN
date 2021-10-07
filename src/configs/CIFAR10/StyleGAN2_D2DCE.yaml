@@ -32,7 +32,7 @@ MODEL:
   d_conv_dim: "N/A"
   apply_g_ema: True
 LOSS:
-  adv_loss: "hinge"
+  adv_loss: "logistic"
   cond_lambda: 0.25
   m_p: 0.98
   temperature: 0.25
