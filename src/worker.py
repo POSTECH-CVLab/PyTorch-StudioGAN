@@ -351,7 +351,7 @@ class WORKER(object):
                         dis_acml_loss += self.LOSS.maxgp_lambda * maxgp_loss
 
                     # if LOSS.apply_r1_reg is True, apply R1 reg. used in multiple discriminator (FUNIT, StarGAN_v2)
-                    if self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps + acml_index) % d_reg_interval == 0:
+                    if self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % d_reg_interval == 0:
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
                                                          images=real_images,
                                                          device=self.local_rank)
@@ -460,7 +460,7 @@ class WORKER(object):
                         gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
 
                     # apply path length regularization
-                    if self.STYLEGAN2.apply_pl_reg and (step_index * self.OPTIMIZATION.acml_steps + acml_index) % self.STYLEGAN2.g_reg_interval == 0:
+                    if self.STYLEGAN2.apply_pl_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.g_reg_interval == 0:
                         gen_acml_loss += self.STYLEGAN2.g_reg_interval * self.pl_reg.cal_pl_reg(fake_images[:self.OPTIMIZATION.batch_size // 2], ws[:self.OPTIMIZATION.batch_size // 2])
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
@@ -533,9 +533,12 @@ class WORKER(object):
                 if self.AUG.apply_ada:
                     ada_dict = {
                         "ada_p": self.ada_p,
-                        "dis_sign_real": float(self.ada_stat[0] / self.ada_stat[1]),
+                        "dis_sign_real": (self.ada_stat[0] / self.ada_stat[1]).item(),
                     }
                     wandb.log(ada_dict, step=self.wandb_step)
+                
+                if self.LOSS.apply_r1_reg:
+                    wandb.log({"r1_reg": real_r1_loss.item()}, step=self.wandb_step)
 
                 # calculate the spectral norms of all weights in the generator for monitoring purpose
                 if self.MODEL.apply_g_sn:
