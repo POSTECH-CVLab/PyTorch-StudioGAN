@@ -71,8 +71,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                target=Gen_ema,
                                ema_kimg=STYLEGAN2.g_ema_kimg,
                                ema_rampup=STYLEGAN2.g_ema_rampup,
-                               effective_batch_size=OPTIMIZATION.batch_size * OPTIMIZATION.acml_steps,
-                               d_updates_per_step=OPTIMIZATION.d_updates_per_step)
+                               effective_batch_size=OPTIMIZATION.batch_size * OPTIMIZATION.acml_steps)
         else:
             Gen_ema, ema = None, None
 

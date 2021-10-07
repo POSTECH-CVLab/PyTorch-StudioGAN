@@ -61,13 +61,12 @@ class Ema(object):
 
 
 class EmaStylegan2(object):
-    def __init__(self, source, target, ema_kimg, ema_rampup, effective_batch_size, d_updates_per_step):
+    def __init__(self, source, target, ema_kimg, ema_rampup, effective_batch_size):
         self.source = source
         self.target = target
         self.ema_nimg = ema_kimg * 1000
         self.ema_rampup = ema_rampup
         self.batch_size = effective_batch_size
-        self.d_updates_per_step = d_updates_per_step
         self.source_dict = self.source.state_dict()
         self.target_dict = self.target.state_dict()
         print("Initialize the copied generator's parameters to be source parameters.")
@@ -78,8 +77,9 @@ class EmaStylegan2(object):
                 b_ema.copy_(b)
 
     def update(self, iter=None):
-        cur_nimg = self.batch_size * self.d_updates_per_step * iter
+        ema_nimg = self.ema_nimg
         if self.ema_rampup is not None:
+            cur_nimg = self.batch_size * iter
             ema_nimg = min(self.ema_nimg, cur_nimg * self.ema_rampup)
         ema_beta = 0.5 ** (self.batch_size / max(ema_nimg, 1e-8))
         with torch.no_grad():
