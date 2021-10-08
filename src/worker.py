@@ -536,7 +536,7 @@ class WORKER(object):
                         "dis_sign_real": (self.ada_stat[0] / self.ada_stat[1]).item(),
                     }
                     wandb.log(ada_dict, step=self.wandb_step)
-                
+
                 if self.LOSS.apply_r1_reg:
                     wandb.log({"r1_reg": real_r1_loss.item()}, step=self.wandb_step)
 

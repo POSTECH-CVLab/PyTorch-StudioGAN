@@ -827,10 +827,12 @@ class Discriminator(torch.nn.Module):
         if self.d_cond_mtd != "SPD":
             adv_output = torch.squeeze(self.linear1(h))
 
-        # add num_classes for discrminating fake images using ADC
-        if adc_fake:
-            label = label + self.num_classes
-        oh_label = F.one_hot(label, self.num_classes * 2 if self.aux_cls_type=="ADC" else self.num_classes)
+        # make class labels odd (for fake) or even (for real) for ADC
+        if self.aux_cls_type == "ADC":
+            if adc_fake:
+                label = label*2 + 1
+            else:
+                label = label*2
 
         # class conditioning
         if self.d_cond_mtd == "AC":

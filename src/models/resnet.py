@@ -326,9 +326,12 @@ class Discriminator(nn.Module):
             # adversarial training
             adv_output = torch.squeeze(self.linear1(h))
 
-            # add num_classes for discrminating fake images using ADC
-            if adc_fake:
-                label = label + self.num_classes
+            # make class labels odd (for fake) or even (for real) for ADC
+            if self.aux_cls_type == "ADC":
+                if adc_fake:
+                    label = label*2 + 1
+                else:
+                    label = label*2
 
             # class conditioning
             if self.d_cond_mtd == "AC":
