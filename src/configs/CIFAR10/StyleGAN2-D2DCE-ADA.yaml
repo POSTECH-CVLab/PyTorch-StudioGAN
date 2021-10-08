@@ -43,7 +43,7 @@ OPTIMIZATION:
   beta2: 0.99
   g_updates_per_step: 1
   d_updates_per_step: 2
-  total_steps: 200000
+  total_steps: 300000
 AUG:
   apply_ada: True
   ada_aug_type: "bgc"
@@ -51,7 +51,6 @@ AUG:
   ada_target: 0.6
   ada_kimg: 500
   ada_interval: 4
-
 STYLEGAN2:
   g_reg_interval: 4
   d_reg_interval: 16
