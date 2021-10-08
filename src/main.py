@@ -43,8 +43,10 @@ def load_configs_initialize_training():
     parser.add_argument("-sync_bn", "--synchronized_bn", action="store_true", help="turn on synchronized batchnorm")
     parser.add_argument("-mpc", "--mixed_precision", action="store_true", help="turn on mixed precision training")
 
-    parser.add_argument("--truncation_th", type=float, default=-1.0, help="threshold value for truncation trick \
+    parser.add_argument("--truncation_factor", type=float, default=-1.0, help="truncation factor for applying truncation trick \
                         (-1.0 means not applying truncation trick)")
+    parser.add_argument("--truncation_cutoff", type=float, default=None, help="truncation cutoff for stylegan \
+                        (apply truncation for only w[:truncation_cutoff]")
     parser.add_argument("-batch_stat", "--batch_statistics", action="store_true", help="use the statistics of a batch when evaluating GAN \
                         (if false, use the moving average updated statistics)")
     parser.add_argument("-std_stat", "--standing_statistics", action="store_true", help="apply standing statistics for evaluation")

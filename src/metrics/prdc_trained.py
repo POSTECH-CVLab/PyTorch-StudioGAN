@@ -31,7 +31,7 @@ import prdc
 import utils.sample as sample
 
 
-def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes, generator,
+def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior, truncation_factor, z_dim, num_classes, generator,
                                  discriminator, eval_model, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
                                  device, disable_tqdm):
     data_iter = iter(data_loader)
@@ -40,7 +40,7 @@ def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior,
         real_images, real_labels = next(data_iter)
         real_images, real_labels = real_images.to(device), real_labels.to(device)
         fake_images, _, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                         truncation_th=truncation_th,
+                                                         truncation_factor=truncation_factor,
                                                          batch_size=batch_size,
                                                          z_dim=z_dim,
                                                          num_classes=num_classes,
@@ -83,7 +83,7 @@ def calculate_prdc(data_loader, eval_model, num_generate, cfgs, generator, gener
                                                             num_generate=num_generate,
                                                             batch_size=cfgs.OPTIMIZATION.batch_size,
                                                             z_prior=cfgs.MODEL.z_prior,
-                                                            truncation_th=cfgs.RUN.truncation_th,
+                                                            truncation_factor=cfgs.RUN.truncation_factor,
                                                             z_dim=cfgs.MODEL.z_dim,
                                                             num_classes=cfgs.DATA.num_classes,
                                                             generator=generator,

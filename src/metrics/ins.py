@@ -40,7 +40,7 @@ def calculate_kl_div(ps, splits):
 
 
 def eval_generator(data_loader, generator, discriminator, eval_model, num_generate, y_sampler, split, batch_size,
-                   z_prior, truncation_th, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping,
+                   z_prior, truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping,
                    generator_synthesis, is_acc, device, logger, disable_tqdm):
     eval_model.eval()
     ps_holder = []
@@ -56,7 +56,7 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                                   truncation_th=truncation_th,
+                                                                   truncation_factor=truncation_factor,
                                                                    batch_size=batch_size,
                                                                    z_dim=z_dim,
                                                                    num_classes=num_classes,

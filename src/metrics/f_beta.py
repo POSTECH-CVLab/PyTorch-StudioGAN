@@ -70,7 +70,7 @@ class precision_recall(object):
         recall = np.clip(recall, 0, 1)
         return precision, recall
 
-    def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_th, z_dim, num_classes,
+    def compute_precision_recall(self, data_loader, num_generate, batch_size, z_prior, truncation_factor, z_dim, num_classes,
                                  generator, discriminator, LOSS, RUN, num_runs, num_clusters, num_angles, is_stylegan,
                                  generator_mapping, generator_synthesis, device):
         data_iter = iter(data_loader)
@@ -79,7 +79,7 @@ class precision_recall(object):
             real_images, real_labels = next(data_iter)
             real_images, real_labels = real_images.to(self.device), real_labels.to(self.device)
             fake_images, _, _, _, _= sample.generate_images(z_prior=z_prior,
-                                                            truncation_th=truncation_th,
+                                                            truncation_factor=truncation_factor,
                                                             batch_size=batch_size,
                                                             z_dim=z_dim,
                                                             num_classes=num_classes,
@@ -137,7 +137,7 @@ def calculate_f_beta(data_loader, eval_model, num_generate, cfgs, generator, gen
                                                       num_generate=num_generate,
                                                       batch_size=cfgs.OPTIMIZATION.batch_size,
                                                       z_prior=cfgs.MODEL.z_prior,
-                                                      truncation_th=cfgs.RUN.truncation_th,
+                                                      truncation_factor=cfgs.RUN.truncation_factor,
                                                       z_dim=cfgs.MODEL.z_dim,
                                                       num_classes=cfgs.DATA.num_classes,
                                                       generator=generator,
