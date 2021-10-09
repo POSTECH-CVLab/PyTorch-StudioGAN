@@ -478,7 +478,8 @@ class WORKER(object):
                             is_stylegan=self.is_stylegan,
                             style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                             cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                        gen_acml_loss += self.STYLEGAN2.g_reg_interval * self.pl_reg.cal_pl_reg(fake_images[:self.OPTIMIZATION.batch_size // 2], ws[:self.OPTIMIZATION.batch_size // 2])
+                        pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images[:self.OPTIMIZATION.batch_size // 2], ws[:self.OPTIMIZATION.batch_size // 2])
+                        gen_acml_loss += self.STYLEGAN2.g_reg_interval * pl_reg_loss
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
@@ -546,16 +547,19 @@ class WORKER(object):
                                 name="losses",
                                 dictionary=save_dict)
 
+                if self.STYLEGAN2.apply_pl_reg:
+                    wandb.log({"pl_reg_loss": pl_reg_loss.item()}, step=self.wandb_step)
+
                 # log ada stats
                 if self.AUG.apply_ada:
                     ada_dict = {
                         "ada_p": self.ada_p,
-                        "dis_sign_real": (self.ada_stat[0] / self.ada_stat[1]).item(),
+                        "dis_sign_real": ().item(),
                     }
                     wandb.log(ada_dict, step=self.wandb_step)
 
                 if self.LOSS.apply_r1_reg:
-                    wandb.log({"r1_reg": real_r1_loss.item()}, step=self.wandb_step)
+                    wandb.log({"r1_reg_loss": real_r1_loss.item()}, step=self.wandb_step)
 
                 # calculate the spectral norms of all weights in the generator for monitoring purpose
                 if self.MODEL.apply_g_sn:
