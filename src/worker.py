@@ -551,7 +551,7 @@ class WORKER(object):
                     feat_norms, probs, w_grads = misc.compute_gradient(fx=real_dict["h"].detach().cpu(),
                                                                        logits=real_dict["cls_output"],
                                                                        label=real_dict["label"].detach().cpu(),
-                                                                       num_classes=self.DATA.num_classes)
+                                                                       num_classes=self.DATA.num_classes*2 if self.MODEL.aux_cls_type=="ADC"  else self.DATA.num_classes)
 
                     mean_feat_norms, mean_probs, mean_w_grads = feat_norms.mean(), probs.mean(), w_grads.mean()
                     std_feat_norms, std_probs, std_w_grads = feat_norms.std(), probs.std(), w_grads.std()
