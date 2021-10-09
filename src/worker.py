@@ -240,11 +240,6 @@ class WORKER(object):
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
-                    # if LOSS.apply_r1_reg is True,
-                    # let real images require gradient calculation to compute \derv_{x}Dis(x)
-                    if self.LOSS.apply_r1_reg and step_index % d_reg_interval == 0:
-                        real_images.requires_grad_()
-
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
@@ -352,6 +347,9 @@ class WORKER(object):
 
                     # if LOSS.apply_r1_reg is True, apply R1 reg. used in multiple discriminator (FUNIT, StarGAN_v2)
                     if self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % d_reg_interval == 0:
+                        real_images.requires_grad_(True)
+                        real_images_ = self.AUG.series_augment(real_images)
+                        real_dict = self.Dis(real_images_, real_labels)
                         real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
                                                          images=real_images,
                                                          device=self.local_rank)
@@ -461,6 +459,25 @@ class WORKER(object):
 
                     # apply path length regularization
                     if self.STYLEGAN2.apply_pl_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.g_reg_interval == 0:
+                        fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
+                            z_prior=self.MODEL.z_prior,
+                            truncation_factor=-1.0,
+                            batch_size=self.OPTIMIZATION.batch_size,
+                            z_dim=self.MODEL.z_dim,
+                            num_classes=self.DATA.num_classes,
+                            y_sampler="totally_random",
+                            radius=self.LOSS.radius,
+                            generator=self.Gen,
+                            discriminator=self.Dis,
+                            is_train=True,
+                            LOSS=self.LOSS,
+                            RUN=self.RUN,
+                            device=self.local_rank,
+                            generator_mapping=self.Gen_mapping,
+                            generator_synthesis=self.Gen_synthesis,
+                            is_stylegan=self.is_stylegan,
+                            style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                            cal_trsp_cost=True if self.LOSS.apply_lo else False)
                         gen_acml_loss += self.STYLEGAN2.g_reg_interval * self.pl_reg.cal_pl_reg(fake_images[:self.OPTIMIZATION.batch_size // 2], ws[:self.OPTIMIZATION.batch_size // 2])
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
