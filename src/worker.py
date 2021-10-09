@@ -97,9 +97,12 @@ class WORKER(object):
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
 
+        if self.is_stylegan:
+            self.pl_reg_loss = 0
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat = torch.zeros(2, device=self.local_rank)
+            self.ada_heuristic = 0
 
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
@@ -462,7 +465,7 @@ class WORKER(object):
                         fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                             z_prior=self.MODEL.z_prior,
                             truncation_factor=-1.0,
-                            batch_size=self.OPTIMIZATION.batch_size,
+                            batch_size=self.OPTIMIZATION.batch_size // 2,
                             z_dim=self.MODEL.z_dim,
                             num_classes=self.DATA.num_classes,
                             y_sampler="totally_random",
@@ -478,8 +481,8 @@ class WORKER(object):
                             is_stylegan=self.is_stylegan,
                             style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                             cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                        pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images[:self.OPTIMIZATION.batch_size // 2], ws[:self.OPTIMIZATION.batch_size // 2])
-                        gen_acml_loss += self.STYLEGAN2.g_reg_interval * pl_reg_loss
+                        self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images, ws)
+                        gen_acml_loss += self.STYLEGAN2.g_reg_interval * self.pl_reg_loss
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
@@ -504,8 +507,9 @@ class WORKER(object):
         if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
             if self.DDP:
                 dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
-            heuristic = float(self.ada_stat[0] / self.ada_stat[1])
-            adjust = np.sign(heuristic - self.AUG.ada_target) * float(self.ada_stat[1]) / (self.AUG.ada_kimg * 1000)
+            self.ada_heuristic = (self.ada_stat[0] / self.ada_stat[1]).item()
+            print(self.ada_heuristic)
+            adjust = np.sign(self.ada_heuristic - self.AUG.ada_target) * (self.ada_stat[1].item()) / (self.AUG.ada_kimg * 1000)
             self.ada_p = min(1., max(self.ada_p + adjust, 0.))
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat.mul_(0)
@@ -548,13 +552,13 @@ class WORKER(object):
                                 dictionary=save_dict)
 
                 if self.STYLEGAN2.apply_pl_reg:
-                    wandb.log({"pl_reg_loss": pl_reg_loss.item()}, step=self.wandb_step)
+                    wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
 
                 # log ada stats
                 if self.AUG.apply_ada:
                     ada_dict = {
                         "ada_p": self.ada_p,
-                        "dis_sign_real": ().item(),
+                        "dis_sign_real": self.ada_heuristic,
                     }
                     wandb.log(ada_dict, step=self.wandb_step)
 
