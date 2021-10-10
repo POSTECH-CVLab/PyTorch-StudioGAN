@@ -833,6 +833,7 @@ class Discriminator(torch.nn.Module):
                 label = label*2 + 1
             else:
                 label = label*2
+        oh_label = F.one_hot(label, self.num_classes * 2 if self.aux_cls_type=="ADC" else self.num_classes)
 
         # class conditioning
         if self.d_cond_mtd == "AC":
