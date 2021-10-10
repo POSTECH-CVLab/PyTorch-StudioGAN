@@ -252,8 +252,8 @@ class Configurations(object):
         self.AUG.bcr_aug_type = "W/O"
         self.AUG.diffaug_type = "W/O"
         self.AUG.ada_aug_type = "W/O"
-        # initial value of augmentation probability. 
-        self.AUG.ada_initial_augment_p = "N/A" 
+        # initial value of augmentation probability.
+        self.AUG.ada_initial_augment_p = "N/A"
         # target probability for adaptive differentiable augmentations, None = fixed p (keep ada_initial_augment_p)
         self.AUG.ada_target = "N/A"
         # ADA adjustment speed, measured in how many kimg it takes for p to increase/decrease by one unit.
@@ -278,7 +278,7 @@ class Configurations(object):
         # conditioning types that utilize embedding proxies for conditional stylegan2
         self.STYLEGAN2.cond_type = ["PD", "SPD", "2C", "D2DCE"]
         # lazy regularization interval for generator, default 4
-        self.STYLEGAN2.g_reg_interval = "N/A" 
+        self.STYLEGAN2.g_reg_interval = "N/A"
         # lazy regularization interval for discriminator, default 16
         self.STYLEGAN2.d_reg_interval = "N/A"
         # number of layers for the mapping network, default 8 except for cifar (2)
@@ -286,7 +286,7 @@ class Configurations(object):
         # style_mixing_p in stylegan generator, default 0.9 except for cifar (0)
         self.STYLEGAN2.style_mixing_p = "N/A"
         # half-life of the exponential moving average (EMA) of generator weights default 500
-        self.STYLEGAN2.g_ema_kimg = "N/A", 
+        self.STYLEGAN2.g_ema_kimg = "N/A"
         # EMA ramp-up coefficient, defalt "N/A" except for cifar 0.05
         self.STYLEGAN2.g_ema_rampup = "N/A"
         # whether to apply path length regularization, default is True except cifar
