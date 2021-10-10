@@ -363,7 +363,7 @@ class WORKER(object):
                         dis_acml_loss += self.LOSS.r1_lambda * self.r1_penalty
 
                     elif self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.d_reg_interval == 0:
-                        real_images = real_images.requires_grad_(True)
+                        real_images.requires_grad_(True)
                         real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
                         self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
                                                                      images=real_images,
