@@ -247,9 +247,7 @@ class WORKER(object):
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
-                        real_images = real_images.detach().requires_grad_(True)
-                    else:
-                        real_images = real_images.detach().requires_grad_(False)
+                        real_images.requires_grad_(True)
 
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
