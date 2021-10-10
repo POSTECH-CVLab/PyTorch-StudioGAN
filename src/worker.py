@@ -97,6 +97,8 @@ class WORKER(object):
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
 
+        if self.LOSS.apply_r1_reg:
+            self.r1_penalty = 0
         if self.is_stylegan:
             self.pl_reg_loss = 0
         if self.AUG.apply_ada:
@@ -209,7 +211,6 @@ class WORKER(object):
         # train Discriminator.
         # -----------------------------------------------------------------------------
         adc_fake = self.MODEL.aux_cls_type == "ADC"
-        d_reg_interval = self.STYLEGAN2.d_reg_interval if self.is_stylegan else 1
         # make GAN be trainable before starting training
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
@@ -242,6 +243,11 @@ class WORKER(object):
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
+
+                    # if LOSS.apply_r1_reg is True,
+                    # let real images require gradient calculation to compute \derv_{x}Dis(x)
+                    if self.LOSS.apply_r1_reg and not self.is_stylegan:
+                        real_images.requires_grad_()
 
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
@@ -348,18 +354,24 @@ class WORKER(object):
                                                                 device=self.local_rank)
                         dis_acml_loss += self.LOSS.maxgp_lambda * maxgp_loss
 
-                    # if LOSS.apply_r1_reg is True, apply R1 reg. used in multiple discriminator (FUNIT, StarGAN_v2)
-                    if self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % d_reg_interval == 0:
+                    if self.LOSS.apply_r1_reg and not self.is_stylegan:
+                        self.r1_penalty = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                            images=real_images,
+                                                            device=self.local_rank)
+                        dis_acml_loss += self.LOSS.r1_lambda * self.r1_penalty
+
+                    elif self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.d_reg_interval == 0:
                         real_images.requires_grad_(True)
                         real_images_ = self.AUG.series_augment(real_images)
                         real_dict = self.Dis(real_images_, real_labels)
-                        real_r1_loss = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                         images=real_images,
-                                                         device=self.local_rank)
-                        dis_acml_loss += d_reg_interval * (self.LOSS.r1_lambda * real_r1_loss)
-
+                        self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                                        images=real_images_,
+                                                                        device=self.local_rank)
+                        dis_acml_loss += self.STYLEGAN2.d_reg_interval * (self.LOSS.r1_lambda * self.r1_penalty)
+                    
                     # adjust gradients for applying gradient accumluation trick
-                    dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
+                    if not self.is_stylegan:
+                        dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
 
                 # accumulate gradients of the discriminator
                 if self.RUN.mixed_precision and not self.is_stylegan:
@@ -484,7 +496,8 @@ class WORKER(object):
                         self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images, ws)
                         gen_acml_loss += self.STYLEGAN2.g_reg_interval * self.pl_reg_loss
                     # adjust gradients for applying gradient accumluation trick
-                    gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
+                    if not self.is_stylegan:
+                        gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
                 # accumulate gradients of the generator
                 if self.RUN.mixed_precision and not self.is_stylegan:
@@ -547,8 +560,8 @@ class WORKER(object):
                                                         step=current_step + 1,
                                                         interval=self.RUN.print_every)
                 misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
-                                name="losses",
-                                dictionary=save_dict)
+                                   name="losses",
+                                   dictionary=save_dict)
 
                 if self.STYLEGAN2.apply_pl_reg:
                     wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
@@ -562,7 +575,7 @@ class WORKER(object):
                     wandb.log(ada_dict, step=self.wandb_step)
 
                 if self.LOSS.apply_r1_reg:
-                    wandb.log({"r1_reg_loss": real_r1_loss.item()}, step=self.wandb_step)
+                    wandb.log({"r1_reg_loss": self.r1_penalty.item()}, step=self.wandb_step)
 
                 # calculate the spectral norms of all weights in the generator for monitoring purpose
                 if self.MODEL.apply_g_sn:
