@@ -247,7 +247,9 @@ class WORKER(object):
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
-                        real_images.requires_grad_()
+                        real_images = real_images.detach().requires_grad_(True)
+                    else:
+                        real_images = real_images.detach().requires_grad_(False)
 
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
@@ -362,11 +364,10 @@ class WORKER(object):
 
                     elif self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.d_reg_interval == 0:
                         real_images.requires_grad_(True)
-                        real_images_ = self.AUG.series_augment(real_images)
-                        real_dict = self.Dis(real_images_, real_labels)
+                        real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
                         self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                                        images=real_images_,
-                                                                        device=self.local_rank)
+                                                                     images=real_images,
+                                                                     device=self.local_rank)
                         dis_acml_loss += self.STYLEGAN2.d_reg_interval * (self.LOSS.r1_lambda * self.r1_penalty)
                     
                     # adjust gradients for applying gradient accumluation trick
