@@ -21,7 +21,7 @@ MODEL:
 LOSS:
   adv_loss: "logistic"
 OPTIMIZATION:
-  total_steps: 200000
+  total_steps: 400000
 AUG:
   apply_ada: True
   ada_aug_type: "bgc"

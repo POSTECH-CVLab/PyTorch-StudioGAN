@@ -29,7 +29,7 @@ OPTIMIZATION:
   batch_size: 128
   g_lr: 0.00028284271
   d_lr: 0.00028284271
-  total_steps: 200000
+  total_steps: 400000
 AUG:
   apply_ada: True
   ada_aug_type: "bgc"
