@@ -277,21 +277,21 @@ class Configurations(object):
 
         # conditioning types that utilize embedding proxies for conditional stylegan2
         self.STYLEGAN2.cond_type = ["PD", "SPD", "2C", "D2DCE"]
-        # lazy regularization interval for generator
-        self.STYLEGAN2.g_reg_interval = "N/A"
-        # lazy regularization interval for discriminator
+        # lazy regularization interval for generator, default 4
+        self.STYLEGAN2.g_reg_interval = "N/A" 
+        # lazy regularization interval for discriminator, default 16
         self.STYLEGAN2.d_reg_interval = "N/A"
-        # number of layers for the mapping network
+        # number of layers for the mapping network, default 8 except for cifar (2)
         self.STYLEGAN2.mapping_network = "N/A"
-        # style_mixing_p in stylegan generator
+        # style_mixing_p in stylegan generator, default 0.9 except for cifar (0)
         self.STYLEGAN2.style_mixing_p = "N/A"
-        # half-life of the exponential moving average (EMA) of generator weights.
-        self.STYLEGAN2.g_ema_kimg = "N/A"
-        # EMA ramp-up coefficient
+        # half-life of the exponential moving average (EMA) of generator weights default 500
+        self.STYLEGAN2.g_ema_kimg = "N/A", 
+        # EMA ramp-up coefficient, defalt "N/A" except for cifar 0.05
         self.STYLEGAN2.g_ema_rampup = "N/A"
-        # whether to apply path length regularization
+        # whether to apply path length regularization, default is True except cifar
         self.STYLEGAN2.apply_pl_reg = False
-        # pl regularization strength
+        # pl regularization strength, default 2
         self.STYLEGAN2.pl_weight = "N/A"
         # discriminator architecture for STYLEGAN2. 'resnet' except for cifar10 ('orig')
         self.STYLEGAN2.d_architecture = "N/A"
@@ -674,8 +674,8 @@ class Configurations(object):
                 "StudioGAN does not support spectral normalization on stylegan2."
 
         if self.MODEL.backbone == "stylegan2":
-            assert self.MODEL.g_cond_mtd in ["N/A", "cAdaIN"], \
-                "stylegan2 only supports 'N/A' or 'cAdaIN' as g_cond_mtd."
+            assert self.MODEL.g_cond_mtd in ["W/O", "cAdaIN"], \
+                "stylegan2 only supports 'W/O' or 'cAdaIN' as g_cond_mtd."
 
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
             assert self.MODEL.backbone == "stylegan2", \

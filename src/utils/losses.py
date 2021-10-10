@@ -319,6 +319,11 @@ def cal_r1_reg(adv_output, images, device):
     r1_reg = 0.5 * grad_dout2.contiguous().view(batch_size, -1).sum(1).mean(0)
     return r1_reg
 
+def stylegan_cal_r1_reg(adv_output, images, device):
+    with conv2d_gradfix.no_weight_gradients():
+        r1_grads = torch.autograd.grad(outputs=[adv_output.sum()], inputs=[images], create_graph=True, only_inputs=True)[0]
+    r1_penalty = r1_grads.square().sum([1,2,3]) / 2
+    return r1_penalty.mean()
 
 def adjust_k(current_k, topk_gamma, sup_k):
     current_k = max(current_k * topk_gamma, sup_k)

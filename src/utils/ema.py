@@ -78,7 +78,7 @@ class EmaStylegan2(object):
 
     def update(self, iter=None):
         ema_nimg = self.ema_nimg
-        if self.ema_rampup is not None:
+        if self.ema_rampup != "N/A":
             cur_nimg = self.batch_size * iter
             ema_nimg = min(self.ema_nimg, cur_nimg * self.ema_rampup)
         ema_beta = 0.5 ** (self.batch_size / max(ema_nimg, 1e-8))

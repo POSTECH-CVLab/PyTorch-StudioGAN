@@ -207,7 +207,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         if topk == "initialize":
             topk == cfgs.OPTIMIZATION.batch_size
         if cfgs.MODEL.backbone == "stylegan2":
-            ema.ema_rampup = None # disable EMA rampup
+            ema.ema_rampup = "N/A" # disable EMA rampup
             cfgs.AUG.ada_kimg = 100 # make ADA react faster at the beginning
 
         dict_dir = join(cfgs.RUN.save_dir, "values", run_name)
