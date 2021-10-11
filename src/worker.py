@@ -584,7 +584,6 @@ class WORKER(object):
                     wandb.log(gen_sigmas, step=self.wandb_step)
 
                 ###############################################
-                # calculate_ACGAN's gradient will be deprecated.
                 if self.MODEL.d_cond_mtd == "AC":
                     feat_norms, probs, w_grads = misc.compute_gradient(fx=real_dict["h"].detach().cpu(),
                                                                        logits=real_dict["cls_output"],
