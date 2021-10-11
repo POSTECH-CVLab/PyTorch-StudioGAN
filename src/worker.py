@@ -369,7 +369,7 @@ class WORKER(object):
                                                                      images=real_images,
                                                                      device=self.local_rank)
                         dis_acml_loss += self.STYLEGAN2.d_reg_interval * (self.LOSS.r1_lambda * self.r1_penalty)
-                    
+
                     # adjust gradients for applying gradient accumluation trick
                     if not self.is_stylegan:
                         dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps

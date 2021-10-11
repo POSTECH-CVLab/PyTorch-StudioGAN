@@ -163,14 +163,15 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # load a generator and a discriminator
     # if cfgs.MODEL.apply_g_ema is True, load an exponential moving average generator (Gen_copy).
     # -----------------------------------------------------------------------------
-    Gen, Dis, Gen_ema, ema = model.load_generator_discriminator(DATA=cfgs.DATA,
-                                                                OPTIMIZATION=cfgs.OPTIMIZATION,
-                                                                MODEL=cfgs.MODEL,
-                                                                STYLEGAN2=cfgs.STYLEGAN2,
-                                                                MODULES=cfgs.MODULES,
-                                                                RUN=cfgs.RUN,
-                                                                device=local_rank,
-                                                                logger=logger)
+    Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis, ema =\
+        model.load_generator_discriminator(DATA=cfgs.DATA,
+                                           OPTIMIZATION=cfgs.OPTIMIZATION,
+                                           MODEL=cfgs.MODEL,
+                                           STYLEGAN2=cfgs.STYLEGAN2,
+                                           MODULES=cfgs.MODULES,
+                                           RUN=cfgs.RUN,
+                                           device=local_rank,
+                                           logger=logger)
 
     if local_rank != 0:
         custom_ops.verbosity = "none"
@@ -217,10 +218,14 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # prepare parallel training
     # -----------------------------------------------------------------------------
-    Gen, Dis, Gen_ema, Gen_mapping, Gen_synthesis, Gen_ema_mapping, Gen_ema_synthesis = \
+    if cfgs.OPTIMIZATION.world_size > 1:
         model.prepare_parallel_training(Gen=Gen,
+                                        Gen_mapping=Gen_mapping,
+                                        Gen_synthesis=Gen_synthesis,
                                         Dis=Dis,
                                         Gen_ema=Gen_ema,
+                                        Gen_ema_mapping=Gen_ema_mapping,
+                                        Gen_ema_synthesis=Gen_ema_synthesis,
                                         MODEL=cfgs.MODEL,
                                         world_size=cfgs.OPTIMIZATION.world_size,
                                         distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
