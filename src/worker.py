@@ -363,6 +363,8 @@ class WORKER(object):
                     elif self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.d_reg_interval == 0:
                         real_images.requires_grad_(True)
                         real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
+                        if self.AUG.apply_ada:
+                            self.ada_stat += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
                         self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
                                                                      images=real_images,
                                                                      device=self.local_rank)
