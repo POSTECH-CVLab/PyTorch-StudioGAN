@@ -94,11 +94,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
 
 
 def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
-    try:
-        Gen, Dis = Gen.module, Dis.module
-        if apply_g_ema: Gen_ema = Gen_ema.module
-    except:
-        pass
+    Gen, Dis, Gen_ema = misc.peel_models(Gen, Dis, Gen_ema)
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-best-weights-step*.pth"))[0]
     Dis_ckpt_path = glob.glob(join(ckpt_dir, "model=D-best-weights-step*.pth"))[0]
 
