@@ -6,6 +6,7 @@ MODEL:
   backbone: "big_resnet"
   g_cond_mtd: "cBN"
   d_cond_mtd: "D2DCE"
+  aux_cls_type: "ADC"
   normalize_d_embed: True
   d_embed_dim: 512
   apply_g_sn: True
@@ -29,7 +30,6 @@ OPTIMIZATION:
   batch_size: 128
   g_lr: 0.00028284271
   d_lr: 0.00028284271
-  total_steps: 200000
 AUG:
   apply_diffaug: True
   diffaug_type: "diffaug"
