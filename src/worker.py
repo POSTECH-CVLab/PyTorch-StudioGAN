@@ -371,8 +371,7 @@ class WORKER(object):
                         dis_acml_loss += self.STYLEGAN2.d_reg_interval * (self.LOSS.r1_lambda * self.r1_penalty)
 
                     # adjust gradients for applying gradient accumluation trick
-                    if not self.is_stylegan:
-                        dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
+                    dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
 
                 # accumulate gradients of the discriminator
                 if self.RUN.mixed_precision and not self.is_stylegan:
@@ -496,9 +495,9 @@ class WORKER(object):
                             cal_trsp_cost=True if self.LOSS.apply_lo else False)
                         self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images, ws)
                         gen_acml_loss += self.STYLEGAN2.g_reg_interval * self.pl_reg_loss
+
                     # adjust gradients for applying gradient accumluation trick
-                    if not self.is_stylegan:
-                        gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
+                    gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
 
                 # accumulate gradients of the generator
                 if self.RUN.mixed_precision and not self.is_stylegan:

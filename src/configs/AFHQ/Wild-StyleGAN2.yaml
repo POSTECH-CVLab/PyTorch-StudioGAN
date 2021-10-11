@@ -1,8 +1,8 @@
-# Guidelines for StyleGAN2-ADA config
+# Guidelines for Wild_StyleGAN2 config
 # Don't change cfgs except for the explained below as comment.
 # Changing other cfgs will cause it to deviate from original StyleGAN paper settings.
-# g_cond_mtd can be changed btw ["N/A", "cAdaIN"]
-# d_cond_mtd can be changed btw ["N/A", "SPD"]
+# g_cond_mtd can be changed btw ["W/O", "cAdaIN"]
+# d_cond_mtd can be changed btw ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE", "SPD"]
 # z_dim, w_dim should be fixed to 512 regardless of image size.
 # apply_g_ema should be true for stable results.
 # apply_r1_reg should be true.
@@ -14,7 +14,7 @@
 # g_ema_rampup, mapping_network, check StyleGAN2 section in src/config.py
 
 DATA:
-  name: "afhq-wild"
+  name: "AFHQ_WILD"
   img_size: 512
   num_classes: 1
 MODEL:
@@ -35,8 +35,8 @@ LOSS:
   r1_lambda: 0.5
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
-  batch_size: 8
-  acml_steps: 8
+  batch_size: 64
+  acml_steps: 1
   g_lr: 0.0025
   d_lr: 0.0025
   beta1: 0

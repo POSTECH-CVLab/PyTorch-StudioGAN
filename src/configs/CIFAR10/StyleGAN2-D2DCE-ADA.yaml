@@ -1,5 +1,6 @@
 # Guidelines for StyleGAN2-D2DCE-ADA config
-# g_cond_mtd can be changed btw ["N/A", "cAdaIN"]
+# g_cond_mtd can be changed btw ["W/O", "cAdaIN"]
+# d_cond_mtd can be changed btw ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE", "SPD"]
 # z_dim, w_dim should be fixed to 512 regardless of image size.
 # apply_g_ema should be true for stable results.
 # apply_r1_reg should be true.
@@ -50,7 +51,7 @@ AUG:
   apply_ada: True
   ada_aug_type: "bgc"
   ada_initial_augment_p: 0
-  ada_target: 0.6
+  ada_target: 0.7
   ada_kimg: 500
   ada_interval: 4
 STYLEGAN2:

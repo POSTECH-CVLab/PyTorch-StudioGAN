@@ -1,5 +1,6 @@
 # Guidelines for StyleGAN2-D2DCE config
-# g_cond_mtd can be changed btw ["N/A", "cAdaIN"]
+## g_cond_mtd can be changed btw ["N/A", "cAdaIN"]
+# d_cond_mtd can be changed btw ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE", "SPD"]
 # z_dim, w_dim should be fixed to 512 regardless of image size.
 # apply_g_ema should be true for stable results.
 # apply_r1_reg should be true.
