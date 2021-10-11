@@ -22,6 +22,8 @@ LOSS:
   adv_loss: "logistic"
 OPTIMIZATION:
   total_steps: 400000
+PRE:
+  apply_rflip: False
 AUG:
   apply_ada: True
   ada_aug_type: "bgc"

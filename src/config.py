@@ -743,3 +743,6 @@ class Configurations(object):
 
         assert self.RUN.save_every % self.RUN.print_every == 0, \
             "RUN.save_every should be divided by RUN.print_every for wandb logging."
+
+        assert self.AUG.apply_ada and self.PRE.apply_rflip, \
+            "Please turn off the random flip pre-preocseeing for adaptive discriminator augmentation (ADA)."
