@@ -27,15 +27,15 @@ def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, loa
         model.load_state_dict(ckpt["state_dict"], strict=False)
 
     if load_opt:
-        try:
+        if load_misc:
+            if ckpt["run_name"] == "CCMGAN2048-train-2021_06_22_06_11_37":
+                pass
+        else:
             optimizer.load_state_dict(ckpt["optimizer"])
             for state in optimizer.state.values():
                 for k, v in state.items():
                     if isinstance(v, torch.Tensor):
                         state[k] = v.cuda()
-        except ValueError:
-            pass
-
     if load_misc:
         seed = ckpt["seed"]
         run_name = ckpt["run_name"]
@@ -69,11 +69,16 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
               optimizer=g_optimizer,
               ckpt_path=Gen_ckpt_path,
               load_model=True,
-              load_opt=True,
+              load_opt=False if RUN.freezeD > -1 or RUN.freezeG > -1 else True,
               load_misc=False)
 
-    seed, prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path = load_ckpt(
-        model=Dis, optimizer=d_optimizer, ckpt_path=Dis_ckpt_path, load_model=True, load_opt=True, load_misc=True)
+    seed, prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path =\
+        load_ckpt(model=Dis,
+                  optimizer=d_optimizer,
+                  ckpt_path=Dis_ckpt_path,
+                  load_model=True,
+                  load_opt=False if RUN.freezeD > -1 or RUN.freezeG > -1 else True,
+                  load_misc=True)
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
