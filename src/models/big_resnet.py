@@ -310,7 +310,6 @@ class Discriminator(nn.Module):
         elif self.d_cond_mtd in ["2C", "D2DCE"]:
             self.linear2 = MODULES.d_linear(in_features=self.out_dims[-1], out_features=d_embed_dim, bias=True)
             self.embedding = MODULES.d_embedding(num_classes, d_embed_dim)
-            pass
 
         # linear and embedding layers for evolved classifier-based GAN
         if self.aux_cls_type == "TAC":

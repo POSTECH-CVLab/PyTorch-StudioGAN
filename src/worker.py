@@ -384,6 +384,18 @@ class WORKER(object):
                 self.scaler.step(self.OPTIMIZATION.d_optimizer)
                 self.scaler.update()
             else:
+                ##################################################################
+                # gradient clipping will be deprecated
+                """
+                if self.MODEL.d_cond_mtd == "AC":
+                    torch.nn.utils.clip_grad_norm_(self.Dis.module.linear2.parameters(), 0.1)
+                """
+                """
+                # weight clpping will be deprecated
+                if self.MODEL.d_cond_mtd == "AC":
+                    self.Dis.module.linear2.parameters().data.clamp_(-0.1, 0.1)
+                """
+                ##################################################################
                 self.OPTIMIZATION.d_optimizer.step()
 
             # clip weights to restrict the discriminator to satisfy 1-Lipschitz constraint

@@ -24,24 +24,34 @@ def make_ckpt_dir(ckpt_dir):
 def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, load_misc=False):
     ckpt = torch.load(ckpt_path)
     if load_model:
-        model.load_state_dict(ckpt["state_dict"])
+        model.load_state_dict(ckpt["state_dict"], strict=False)
+
     if load_opt:
-        optimizer.load_state_dict(ckpt["optimizer"])
-    if load_misc:
-        seed = ckpt["seed"]
-        run_name = ckpt["run_name"]
-        step = ckpt["step"]
-        epoch = ckpt["epoch"]
-        topk = ckpt["topk"]
-        ada_p = ckpt["ada_p"]
-        if load_opt:
+        try:
+            optimizer.load_state_dict(ckpt["optimizer"])
             for state in optimizer.state.values():
                 for k, v in state.items():
                     if isinstance(v, torch.Tensor):
                         state[k] = v.cuda()
+        except ValueError:
+            pass
 
+    if load_misc:
+        seed = ckpt["seed"]
+        run_name = ckpt["run_name"]
+        step = ckpt["step"]
+        ada_p = ckpt["ada_p"]
         best_step = ckpt["best_step"]
         best_fid = ckpt["best_fid"]
+
+        try:
+            epoch = ckpt["epoch"]
+        except:
+            epoch = 0
+        try:
+            topk = ckpt["topk"]
+        except:
+            topk = "initialize"
         try:
             best_ckpt_path = ckpt["best_fid_checkpoint_path"]
         except:
