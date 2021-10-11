@@ -724,6 +724,10 @@ class Configurations(object):
             assert not self.MODEL.d_cond_mtd == "W/O", \
                 "Classifier Accuracy Score (CAS) is defined only when the GAN is trained by a class-conditioned way."
 
+        if self.AUG.apply_ada:
+            assert not self.PRE.apply_rflip, \
+            "Please turn off the random flip pre-preocseeing for adaptive discriminator augmentation (ADA)."
+
         assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
             \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \
             dataset to be downloaded."
@@ -743,6 +747,3 @@ class Configurations(object):
 
         assert self.RUN.save_every % self.RUN.print_every == 0, \
             "RUN.save_every should be divided by RUN.print_every for wandb logging."
-
-        assert self.AUG.apply_ada and self.PRE.apply_rflip, \
-            "Please turn off the random flip pre-preocseeing for adaptive discriminator augmentation (ADA)."
