@@ -173,3 +173,4 @@ def prepare_parallel_training(Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen
             Dis = convert_model(Dis).to(device)
             if apply_g_ema:
                 Gen_ema = convert_model(Gen_ema).to(device)
+    return Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis

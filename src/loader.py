@@ -70,7 +70,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.distributed_data_parallel:
         global_rank = cfgs.RUN.current_node * (gpus_per_node) + local_rank
         print("Use GPU: {global_rank} for training.".format(global_rank=global_rank))
-        misc.setup(global_rank, cfgs.OPTIMIZATION.world_size)
+        misc.setup(global_rank, cfgs.OPTIMIZATION.world_size, cfgs.RUN.backend)
         torch.cuda.set_device(local_rank)
     else:
         global_rank = local_rank
@@ -218,7 +218,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # prepare parallel training
     # -----------------------------------------------------------------------------
+    print(cfgs.OPTIMIZATION.world_size)
     if cfgs.OPTIMIZATION.world_size > 1:
+        Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis =\
         model.prepare_parallel_training(Gen=Gen,
                                         Gen_mapping=Gen_mapping,
                                         Gen_synthesis=Gen_synthesis,
