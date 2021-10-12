@@ -55,7 +55,6 @@ def load_configs_initialize_training():
                         (-1.0 menas not applying standing statistics trick for evaluation)")
     parser.add_argument("-std_step", "--standing_step", type=int, default=-1, help="# of steps for standing statistics \
                         (-1.0 menas not applying standing statistics trick for evaluation)")
-    parser.add_argument("--freezeG", type=int, default=-1, help="# of freezed blocks in the generator for transfer learning")
     parser.add_argument("--freezeD", type=int, default=-1, help="# of freezed blocks in the discriminator for transfer learning")
 
     # parser arguments to apply langevin sampling for GAN evaluation

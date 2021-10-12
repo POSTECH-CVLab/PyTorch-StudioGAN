@@ -175,7 +175,7 @@ class WORKER(object):
             self.scaler = torch.cuda.amp.GradScaler()
 
         if self.global_rank == 0:
-            resume = False if self.RUN.freezeD > -1 or self.RUN.freezeG > -1 else True
+            resume = False if self.RUN.freezeD > -1 else True
             wandb.init(project=self.RUN.project,
                        entity=self.RUN.entity,
                        name=self.run_name,
@@ -415,7 +415,7 @@ class WORKER(object):
         # -----------------------------------------------------------------------------
         # toggle gradients of the generator and discriminator
         misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
-        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=self.RUN.freezeG, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
         self.Gen.apply(misc.track_bn_statistics)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()

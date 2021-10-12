@@ -72,7 +72,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
     when = "best" if load_best is True else "current"
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-{when}-weights-step*.pth".format(when=when)))[0]
     Dis_ckpt_path = glob.glob(join(ckpt_dir, "model=D-{when}-weights-step*.pth".format(when=when)))[0]
-    is_freeze = True if RUN.freezeD > -1 or RUN.freezeG > -1 else False
+    is_freeze = True if RUN.freezeD > -1 else False
 
     load_ckpt(model=Gen,
               optimizer=g_optimizer,

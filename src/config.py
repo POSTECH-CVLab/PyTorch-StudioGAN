@@ -583,10 +583,6 @@ class Configurations(object):
         if self.RUN.langevin_sampling:
             assert self.MODEL.z_prior == "gaussian", "Langevin sampling is defined only if z_prior is gaussian."
 
-        if self.RUN.freezeG > -1:
-            assert self.RUN.ckpt_dir is not None, "Freezing generator needs a pre-trained model.\
-                Please specify the checkpoint directory (using -ckpt) for loading a pre-trained generator."
-
         if self.RUN.freezeD > -1:
             assert self.RUN.ckpt_dir is not None, "Freezing discriminator needs a pre-trained model.\
                 Please specify the checkpoint directory (using -ckpt) for loading a pre-trained discriminator."
@@ -710,11 +706,10 @@ class Configurations(object):
                 self.RUN.synchronized_bn + \
                 self.RUN.batch_statistics + \
                 self.RUN.standing_statistics + \
-                self.RUN.freezeG + \
                 self.RUN.freezeD + \
                 self.RUN.langevin_sampling + \
                 self.RUN.interpolation + \
-                self.RUN.semantic_factorization == -2, \
+                self.RUN.semantic_factorization == -1, \
                 "StudioGAN does not support some options for stylegan2."
 
         if self.MODEL.backbone == "stylegan2":
