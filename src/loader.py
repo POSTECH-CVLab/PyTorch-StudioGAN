@@ -218,7 +218,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # prepare parallel training
     # -----------------------------------------------------------------------------
-    print(cfgs.OPTIMIZATION.world_size)
     if cfgs.OPTIMIZATION.world_size > 1:
         Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis =\
         model.prepare_parallel_training(Gen=Gen,
