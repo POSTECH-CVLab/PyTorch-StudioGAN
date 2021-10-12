@@ -82,7 +82,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if local_rank == 0:
         logger = log.make_logger(cfgs.RUN.save_dir, run_name, None)
-        if cfgs.RUN.ckpt_dir is not None:
+        if cfgs.RUN.ckpt_dir is not None and cfgs.RUN.freezeD == -1:
             logger.info("Run name : {run_name}".format(run_name=cfgs.RUN.ckpt_dir.split("/")[-1]))
         else:
             logger.info("Run name : {run_name}".format(run_name=run_name))
@@ -184,10 +184,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # load the generator and the discriminator from a checkpoint if possible
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.ckpt_dir is None:
-        if local_rank == 0:
-            cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
-    else:
+    if cfgs.RUN.ckpt_dir is not None:
         run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path, logger =\
             ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
                                       load_best=cfgs.RUN.load_best,
@@ -210,6 +207,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         if cfgs.MODEL.backbone == "stylegan2":
             ema.ema_rampup = "N/A" # disable EMA rampup
             cfgs.AUG.ada_kimg = 100 # make ADA react faster at the beginning
+
+    if cfgs.RUN.ckpt_dir is None or cfgs.RUN.freezeD != -1:
+        if local_rank == 0:
+            cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
 
         dict_dir = join(cfgs.RUN.save_dir, "values", run_name)
         loss_list_dict = misc.load_log_dicts(directory=dict_dir, file_name="losses.npy", ph=loss_list_dict)

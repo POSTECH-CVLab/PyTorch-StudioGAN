@@ -108,7 +108,9 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
         misc.fix_seed(RUN.seed)
 
     if device == 0:
-        logger = log.make_logger(RUN.save_dir, prev_run_name, None)
+        if not is_freeze:
+            logger = log.make_logger(RUN.save_dir, prev_run_name, None)
+
         logger.info("Generator checkpoint is {}".format(Gen_ckpt_path))
         if apply_g_ema:
             logger.info("EMA_Generator checkpoint is {}".format(Gen_ema_ckpt_path))
