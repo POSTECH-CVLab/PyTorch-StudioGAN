@@ -656,3 +656,19 @@ def compute_gradient(fx, logits, label, num_classes):
     preds = (probs*gt_prob).sum(-1)
     grad = torch.mean(fx.unsqueeze(1) * oneMp.unsqueeze(2), dim=0)
     return fx.norm(dim=1), preds, torch.norm(grad, dim=1)
+
+def load_parameters(src, dst, strict=True):
+    mismatch_names = []
+    for dst_key, dst_value in dst.items():
+        if dst_key in src:
+            if dst_value.shape == src[dst_key].shape:
+                dst[dst_key] = src[dst_key]
+            else:
+                mismatch_names.append(dst_key)
+                err = "source tensor {key}({src}) does not match with destination tensor {key}({dst}).".\
+                    format(key=dst_key, src=src[dst_key].shape, dst=dst_value.shape)
+                assert not strict, err
+        else:
+            mismatch_names.append(dst_key)
+            assert not strict, "dst_key is not in src_dict."
+    return mismatch_names
