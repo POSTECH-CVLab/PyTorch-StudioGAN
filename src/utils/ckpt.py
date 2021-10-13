@@ -23,13 +23,14 @@ def make_ckpt_dir(ckpt_dir):
     return ckpt_dir
 
 
-def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, load_misc=False, is_freeze=False):
+def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, load_misc=False, is_freezeD=False):
     ckpt = torch.load(ckpt_path)
     if load_model:
-        if is_freeze:
+        if is_freezeD:
             mismatch_names = misc.load_parameters(src=ckpt["state_dict"],
                                                   dst=model.state_dict(),
                                                   strict=False)
+            print("The following parameters/buffers do not match with the ones of the pre-trained model:", mismatch_names)
         else:
             model.load_state_dict(ckpt["state_dict"])
 
@@ -68,17 +69,17 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
     when = "best" if load_best is True else "current"
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-{when}-weights-step*.pth".format(when=when)))[0]
     Dis_ckpt_path = glob.glob(join(ckpt_dir, "model=D-{when}-weights-step*.pth".format(when=when)))[0]
+    prev_run_name = torch.load(Dis_ckpt_path)["run_name"]
     is_freezeD = True if RUN.freezeD > -1 else False
 
     load_ckpt(model=Gen,
               optimizer=g_optimizer,
               ckpt_path=Gen_ckpt_path,
-              load_model=not is_freezeD,
-              load_opt=not is_freezeD,
+              load_model=True,
+              load_opt=False if prev_run_name in blacklist or is_freezeD else True,
               load_misc=False,
-              is_freeze=False)
+              is_freezeD=is_freezeD)
 
-    prev_run_name = torch.load(Dis_ckpt_path)["run_name"]
     seed, prev_run_name, step, epoch, topk, ada_p, best_step, best_fid, best_ckpt_path =\
         load_ckpt(model=Dis,
                   optimizer=d_optimizer,
@@ -86,17 +87,17 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
                   load_model=True,
                   load_opt=False if prev_run_name in blacklist or is_freezeD else True,
                   load_misc=True,
-                  is_freeze=is_freezeD)
+                  is_freezeD=is_freezeD)
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
         load_ckpt(model=Gen_ema,
                   optimizer=None,
                   ckpt_path=Gen_ema_ckpt_path,
-                  load_model=not is_freezeD,
+                  load_model=True,
                   load_opt=False,
                   load_misc=False,
-                  is_freeze=False)
+                  is_freezeD=is_freezeD)
 
         ema.source, ema.target = Gen, Gen_ema
 
@@ -130,7 +131,7 @@ def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
               load_model=True,
               load_opt=False,
               load_misc=False,
-              is_freeze=False)
+              is_freezeD=False)
 
     _, _, _, _, _, _, best_step, _, _ = load_ckpt(model=Dis,
                                                   optimizer=None,
@@ -138,7 +139,7 @@ def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
                                                   load_model=True,
                                                   load_opt=False,
                                                   load_misc=True,
-                                                  is_freeze=False)
+                                                  is_freezeD=False)
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-best-weights-step*.pth"))[0]
@@ -148,7 +149,7 @@ def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
                   load_model=True,
                   load_opt=False,
                   load_misc=False,
-                  is_freeze=False)
+                  is_freezeD=False)
 
         ema.source, ema.target = Gen, Gen_ema
     return best_step
