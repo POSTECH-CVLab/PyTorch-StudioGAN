@@ -414,8 +414,8 @@ class WORKER(object):
             if self.LOSS.apply_r1_reg and (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
                 self.OPTIMIZATION.d_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
-                    real_images = real_image_basket[batch_counter - acml_index].to(self.local_rank, non_blocking=True)
-                    real_labels = real_label_basket[batch_counter - acml_index].to(self.local_rank, non_blocking=True)
+                    real_images = real_image_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
+                    real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
                     real_images.requires_grad_(True)
                     real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
                     self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
