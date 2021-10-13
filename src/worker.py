@@ -473,13 +473,14 @@ class WORKER(object):
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     fake_dict = self.Dis(fake_images_, fake_labels)
 
-                    # accumulate discriminator output informations for logging
-                    self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
-                                                        self.OPTIMIZATION.batch_size),
-                                                       device=self.local_rank)
-                    self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(),
-                                                         self.OPTIMIZATION.batch_size),
+                    if self.AUG.apply_ada:
+                        # accumulate discriminator output informations for logging
+                        self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
                                                         device=self.local_rank)
+                        self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
 
                     # apply top k sampling for discarding bottom 1-k samples which are 'in-between modes'
                     if self.LOSS.apply_topk:
