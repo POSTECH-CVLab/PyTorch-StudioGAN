@@ -103,10 +103,11 @@ class WORKER(object):
             self.pl_reg_loss = 0
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-        self.dis_sign_real = torch.zeros(2, device=self.local_rank)
-        self.dis_sign_fake = torch.zeros(2, device=self.local_rank)
-        self.dis_logit_real = torch.zeros(2, device=self.local_rank)
-        self.dis_logit_fake = torch.zeros(2, device=self.local_rank)
+            self.ada_stat = torch.zeros(2, device=self.local_rank)
+            self.dis_sign_real, self.dis_sign_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
+            self.dis_logit_real, self.dis_logit_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
+            self.dis_sign_real_log, self.dis_sign_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
+            self.dis_logit_real_log, self.dis_logit_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
 
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
@@ -261,10 +262,18 @@ class WORKER(object):
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
 
                     # accumulate discriminator output informations for logging
-                    self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
-                    self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
-                    self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
-                    self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                    self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
+                                                        self.OPTIMIZATION.batch_size),
+                                                       device=self.local_rank)
+                    self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
+                                                        self.OPTIMIZATION.batch_size),
+                                                       device=self.local_rank)
+                    self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
+                                                         self.OPTIMIZATION.batch_size),
+                                                        device=self.local_rank)
+                    self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(),
+                                                         self.OPTIMIZATION.batch_size),
+                                                        device=self.local_rank)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -370,8 +379,12 @@ class WORKER(object):
                     elif self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.d_reg_interval == 0:
                         real_images.requires_grad_(True)
                         real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
-                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
-                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                           device=self.local_rank)
+                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
+                                                             self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
                         self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
                                                                      images=real_images,
                                                                      device=self.local_rank)
@@ -391,22 +404,33 @@ class WORKER(object):
                 self.scaler.step(self.OPTIMIZATION.d_optimizer)
                 self.scaler.update()
             else:
-                ##################################################################
-                # gradient clipping will be deprecated
                 """
+                # gradient clipping will be deprecated
                 if self.MODEL.d_cond_mtd == "AC":
                     torch.nn.utils.clip_grad_norm_(self.Dis.module.linear2.parameters(), 0.1)
                 # weight clpping will be deprecated
                 if self.MODEL.d_cond_mtd == "AC":
                     self.Dis.module.linear2.parameters().data.clamp_(-0.1, 0.1)
                 """
-                ##################################################################
                 self.OPTIMIZATION.d_optimizer.step()
 
             # clip weights to restrict the discriminator to satisfy 1-Lipschitz constraint
             if self.LOSS.apply_wc:
                 for p in self.Dis.parameters():
                     p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
+
+        # apply ada heuristic
+        if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
+            if self.DDP:
+                dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
+            ada_heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
+            adjust = np.sign(ada_heuristic - self.AUG.ada_target) * (self.dis_sign_real[1].item()) / (self.AUG.ada_kimg * 1000)
+            self.ada_p = min(1., max(self.ada_p + adjust, 0.))
+            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
+            self.dis_sign_real_log.copy_(self.dis_sign_real), self.dis_sign_fake_log.copy_(self.dis_sign_fake)
+            self.dis_logit_real_log.copy_(self.dis_logit_real), self.dis_logit_fake_log.copy_(self.dis_logit_fake)
+            self.dis_sign_real.mul_(0), self.dis_sign_fake.mul_(0)
+            self.dis_logit_real.mul_(0), self.dis_logit_fake.mul_(0)
         return real_cond_loss, dis_acml_loss
 
     # -----------------------------------------------------------------------------
@@ -449,8 +473,12 @@ class WORKER(object):
                     fake_dict = self.Dis(fake_images_, fake_labels)
 
                     # accumulate discriminator output informations for logging
-                    self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
-                    self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                    self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
+                                                        self.OPTIMIZATION.batch_size),
+                                                       device=self.local_rank)
+                    self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(),
+                                                         self.OPTIMIZATION.batch_size),
+                                                        device=self.local_rank)
 
                     # apply top k sampling for discarding bottom 1-k samples which are 'in-between modes'
                     if self.LOSS.apply_topk:
@@ -535,16 +563,6 @@ class WORKER(object):
             # if ema is True: update parameters of the Gen_ema in adaptive way
             if self.MODEL.apply_g_ema:
                 self.ema.update(current_step)
-
-        # apply ada heuristic
-        if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
-            if self.DDP:
-                dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
-            ada_heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
-            adjust = np.sign(ada_heuristic - self.AUG.ada_target) * (self.dis_sign_real[1].item()) / (self.AUG.ada_kimg * 1000)
-            self.ada_p = min(1., max(self.ada_p + adjust, 0.))
-            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-            self.ada_stat.mul_(0)
         return gen_acml_loss
 
     # -----------------------------------------------------------------------------
@@ -587,10 +605,10 @@ class WORKER(object):
                             dictionary=save_dict)
 
         dis_output_dict = {
-                    "dis_sign_real": (self.dis_sign_real[0]/self.dis_sign_real[1]).item(),
-                    "dis_sign_fake": (self.dis_sign_fake[0]/self.dis_sign_fake[1]).item(),
-                    "dis_logit_real": (self.dis_logit_real[0]/self.dis_logit_real[1]).item(),
-                    "dis_logit_fake": (self.dis_logit_fake[0]/self.dis_logit_fake[1]).item(),
+                    "dis_sign_real": (self.dis_sign_real_log[0]/self.dis_sign_real_log[1]).item(),
+                    "dis_sign_fake": (self.dis_sign_fake_log[0]/self.dis_sign_fake_log[1]).item(),
+                    "dis_logit_real": (self.dis_logit_real_log[0]/self.dis_logit_real_log[1]).item(),
+                    "dis_logit_fake": (self.dis_logit_fake_log[0]/self.dis_logit_fake_log[1]).item(),
                 }
         wandb.log(dis_output_dict, step=self.wandb_step)
 
@@ -603,12 +621,6 @@ class WORKER(object):
         if self.STYLEGAN2.apply_pl_reg:
             wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
 
-        if (not self.AUG.apply_ada and current_step % 4 == 0) or (self.AUG.apply_ada and current_step % self.AUG.ada_interval == 0):
-            self.dis_sign_real.mul_(0)
-            self.dis_sign_fake.mul_(0)
-            self.dis_logit_real.mul_(0)
-            self.dis_logit_fake.mul_(0)
-
         # calculate the spectral norms of all weights in the generator for monitoring purpose
         if self.MODEL.apply_g_sn:
             gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
@@ -618,15 +630,6 @@ class WORKER(object):
         if self.MODEL.apply_d_sn:
             dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
             wandb.log(dis_sigmas, step=self.wandb_step)
-
-    # -----------------------------------------------------------------------------
-    # reset_ada_logit_accumulation
-    # -----------------------------------------------------------------------------
-    def reset_ada_logit_accum(self):
-        self.dis_sign_real.mul_(0)
-        self.dis_sign_fake.mul_(0)
-        self.dis_logit_real.mul_(0)
-        self.dis_logit_fake.mul_(0)
 
     # -----------------------------------------------------------------------------
     # visualize fake images for monitoring purpose.
