@@ -602,7 +602,7 @@ class WORKER(object):
 
         if self.STYLEGAN2.apply_pl_reg:
             wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
-                    
+
         if (not self.AUG.apply_ada and current_step % 4 == 0) or (self.AUG.apply_ada and current_step % self.AUG.ada_interval == 0):
             self.dis_sign_real.mul_(0)
             self.dis_sign_fake.mul_(0)
@@ -618,6 +618,15 @@ class WORKER(object):
         if self.MODEL.apply_d_sn:
             dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
             wandb.log(dis_sigmas, step=self.wandb_step)
+
+    # -----------------------------------------------------------------------------
+    # reset_ada_logit_accumulation
+    # -----------------------------------------------------------------------------
+    def reset_ada_logit_accum(self):
+        self.dis_sign_real.mul_(0)
+        self.dis_sign_fake.mul_(0)
+        self.dis_logit_real.mul_(0)
+        self.dis_logit_fake.mul_(0)
 
     # -----------------------------------------------------------------------------
     # visualize fake images for monitoring purpose.
