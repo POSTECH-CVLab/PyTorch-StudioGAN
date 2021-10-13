@@ -290,8 +290,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.prepare_train_iter(epoch_counter=epoch)
         while step <= cfgs.OPTIMIZATION.total_steps:
             if cfgs.MODEL.backbone == "stylegan2":
-                real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
                 gen_acml_loss = worker.train_generator(current_step=step)
+                real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
             else:
                 real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
                 gen_acml_loss = worker.train_generator(current_step=step)
