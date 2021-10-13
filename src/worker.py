@@ -421,7 +421,7 @@ class WORKER(object):
                     self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
                                                                  images=real_images,
                                                                  device=self.local_rank)
-                    self.r1_penalty *= self.STYLEGAN2.d_reg_interval
+                    self.r1_penalty *= self.STYLEGAN2.d_reg_interval/self.OPTIMIZATION.acml_steps
 
                     self.r1_penalty.backward()
                     if self.AUG.apply_ada:
@@ -577,7 +577,7 @@ class WORKER(object):
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
                     self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images, ws)
-                    self.pl_reg_loss *= self.STYLEGAN2.g_reg_interval
+                    self.pl_reg_loss *= self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
 
                     self.pl_reg_loss.backward()
 
