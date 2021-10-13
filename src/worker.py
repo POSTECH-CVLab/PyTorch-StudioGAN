@@ -112,8 +112,10 @@ class WORKER(object):
 
         if self.MODEL.aux_cls_type == "ADC":
             num_classes = self.DATA.num_classes * 2
+            self.adc_fake = True
         else:
             num_classes = self.DATA.num_classes
+            self.adc_fake = False
 
         if self.MODEL.d_cond_mtd == "AC":
             self.cond_loss = losses.CrossEntropyLoss()
@@ -206,11 +208,10 @@ class WORKER(object):
         real_labels = real_labels.to(self.local_rank, non_blocking=True)
         return real_images, real_labels
 
-    def train(self, current_step):
-        # -----------------------------------------------------------------------------
-        # train Discriminator.
-        # -----------------------------------------------------------------------------
-        adc_fake = self.MODEL.aux_cls_type == "ADC"
+    # -----------------------------------------------------------------------------
+    # train Discriminator
+    # -----------------------------------------------------------------------------
+    def train_discriminator(self, current_step):
         # make GAN be trainable before starting training
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
@@ -255,7 +256,7 @@ class WORKER(object):
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     real_dict = self.Dis(real_images_, real_labels)
-                    fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=adc_fake)
+                    fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
 
                     # keep real_dict["adv_output"] signs for ada
                     if self.AUG.apply_ada:
@@ -280,6 +281,8 @@ class WORKER(object):
                             dis_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
                         else:
                             pass
+                    else:
+                        real_cond_loss = "N/A"
 
                     # add transport cost for latent optimization training
                     if self.LOSS.apply_lo:
@@ -303,7 +306,7 @@ class WORKER(object):
                         real_prl_images = self.AUG.parallel_augment(real_images)
                         fake_prl_images = self.AUG.parallel_augment(fake_images)
                         real_prl_dict = self.Dis(real_prl_images, real_labels)
-                        fake_prl_dict = self.Dis(fake_prl_images, fake_labels, adc_fake=adc_fake)
+                        fake_prl_dict = self.Dis(fake_prl_images, fake_labels, adc_fake=self.adc_fake)
                         real_bcr_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
                         fake_bcr_loss = self.l2_loss(fake_dict["adv_output"], fake_prl_dict["adv_output"])
                         if self.MODEL.d_cond_mtd == "AC":
@@ -318,7 +321,7 @@ class WORKER(object):
 
                     # if LOSS.apply_zcr is True, apply latent consistency regularization proposed in ICRGAN
                     if self.LOSS.apply_zcr:
-                        fake_eps_dict = self.Dis(fake_images_eps, fake_labels, adc_fake=adc_fake)
+                        fake_eps_dict = self.Dis(fake_images_eps, fake_labels, adc_fake=self.adc_fake)
                         fake_zcr_loss = self.l2_loss(fake_dict["adv_output"], fake_eps_dict["adv_output"])
                         if self.MODEL.d_cond_mtd == "AC":
                             fake_zcr_loss += self.l2_loss(fake_dict["cls_output"], fake_eps_dict["cls_output"])
@@ -389,8 +392,6 @@ class WORKER(object):
                 """
                 if self.MODEL.d_cond_mtd == "AC":
                     torch.nn.utils.clip_grad_norm_(self.Dis.module.linear2.parameters(), 0.1)
-                """
-                """
                 # weight clpping will be deprecated
                 if self.MODEL.d_cond_mtd == "AC":
                     self.Dis.module.linear2.parameters().data.clamp_(-0.1, 0.1)
@@ -402,17 +403,12 @@ class WORKER(object):
             if self.LOSS.apply_wc:
                 for p in self.Dis.parameters():
                     p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
+        return real_cond_loss, dis_acml_loss
 
-        # calculate the spectral norms of all weights in the discriminator for monitoring purpose
-        if (current_step + 1) % self.RUN.print_every == 0:
-            self.wandb_step = current_step + 1
-            if self.MODEL.apply_d_sn and self.global_rank == 0:
-                dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
-                wandb.log(dis_sigmas, step=self.wandb_step)
-
-        # -----------------------------------------------------------------------------
-        # train Generator.
-        # -----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
+    # train Generator
+    # -----------------------------------------------------------------------------
+    def train_generator(self, current_step):
         # toggle gradients of the generator and discriminator
         misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
         misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
@@ -466,12 +462,16 @@ class WORKER(object):
                             tac_gen_loss = -self.cond_loss_mi(**fake_dict)
                             dis_acml_loss += self.LOSS.tac_gen_lambda * tac_gen_loss
                         if self.MODEL.aux_cls_type == "ADC":
-                            adc_fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=adc_fake)
+                            adc_fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
                             adc_fake_cond_loss = -self.cond_loss(**adc_fake_dict)
                             gen_acml_loss += self.LOSS.cond_lambda * adc_fake_cond_loss
 
                     # apply feature matching regularization to stabilize adversarial dynamics
                     if self.LOSS.apply_fm:
+                        real_images, real_labels = self.sample_data()
+                        real_images_ = self.AUG.series_augment(real_images)
+                        real_dict = self.Dis(real_images_, real_labels)
+
                         mean_match_loss = self.fm_loss(real_dict["h"].detach(), fake_dict["h"])
                         gen_acml_loss += self.LOSS.fm_lambda * mean_match_loss
 
@@ -537,82 +537,70 @@ class WORKER(object):
             self.ada_p = min(1., max(self.ada_p + adjust, 0.))
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat.mul_(0)
+        return gen_acml_loss
 
-        # logging
-        if (current_step + 1) % self.RUN.print_every == 0:
-            if self.global_rank == 0:
-                if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
-                    cls_loss = real_cond_loss.item()
-                else:
-                    cls_loss = "N/A"
+    # -----------------------------------------------------------------------------
+    # log training statistics
+    # -----------------------------------------------------------------------------
+    def log_train_statistics(self, current_step, real_cond_loss, gen_acml_loss, dis_acml_loss):
+        self.wandb_step = current_step + 1
+        if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
+            cls_loss = real_cond_loss.item()
+        else:
+            cls_loss = "N/A"
 
-                log_message = LOG_FORMAT.format(
-                    step=current_step + 1,
-                    progress=(current_step + 1) / self.OPTIMIZATION.total_steps,
-                    elapsed=misc.elapsed_time(self.start_time),
-                    gen_loss=gen_acml_loss.item(),
-                    dis_loss=dis_acml_loss.item(),
-                    cls_loss=cls_loss,
-                    topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
-                    ada_p=self.ada_p if self.AUG.apply_ada else "N/A",
-                )
-                self.logger.info(log_message)
+        log_message = LOG_FORMAT.format(
+            step=current_step + 1,
+            progress=(current_step + 1) / self.OPTIMIZATION.total_steps,
+            elapsed=misc.elapsed_time(self.start_time),
+            gen_loss=gen_acml_loss.item(),
+            dis_loss=dis_acml_loss.item(),
+            cls_loss=cls_loss,
+            topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
+            ada_p=self.ada_p if self.AUG.apply_ada else "N/A",
+        )
+        self.logger.info(log_message)
 
-                # save loss values in wandb event file and .npz format
-                loss_dict = {
-                    "gen_loss": gen_acml_loss.item(),
-                    "dis_loss": dis_acml_loss.item(),
-                    "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss,
-                }
+        # save loss values in wandb event file and .npz format
+        loss_dict = {
+            "gen_loss": gen_acml_loss.item(),
+            "dis_loss": dis_acml_loss.item(),
+            "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss,
+        }
 
-                wandb.log(loss_dict, step=self.wandb_step)
+        wandb.log(loss_dict, step=self.wandb_step)
 
-                save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
-                                                        value_dict=loss_dict,
-                                                        step=current_step + 1,
-                                                        interval=self.RUN.print_every)
-                misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
-                                   name="losses",
-                                   dictionary=save_dict)
+        save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
+                                                value_dict=loss_dict,
+                                                step=current_step + 1,
+                                                interval=self.RUN.print_every)
+        misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
+                            name="losses",
+                            dictionary=save_dict)
 
-                if self.STYLEGAN2.apply_pl_reg:
-                    wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
+        if self.STYLEGAN2.apply_pl_reg:
+            wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
 
-                # log ada stats
-                if self.AUG.apply_ada:
-                    ada_dict = {
-                        "ada_p": self.ada_p,
-                        "dis_sign_real": self.ada_heuristic,
-                    }
-                    wandb.log(ada_dict, step=self.wandb_step)
+        # log ada stats
+        if self.AUG.apply_ada:
+            ada_dict = {
+                "ada_p": self.ada_p,
+                "dis_sign_real": self.ada_heuristic,
+            }
+            wandb.log(ada_dict, step=self.wandb_step)
 
-                if self.LOSS.apply_r1_reg:
-                    wandb.log({"r1_reg_loss": self.r1_penalty.item()}, step=self.wandb_step)
+        if self.LOSS.apply_r1_reg:
+            wandb.log({"r1_reg_loss": self.r1_penalty.item()}, step=self.wandb_step)
 
-                # calculate the spectral norms of all weights in the generator for monitoring purpose
-                if self.MODEL.apply_g_sn:
-                    gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
-                    wandb.log(gen_sigmas, step=self.wandb_step)
+        # calculate the spectral norms of all weights in the generator for monitoring purpose
+        if self.MODEL.apply_g_sn:
+            gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
+            wandb.log(gen_sigmas, step=self.wandb_step)
 
-                ###############################################
-                if self.MODEL.d_cond_mtd == "AC":
-                    feat_norms, probs, w_grads = misc.compute_gradient(fx=real_dict["h"].detach().cpu(),
-                                                                       logits=real_dict["cls_output"],
-                                                                       label=real_dict["label"].detach().cpu(),
-                                                                       num_classes=self.DATA.num_classes*2 if self.MODEL.aux_cls_type=="ADC"  else self.DATA.num_classes)
-
-                    mean_feat_norms, mean_probs, mean_w_grads = feat_norms.mean(), probs.mean(), w_grads.mean()
-                    std_feat_norms, std_probs, std_w_grads = feat_norms.std(), probs.std(), w_grads.std()
-
-                    wandb.log({"mean_feat_norms": mean_feat_norms,
-                               "mean_probs": mean_probs,
-                               "mean_w_grads": mean_w_grads,
-                               "std_feat_norms": std_feat_norms,
-                               "std_probs": std_probs,
-                               "std_w_grads": std_w_grads}, step=self.wandb_step)
-                ###############################################
-
-        return current_step + 1
+        # calculate the spectral norms of all weights in the discriminator for monitoring purpose
+        if self.MODEL.apply_d_sn:
+            dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
+            wandb.log(dis_sigmas, step=self.wandb_step)
 
     # -----------------------------------------------------------------------------
     # visualize fake images for monitoring purpose.
