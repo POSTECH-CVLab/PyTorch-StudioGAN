@@ -662,7 +662,7 @@ def load_parameters(src, dst, strict=True):
     for dst_key, dst_value in dst.items():
         if dst_key in src:
             if dst_value.shape == src[dst_key].shape:
-                dst[dst_key] = src[dst_key]
+                dst[dst_key].copy_(src[dst_key])
             else:
                 mismatch_names.append(dst_key)
                 err = "source tensor {key}({src}) does not match with destination tensor {key}({dst}).".\

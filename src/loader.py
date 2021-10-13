@@ -209,9 +209,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             cfgs.AUG.ada_kimg = 100 # make ADA react faster at the beginning
 
     if cfgs.RUN.ckpt_dir is None or cfgs.RUN.freezeD != -1:
-        if local_rank == 0:
-            cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
-
+        cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
         dict_dir = join(cfgs.RUN.save_dir, "values", run_name)
         loss_list_dict = misc.load_log_dicts(directory=dict_dir, file_name="losses.npy", ph=loss_list_dict)
         metric_list_dict = misc.load_log_dicts(directory=dict_dir, file_name="metrics.npy", ph=metric_list_dict)
@@ -290,7 +288,19 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.training, worker.topk = True, topk
         worker.prepare_train_iter(epoch_counter=epoch)
         while step <= cfgs.OPTIMIZATION.total_steps:
-            step = worker.train(current_step=step)
+            if cfgs.MODEL.backbone == "stylegan2":
+                gen_acml_loss = worker.train_generator(current_step=step)
+                real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
+            else:
+                real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
+                gen_acml_loss = worker.train_generator(current_step=step)
+
+            if global_rank == 0 and (step + 1) % cfgs.RUN.print_every == 0:
+                worker.log_train_statistics(current_step=step,
+                                            real_cond_loss=real_cond_loss,
+                                            gen_acml_loss=gen_acml_loss,
+                                            dis_acml_loss=dis_acml_loss)
+            step += 1
             if cfgs.LOSS.apply_topk:
                 if (epoch + 1) == worker.epoch_counter:
                     epoch += 1
