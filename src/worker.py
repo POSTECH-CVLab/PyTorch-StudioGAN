@@ -103,8 +103,10 @@ class WORKER(object):
             self.pl_reg_loss = 0
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-            self.ada_stat = torch.zeros(2, device=self.local_rank)
-            self.ada_heuristic = 0
+        self.dis_sign_real = torch.zeros(2, device=self.local_rank)
+        self.dis_sign_fake = torch.zeros(2, device=self.local_rank)
+        self.dis_logit_real = torch.zeros(2, device=self.local_rank)
+        self.dis_logit_fake = torch.zeros(2, device=self.local_rank)
 
         if self.LOSS.adv_loss == "MH":
             self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
@@ -258,9 +260,11 @@ class WORKER(object):
                     real_dict = self.Dis(real_images_, real_labels)
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
 
-                    # keep real_dict["adv_output"] signs for ada
-                    if self.AUG.apply_ada:
-                        self.ada_stat += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                    # accumulate discriminator output informations for logging
+                    self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                    self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                    self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                    self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -366,8 +370,8 @@ class WORKER(object):
                     elif self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.d_reg_interval == 0:
                         real_images.requires_grad_(True)
                         real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
-                        if self.AUG.apply_ada:
-                            self.ada_stat += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
                         self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
                                                                      images=real_images,
                                                                      device=self.local_rank)
@@ -443,6 +447,10 @@ class WORKER(object):
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     fake_dict = self.Dis(fake_images_, fake_labels)
+
+                    # accumulate discriminator output informations for logging
+                    self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
+                    self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(), real_dict["adv_output"].shape[0]), device=self.local_rank)
 
                     # apply top k sampling for discarding bottom 1-k samples which are 'in-between modes'
                     if self.LOSS.apply_topk:
@@ -531,9 +539,9 @@ class WORKER(object):
         # apply ada heuristic
         if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
             if self.DDP:
-                dist.all_reduce(self.ada_stat, op=dist.ReduceOp.SUM, group=self.group)
-            self.ada_heuristic = (self.ada_stat[0] / self.ada_stat[1]).item()
-            adjust = np.sign(self.ada_heuristic - self.AUG.ada_target) * (self.ada_stat[1].item()) / (self.AUG.ada_kimg * 1000)
+                dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
+            ada_heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
+            adjust = np.sign(ada_heuristic - self.AUG.ada_target) * (self.dis_sign_real[1].item()) / (self.AUG.ada_kimg * 1000)
             self.ada_p = min(1., max(self.ada_p + adjust, 0.))
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat.mul_(0)
@@ -571,26 +579,35 @@ class WORKER(object):
         wandb.log(loss_dict, step=self.wandb_step)
 
         save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
-                                                value_dict=loss_dict,
-                                                step=current_step + 1,
-                                                interval=self.RUN.print_every)
+                                                  value_dict=loss_dict,
+                                                  step=current_step + 1,
+                                                  interval=self.RUN.print_every)
         misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
                             name="losses",
                             dictionary=save_dict)
 
-        if self.STYLEGAN2.apply_pl_reg:
-            wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
+        dis_output_dict = {
+                    "dis_sign_real": (self.dis_sign_real[0]/self.dis_sign_real[1]).item(),
+                    "dis_sign_fake": (self.dis_sign_fake[0]/self.dis_sign_fake[1]).item(),
+                    "dis_logit_real": (self.dis_logit_real[0]/self.dis_logit_real[1]).item(),
+                    "dis_logit_fake": (self.dis_logit_fake[0]/self.dis_logit_fake[1]).item(),
+                }
+        wandb.log(dis_output_dict, step=self.wandb_step)
 
-        # log ada stats
         if self.AUG.apply_ada:
-            ada_dict = {
-                "ada_p": self.ada_p,
-                "dis_sign_real": self.ada_heuristic,
-            }
-            wandb.log(ada_dict, step=self.wandb_step)
+            wandb.log({"ada_p": self.ada_p.item()}, step=self.wandb_step)
 
         if self.LOSS.apply_r1_reg:
             wandb.log({"r1_reg_loss": self.r1_penalty.item()}, step=self.wandb_step)
+
+        if self.STYLEGAN2.apply_pl_reg:
+            wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
+                    
+        if (not self.AUG.apply_ada and current_step % 4 == 0) or (self.AUG.apply_ada and current_step % self.AUG.ada_interval == 0):
+            self.dis_sign_real.mul_(0)
+            self.dis_sign_fake.mul_(0)
+            self.dis_logit_real.mul_(0)
+            self.dis_logit_fake.mul_(0)
 
         # calculate the spectral norms of all weights in the generator for monitoring purpose
         if self.MODEL.apply_g_sn:

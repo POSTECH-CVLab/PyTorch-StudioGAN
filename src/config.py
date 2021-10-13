@@ -359,7 +359,7 @@ class Configurations(object):
         else:
             g_losses = {
                 "vanilla": losses.g_vanilla,
-                "logistic": losses.g_vanilla,
+                "logistic": losses.g_logistic,
                 "least_square": losses.g_ls,
                 "hinge": losses.g_hinge,
                 "wasserstein": losses.g_wasserstein,
