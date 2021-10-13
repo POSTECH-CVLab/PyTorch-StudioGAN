@@ -262,18 +262,19 @@ class WORKER(object):
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
 
                     # accumulate discriminator output informations for logging
-                    self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
-                                                        self.OPTIMIZATION.batch_size),
-                                                       device=self.local_rank)
-                    self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
-                                                        self.OPTIMIZATION.batch_size),
-                                                       device=self.local_rank)
-                    self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
-                                                         self.OPTIMIZATION.batch_size),
+                    if self.AUG.apply_ada:
+                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
                                                         device=self.local_rank)
-                    self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(),
-                                                         self.OPTIMIZATION.batch_size),
+                        self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
                                                         device=self.local_rank)
+                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
+                        self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
 
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
@@ -604,15 +605,14 @@ class WORKER(object):
                             name="losses",
                             dictionary=save_dict)
 
-        dis_output_dict = {
-                    "dis_sign_real": (self.dis_sign_real_log[0]/self.dis_sign_real_log[1]).item(),
-                    "dis_sign_fake": (self.dis_sign_fake_log[0]/self.dis_sign_fake_log[1]).item(),
-                    "dis_logit_real": (self.dis_logit_real_log[0]/self.dis_logit_real_log[1]).item(),
-                    "dis_logit_fake": (self.dis_logit_fake_log[0]/self.dis_logit_fake_log[1]).item(),
-                }
-        wandb.log(dis_output_dict, step=self.wandb_step)
-
         if self.AUG.apply_ada:
+            dis_output_dict = {
+                        "dis_sign_real": (self.dis_sign_real_log[0]/self.dis_sign_real_log[1]).item(),
+                        "dis_sign_fake": (self.dis_sign_fake_log[0]/self.dis_sign_fake_log[1]).item(),
+                        "dis_logit_real": (self.dis_logit_real_log[0]/self.dis_logit_real_log[1]).item(),
+                        "dis_logit_fake": (self.dis_logit_fake_log[0]/self.dis_logit_fake_log[1]).item(),
+                    }
+            wandb.log(dis_output_dict, step=self.wandb_step)
             wandb.log({"ada_p": self.ada_p.item()}, step=self.wandb_step)
 
         if self.LOSS.apply_r1_reg:
