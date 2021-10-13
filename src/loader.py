@@ -209,7 +209,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             cfgs.AUG.ada_kimg = 100 # make ADA react faster at the beginning
 
     if cfgs.RUN.ckpt_dir is None or cfgs.RUN.freezeD != -1:
-        cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
+        if local_rank == 0:
+            cfgs.RUN.ckpt_dir = ckpt.make_ckpt_dir(join(cfgs.RUN.save_dir, "checkpoints", run_name))
         dict_dir = join(cfgs.RUN.save_dir, "values", run_name)
         loss_list_dict = misc.load_log_dicts(directory=dict_dir, file_name="losses.npy", ph=loss_list_dict)
         metric_list_dict = misc.load_log_dicts(directory=dict_dir, file_name="metrics.npy", ph=metric_list_dict)

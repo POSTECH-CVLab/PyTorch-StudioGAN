@@ -380,15 +380,17 @@ class WORKER(object):
                     elif self.LOSS.apply_r1_reg and (step_index * self.OPTIMIZATION.acml_steps) % self.STYLEGAN2.d_reg_interval == 0:
                         real_images.requires_grad_(True)
                         real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
-                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
-                                                            self.OPTIMIZATION.batch_size),
-                                                           device=self.local_rank)
-                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
-                                                             self.OPTIMIZATION.batch_size),
-                                                            device=self.local_rank)
                         self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
                                                                      images=real_images,
                                                                      device=self.local_rank)
+                        if self.AUG.apply_ada:
+                            self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
+                                                                self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
+                            self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
+                                                                self.OPTIMIZATION.batch_size),
+                                                                device=self.local_rank)
+
                         dis_acml_loss += self.STYLEGAN2.d_reg_interval * (self.LOSS.r1_lambda * self.r1_penalty)
 
                     # adjust gradients for applying gradient accumluation trick
