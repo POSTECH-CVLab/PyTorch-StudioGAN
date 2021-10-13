@@ -554,7 +554,7 @@ class WORKER(object):
                 self.OPTIMIZATION.g_optimizer.step()
 
             # apply path length regularization
-            if self.LOSS.apply_pl_reg and (self.OPTIMIZATION.g_updates_per_step*current_step + step_index) % self.STYLEGAN2.g_reg_interval == 0:
+            if self.STYLEGAN2.apply_pl_reg and (self.OPTIMIZATION.g_updates_per_step*current_step + step_index) % self.STYLEGAN2.g_reg_interval == 0:
                 self.OPTIMIZATION.g_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
