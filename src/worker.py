@@ -97,10 +97,11 @@ class WORKER(object):
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
 
-        if self.LOSS.apply_r1_reg:
-            self.r1_penalty = 0
-        if self.is_stylegan:
-            self.pl_reg_loss = 0
+        if self.is_stylegan and self.LOSS.apply_r1_reg:
+            self.r1_lambda = self.STYLEGAN2.d_reg_interval/self.OPTIMIZATION.acml_steps
+        if self.is_stylegan and self.STYLEGAN2.apply_pl_reg:
+            self.pl_lambda = self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
+
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
             self.ada_stat = torch.zeros(2, device=self.local_rank)
@@ -226,8 +227,8 @@ class WORKER(object):
         real_image_basket, real_label_basket = self.sample_data_basket()
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
             self.OPTIMIZATION.d_optimizer.zero_grad()
-            with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
-                for acml_index in range(self.OPTIMIZATION.acml_steps):
+            for acml_index in range(self.OPTIMIZATION.acml_steps):
+                with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
                     # load real images and labels onto the GPU memory
                     real_images = real_image_basket[batch_counter].to(self.local_rank, non_blocking=True)
                     real_labels = real_label_basket[batch_counter].to(self.local_rank, non_blocking=True)
@@ -418,12 +419,12 @@ class WORKER(object):
                     real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
                     real_images.requires_grad_(True)
                     real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
-                    self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                                 images=real_images,
-                                                                 device=self.local_rank)
-                    self.r1_penalty *= self.STYLEGAN2.d_reg_interval/self.OPTIMIZATION.acml_steps
-
+                    self.r1_penalty = self.r1_lambda*losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                                                images=real_images,
+                                                                                r1_lambda=self.r1_lambda,
+                                                                                device=self.local_rank)
                     self.r1_penalty.backward()
+
                     if self.AUG.apply_ada:
                         self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
                                                             self.OPTIMIZATION.batch_size),
@@ -457,8 +458,8 @@ class WORKER(object):
         self.Gen.apply(misc.track_bn_statistics)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
-            with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
-                for acml_step in range(self.OPTIMIZATION.acml_steps):
+            for acml_step in range(self.OPTIMIZATION.acml_steps):
+                with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
                     # sample fake images and labels from p(G(z), y)
                     fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
@@ -511,11 +512,12 @@ class WORKER(object):
                         gen_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
                         if self.MODEL.aux_cls_type == "TAC":
                             tac_gen_loss = -self.cond_loss_mi(**fake_dict)
-                            dis_acml_loss += self.LOSS.tac_gen_lambda * tac_gen_loss
-                        if self.MODEL.aux_cls_type == "ADC":
+                            gen_acml_loss += self.LOSS.tac_gen_lambda * tac_gen_loss
+                        elif self.MODEL.aux_cls_type == "ADC":
                             adc_fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
                             adc_fake_cond_loss = -self.cond_loss(**adc_fake_dict)
                             gen_acml_loss += self.LOSS.cond_lambda * adc_fake_cond_loss
+                        pass
 
                     # apply feature matching regularization to stabilize adversarial dynamics
                     if self.LOSS.apply_fm:
@@ -576,8 +578,7 @@ class WORKER(object):
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                    self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images, ws)
-                    self.pl_reg_loss *= self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
+                    self.pl_reg_loss = self.pl_lambda*self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws)
 
                     self.pl_reg_loss.backward()
 

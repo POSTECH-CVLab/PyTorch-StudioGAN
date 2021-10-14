@@ -127,7 +127,7 @@ class Configurations(object):
         self.LOSS.fm_lambda = "N/A"
         # whether to apply r1 regularization used in multiple-discriminator (FUNIT)
         self.LOSS.apply_r1_reg = False
-        # strength of r1 regularization
+        # strength of r1 regularization (it does not apply to r1_reg in StyleGAN2
         self.LOSS.r1_lambda = "N/A"
         # positive margin for D2DCE
         self.LOSS.m_p = "N/A"
