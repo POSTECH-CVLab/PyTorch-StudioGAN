@@ -473,19 +473,21 @@ class Configurations(object):
                 self.OPTIMIZATION.d_lr *= d_ratio
                 betas_g = [self.OPTIMIZATION.beta1 ** g_ratio, self.OPTIMIZATION.beta2 ** g_ratio]
                 betas_d = [self.OPTIMIZATION.beta1 ** d_ratio, self.OPTIMIZATION.beta2 ** d_ratio]
+                eps_ = 1e-8
             else:
                 betas_g = betas_d = [self.OPTIMIZATION.beta1, self.OPTIMIZATION.beta2]
+                eps_ = 1e-6
 
             self.OPTIMIZATION.g_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Gen.parameters()),
                                                              lr=self.OPTIMIZATION.g_lr,
                                                              betas=betas_g,
                                                              weight_decay=self.OPTIMIZATION.g_weight_decay,
-                                                             eps=1e-6)
+                                                             eps=eps_)
             self.OPTIMIZATION.d_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, Dis.parameters()),
                                                              lr=self.OPTIMIZATION.d_lr,
                                                              betas=betas_d,
                                                              weight_decay=self.OPTIMIZATION.d_weight_decay,
-                                                             eps=1e-6)
+                                                             eps=eps_)
         else:
             raise NotImplementedError
 

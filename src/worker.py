@@ -98,13 +98,12 @@ class WORKER(object):
         self.fm_loss = losses.feature_matching_loss
 
         if self.is_stylegan and self.LOSS.apply_r1_reg:
-            self.r1_lambda = self.STYLEGAN2.d_reg_interval/self.OPTIMIZATION.acml_steps
+            self.r1_lambda = self.LOSS.r1_lambda*self.STYLEGAN2.d_reg_interval/self.OPTIMIZATION.acml_steps
         if self.is_stylegan and self.STYLEGAN2.apply_pl_reg:
-            self.pl_lambda = self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
+            self.pl_lambda = self.STYLEGAN2.pl_weight*self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
 
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-            self.ada_stat = torch.zeros(2, device=self.local_rank)
             self.dis_sign_real, self.dis_sign_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
             self.dis_logit_real, self.dis_logit_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
             self.dis_sign_real_log, self.dis_sign_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
@@ -430,7 +429,7 @@ class WORKER(object):
                     dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
                 ada_heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
                 adjust = np.sign(ada_heuristic - self.AUG.ada_target) * (self.dis_sign_real[1].item()) / (self.AUG.ada_kimg * 1000)
-                self.ada_p = min(torch.Tensor(1.), max(self.ada_p + adjust, torch.Tensor(0.)))
+                self.ada_p = min(torch.as_tensor(1.), max(self.ada_p + adjust, torch.as_tensor(0.)))
                 self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
                 self.dis_sign_real_log.copy_(self.dis_sign_real), self.dis_sign_fake_log.copy_(self.dis_sign_fake)
                 self.dis_logit_real_log.copy_(self.dis_logit_real), self.dis_logit_fake_log.copy_(self.dis_logit_fake)
