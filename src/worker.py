@@ -407,11 +407,6 @@ class WORKER(object):
                 """
                 self.OPTIMIZATION.d_optimizer.step()
 
-            # clip weights to restrict the discriminator to satisfy 1-Lipschitz constraint
-            if self.LOSS.apply_wc:
-                for p in self.Dis.parameters():
-                    p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
-
             if self.LOSS.apply_r1_reg and (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
                 self.OPTIMIZATION.d_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
@@ -420,9 +415,7 @@ class WORKER(object):
                     real_images.requires_grad_(True)
                     real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
                     self.r1_penalty = self.r1_lambda*losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                                                images=real_images,
-                                                                                r1_lambda=self.r1_lambda,
-                                                                                device=self.local_rank)
+                                                                                images=real_images)
                     self.r1_penalty.backward()
 
                     if self.AUG.apply_ada:
@@ -434,18 +427,24 @@ class WORKER(object):
                                                             device=self.local_rank)
                 self.OPTIMIZATION.d_optimizer.step()
 
-        # apply ada heuristic
-        if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
-            if self.DDP:
-                dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
-            ada_heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
-            adjust = np.sign(ada_heuristic - self.AUG.ada_target) * (self.dis_sign_real[1].item()) / (self.AUG.ada_kimg * 1000)
-            self.ada_p = min(1., max(self.ada_p + adjust, 0.))
-            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-            self.dis_sign_real_log.copy_(self.dis_sign_real), self.dis_sign_fake_log.copy_(self.dis_sign_fake)
-            self.dis_logit_real_log.copy_(self.dis_logit_real), self.dis_logit_fake_log.copy_(self.dis_logit_fake)
-            self.dis_sign_real.mul_(0), self.dis_sign_fake.mul_(0)
-            self.dis_logit_real.mul_(0), self.dis_logit_fake.mul_(0)
+            # apply ada heuristics
+            if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
+                if self.DDP:
+                    dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
+                ada_heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
+                adjust = np.sign(ada_heuristic - self.AUG.ada_target) * (self.dis_sign_real[1].item()) / (self.AUG.ada_kimg * 1000)
+                self.ada_p = min(1., max(self.ada_p + adjust, 0.))
+                self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
+                self.dis_sign_real_log.copy_(self.dis_sign_real), self.dis_sign_fake_log.copy_(self.dis_sign_fake)
+                self.dis_logit_real_log.copy_(self.dis_logit_real), self.dis_logit_fake_log.copy_(self.dis_logit_fake)
+                self.dis_sign_real.mul_(0), self.dis_sign_fake.mul_(0)
+                self.dis_logit_real.mul_(0), self.dis_logit_fake.mul_(0)
+
+            # clip weights to restrict the discriminator to satisfy 1-Lipschitz constraint
+            if self.LOSS.apply_wc:
+                for p in self.Dis.parameters():
+                    p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
+
         return real_cond_loss, dis_acml_loss
 
     # -----------------------------------------------------------------------------
@@ -578,8 +577,8 @@ class WORKER(object):
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
-                    self.pl_reg_loss = self.pl_lambda*self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws)
 
+                    self.pl_reg_loss = self.pl_lambda*self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws)
                     self.pl_reg_loss.backward()
 
                 self.OPTIMIZATION.g_optimizer.step()
