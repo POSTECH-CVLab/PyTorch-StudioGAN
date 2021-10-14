@@ -104,7 +104,6 @@ class WORKER(object):
 
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
-            self.ada_stat = torch.zeros(2, device=self.local_rank)
             self.dis_sign_real, self.dis_sign_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
             self.dis_logit_real, self.dis_logit_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
             self.dis_sign_real_log, self.dis_sign_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
