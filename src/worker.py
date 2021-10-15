@@ -396,11 +396,11 @@ class WORKER(object):
                 self.scaler.step(self.OPTIMIZATION.d_optimizer)
                 self.scaler.update()
             else:
-                """
                 # gradient clipping will be deprecated
                 if self.MODEL.d_cond_mtd == "AC":
-                    torch.nn.utils.clip_grad_norm_(self.Dis.module.linear2.parameters(), 0.1)
-                """
+                    for name, p in self.Dis.named_parameters():
+                        if "linear2" in name:
+                            torch.nn.utils.clip_grad_norm_(p, 0.1)
                 self.OPTIMIZATION.d_optimizer.step()
 
             if self.LOSS.apply_r1_reg and (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
