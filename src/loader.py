@@ -83,7 +83,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if local_rank == 0:
         logger = log.make_logger(cfgs.RUN.save_dir, run_name, None)
         if cfgs.RUN.ckpt_dir is not None and cfgs.RUN.freezeD == -1:
-            logger.info("Run name : {run_name}".format(run_name=cfgs.RUN.ckpt_dir.split("/")[-1]))
+            folder_hier = cfgs.RUN.ckpt_dir.split("/")
+            if folder_hier[-1] == "":
+                folder_hier.pop()
+            logger.info("Run name : {run_name}".format(run_name=folder_hier.pop()))
         else:
             logger.info("Run name : {run_name}".format(run_name=run_name))
         for k, v in cfgs.super_cfgs.items():

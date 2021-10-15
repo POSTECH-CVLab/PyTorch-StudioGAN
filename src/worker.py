@@ -123,17 +123,17 @@ class WORKER(object):
         if self.MODEL.d_cond_mtd == "AC":
             self.cond_loss = losses.CrossEntropyLoss()
             if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.CrossEntropyLoss()
+                self.cond_loss_mi = losses.MiCrossEntropyLoss()
         elif self.MODEL.d_cond_mtd == "2C":
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
                                                                temperature=self.LOSS.temperature,
                                                                master_rank="cuda",
                                                                DDP=self.DDP)
             if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.ConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
-                                                                      temperature=self.LOSS.temperature,
-                                                                      master_rank="cuda",
-                                                                      DDP=self.DDP)
+                self.cond_loss_mi = losses.MiConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
+                                                                        temperature=self.LOSS.temperature,
+                                                                        master_rank="cuda",
+                                                                        DDP=self.DDP)
         elif self.MODEL.d_cond_mtd == "D2DCE":
             self.cond_loss = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
                                                               temperature=self.LOSS.temperature,
@@ -141,11 +141,11 @@ class WORKER(object):
                                                               master_rank="cuda",
                                                               DDP=self.DDP)
             if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
-                                                                     temperature=self.LOSS.temperature,
-                                                                     m_p=self.LOSS.m_p,
-                                                                     master_rank="cuda",
-                                                                     DDP=self.DDP)
+                self.cond_loss_mi = losses.MiData2DataCrossEntropyLoss(num_classes=num_classes,
+                                                                       temperature=self.LOSS.temperature,
+                                                                       m_p=self.LOSS.m_p,
+                                                                       master_rank="cuda",
+                                                                       DDP=self.DDP)
         else:
             pass
 
