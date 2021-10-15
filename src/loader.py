@@ -317,7 +317,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             if step % cfgs.RUN.save_every == 0:
                 # visuailize fake images
                 if global_rank == 0:
-                   worker.visualize_fake_images(num_cols=num_cols)
+                   worker.visualize_fake_images(num_cols=num_cols, current_step=step)
 
                 # evaluate GAN for monitoring purpose
                 if cfgs.RUN.eval:
@@ -362,7 +362,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.vis_fake_images:
         if global_rank == 0:
             print(""), logger.info("-" * 80)
-        worker.visualize_fake_images(num_cols=num_cols)
+        worker.visualize_fake_images(num_cols=num_cols, current_step=best_step)
 
     if cfgs.RUN.k_nearest_neighbor:
         if global_rank == 0:

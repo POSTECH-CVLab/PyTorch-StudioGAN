@@ -652,7 +652,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # visualize fake images for monitoring purpose.
     # -----------------------------------------------------------------------------
-    def visualize_fake_images(self, num_cols):
+    def visualize_fake_images(self, num_cols, current_step):
         if self.global_rank == 0:
             self.logger.info("Visualize (num_rows x 8) fake image canvans.")
         if self.gen_ctlr.standing_statistics:
@@ -684,7 +684,8 @@ class WORKER(object):
 
         misc.plot_img_canvas(images=(fake_images.detach().cpu() + 1) / 2,
                              save_path=join(self.RUN.save_dir,
-                                            "figures/{run_name}/generated_canvas.png".format(run_name=self.run_name)),
+                                            "figures/{run_name}/generated_canvas_{step}.png".format(run_name=self.run_name,
+                                                                                                    step=current_step)),
                              num_cols=num_cols,
                              logger=self.logger,
                              logging=self.global_rank == 0 and self.logger)
