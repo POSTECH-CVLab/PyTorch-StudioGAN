@@ -21,6 +21,7 @@ import utils.cr as cr
 import utils.simclr_aug as simclr_aug
 import utils.ada_aug as ada_aug
 
+
 class make_empty_object(object):
     pass
 
@@ -312,14 +313,37 @@ class Configurations(object):
         self.MISC.base_folders = ["checkpoints", "figures", "logs", "moments", "samples", "values"]
         self.MISC.classifier_based_GAN = ["AC", "2C", "D2DCE"]
         self.MISC.cas_setting = {
-            "CIFAR10": {"batch_size": 128, "epochs": 90, "depth": 32, "lr": 0.1, "momentum": 0.9,
-                        "weight_decay": 1e-4, "print_freq": 1, "bottleneck": True},
-            "Tiny_ImageNet": {"batch_size": 128, "epochs": 90, "depth": 34, "lr": 0.1, "momentum": 0.9,
-                              "weight_decay": 1e-4, "print_freq": 1, "bottleneck": True},
-            "ImageNet": {"batch_size": 128, "epochs": 90, "depth": 34, "lr": 0.1, "momentum": 0.9,
-                         "weight_decay": 1e-4, "print_freq": 1, "bottleneck": True},
+            "CIFAR10": {
+                "batch_size": 128,
+                "epochs": 90,
+                "depth": 32,
+                "lr": 0.1,
+                "momentum": 0.9,
+                "weight_decay": 1e-4,
+                "print_freq": 1,
+                "bottleneck": True
+            },
+            "Tiny_ImageNet": {
+                "batch_size": 128,
+                "epochs": 90,
+                "depth": 34,
+                "lr": 0.1,
+                "momentum": 0.9,
+                "weight_decay": 1e-4,
+                "print_freq": 1,
+                "bottleneck": True
+            },
+            "ImageNet": {
+                "batch_size": 128,
+                "epochs": 90,
+                "depth": 34,
+                "lr": 0.1,
+                "momentum": 0.9,
+                "weight_decay": 1e-4,
+                "print_freq": 1,
+                "bottleneck": True
+            },
         }
-
 
         # -----------------------------------------------------------------------------
         # Module settings
@@ -453,14 +477,12 @@ class Configurations(object):
                                                             momentum=self.OPTIMIZATION.momentum,
                                                             nesterov=self.OPTIMIZATION.nesterov)
         elif self.OPTIMIZATION.type_ == "RMSprop":
-            self.OPTIMIZATION.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad,
-                                                                              Gen.parameters()),
+            self.OPTIMIZATION.g_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Gen.parameters()),
                                                                 lr=self.OPTIMIZATION.g_lr,
                                                                 weight_decay=self.OPTIMIZATION.g_weight_decay,
                                                                 momentum=self.OPTIMIZATION.momentum,
                                                                 alpha=self.OPTIMIZATION.alpha)
-            self.OPTIMIZATION.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad,
-                                                                              Dis.parameters()),
+            self.OPTIMIZATION.d_optimizer = torch.optim.RMSprop(params=filter(lambda p: p.requires_grad, Dis.parameters()),
                                                                 lr=self.OPTIMIZATION.d_lr,
                                                                 weight_decay=self.OPTIMIZATION.d_weight_decay,
                                                                 momentum=self.OPTIMIZATION.momentum,
@@ -471,8 +493,8 @@ class Configurations(object):
                 d_ratio = (self.STYLEGAN2.d_reg_interval / (self.STYLEGAN2.d_reg_interval + 1))
                 self.OPTIMIZATION.g_lr *= g_ratio
                 self.OPTIMIZATION.d_lr *= d_ratio
-                betas_g = [self.OPTIMIZATION.beta1 ** g_ratio, self.OPTIMIZATION.beta2 ** g_ratio]
-                betas_d = [self.OPTIMIZATION.beta1 ** d_ratio, self.OPTIMIZATION.beta2 ** d_ratio]
+                betas_g = [self.OPTIMIZATION.beta1**g_ratio, self.OPTIMIZATION.beta2**g_ratio]
+                betas_d = [self.OPTIMIZATION.beta1**d_ratio, self.OPTIMIZATION.beta2**d_ratio]
                 eps_ = 1e-8
             else:
                 betas_g = betas_d = [self.OPTIMIZATION.beta1, self.OPTIMIZATION.beta2]
@@ -520,7 +542,8 @@ class Configurations(object):
                 raise NotImplementedError
 
         if self.AUG.apply_ada:
-            assert self.AUG.ada_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"], "Please select ada supported augmentations"
+            assert self.AUG.ada_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn",
+                                             "bgcfnc"], "Please select ada supported augmentations"
             self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.ada_aug_type]).train().to(device).requires_grad_(False)
 
         if self.LOSS.apply_cr:
@@ -545,7 +568,8 @@ class Configurations(object):
             elif self.AUG.bcr_aug_type in ["simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"]:
                 self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device).requires_grad_(False)
             elif self.AUG.bcr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
-                self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.bcr_aug_type]).train().to(device).requires_grad_(False)
+                self.AUG.parallel_augment = ada_aug.AdaAugment(
+                    **ada_augpipe[self.AUG.bcr_aug_type]).train().to(device).requires_grad_(False)
             else:
                 raise NotImplementedError
 

@@ -672,3 +672,10 @@ def load_parameters(src, dst, strict=True):
             mismatch_names.append(dst_key)
             assert not strict, "dst_key is not in src_dict."
     return mismatch_names
+
+def enable_allreduce(dict_):
+    loss = 0
+    for key, value in dict_.items():
+        if value is not None and key != "label":
+            loss += value.mean()*0
+    return loss

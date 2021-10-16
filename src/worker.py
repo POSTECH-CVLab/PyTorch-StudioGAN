@@ -405,8 +405,8 @@ class WORKER(object):
                     real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
                     real_images.requires_grad_(True)
                     real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
-                    self.r1_penalty = real_dict["adv_output"].mean()*0 + self.r1_lambda*losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                                                                       images=real_images)
+                    self.r1_penalty = misc.enable_allreduce(real_dict) + self.r1_lambda*losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                                                                                   images=real_images)
                     self.r1_penalty.backward()
 
                     if self.AUG.apply_ada:
