@@ -331,7 +331,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                 if cfgs.RUN.distributed_data_parallel:
                     dist.barrier(worker.group)
 
-        if global_rank == 0: logger.info("End training!")
+        if global_rank == 0: logger.info("End of training!")
 
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
@@ -342,7 +342,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     worker.gen_ctlr.standing_max_batch = cfgs.RUN.standing_max_batch
     worker.gen_ctlr.standing_step = cfgs.RUN.standing_step
 
-    best_step = ckpt.load_best_model(ckpt_dir=cfgs.RUN.ckpt_dir,
+    if global_rank == 0:
+        best_step = ckpt.load_best_model(ckpt_dir=cfgs.RUN.ckpt_dir,
                                      Gen=Gen,
                                      Dis=Dis,
                                      apply_g_ema=cfgs.MODEL.apply_g_ema,
