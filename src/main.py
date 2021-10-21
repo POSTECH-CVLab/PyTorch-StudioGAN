@@ -151,17 +151,15 @@ if __name__ == "__main__":
     cfgs, gpus_per_node, run_name, hdf5_path, rank = load_configs_initialize_training()
 
     if cfgs.RUN.distributed_data_parallel and cfgs.OPTIMIZATION.world_size > 1:
+        mp.set_start_method("spawn", force=True)
         print("Train the models through DistributedDataParallel (DDP) mode.")
-        mp.set_start_method("spawn")
         try:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                torch.multiprocessing.spawn(fn=loader.load_worker,
-                                            args=(cfgs,
-                                                  gpus_per_node,
-                                                  run_name,
-                                                  hdf5_path,
-                                                  temp_dir),
-                                            nprocs=gpus_per_node)
+            torch.multiprocessing.spawn(fn=loader.load_worker,
+                                        args=(cfgs,
+                                              gpus_per_node,
+                                              run_name,
+                                              hdf5_path),
+                                        nprocs=gpus_per_node)
         except KeyboardInterrupt:
             misc.cleanup()
     else:
@@ -169,5 +167,4 @@ if __name__ == "__main__":
                            cfgs=cfgs,
                            gpus_per_node=gpus_per_node,
                            run_name=run_name,
-                           hdf5_path=hdf5_path,
-                           temp_dir=None)
+                           hdf5_path=hdf5_path)

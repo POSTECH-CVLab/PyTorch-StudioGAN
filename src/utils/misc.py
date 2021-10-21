@@ -182,20 +182,22 @@ def fix_seed(seed):
     np.random.seed(seed)
 
 
-def setup(rank, world_size, backend, temp_dir):
-    init_file = os.path.abspath(os.path.join(temp_dir, ".torch_distributed_init"))
-    if backend == "gloo":
-        init_method = "file:///" + init_file.replace("\\", "/")
-    elif backend == "nccl":
-        init_method = f"file://{init_file}"
-    else:
-        raise NotImplementedError
+def setup(rank, world_size, backend="nccl"):
+    if sys.platform == "win32":
+        # Distributed package only covers collective communications with Gloo
+        # backend and FileStore on Windows platform. Set init_method parameter
+        # in init_process_group to a local file.
+        # Example init_method="file:///f:/libtmp/some_file"
+        init_method = "file:///{your local file path}"
 
-    # initialize the process group
-    dist.init_process_group(backend=backend,
-                            init_method=init_method,
-                            rank=rank,
-                            world_size=world_size)
+        # initialize the process group
+        dist.init_process_group(backend, init_method=init_method, rank=rank, world_size=world_size)
+    else:
+        # initialize the process group
+        dist.init_process_group(backend,
+                                init_method="tcp://%s:%s" % (os.environ["MASTER_ADDR"], os.environ["MASTER_PORT"]),
+                                rank=rank,
+                                world_size=world_size)
 
 
 def cleanup():

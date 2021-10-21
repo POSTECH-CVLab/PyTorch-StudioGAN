@@ -34,7 +34,7 @@ import models.model as model
 import metrics.preparation as pp
 
 
-def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path, temp_dir):
+def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # define default variables for loading ckpt or evaluating the trained GAN model.
     # -----------------------------------------------------------------------------
@@ -70,7 +70,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path, temp_dir):
     if cfgs.RUN.distributed_data_parallel:
         global_rank = cfgs.RUN.current_node * (gpus_per_node) + local_rank
         print("Use GPU: {global_rank} for training.".format(global_rank=global_rank))
-        misc.setup(global_rank, cfgs.OPTIMIZATION.world_size, cfgs.RUN.backend, temp_dir)
+        misc.setup(global_rank, cfgs.OPTIMIZATION.world_size, cfgs.RUN.backend)
         torch.cuda.set_device(local_rank)
     else:
         global_rank = local_rank
@@ -149,7 +149,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path, temp_dir):
                                       pin_memory=True,
                                       num_workers=cfgs.RUN.num_workers,
                                       sampler=train_sampler,
-                                      drop_last=True)
+                                      drop_last=True,
+                                      persistent_workers=True)
     else:
         train_dataloader = None
 
