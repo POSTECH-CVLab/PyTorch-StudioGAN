@@ -736,7 +736,7 @@ class Configurations(object):
                 self.RUN.langevin_sampling + \
                 self.RUN.interpolation + \
                 self.RUN.semantic_factorization == -1, \
-                "StudioGAN does not support some options for stylegan2."
+                "StudioGAN does not support some options for stylegan2. Please refer to config.py for more details."
 
         if self.MODEL.backbone == "stylegan2":
             assert not self.MODEL.apply_attn, "cannot apply attention layers to the stylegan2 generator."
