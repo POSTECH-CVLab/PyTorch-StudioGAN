@@ -32,7 +32,7 @@ def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, loa
                                                   strict=False)
             print("The following parameters/buffers do not match with the ones of the pre-trained model:", mismatch_names)
         else:
-            model.load_state_dict(ckpt["state_dict"])
+            model.load_state_dict(ckpt["state_dict"], strict=False)
 
     if load_opt:
         optimizer.load_state_dict(ckpt["optimizer"])
