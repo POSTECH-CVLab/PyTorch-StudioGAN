@@ -270,6 +270,13 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 ### Precision and Recall (PR: F_1/8=Weights Precision, F_8=Weights Recall)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
+### Improved Precision and Recall
+Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
+
+### Density and Coverage
+Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
+
+
 # Benchmark
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
@@ -407,9 +414,11 @@ Implementation Details: https://github.com/ajbrock/BigGAN-PyTorch
 
 Architecture Details: https://github.com/google/compare_gan
 
+StyleGAN2: https://github.com/NVlabs/stylegan2
+
 DiffAugment: https://github.com/mit-han-lab/data-efficient-gans
 
-Adaptive Discriminator Augmentation: https://github.com/rosinality/stylegan2-pytorch
+Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
 
 Tensorflow IS: https://github.com/openai/improved-gan
 
@@ -419,7 +428,9 @@ Pytorch FID: https://github.com/mseitzer/pytorch-fid
 
 Tensorflow Precision and Recall: https://github.com/msmsajjadi/precision-recall-distributions
 
-torchlars: https://github.com/kakaobrain/torchlars
+PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-evaluation-prdc
+
+PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
 
 
 ## Citation
@@ -433,6 +444,14 @@ StudioGAN is established for the following research project. Please cite our wor
 }
 ```
 
+```bib
+@inproceedings{kang2021ReACGAN,
+  title   = {{Rebooting ACGAN: Auxiliary Classifier GANs with Stable Training}},
+  author  = {Minguk Kang, Woohyeon Shim, Minsu Cho, and Jaesik Park},
+  journal = {Conference on Neural Information Processing Systems (NeurIPS)},
+  year    = {2021}
+}
+```
 ---------------------------------------
 
 <a name="footnote_1">[1]</a> Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.
