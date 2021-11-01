@@ -1,0 +1,36 @@
+DATA:
+  name: "Tiny_ImageNet"
+  img_size: 64
+  num_classes: 200
+MODEL:
+  backbone: "big_resnet"
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "2C"
+  normalize_d_embed: True
+  d_embed_dim: 768
+  apply_g_sn: True
+  apply_d_sn: True
+  apply_attn: True
+  attn_g_loc: [3]
+  attn_d_loc: [1]
+  z_dim: 100
+  g_shared_dim: 128
+  g_conv_dim: 80
+  d_conv_dim: 80
+  apply_g_ema: True
+  g_ema_decay: 0.9999
+  g_ema_start: 20000
+LOSS:
+  adv_loss: "hinge"
+  cond_lambda: 1.0
+  temperature: 1.0
+OPTIMIZATION:
+  batch_size: 1024
+  g_lr: 0.0001
+  d_lr: 0.0004
+  beta1: 0.0
+  beta2: 0.999
+  d_updates_per_step: 1
+AUG:
+  apply_diffaug: True
+  diffaug_type: "diffaug"

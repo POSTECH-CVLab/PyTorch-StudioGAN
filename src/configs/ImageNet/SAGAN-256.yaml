@@ -1,0 +1,22 @@
+DATA:
+  name: "ImageNet"
+  img_size: 128
+  num_classes: 1000
+MODEL:
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "PD"
+  apply_g_sn: True
+  apply_d_sn: True
+  apply_attn: True
+  attn_g_loc: [4]
+  attn_d_loc: [1]
+LOSS:
+  adv_loss: "hinge"
+OPTIMIZATION:
+  batch_size: 256
+  g_lr: 0.0001
+  d_lr: 0.0004
+  beta1: 0.0
+  beta2: 0.999
+  d_updates_per_step: 1
+  total_steps: 1000000

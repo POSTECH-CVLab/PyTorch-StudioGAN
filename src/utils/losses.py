@@ -2,328 +2,460 @@
 # The MIT License (MIT)
 # See license file or visit https://github.com/POSTECH-CVLab/PyTorch-StudioGAN for details
 
-# src/utils/losses.py
+# src/utils/loss.py
 
-
-import numpy as np
-
-from utils.model_ops import snlinear, linear
-
+from torch.nn import DataParallel
+from torch import autograd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import DataParallel
-from torch import autograd
+import numpy as np
+
+from utils.style_ops import conv2d_gradfix
+import utils.ops as ops
+import utils.misc as misc
 
 
-
-# DCGAN loss
-def loss_dcgan_dis(dis_out_real, dis_out_fake):
-    device = dis_out_real.get_device()
-    ones = torch.ones_like(dis_out_real, device=device, requires_grad=False)
-    dis_loss = -torch.mean(nn.LogSigmoid()(dis_out_real) + nn.LogSigmoid()(ones - dis_out_fake))
-    return dis_loss
-
-
-def loss_dcgan_gen(gen_out_fake):
-    return -torch.mean(nn.LogSigmoid()(gen_out_fake))
-
-
-def loss_lsgan_dis(dis_out_real, dis_out_fake):
-    dis_loss = 0.5*(dis_out_real - torch.ones_like(dis_out_real))**2 + 0.5*(dis_out_fake)**2
-    return dis_loss.mean()
-
-
-def loss_lsgan_gen(dis_out_fake):
-    gen_loss = 0.5*(dis_out_fake - torch.ones_like(dis_out_fake))**2
-    return gen_loss.mean()
-
-
-def loss_hinge_dis(dis_out_real, dis_out_fake):
-    return torch.mean(F.relu(1. - dis_out_real)) + torch.mean(F.relu(1. + dis_out_fake))
-
-
-def loss_hinge_gen(gen_out_fake):
-    return -torch.mean(gen_out_fake)
-
-
-def loss_wgan_dis(dis_out_real, dis_out_fake):
-    return torch.mean(dis_out_fake - dis_out_real)
-
-
-def loss_wgan_gen(gen_out_fake):
-    return -torch.mean(gen_out_fake)
-
-
-def latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, latent_op_rate,
-                    latent_op_alpha, latent_op_beta, trans_cost, default_device):
-    batch_size = zs.shape[0]
-    for step in range(latent_op_step):
-        drop_mask = (torch.FloatTensor(batch_size, 1).uniform_() > 1 - latent_op_rate).to(default_device)
-        z_gradients, z_gradients_norm = calc_derv(zs, fake_labels, dis_model, conditional_strategy, default_device, gen_model)
-        delta_z = latent_op_alpha*z_gradients/(latent_op_beta + z_gradients_norm)
-        zs = torch.clamp(zs + drop_mask*delta_z, -1.0, 1.0)
-
-        if trans_cost:
-            if step == 0:
-                transport_cost = (delta_z.norm(2, dim=1)**2).mean()
-            else:
-                transport_cost += (delta_z.norm(2, dim=1)**2).mean()
-
-    if trans_cost:
-        return zs, trans_cost
-    else:
-        return zs
-
-
-def set_temperature(conditional_strategy, tempering_type, start_temperature, end_temperature, step_count, tempering_step, total_step):
-    if conditional_strategy == 'ContraGAN':
-        if tempering_type == 'continuous':
-            t = start_temperature + step_count*(end_temperature - start_temperature)/total_step
-        elif tempering_type == 'discrete':
-            tempering_interval = total_step//(tempering_step + 1)
-            t = start_temperature + \
-                (step_count//tempering_interval)*(end_temperature-start_temperature)/tempering_step
-        else:
-            t = start_temperature
-    else:
-        t = 'no'
-    return t
-
-
-class Cross_Entropy_loss(torch.nn.Module):
-    def __init__(self, in_features, out_features, spectral_norm=True):
-        super(Cross_Entropy_loss, self).__init__()
-
-        if spectral_norm:
-            self.layer =  snlinear(in_features=in_features, out_features=out_features, bias=True)
-        else:
-            self.layer =  linear(in_features=in_features, out_features=out_features, bias=True)
+class CrossEntropyLoss(torch.nn.Module):
+    def __init__(self):
+        super(CrossEntropyLoss, self).__init__()
         self.ce_loss = torch.nn.CrossEntropyLoss()
 
-    def forward(self, embeds, labels):
-        logits = self.layer(embeds)
-        return self.ce_loss(logits, labels)
+    def forward(self, cls_output, label, **_):
+        return self.ce_loss(cls_output, label).mean()
 
 
-class Conditional_Contrastive_loss(torch.nn.Module):
-    def __init__(self, device, batch_size, pos_collected_numerator):
-        super(Conditional_Contrastive_loss, self).__init__()
-        self.device = device
-        self.batch_size = batch_size
-        self.pos_collected_numerator = pos_collected_numerator
+class MiCrossEntropyLoss(torch.nn.Module):
+    def __init__(self):
+        super(MiCrossEntropyLoss, self).__init__()
+        self.ce_loss = torch.nn.CrossEntropyLoss()
+
+    def forward(self, mi_cls_output, label, **_):
+        return self.ce_loss(mi_cls_output, label).mean()
+
+
+class ConditionalContrastiveLoss(torch.nn.Module):
+    def __init__(self, num_classes, temperature, master_rank, DDP):
+        super(ConditionalContrastiveLoss, self).__init__()
+        self.num_classes = num_classes
+        self.temperature = temperature
+        self.master_rank = master_rank
+        self.DDP = DDP
         self.calculate_similarity_matrix = self._calculate_similarity_matrix()
         self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
 
+    def _make_neg_removal_mask(self, labels):
+        labels = labels.detach().cpu().numpy()
+        n_samples = labels.shape[0]
+        mask_multi, target = np.zeros([self.num_classes, n_samples]), 1.0
+        for c in range(self.num_classes):
+            c_indices = np.where(labels == c)
+            mask_multi[c, c_indices] = target
+        return torch.tensor(mask_multi).type(torch.long).to(self.master_rank)
 
     def _calculate_similarity_matrix(self):
         return self._cosine_simililarity_matrix
 
+    def _remove_diag(self, M):
+        h, w = M.shape
+        assert h == w, "h and w should be same"
+        mask = np.ones((h, w)) - np.eye(h)
+        mask = torch.from_numpy(mask)
+        mask = (mask).type(torch.bool).to(self.master_rank)
+        return M[mask].view(h, -1)
+
+    def _cosine_simililarity_matrix(self, x, y):
+        v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
+        return v
+
+    def forward(self, embed, proxy, label, **_):
+        if self.DDP:
+            embed = torch.cat(misc.GatherLayer.apply(embed), dim=0)
+            proxy = torch.cat(misc.GatherLayer.apply(proxy), dim=0)
+            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+
+        sim_matrix = self.calculate_similarity_matrix(embed, embed)
+        sim_matrix = torch.exp(self._remove_diag(sim_matrix) / self.temperature)
+        neg_removal_mask = self._remove_diag(self._make_neg_removal_mask(label)[label])
+        sim_pos_only = neg_removal_mask * sim_matrix
+
+        emb2proxy = torch.exp(self.cosine_similarity(embed, proxy) / self.temperature)
+
+        numerator = emb2proxy + sim_pos_only.sum(dim=1)
+        denomerator = torch.cat([torch.unsqueeze(emb2proxy, dim=1), sim_matrix], dim=1).sum(dim=1)
+        return -torch.log(numerator / denomerator).mean()
+
+
+class MiConditionalContrastiveLoss(torch.nn.Module):
+    def __init__(self, num_classes, temperature, master_rank, DDP):
+        super(MiConditionalContrastiveLoss, self).__init__()
+        self.num_classes = num_classes
+        self.temperature = temperature
+        self.master_rank = master_rank
+        self.DDP = DDP
+        self.calculate_similarity_matrix = self._calculate_similarity_matrix()
+        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
+
+    def _make_neg_removal_mask(self, labels):
+        labels = labels.detach().cpu().numpy()
+        n_samples = labels.shape[0]
+        mask_multi, target = np.zeros([self.num_classes, n_samples]), 1.0
+        for c in range(self.num_classes):
+            c_indices = np.where(labels == c)
+            mask_multi[c, c_indices] = target
+        return torch.tensor(mask_multi).type(torch.long).to(self.master_rank)
+
+    def _calculate_similarity_matrix(self):
+        return self._cosine_simililarity_matrix
+
+    def _remove_diag(self, M):
+        h, w = M.shape
+        assert h == w, "h and w should be same"
+        mask = np.ones((h, w)) - np.eye(h)
+        mask = torch.from_numpy(mask)
+        mask = (mask).type(torch.bool).to(self.master_rank)
+        return M[mask].view(h, -1)
+
+    def _cosine_simililarity_matrix(self, x, y):
+        v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
+        return v
+
+    def forward(self, mi_embed, mi_proxy, label, **_):
+        if self.DDP:
+            mi_embed = torch.cat(misc.GatherLayer.apply(mi_embed), dim=0)
+            mi_proxy = torch.cat(misc.GatherLayer.apply(mi_proxy), dim=0)
+            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+
+        sim_matrix = self.calculate_similarity_matrix(mi_embed, mi_embed)
+        sim_matrix = torch.exp(self._remove_diag(sim_matrix) / self.temperature)
+        neg_removal_mask = self._remove_diag(self._make_neg_removal_mask(label)[label])
+        sim_pos_only = neg_removal_mask * sim_matrix
+
+        emb2proxy = torch.exp(self.cosine_similarity(mi_embed, mi_proxy) / self.temperature)
+
+        numerator = emb2proxy + sim_pos_only.sum(dim=1)
+        denomerator = torch.cat([torch.unsqueeze(emb2proxy, dim=1), sim_matrix], dim=1).sum(dim=1)
+        return -torch.log(numerator / denomerator).mean()
+
+
+class Data2DataCrossEntropyLoss(torch.nn.Module):
+    def __init__(self, num_classes, temperature, m_p, master_rank, DDP):
+        super(Data2DataCrossEntropyLoss, self).__init__()
+        self.num_classes = num_classes
+        self.temperature = temperature
+        self.m_p = m_p
+        self.master_rank = master_rank
+        self.DDP = DDP
+        self.calculate_similarity_matrix = self._calculate_similarity_matrix()
+        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
+
+    def _calculate_similarity_matrix(self):
+        return self._cosine_simililarity_matrix
+
+    def _cosine_simililarity_matrix(self, x, y):
+        v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
+        return v
+
+    def make_index_matrix(self, labels):
+        labels = labels.detach().cpu().numpy()
+        num_samples = labels.shape[0]
+        mask_multi, target = np.ones([self.num_classes, num_samples]), 0.0
+
+        for c in range(self.num_classes):
+            c_indices = np.where(labels==c)
+            mask_multi[c, c_indices] = target
+        return torch.tensor(mask_multi).type(torch.long).to(self.master_rank)
 
     def remove_diag(self, M):
         h, w = M.shape
         assert h==w, "h and w should be same"
         mask = np.ones((h, w)) - np.eye(h)
         mask = torch.from_numpy(mask)
-        mask = (mask).type(torch.bool).to(self.device)
+        mask = (mask).type(torch.bool).to(self.master_rank)
         return M[mask].view(h, -1)
 
+    def forward(self, embed, proxy, label, **_):
+        # If train a GAN throuh DDP, gather all data on the master rank
+        if self.DDP:
+            embed = torch.cat(misc.GatherLayer.apply(embed), dim=0)
+            proxy = torch.cat(misc.GatherLayer.apply(proxy), dim=0)
+            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+
+        # calculate similarities between sample embeddings
+        sim_matrix = self.calculate_similarity_matrix(embed, embed) + self.m_p - 1
+        # remove diagonal terms
+        sim_matrix = self.remove_diag(sim_matrix/self.temperature)
+        # for numerical stability
+        sim_max, _ = torch.max(sim_matrix, dim=1, keepdim=True)
+        sim_matrix = F.relu(sim_matrix) - sim_max.detach()
+
+        # calculate similarities between sample embeddings and the corresponding proxies
+        smp2proxy = self.cosine_similarity(embed, proxy)
+        # make false negative removal
+        removal_fn = self.remove_diag(self.make_index_matrix(label)[label])
+        # apply the negative removal to the similarity matrix
+        improved_sim_matrix = removal_fn*torch.exp(sim_matrix)
+
+        # compute positive attraction term
+        pos_attr = F.relu((self.m_p - smp2proxy)/self.temperature)
+        # compute negative repulsion term
+        neg_repul = torch.log(torch.exp(-pos_attr) + improved_sim_matrix.sum(dim=1))
+        # compute data to data cross-entropy criterion
+        criterion = pos_attr + neg_repul
+        return criterion.mean()
+
+
+class MiData2DataCrossEntropyLoss(torch.nn.Module):
+    def __init__(self, num_classes, temperature, m_p, master_rank, DDP):
+        super(MiData2DataCrossEntropyLoss, self).__init__()
+        self.num_classes = num_classes
+        self.temperature = temperature
+        self.m_p = m_p
+        self.master_rank = master_rank
+        self.DDP = DDP
+        self.calculate_similarity_matrix = self._calculate_similarity_matrix()
+        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
+
+    def _calculate_similarity_matrix(self):
+        return self._cosine_simililarity_matrix
 
     def _cosine_simililarity_matrix(self, x, y):
         v = self.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
         return v
 
-
-    def forward(self, inst_embed, proxy, negative_mask, labels, temperature, margin):
-        similarity_matrix = self.calculate_similarity_matrix(inst_embed, inst_embed)
-        instance_zone = torch.exp((self.remove_diag(similarity_matrix) - margin)/temperature)
-
-        inst2proxy_positive = torch.exp((self.cosine_similarity(inst_embed, proxy) - margin)/temperature)
-        if self.pos_collected_numerator:
-            mask_4_remove_negatives = negative_mask[labels]
-            mask_4_remove_negatives = self.remove_diag(mask_4_remove_negatives)
-            inst2inst_positives = instance_zone*mask_4_remove_negatives
-
-            numerator = inst2proxy_positive + inst2inst_positives.sum(dim=1)
-        else:
-            numerator = inst2proxy_positive
-
-        denomerator = torch.cat([torch.unsqueeze(inst2proxy_positive, dim=1), instance_zone], dim=1).sum(dim=1)
-        criterion = -torch.log(temperature*(numerator/denomerator)).mean()
-        return criterion
-
-
-class Proxy_NCA_loss(torch.nn.Module):
-    def __init__(self, device, embedding_layer, num_classes, batch_size):
-        super(Proxy_NCA_loss, self).__init__()
-        self.device = device
-        self.embedding_layer = embedding_layer
-        self.num_classes = num_classes
-        self.batch_size = batch_size
-        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
-
-
-    def _get_positive_proxy_mask(self, labels):
+    def make_index_matrix(self, labels):
         labels = labels.detach().cpu().numpy()
-        rvs_one_hot_target = np.ones([self.num_classes, self.num_classes]) - np.eye(self.num_classes)
-        rvs_one_hot_target = rvs_one_hot_target[labels]
-        mask = torch.from_numpy((rvs_one_hot_target)).type(torch.bool)
-        return mask.to(self.device)
+        num_samples = labels.shape[0]
+        mask_multi, target = np.ones([self.num_classes, num_samples]), 0.0
+
+        for c in range(self.num_classes):
+            c_indices = np.where(labels==c)
+            mask_multi[c, c_indices] = target
+        return torch.tensor(mask_multi).type(torch.long).to(self.master_rank)
+
+    def remove_diag(self, M):
+        h, w = M.shape
+        assert h==w, "h and w should be same"
+        mask = np.ones((h, w)) - np.eye(h)
+        mask = torch.from_numpy(mask)
+        mask = (mask).type(torch.bool).to(self.master_rank)
+        return M[mask].view(h, -1)
+
+    def forward(self, mi_embed, mi_proxy, label, **_):
+        # If train a GAN throuh DDP, gather all data on the master rank
+        if self.DDP:
+            mi_embed = torch.cat(misc.GatherLayer.apply(mi_embed), dim=0)
+            mi_proxy = torch.cat(misc.GatherLayer.apply(mi_proxy), dim=0)
+            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+
+        # calculate similarities between sample embeddings
+        sim_matrix = self.calculate_similarity_matrix(mi_embed, mi_embed) + self.m_p - 1
+        # remove diagonal terms
+        sim_matrix = self.remove_diag(sim_matrix/self.temperature)
+        # for numerical stability
+        sim_max, _ = torch.max(sim_matrix, dim=1, keepdim=True)
+        sim_matrix = F.relu(sim_matrix) - sim_max.detach()
+
+        # calculate similarities between sample embeddings and the corresponding proxies
+        smp2proxy = self.cosine_similarity(mi_embed, mi_proxy)
+        # make false negative removal
+        removal_fn = self.remove_diag(self.make_index_matrix(label)[label])
+        # apply the negative removal to the similarity matrix
+        improved_sim_matrix = removal_fn*torch.exp(sim_matrix)
+
+        # compute positive attraction term
+        pos_attr = F.relu((self.m_p - smp2proxy)/self.temperature)
+        # compute negative repulsion term
+        neg_repul = torch.log(torch.exp(-pos_attr) + improved_sim_matrix.sum(dim=1))
+        # compute data to data cross-entropy criterion
+        criterion = pos_attr + neg_repul
+        return criterion.mean()
 
 
-    def forward(self, inst_embed, proxy, labels):
-        all_labels = torch.tensor([c for c in range(self.num_classes)]).type(torch.long).to(self.device)
-        positive_proxy_mask = self._get_positive_proxy_mask(labels)
-        negative_proxies = torch.exp(torch.mm(inst_embed, self.embedding_layer(all_labels).T))*positive_proxy_mask
+class PathLengthRegularizer:
+    def __init__(self, device, pl_decay=0.01, pl_weight=2):
+        self.pl_decay = 0.01
+        self.pl_weight = 2
+        self.pl_mean = torch.zeros([], device=device)
 
-        inst2proxy_positive = torch.exp(self.cosine_similarity(inst_embed, proxy))
-        numerator = inst2proxy_positive
-        denomerator = negative_proxies.sum(dim=1)
-        criterion = -torch.log(numerator/denomerator).mean()
-        return criterion
-
-
-class NT_Xent_loss(torch.nn.Module):
-    def __init__(self, device, batch_size, use_cosine_similarity=True):
-        super(NT_Xent_loss, self).__init__()
-        self.device = device
-        self.batch_size = batch_size
-        self.softmax = torch.nn.Softmax(dim=-1)
-        self.mask_samples_from_same_repr = self._get_correlated_mask().type(torch.bool)
-        self.similarity_function = self._get_similarity_function(use_cosine_similarity)
-        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+    def cal_pl_reg(self, fake_images, ws):
+        #ws refers to weight style
+        #receives new fake_images of original batch (in original implementation, fakes_images used for calculating g_loss and pl_loss is generated independently)
+        pl_noise = torch.randn_like(fake_images) / np.sqrt(fake_images.shape[2] * fake_images.shape[3])
+        with conv2d_gradfix.no_weight_gradients():
+            pl_grads = torch.autograd.grad(outputs=[(fake_images * pl_noise).sum()], inputs=[ws], create_graph=True, only_inputs=True)[0]
+        pl_lengths = pl_grads.square().sum(2).mean(1).sqrt()
+        pl_mean = self.pl_mean.lerp(pl_lengths.mean(), self.pl_decay)
+        self.pl_mean.copy_(pl_mean.detach())
+        pl_penalty = (pl_lengths - pl_mean).square()
+        loss_Gpl = (pl_penalty * self.pl_weight).mean(0)
+        return loss_Gpl
 
 
-    def _get_similarity_function(self, use_cosine_similarity):
-        if use_cosine_similarity:
-            self._cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
-            return self._cosine_simililarity
+def d_vanilla(d_logit_real, d_logit_fake, DDP):
+    device = d_logit_real.get_device()
+    ones = torch.ones_like(d_logit_real, device=device, requires_grad=False)
+    d_loss = -torch.mean(nn.LogSigmoid()(d_logit_real) + nn.LogSigmoid()(ones - d_logit_fake))
+    return d_loss
+
+def g_vanilla(d_logit_fake, DDP):
+    return -torch.mean(nn.LogSigmoid()(d_logit_fake))
+
+def d_logistic(d_logit_real, d_logit_fake, DDP):
+    d_loss = F.softplus(-d_logit_real) + F.softplus(d_logit_fake)
+    return d_loss.mean()
+
+def g_logistic(d_logit_fake, DDP):
+    # basically same as g_vanilla.
+    return F.softplus(-d_logit_fake).mean()
+
+def d_ls(d_logit_real, d_logit_fake, DDP):
+    d_loss = 0.5 * (d_logit_real - torch.ones_like(d_logit_real))**2 + 0.5 * (d_logit_fake)**2
+    return d_loss.mean()
+
+
+def g_ls(d_logit_fake, DDP):
+    gen_loss = 0.5 * (d_logit_fake - torch.ones_like(d_logit_fake))**2
+    return gen_loss.mean()
+
+
+def d_hinge(d_logit_real, d_logit_fake, DDP):
+    return torch.mean(F.relu(1. - d_logit_real)) + torch.mean(F.relu(1. + d_logit_fake))
+
+
+def g_hinge(d_logit_fake, DDP):
+    return -torch.mean(d_logit_fake)
+
+
+def d_wasserstein(d_logit_real, d_logit_fake, DDP):
+    return torch.mean(d_logit_fake - d_logit_real)
+
+
+def g_wasserstein(d_logit_fake, DDP):
+    return -torch.mean(d_logit_fake)
+
+
+def crammer_singer_loss(adv_output, label, DDP, **_):
+    # https://github.com/ilyakava/BigGAN-PyTorch/blob/master/train_fns.py
+    # crammer singer criterion
+    num_real_classes = adv_output.shape[1] - 1
+    mask = torch.ones_like(adv_output).to(adv_output.device)
+    mask.scatter_(1, label.unsqueeze(-1), 0)
+    wrongs = torch.masked_select(adv_output, mask.bool()).reshape(adv_output.shape[0], num_real_classes)
+    max_wrong, _ = wrongs.max(1)
+    max_wrong = max_wrong.unsqueeze(-1)
+    target = adv_output.gather(1, label.unsqueeze(-1))
+    return torch.mean(F.relu(1 + max_wrong - target))
+
+
+def feature_matching_loss(real_embed, fake_embed):
+    # https://github.com/ilyakava/BigGAN-PyTorch/blob/master/train_fns.py
+    # feature matching criterion
+    fm_loss = torch.mean(torch.abs(torch.mean(fake_embed, 0) - torch.mean(real_embed, 0)))
+    return fm_loss
+
+
+def cal_deriv(inputs, outputs, device):
+    grads = autograd.grad(outputs=outputs,
+                          inputs=inputs,
+                          grad_outputs=torch.ones(outputs.size()).to(device),
+                          create_graph=True,
+                          retain_graph=True,
+                          only_inputs=True)[0]
+    return grads
+
+
+def latent_optimise(zs, fake_labels, generator, discriminator, batch_size, lo_rate, lo_steps, lo_alpha, lo_beta, eval,
+                    cal_trsp_cost, device):
+    for step in range(lo_steps - 1):
+        drop_mask = (torch.FloatTensor(batch_size, 1).uniform_() > 1 - lo_rate).to(device)
+
+        zs = autograd.Variable(zs, requires_grad=True)
+        fake_images = generator(zs, fake_labels, eval=eval)
+        fake_dict = discriminator(fake_images, fake_labels, eval=eval)
+        z_grads = cal_deriv(inputs=zs, outputs=fake_dict["adv_output"], device=device)
+        z_grads_norm = torch.unsqueeze((z_grads.norm(2, dim=1)**2), dim=1)
+        delta_z = lo_alpha * z_grads / (lo_beta + z_grads_norm)
+        zs = torch.clamp(zs + drop_mask * delta_z, -1.0, 1.0)
+
+        if cal_trsp_cost:
+            if step == 0:
+                trsf_cost = (delta_z.norm(2, dim=1)**2).mean()
+            else:
+                trsf_cost += (delta_z.norm(2, dim=1)**2).mean()
         else:
-            return self._dot_simililarity
+            trsf_cost = None
+        return zs, trsf_cost
 
 
-    def _get_correlated_mask(self):
-        diag = np.eye(2 * self.batch_size)
-        l1 = np.eye((2 * self.batch_size), 2 * self.batch_size, k=-self.batch_size)
-        l2 = np.eye((2 * self.batch_size), 2 * self.batch_size, k=self.batch_size)
-        mask = torch.from_numpy((diag + l1 + l2))
-        mask = (1 - mask).type(torch.bool)
-        return mask.to(self.device)
-
-
-    @staticmethod
-    def _dot_simililarity(x, y):
-        v = torch.tensordot(x.unsqueeze(1), y.T.unsqueeze(0), dims=2)
-        # x shape: (N, 1, C)
-        # y shape: (1, C, 2N)
-        # v shape: (N, 2N)
-        return v
-
-
-    def _cosine_simililarity(self, x, y):
-        # x shape: (N, 1, C)
-        # y shape: (1, 2N, C)
-        # v shape: (N, 2N)
-        v = self._cosine_similarity(x.unsqueeze(1), y.unsqueeze(0))
-        return v
-
-
-    def forward(self, zis, zjs, temperature):
-        representations = torch.cat([zjs, zis], dim=0)
-
-        similarity_matrix = self.similarity_function(representations, representations)
-
-        # filter out the scores from the positive samples
-        l_pos = torch.diag(similarity_matrix, self.batch_size)
-        r_pos = torch.diag(similarity_matrix, -self.batch_size)
-        positives = torch.cat([l_pos, r_pos]).view(2 * self.batch_size, 1)
-
-        negatives = similarity_matrix[self.mask_samples_from_same_repr].view(2 * self.batch_size, -1)
-
-        logits = torch.cat((positives, negatives), dim=1)
-        logits /= temperature
-
-        labels = torch.zeros(2 * self.batch_size).to(self.device).long()
-        loss = self.criterion(logits, labels)
-        return loss / (2 * self.batch_size)
-
-
-def calc_derv4gp(netD, conditional_strategy, real_data, fake_data, real_labels, device):
-    batch_size, c, h, w = real_data.shape
+def cal_grad_penalty(real_images, real_labels, fake_images, discriminator, device):
+    batch_size, c, h, w = real_images.shape
     alpha = torch.rand(batch_size, 1)
-    alpha = alpha.expand(batch_size, real_data.nelement()//batch_size).contiguous().view(batch_size,c,h,w)
+    alpha = alpha.expand(batch_size, real_images.nelement() // batch_size).contiguous().view(batch_size, c, h, w)
     alpha = alpha.to(device)
 
-    real_data = real_data.to(device)
-
-    interpolates = alpha * real_data + ((1 - alpha) * fake_data)
+    real_images = real_images.to(device)
+    interpolates = alpha * real_images + ((1 - alpha) * fake_images)
     interpolates = interpolates.to(device)
     interpolates = autograd.Variable(interpolates, requires_grad=True)
+    fake_dict = discriminator(interpolates, real_labels, eval=False)
+    grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
+    grads = grads.view(grads.size(0), -1)
 
-    if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
-        _, _, disc_interpolates = netD(interpolates, real_labels)
-    elif conditional_strategy in ['ProjGAN', 'no']:
-            disc_interpolates = netD(interpolates, real_labels)
-    elif conditional_strategy == 'ACGAN':
-        _, disc_interpolates = netD(interpolates, real_labels)
-    else:
-        raise NotImplementedError
-
-    gradients = autograd.grad(outputs=disc_interpolates, inputs=interpolates,
-                              grad_outputs=torch.ones(disc_interpolates.size()).to(device),
-                              create_graph=True, retain_graph=True, only_inputs=True)[0]
-    gradients = gradients.view(gradients.size(0), -1)
-
-    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-    return gradient_penalty
+    grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
+    return grad_penalty
 
 
-def calc_derv4dra(netD, conditional_strategy, real_data, real_labels, device):
-    batch_size, c, h, w = real_data.shape
+def cal_dra_penalty(real_images, real_labels, discriminator, device):
+    batch_size, c, h, w = real_images.shape
     alpha = torch.rand(batch_size, 1, 1, 1)
     alpha = alpha.to(device)
 
-    real_data = real_data.to(device)
-    differences  = 0.5*real_data.std()*torch.rand(real_data.size()).to(device)
-
-    interpolates = real_data + (alpha*differences)
+    real_images = real_images.to(device)
+    differences = 0.5 * real_images.std() * torch.rand(real_images.size()).to(device)
+    interpolates = real_images + (alpha * differences)
     interpolates = interpolates.to(device)
     interpolates = autograd.Variable(interpolates, requires_grad=True)
+    fake_dict = discriminator(interpolates, real_labels, eval=False)
+    grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
+    grads = grads.view(grads.size(0), -1)
 
-    if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
-        _, _, disc_interpolates = netD(interpolates, real_labels)
-    elif conditional_strategy in ['ProjGAN', 'no']:
-            disc_interpolates = netD(interpolates, real_labels)
-    elif conditional_strategy == 'ACGAN':
-        _, disc_interpolates = netD(interpolates, real_labels)
-    else:
-        raise NotImplementedError
-
-    gradients = autograd.grad(outputs=disc_interpolates, inputs=interpolates,
-                              grad_outputs=torch.ones(disc_interpolates.size()).to(device),
-                              create_graph=True, retain_graph=True, only_inputs=True)[0]
-    gradients = gradients.view(gradients.size(0), -1)
-
-    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-    return gradient_penalty
+    grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
+    return grad_penalty
 
 
-def calc_derv(inputs, labels, netD, conditional_strategy, device, netG=None):
-    zs = autograd.Variable(inputs, requires_grad=True)
-    fake_images = netG(zs, labels)
+def cal_maxgrad_penalty(real_images, real_labels, fake_images, discriminator, device):
+    batch_size, c, h, w = real_images.shape
+    alpha = torch.rand(batch_size, 1)
+    alpha = alpha.expand(batch_size, real_images.nelement() // batch_size).contiguous().view(batch_size, c, h, w)
+    alpha = alpha.to(device)
 
-    if conditional_strategy in ['ContraGAN', "Proxy_NCA_GAN", "NT_Xent_GAN"]:
-        _, _, dis_out_fake = netD(fake_images, labels)
-    elif conditional_strategy in ['ProjGAN', 'no']:
-        dis_out_fake = netD(fake_images, labels)
-    elif conditional_strategy == 'ACGAN':
-        _, dis_out_fake = netD(fake_images, labels)
-    else:
-        raise NotImplementedError
+    real_images = real_images.to(device)
+    interpolates = alpha * real_images + ((1 - alpha) * fake_images)
+    interpolates = interpolates.to(device)
+    interpolates = autograd.Variable(interpolates, requires_grad=True)
+    fake_dict = discriminator(interpolates, real_labels, eval=False)
+    grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
+    grads = grads.view(grads.size(0), -1)
 
-    gradients = autograd.grad(outputs=dis_out_fake, inputs=zs,
-                              grad_outputs=torch.ones(dis_out_fake.size()).to(device),
-                              create_graph=True, retain_graph=True, only_inputs=True)[0]
+    maxgrad_penalty = torch.max(grads.norm(2, dim=1)**2)
+    return maxgrad_penalty
 
-    gradients_norm = torch.unsqueeze((gradients.norm(2, dim=1) ** 2), dim=1)
-    return gradients, gradients_norm
+
+def cal_r1_reg(adv_output, images, device):
+    batch_size = images.size(0)
+    grad_dout = cal_deriv(inputs=images, outputs=adv_output.sum(), device=device)
+    grad_dout2 = grad_dout.pow(2)
+    assert (grad_dout2.size() == images.size())
+    r1_reg = 0.5 * grad_dout2.contiguous().view(batch_size, -1).sum(1).mean(0)
+    return r1_reg
+
+def stylegan_cal_r1_reg(adv_output, images):
+    with conv2d_gradfix.no_weight_gradients():
+        r1_grads = torch.autograd.grad(outputs=[adv_output.sum()], inputs=[images], create_graph=True, only_inputs=True)[0]
+    r1_penalty = r1_grads.square().sum([1,2,3])/2
+    return r1_penalty.mean()
+
+def adjust_k(current_k, topk_gamma, sup_k):
+    current_k = max(current_k * topk_gamma, sup_k)
+    return current_k

@@ -4,935 +4,1520 @@
 
 # src/worker.py
 
-
-import numpy as np
+from os.path import join
 import sys
 import glob
 import random
-from scipy import ndimage
-from sklearn.manifold import TSNE
-from os.path import join
+import string
+
+from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
+from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
+from scipy import ndimage
+from sklearn.manifold import TSNE
 from datetime import datetime
-
-from metrics.IS import calculate_incep_score
-from metrics.FID import calculate_fid_score
-from metrics.F_beta import calculate_f_beta_score
-from metrics.Accuracy import calculate_accuracy
-from utils.ada import ADAugment
-from utils.biggan_utils import interp
-from utils.sample import sample_latents, sample_1hot, make_mask, target_class_sampler
-from utils.misc import *
-from utils.losses import calc_derv4gp, calc_derv4dra, calc_derv, latent_optimise, set_temperature
-from utils.losses import Conditional_Contrastive_loss, Proxy_NCA_loss, NT_Xent_loss
-from utils.diff_aug import DiffAugment
-from utils.cr_diff_aug import CR_DiffAug
-
 import torch
-import torch.nn as nn
-from torch.nn import DataParallel
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel
-import torch.nn.functional as F
 import torchvision
-from torchvision import transforms
+import torch.nn as nn
+import torch.distributed as dist
+import torch.nn.functional as F
+import numpy as np
+
+import metrics.ins as ins
+import metrics.fid as fid
+import metrics.prdc_trained as prdc_trained
+import metrics.resnet as resnet
+import utils.ckpt as ckpt
+import utils.sample as sample
+import utils.misc as misc
+import utils.losses as losses
+import utils.sefa as sefa
+import utils.ops as ops
+import wandb
+
+SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
+
+LOG_FORMAT = ("Step: {step:>6} "
+              "Progress: {progress:<.1%} "
+              "Elapsed: {elapsed} "
+              "Gen_loss: {gen_loss:<.4} "
+              "Dis_loss: {dis_loss:<.4} "
+              "Cls_loss: {cls_loss:<.4} "
+              "Topk: {topk:>4} "
+              "ada_p: {ada_p:<.4} ")
 
 
-
-SAVE_FORMAT = 'step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth'
-
-LOG_FORMAT = (
-    "Step: {step:>7} "
-    "Progress: {progress:<.1%} "
-    "Elapsed: {elapsed} "
-    "temperature: {temperature:<.6} "
-    "ada_p: {ada_p:<.6} "
-    "Discriminator_loss: {dis_loss:<.6} "
-    "Generator_loss: {gen_loss:<.6} "
-)
-
-
-class make_worker(object):
-    def __init__(self, cfgs, train_configs, model_configs, run_name, best_step, logger, writer, n_gpus, gen_model, dis_model,
-                 inception_model, Gen_copy, Gen_ema, train_dataset, eval_dataset, train_dataloader, eval_dataloader, G_optimizer,
-                 D_optimizer, G_loss, D_loss, prev_ada_p, global_rank, local_rank, bn_stat_OnTheFly, checkpoint_dir, mu, sigma,
-                 best_fid, best_fid_checkpoint_path):
-
+class WORKER(object):
+    def __init__(self, cfgs, run_name, Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis,
+                 ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, logger, ada_p,
+                 best_step, best_fid, best_ckpt_path, loss_list_dict, metric_list_dict):
         self.cfgs = cfgs
-        self.train_configs = train_configs
-        self.model_configs = model_configs
         self.run_name = run_name
-        self.best_step = best_step
-        self.seed = cfgs.seed
-        self.dataset_name = cfgs.dataset_name
-        self.eval_type = cfgs.eval_type
-        self.logger = logger
-        self.writer = writer
-        self.num_workers = cfgs.num_workers
-        self.n_gpus = n_gpus
-
-        self.gen_model = gen_model
-        self.dis_model = dis_model
-        self.inception_model = inception_model
-        self.Gen_copy = Gen_copy
+        self.Gen = Gen
+        self.Gen_mapping = Gen_mapping
+        self.Gen_synthesis = Gen_synthesis
+        self.Dis = Dis
         self.Gen_ema = Gen_ema
-
-        self.train_dataset = train_dataset
-        self.eval_dataset = eval_dataset
+        self.Gen_ema_mapping = Gen_ema_mapping
+        self.Gen_ema_synthesis = Gen_ema_synthesis
+        self.ema = ema
+        self.eval_model = eval_model
         self.train_dataloader = train_dataloader
         self.eval_dataloader = eval_dataloader
-
-        self.freeze_layers = cfgs.freeze_layers
-
-        self.conditional_strategy = cfgs.conditional_strategy
-        self.pos_collected_numerator = cfgs.pos_collected_numerator
-        self.z_dim = cfgs.z_dim
-        self.num_classes = cfgs.num_classes
-        self.hypersphere_dim = cfgs.hypersphere_dim
-        self.d_spectral_norm = cfgs.d_spectral_norm
-        self.g_spectral_norm = cfgs.g_spectral_norm
-
-        self.G_optimizer = G_optimizer
-        self.D_optimizer = D_optimizer
-        self.batch_size = cfgs.batch_size
-        self.g_steps_per_iter = cfgs.g_steps_per_iter
-        self.d_steps_per_iter = cfgs.d_steps_per_iter
-        self.accumulation_steps = cfgs.accumulation_steps
-        self.total_step = cfgs.total_step
-
-        self.G_loss = G_loss
-        self.D_loss = D_loss
-        self.contrastive_lambda = cfgs.contrastive_lambda
-        self.margin = cfgs.margin
-        self.tempering_type = cfgs.tempering_type
-        self.tempering_step = cfgs.tempering_step
-        self.start_temperature = cfgs.start_temperature
-        self.end_temperature = cfgs.end_temperature
-        self.weight_clipping_for_dis = cfgs.weight_clipping_for_dis
-        self.weight_clipping_bound = cfgs.weight_clipping_bound
-        self.gradient_penalty_for_dis = cfgs.gradient_penalty_for_dis
-        self.gradient_penalty_lambda = cfgs.gradient_penalty_lambda
-        self.deep_regret_analysis_for_dis = cfgs.deep_regret_analysis_for_dis
-        self.regret_penalty_lambda = cfgs.regret_penalty_lambda
-        self.cr = cfgs.cr
-        self.cr_lambda = cfgs.cr_lambda
-        self.bcr = cfgs.bcr
-        self.real_lambda = cfgs.real_lambda
-        self.fake_lambda = cfgs.fake_lambda
-        self.zcr = cfgs.zcr
-        self.gen_lambda = cfgs.gen_lambda
-        self.dis_lambda = cfgs.dis_lambda
-        self.sigma_noise = cfgs.sigma_noise
-
-        self.diff_aug = cfgs.diff_aug
-        self.ada = cfgs.ada
-        self.prev_ada_p = prev_ada_p
-        self.ada_target = cfgs.ada_target
-        self.ada_length = cfgs.ada_length
-        self.prior = cfgs.prior
-        self.truncated_factor = cfgs.truncated_factor
-        self.ema = cfgs.ema
-        self.latent_op = cfgs.latent_op
-        self.latent_op_rate = cfgs.latent_op_rate
-        self.latent_op_step = cfgs.latent_op_step
-        self.latent_op_step4eval = cfgs.latent_op_step4eval
-        self.latent_op_alpha = cfgs.latent_op_alpha
-        self.latent_op_beta = cfgs.latent_op_beta
-        self.latent_norm_reg_weight = cfgs.latent_norm_reg_weight
-
         self.global_rank = global_rank
         self.local_rank = local_rank
-        self.bn_stat_OnTheFly = bn_stat_OnTheFly
-        self.print_every = cfgs.print_every
-        self.save_every = cfgs.save_every
-        self.checkpoint_dir = checkpoint_dir
-        self.evaluate = cfgs.eval
         self.mu = mu
         self.sigma = sigma
+        self.logger = logger
+        self.ada_p = ada_p
+        self.best_step = best_step
         self.best_fid = best_fid
-        self.best_fid_checkpoint_path = best_fid_checkpoint_path
-        self.distributed_data_parallel = cfgs.distributed_data_parallel
-        self.mixed_precision = cfgs.mixed_precision
-        self.synchronized_bn = cfgs.synchronized_bn
+        self.best_ckpt_path = best_ckpt_path
+        self.loss_list_dict = loss_list_dict
+        self.metric_list_dict = metric_list_dict
 
-        self.start_time = datetime.now()
+        self.cfgs.define_augments(local_rank)
+        self.cfgs.define_losses()
+        self.DATA = cfgs.DATA
+        self.MODEL = cfgs.MODEL
+        self.LOSS = cfgs.LOSS
+        self.STYLEGAN2 = cfgs.STYLEGAN2
+        self.OPTIMIZATION = cfgs.OPTIMIZATION
+        self.PRE = cfgs.PRE
+        self.AUG = cfgs.AUG
+        self.RUN = cfgs.RUN
+        self.MISC = cfgs.MISC
+
+        self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
+        self.DDP = self.RUN.distributed_data_parallel
+        self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
-        self.cosine_similarity = torch.nn.CosineSimilarity(dim=-1)
-        self.policy = "color,translation,cutout"
-        self.sampler = define_sampler(self.dataset_name, self.conditional_strategy, self.batch_size, self.num_classes)
-        self.counter = 0
+        self.fm_loss = losses.feature_matching_loss
 
-        if self.distributed_data_parallel: self.group = dist.new_group([n for n in range(self.n_gpus)])
-        if self.mixed_precision: self.scaler = torch.cuda.amp.GradScaler()
-        if self.ada: self.adtv_aug = Adaptive_Augment(self.prev_ada_p, self.ada_target, self.ada_length, self.batch_size, self.local_rank)
+        if self.is_stylegan and self.LOSS.apply_r1_reg:
+            self.r1_lambda = self.LOSS.r1_lambda*self.STYLEGAN2.d_reg_interval/self.OPTIMIZATION.acml_steps
+        if self.is_stylegan and self.STYLEGAN2.apply_pl_reg:
+            self.pl_lambda = self.STYLEGAN2.pl_weight*self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
 
-        if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
-            if isinstance(self.dis_model, DataParallel) or isinstance(self.dis_model, DistributedDataParallel):
-                self.embedding_layer = self.dis_model.module.embedding
-            else:
-                self.embedding_layer = self.dis_model.embedding
+        if self.AUG.apply_ada:
+            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
+            self.dis_sign_real, self.dis_sign_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
+            self.dis_logit_real, self.dis_logit_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
+            self.dis_sign_real_log, self.dis_sign_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
+            self.dis_logit_real_log, self.dis_logit_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
 
-        if self.conditional_strategy == 'ContraGAN':
-            self.mask_negatives=True
-            self.contrastive_criterion = Conditional_Contrastive_loss(self.local_rank, self.batch_size, self.pos_collected_numerator)
-        elif self.conditional_strategy == 'Proxy_NCA_GAN':
-            self.NCA_criterion = Proxy_NCA_loss(self.local_rank, self.embedding_layer, self.num_classes, self.batch_size)
-        elif self.conditional_strategy == 'NT_Xent_GAN':
-            self.NT_Xent_criterion = NT_Xent_loss(self.local_rank, self.batch_size)
+        if self.LOSS.adv_loss == "MH":
+            self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
+            self.lossy.data.fill_(self.DATA.num_classes)
+
+        if self.MODEL.aux_cls_type == "ADC":
+            num_classes = self.DATA.num_classes * 2
+            self.adc_fake = True
+        else:
+            num_classes = self.DATA.num_classes
+            self.adc_fake = False
+
+        if self.MODEL.d_cond_mtd == "AC":
+            self.cond_loss = losses.CrossEntropyLoss()
+            if self.MODEL.aux_cls_type == "TAC":
+                self.cond_loss_mi = losses.MiCrossEntropyLoss()
+        elif self.MODEL.d_cond_mtd == "2C":
+            self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
+                                                               temperature=self.LOSS.temperature,
+                                                               master_rank="cuda",
+                                                               DDP=self.DDP)
+            if self.MODEL.aux_cls_type == "TAC":
+                self.cond_loss_mi = losses.MiConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
+                                                                        temperature=self.LOSS.temperature,
+                                                                        master_rank="cuda",
+                                                                        DDP=self.DDP)
+        elif self.MODEL.d_cond_mtd == "D2DCE":
+            self.cond_loss = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
+                                                              temperature=self.LOSS.temperature,
+                                                              m_p=self.LOSS.m_p,
+                                                              master_rank="cuda",
+                                                              DDP=self.DDP)
+            if self.MODEL.aux_cls_type == "TAC":
+                self.cond_loss_mi = losses.MiData2DataCrossEntropyLoss(num_classes=num_classes,
+                                                                       temperature=self.LOSS.temperature,
+                                                                       m_p=self.LOSS.m_p,
+                                                                       master_rank="cuda",
+                                                                       DDP=self.DDP)
         else:
             pass
 
-        if self.dataset_name == "imagenet":
-            self.num_eval = {'train':50000, 'valid':50000}
-        elif self.dataset_name == "tiny_imagenet":
-            self.num_eval = {'train':50000, 'valid':10000}
-        elif self.dataset_name == "cifar10":
-            self.num_eval = {'train':50000, 'test':10000}
+        if self.DATA.name == "CIFAR10":
+            self.num_eval = {"train": 50000, "test": 10000}
+        elif self.DATA.name == "CIFAR100":
+            self.num_eval = {"train": 50000, "test": 10000}
+        elif self.DATA.name == "Tiny_ImageNet":
+            self.num_eval = {"train": 50000, "valid": 10000}
+        elif self.DATA.name == "ImageNet":
+            self.num_eval = {"train": 50000, "valid": 50000}
         else:
-            num_train_images, num_eval_images = len(self.train_dataset.data), len(self.eval_dataset.data)
-            self.num_eval = {'train':num_train_images, 'valid':num_eval_images}
-
-
-    ################################################################################################################################
-    def train(self, current_step, total_step):
-        self.dis_model.train()
-        self.gen_model.train()
-        if self.Gen_copy is not None:
-            self.Gen_copy.train()
-
-        if self.global_rank == 0: self.logger.info('Start training....')
-        step_count = current_step
-        train_iter = iter(self.train_dataloader)
-
-        self.ada_aug_p = self.adtv_aug.initialize() if self.ada else 'No'
-        while step_count <= total_step:
-            # ================== TRAIN D ================== #
-            toggle_grad(self.dis_model, on=True, freeze_layers=self.freeze_layers)
-            toggle_grad(self.gen_model, on=False, freeze_layers=-1)
-            t = set_temperature(self.conditional_strategy, self.tempering_type, self.start_temperature, self.end_temperature, step_count, self.tempering_step, total_step)
-            for step_index in range(self.d_steps_per_iter):
-                self.D_optimizer.zero_grad()
-                for acml_index in range(self.accumulation_steps):
-                    try:
-                        real_images, real_labels = next(train_iter)
-                    except StopIteration:
-                        train_iter = iter(self.train_dataloader)
-                        real_images, real_labels = next(train_iter)
-
-                    real_images, real_labels = real_images.to(self.local_rank), real_labels.to(self.local_rank)
-                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
-                        if self.diff_aug:
-                            real_images = DiffAugment(real_images, policy=self.policy)
-                        if self.ada:
-                            real_images, _ = ADAugment(real_images, self.ada_aug_p)
-
-                        if self.zcr:
-                            zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, -1.0, self.num_classes,
-                                                                   self.sigma_noise, self.local_rank)
-                        else:
-                            zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, -1.0, self.num_classes,
-                                                             None, self.local_rank)
-                        if self.latent_op:
-                            zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
-                                                 self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                                 False, self.local_rank)
-
-                        fake_images = self.gen_model(zs, fake_labels)
-                        if self.diff_aug:
-                            fake_images = DiffAugment(fake_images, policy=self.policy)
-                        if self.ada:
-                            fake_images, _ = ADAugment(fake_images, self.ada_aug_p)
-
-                        if self.conditional_strategy == "ACGAN":
-                            cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
-                            cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                            dis_out_real = self.dis_model(real_images, real_labels)
-                            dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                            cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels)
-                            cls_proxies_fake, cls_embed_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        else:
-                            raise NotImplementedError
-
-                        dis_acml_loss = self.D_loss(dis_out_real, dis_out_fake)
-                        if self.conditional_strategy == "ACGAN":
-                            dis_acml_loss += (self.ce_loss(cls_out_real, real_labels) + self.ce_loss(cls_out_fake, fake_labels))
-                        elif self.conditional_strategy == "NT_Xent_GAN":
-                            real_images_aug = CR_DiffAug(real_images)
-                            _, cls_embed_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
-                            dis_acml_loss += self.contrastive_lambda*self.NT_Xent_criterion(cls_embed_real, cls_embed_real_aug, t)
-                        elif self.conditional_strategy == "Proxy_NCA_GAN":
-                            dis_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_real, cls_proxies_real, real_labels)
-                        elif self.conditional_strategy == "ContraGAN":
-                            real_cls_mask = make_mask(real_labels, self.num_classes, mask_negatives=self.mask_negatives, device=self.local_rank)
-                            dis_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_real, cls_proxies_real,
-                                                                                                real_cls_mask, real_labels, t, self.margin)
-                        else:
-                            pass
-
-                        if self.cr:
-                            real_images_aug = CR_DiffAug(real_images)
-                            if self.conditional_strategy == "ACGAN":
-                                cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
-                                cls_consistency_loss = self.l2_loss(cls_out_real, cls_out_real_aug)
-                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                                dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
-                            elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                                _, cls_embed_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
-                                cls_consistency_loss = self.l2_loss(cls_embed_real, cls_embed_real_aug)
-                            else:
-                                raise NotImplementedError
-
-                            consistency_loss = self.l2_loss(dis_out_real, dis_out_real_aug)
-                            if self.conditional_strategy in ["ACGAN", "NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                                consistency_loss += cls_consistency_loss
-                            dis_acml_loss += self.cr_lambda*consistency_loss
-
-                        if self.bcr:
-                            real_images_aug = CR_DiffAug(real_images)
-                            fake_images_aug = CR_DiffAug(fake_images)
-                            if self.conditional_strategy == "ACGAN":
-                                cls_out_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
-                                cls_out_fake_aug, dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
-                                cls_bcr_real_loss = self.l2_loss(cls_out_real, cls_out_real_aug)
-                                cls_bcr_fake_loss = self.l2_loss(cls_out_fake, cls_out_fake_aug)
-                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                                dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
-                                dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
-                            elif self.conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
-                                cls_proxies_real_aug, cls_embed_real_aug, dis_out_real_aug = self.dis_model(real_images_aug, real_labels)
-                                cls_proxies_fake_aug, cls_embed_fake_aug, dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
-                                cls_bcr_real_loss = self.l2_loss(cls_embed_real, cls_embed_real_aug)
-                                cls_bcr_fake_loss = self.l2_loss(cls_embed_fake, cls_embed_fake_aug)
-                            else:
-                                raise NotImplementedError
-
-                            bcr_real_loss = self.l2_loss(dis_out_real, dis_out_real_aug)
-                            bcr_fake_loss = self.l2_loss(dis_out_fake, dis_out_fake_aug)
-                            if self.conditional_strategy in ["ACGAN", "NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                                bcr_real_loss += cls_bcr_real_loss
-                                bcr_fake_loss += cls_bcr_fake_loss
-                            dis_acml_loss += self.real_lambda*bcr_real_loss + self.fake_lambda*bcr_fake_loss
-
-                        if self.zcr:
-                            fake_images_zaug = self.gen_model(zs_t, fake_labels)
-                            if self.conditional_strategy == "ACGAN":
-                                cls_out_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
-                                cls_zcr_dis_loss = self.l2_loss(cls_out_fake, cls_out_fake_zaug)
-                            elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                                dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
-                            elif self.conditional_strategy in ["ContraGAN", "Proxy_NCA_GAN", "NT_Xent_GAN"]:
-                                cls_proxies_fake_zaug, cls_embed_fake_zaug, dis_out_fake_zaug = self.dis_model(fake_images_zaug, fake_labels)
-                                cls_zcr_dis_loss = self.l2_loss(cls_embed_fake, cls_embed_fake_zaug)
-                            else:
-                                raise NotImplementedError
-
-                            zcr_dis_loss = self.l2_loss(dis_out_fake, dis_out_fake_zaug)
-                            if self.conditional_strategy in ["ACGAN", "NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                                zcr_dis_loss += cls_zcr_dis_loss
-                            dis_acml_loss += self.dis_lambda*zcr_dis_loss
-
-                        if self.gradient_penalty_for_dis:
-                            dis_acml_loss += self.gradient_penalty_lambda*calc_derv4gp(self.dis_model, self.conditional_strategy, real_images,
-                                                                                       fake_images, real_labels, self.local_rank)
-                        if self.deep_regret_analysis_for_dis:
-                            dis_acml_loss += self.regret_penalty_lambda*calc_derv4dra(self.dis_model, self.conditional_strategy, real_images,
-                                                                                      real_labels, self.local_rank)
-                        if self.ada:
-                            self.ada_aug_p = self.adtv_aug.update(dis_out_real)
-
-                        dis_acml_loss = dis_acml_loss/self.accumulation_steps
-
-                    if self.mixed_precision:
-                        self.scaler.scale(dis_acml_loss).backward()
-                    else:
-                        dis_acml_loss.backward()
-
-                if self.mixed_precision:
-                    self.scaler.step(self.D_optimizer)
-                    self.scaler.update()
-                else:
-                    self.D_optimizer.step()
-
-                if self.weight_clipping_for_dis:
-                    for p in self.dis_model.parameters():
-                        p.data.clamp_(-self.weight_clipping_bound, self.weight_clipping_bound)
-
-            if step_count % self.print_every == 0 and step_count !=0 and self.global_rank == 0:
-                if self.d_spectral_norm:
-                    dis_sigmas = calculate_all_sn(self.dis_model)
-                    self.writer.add_scalars('SN_of_dis', dis_sigmas, step_count)
-
-            # ================== TRAIN G ================== #
-            toggle_grad(self.dis_model, False, freeze_layers=-1)
-            toggle_grad(self.gen_model, True, freeze_layers=-1)
-            for step_index in range(self.g_steps_per_iter):
-                self.G_optimizer.zero_grad()
-                for acml_step in range(self.accumulation_steps):
-                    with torch.cuda.amp.autocast() if self.mixed_precision else dummy_context_mgr() as mpc:
-                        if self.zcr:
-                            zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, -1.0, self.num_classes,
-                                                                   self.sigma_noise, self.local_rank)
-                        else:
-                            zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, -1.0, self.num_classes,
-                                                             None, self.local_rank)
-                        if self.latent_op:
-                            zs, transport_cost = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
-                                                                 self.latent_op_step, self.latent_op_rate, self.latent_op_alpha,
-                                                                 self.latent_op_beta, True, self.local_rank)
-
-                        fake_images = self.gen_model(zs, fake_labels)
-                        if self.diff_aug:
-                            fake_images = DiffAugment(fake_images, policy=self.policy)
-                        if self.ada:
-                            fake_images, _ = ADAugment(fake_images, self.ada_aug_p)
-
-                        if self.conditional_strategy == "ACGAN":
-                            cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                            dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                            fake_cls_mask = make_mask(fake_labels, self.num_classes, mask_negatives=self.mask_negatives, device=self.local_rank)
-                            cls_proxies_fake, cls_embed_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                        else:
-                            raise NotImplementedError
-
-                        gen_acml_loss = self.G_loss(dis_out_fake)
-
-                        if self.latent_op:
-                            gen_acml_loss += transport_cost*self.latent_norm_reg_weight
-
-                        if self.zcr:
-                            fake_images_zaug = self.gen_model(zs_t, fake_labels)
-                            zcr_gen_loss = -1 * self.l2_loss(fake_images, fake_images_zaug)
-                            gen_acml_loss += self.gen_lambda*zcr_gen_loss
-
-                        if self.conditional_strategy == "ACGAN":
-                            gen_acml_loss += self.ce_loss(cls_out_fake, fake_labels)
-                        elif self.conditional_strategy == "ContraGAN":
-                            gen_acml_loss += self.contrastive_lambda*self.contrastive_criterion(cls_embed_fake, cls_proxies_fake, fake_cls_mask, fake_labels, t, self.margin)
-                        elif self.conditional_strategy == "Proxy_NCA_GAN":
-                            gen_acml_loss += self.contrastive_lambda*self.NCA_criterion(cls_embed_fake, cls_proxies_fake, fake_labels)
-                        elif self.conditional_strategy == "NT_Xent_GAN":
-                            fake_images_aug = CR_DiffAug(fake_images)
-                            _, cls_embed_fake_aug, dis_out_fake_aug = self.dis_model(fake_images_aug, fake_labels)
-                            gen_acml_loss += self.contrastive_lambda*self.NT_Xent_criterion(cls_embed_fake, cls_embed_fake_aug, t)
-                        else:
-                            pass
-
-                        gen_acml_loss = gen_acml_loss/self.accumulation_steps
-
-                    if self.mixed_precision:
-                        self.scaler.scale(gen_acml_loss).backward()
-                    else:
-                        gen_acml_loss.backward()
-
-                if self.mixed_precision:
-                    self.scaler.step(self.G_optimizer)
-                    self.scaler.update()
-                else:
-                    self.G_optimizer.step()
-
-                # if ema is True: we update parameters of the Gen_copy in adaptive way.
-                if self.ema:
-                    self.Gen_ema.update(step_count)
-
-                step_count += 1
-
-            if step_count % self.print_every == 0 and self.global_rank == 0:
-                log_message = LOG_FORMAT.format(step=step_count,
-                                                progress=step_count/total_step,
-                                                elapsed=elapsed_time(self.start_time),
-                                                temperature=t,
-                                                ada_p=self.ada_aug_p,
-                                                dis_loss=dis_acml_loss.item(),
-                                                gen_loss=gen_acml_loss.item(),
-                                                )
-                self.logger.info(log_message)
-
-                if self.g_spectral_norm:
-                    gen_sigmas = calculate_all_sn(self.gen_model)
-                    self.writer.add_scalars('SN_of_gen', gen_sigmas, step_count)
-
-                self.writer.add_scalars('Losses', {'discriminator': dis_acml_loss.item(),
-                                                   'generator': gen_acml_loss.item()}, step_count)
-                if self.ada:
-                    self.writer.add_scalar('ada_p', self.ada_aug_p, step_count)
-
-            if step_count % self.save_every == 0 or step_count == total_step:
-                if self.evaluate:
-                    is_best = self.evaluation(step_count, False, "N/A")
-                    if self.global_rank == 0: self.save(step_count, is_best)
-                else:
-                    if self.global_rank == 0: self.save(step_count, False)
-
-            if self.cfgs.distributed_data_parallel:
-                dist.barrier(self.group)
-
-        return step_count-1
-    ################################################################################################################################
-
-
-    ################################################################################################################################
-    def save(self, step, is_best):
-        when = "best" if is_best is True else "current"
-        self.dis_model.eval()
-        self.gen_model.eval()
-        if self.Gen_copy is not None:
-            self.Gen_copy.eval()
-
-        if isinstance(self.gen_model, DataParallel) or isinstance(self.gen_model, DistributedDataParallel):
-            gen, dis = self.gen_model.module, self.dis_model.module
-            if self.Gen_copy is not None:
-                gen_copy = self.Gen_copy.module
-        else:
-            gen, dis = self.gen_model, self.dis_model
-            if self.Gen_copy is not None:
-                gen_copy = self.Gen_copy
-
-        g_states = {'seed': self.seed, 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
-                    'state_dict': gen.state_dict(), 'optimizer': self.G_optimizer.state_dict(), 'ada_p': self.ada_aug_p}
-
-        d_states = {'seed': self.seed, 'run_name': self.run_name, 'step': step, 'best_step': self.best_step,
-                    'state_dict': dis.state_dict(), 'optimizer': self.D_optimizer.state_dict(), 'ada_p': self.ada_aug_p,
-                    'best_fid': self.best_fid, 'best_fid_checkpoint_path': self.checkpoint_dir}
-
-        if len(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))) >= 1:
-            find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-{when}-weights-step*.pth".format(when=when)))[0])
-            find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-{when}-weights-step*.pth".format(when=when)))[0])
-
-        g_checkpoint_output_path = join(self.checkpoint_dir, "model=G-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
-        d_checkpoint_output_path = join(self.checkpoint_dir, "model=D-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
-
-        torch.save(g_states, g_checkpoint_output_path)
-        torch.save(d_states, d_checkpoint_output_path)
-
-        if when == "best":
-            if len(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth"))) >= 1:
-                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G-current-weights-step*.pth"))[0])
-                find_and_remove(glob.glob(join(self.checkpoint_dir,"model=D-current-weights-step*.pth"))[0])
-
-            g_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G-current-weights-step={step}.pth".format(step=str(step)))
-            d_checkpoint_output_path_ = join(self.checkpoint_dir, "model=D-current-weights-step={step}.pth".format(step=str(step)))
-
-            torch.save(g_states, g_checkpoint_output_path_)
-            torch.save(d_states, d_checkpoint_output_path_)
-
-        if self.Gen_copy is not None:
-            g_ema_states = {'state_dict': gen_copy.state_dict()}
-            if len(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))) >= 1:
-                find_and_remove(glob.glob(join(self.checkpoint_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0])
-
-            g_ema_checkpoint_output_path = join(self.checkpoint_dir, "model=G_ema-{when}-weights-step={step}.pth".format(when=when, step=str(step)))
-
-            torch.save(g_ema_states, g_ema_checkpoint_output_path)
-
-            if when == "best":
-                if len(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))) >= 1:
-                    find_and_remove(glob.glob(join(self.checkpoint_dir,"model=G_ema-current-weights-step*.pth".format(when=when)))[0])
-
-                g_ema_checkpoint_output_path_ = join(self.checkpoint_dir, "model=G_ema-current-weights-step={step}.pth".format(when=when, step=str(step)))
-
-                torch.save(g_ema_states, g_ema_checkpoint_output_path_)
-
-        if self.logger:
-            if self.global_rank == 0: self.logger.info("Save model to {}".format(self.checkpoint_dir))
-
-        self.dis_model.train()
-        self.gen_model.train()
-        if self.Gen_copy is not None:
-            self.Gen_copy.train()
-    ################################################################################################################################
-
-
-    ################################################################################################################################
-    def evaluation(self, step, standing_statistics, standing_step):
-        if standing_statistics: self.counter += 1
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            if self.global_rank == 0: self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
-            is_best = False
-            num_split, num_run4PR, num_cluster4PR, beta4PR = 1, 10, 20, 8
-
-            self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
-
-            fid_score, self.m1, self.s1 = calculate_fid_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
-                                                              self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                              self.latent_op_beta, self.local_rank, self.logger, self.mu, self.sigma, self.run_name)
-
-            kl_score, kl_std = calculate_incep_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
-                                                     self.truncated_factor, self.prior, self.latent_op, self.latent_op_step4eval, self.latent_op_alpha,
-                                                     self.latent_op_beta, num_split, self.local_rank, self.logger)
-
-            precision, recall, f_beta, f_beta_inv = calculate_f_beta_score(self.eval_dataloader, generator, self.dis_model, self.inception_model, self.num_eval[self.eval_type],
-                                                                           num_run4PR, num_cluster4PR, beta4PR, self.truncated_factor, self.prior, self.latent_op,
-                                                                           self.latent_op_step4eval, self.latent_op_alpha, self.latent_op_beta, self.local_rank, self.logger)
-            PR_Curve = plot_pr_curve(precision, recall, self.run_name, self.logger, logging=True)
-
-            if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
-                if self.dataset_name == "cifar10":
-                    classes = torch.tensor([c for c in range(self.num_classes)], dtype=torch.long).to(self.local_rank)
-                    labels = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
-                else:
-                    if self.num_classes > 10:
-                        classes = torch.tensor(random.sample(range(0, self.num_classes), 10), dtype=torch.long).to(self.local_rank)
-                    else:
-                        classes = torch.tensor([c for c in range(self.num_classes)], dtype=torch.long).to(self.local_rank)
-                    labels = classes.detach().cpu().numpy()
-                proxies = self.embedding_layer(classes)
-                sim_p = self.cosine_similarity(proxies.unsqueeze(1), proxies.unsqueeze(0))
-                sim_heatmap = plot_sim_heatmap(sim_p.detach().cpu().numpy(), labels, labels, self.run_name, self.logger, logging=True)
-
-            if self.D_loss.__name__ != "loss_wgan_dis":
-                real_train_acc, fake_acc = calculate_accuracy(self.train_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
-                                                              self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
-                                                              self.latent_op_beta, self.local_rank, cr=self.cr, logger=self.logger, eval_generated_sample=True)
-
-                if self.eval_type == 'train':
-                    acc_dict = {'real_train': real_train_acc, 'fake': fake_acc}
-                else:
-                    real_eval_acc = calculate_accuracy(self.eval_dataloader, generator, self.dis_model, self.D_loss, self.num_eval[self.eval_type],
-                                                       self.truncated_factor, self.prior, self.latent_op, self.latent_op_step, self.latent_op_alpha,
-                                                       self. latent_op_beta, self.local_rank, cr=self.cr, logger=self.logger, eval_generated_sample=False)
-                    acc_dict = {'real_train': real_train_acc, 'real_valid': real_eval_acc, 'fake': fake_acc}
-
-                if self.global_rank == 0: self.writer.add_scalars('Accuracy', acc_dict, step)
-
-            if self.best_fid is None:
-                self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best = fid_score, step, True, f_beta, f_beta_inv
+            try:
+                self.num_eval = {"train": len(self.train_dataloader.dataset),
+                                 "valid": len(self.eval_dataloader.dataset),
+                                 "test": len(self.eval_dataloader.dataset)
+                                 }
+            except AttributeError:
+                self.num_eval = {"train": 10000, "valid": 10000, "test": 10000}
+
+
+        self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
+                                                 generator_mapping=self.Gen_ema_mapping,
+                                                 generator_synthesis=self.Gen_ema_synthesis,
+                                                 batch_statistics=self.RUN.batch_statistics,
+                                                 standing_statistics=False,
+                                                 standing_max_batch="N/A",
+                                                 standing_step="N/A",
+                                                 cfgs=self.cfgs,
+                                                 device=self.local_rank,
+                                                 global_rank=self.global_rank,
+                                                 logger=self.logger,
+                                                 std_stat_counter=0)
+
+        if self.DDP:
+            self.group = dist.new_group([n for n in range(self.OPTIMIZATION.world_size)])
+
+        if self.RUN.mixed_precision and not self.is_stylegan:
+            self.scaler = torch.cuda.amp.GradScaler()
+
+        if self.global_rank == 0:
+            resume = False if self.RUN.freezeD > -1 else True
+            wandb.init(project=self.RUN.project,
+                       entity=self.RUN.entity,
+                       name=self.run_name,
+                       dir=self.RUN.save_dir,
+                       resume=self.best_step > 0 and resume)
+
+        self.start_time = datetime.now()
+
+    def prepare_train_iter(self, epoch_counter):
+        self.epoch_counter = epoch_counter
+        if self.DDP:
+            self.train_dataloader.sampler.set_epoch(self.epoch_counter)
+        self.train_iter = iter(self.train_dataloader)
+
+    def sample_data_basket(self):
+        try:
+            real_image_basket, real_label_basket = next(self.train_iter)
+        except StopIteration:
+            self.epoch_counter += 1
+            if self.RUN.train and self.DDP:
+                self.train_dataloader.sampler.set_epoch(self.epoch_counter)
             else:
-                if fid_score <= self.best_fid:
-                    self.best_fid, self.best_step, is_best, f_beta_best, f_beta_inv_best = fid_score, step, True, f_beta, f_beta_inv
+                pass
+            self.train_iter = iter(self.train_dataloader)
+            real_image_basket, real_label_basket = next(self.train_iter)
+
+        real_image_basket = torch.split(real_image_basket, self.OPTIMIZATION.batch_size)
+        real_label_basket = torch.split(real_label_basket, self.OPTIMIZATION.batch_size)
+        return real_image_basket, real_label_basket
+
+    # -----------------------------------------------------------------------------
+    # train Discriminator
+    # -----------------------------------------------------------------------------
+    def train_discriminator(self, current_step):
+        batch_counter = 0
+        # make GAN be trainable before starting training
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+        # toggle gradients of the generator and discriminator
+        misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, is_stylegan=self.is_stylegan)
+        self.Gen.apply(misc.untrack_bn_statistics)
+        # sample real images and labels from the true data distribution
+        real_image_basket, real_label_basket = self.sample_data_basket()
+        for step_index in range(self.OPTIMIZATION.d_updates_per_step):
+            self.OPTIMIZATION.d_optimizer.zero_grad()
+            for acml_index in range(self.OPTIMIZATION.acml_steps):
+                with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
+                    # load real images and labels onto the GPU memory
+                    real_images = real_image_basket[batch_counter].to(self.local_rank, non_blocking=True)
+                    real_labels = real_label_basket[batch_counter].to(self.local_rank, non_blocking=True)
+                    # sample fake images and labels from p(G(z), y)
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
+                        z_prior=self.MODEL.z_prior,
+                        truncation_factor=-1.0,
+                        batch_size=self.OPTIMIZATION.batch_size,
+                        z_dim=self.MODEL.z_dim,
+                        num_classes=self.DATA.num_classes,
+                        y_sampler="totally_random",
+                        radius=self.LOSS.radius,
+                        generator=self.Gen,
+                        discriminator=self.Dis,
+                        is_train=True,
+                        LOSS=self.LOSS,
+                        RUN=self.RUN,
+                        device=self.local_rank,
+                        generator_mapping=self.Gen_mapping,
+                        generator_synthesis=self.Gen_synthesis,
+                        is_stylegan=self.is_stylegan,
+                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                        cal_trsp_cost=True if self.LOSS.apply_lo else False)
+
+                    # if LOSS.apply_r1_reg is True,
+                    # let real images require gradient calculation to compute \derv_{x}Dis(x)
+                    if self.LOSS.apply_r1_reg and not self.is_stylegan:
+                        real_images.requires_grad_(True)
+
+                    # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
+                    real_images_ = self.AUG.series_augment(real_images)
+                    fake_images_ = self.AUG.series_augment(fake_images)
+
+                    # calculate adv_output, embed, proxy, and cls_output using the discriminator
+                    real_dict = self.Dis(real_images_, real_labels)
+                    fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
+
+                    # accumulate discriminator output informations for logging
+                    if self.AUG.apply_ada:
+                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                        device=self.local_rank)
+                        self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                        device=self.local_rank)
+                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
+                        self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
+
+                    # calculate adversarial loss defined by "LOSS.adv_loss"
+                    if self.LOSS.adv_loss == "MH":
+                        dis_acml_loss = self.LOSS.d_loss(DDP=self.DDP, **real_dict)
+                        dis_acml_loss += self.LOSS.d_loss(fake_dict["adv_output"], self.lossy, DDP=self.DDP)
+                    else:
+                        dis_acml_loss = self.LOSS.d_loss(real_dict["adv_output"], fake_dict["adv_output"], DDP=self.DDP)
+
+                    # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
+                    if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
+                        real_cond_loss = self.cond_loss(**real_dict)
+                        dis_acml_loss += self.LOSS.cond_lambda * real_cond_loss
+                        if self.MODEL.aux_cls_type == "TAC":
+                            tac_dis_loss = self.cond_loss_mi(**fake_dict)
+                            dis_acml_loss += self.LOSS.tac_dis_lambda * tac_dis_loss
+                        elif self.MODEL.aux_cls_type == "ADC":
+                            fake_cond_loss = self.cond_loss(**fake_dict)
+                            dis_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
+                        else:
+                            pass
+                    else:
+                        real_cond_loss = "N/A"
+
+                    # add transport cost for latent optimization training
+                    if self.LOSS.apply_lo:
+                        dis_acml_loss += self.LOSS.lo_lambda * trsp_cost
+
+                    # if LOSS.apply_cr is True, force the adv. and cls. logits to be the same
+                    if self.LOSS.apply_cr:
+                        real_prl_images = self.AUG.parallel_augment(real_images)
+                        real_prl_dict = self.Dis(real_prl_images, real_labels)
+                        real_consist_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
+                        if self.MODEL.d_cond_mtd == "AC":
+                            real_consist_loss += self.l2_loss(real_dict["cls_output"], real_prl_dict["cls_output"])
+                        elif self.MODEL.d_cond_mtd in ["2C", "D2DCE"]:
+                            real_consist_loss += self.l2_loss(real_dict["embed"], real_prl_dict["embed"])
+                        else:
+                            pass
+                        dis_acml_loss += self.LOSS.cr_lambda * real_consist_loss
+
+                    # if LOSS.apply_bcr is True, apply balanced consistency regularization proposed in ICRGAN
+                    if self.LOSS.apply_bcr:
+                        real_prl_images = self.AUG.parallel_augment(real_images)
+                        fake_prl_images = self.AUG.parallel_augment(fake_images)
+                        real_prl_dict = self.Dis(real_prl_images, real_labels)
+                        fake_prl_dict = self.Dis(fake_prl_images, fake_labels, adc_fake=self.adc_fake)
+                        real_bcr_loss = self.l2_loss(real_dict["adv_output"], real_prl_dict["adv_output"])
+                        fake_bcr_loss = self.l2_loss(fake_dict["adv_output"], fake_prl_dict["adv_output"])
+                        if self.MODEL.d_cond_mtd == "AC":
+                            real_bcr_loss += self.l2_loss(real_dict["cls_output"], real_prl_dict["cls_output"])
+                            fake_bcr_loss += self.l2_loss(fake_dict["cls_output"], fake_prl_dict["cls_output"])
+                        elif self.MODEL.d_cond_mtd in ["2C", "D2DCE"]:
+                            real_bcr_loss += self.l2_loss(real_dict["embed"], real_prl_dict["embed"])
+                            fake_bcr_loss += self.l2_loss(fake_dict["embed"], fake_prl_dict["embed"])
+                        else:
+                            pass
+                        dis_acml_loss += self.LOSS.real_lambda * real_bcr_loss + self.LOSS.fake_lambda * fake_bcr_loss
+
+                    # if LOSS.apply_zcr is True, apply latent consistency regularization proposed in ICRGAN
+                    if self.LOSS.apply_zcr:
+                        fake_eps_dict = self.Dis(fake_images_eps, fake_labels, adc_fake=self.adc_fake)
+                        fake_zcr_loss = self.l2_loss(fake_dict["adv_output"], fake_eps_dict["adv_output"])
+                        if self.MODEL.d_cond_mtd == "AC":
+                            fake_zcr_loss += self.l2_loss(fake_dict["cls_output"], fake_eps_dict["cls_output"])
+                        elif self.MODEL.d_cond_mtd in ["2C", "D2DCE"]:
+                            fake_zcr_loss += self.l2_loss(fake_dict["embed"], fake_eps_dict["embed"])
+                        else:
+                            pass
+                        dis_acml_loss += self.LOSS.d_lambda * fake_zcr_loss
+
+                    # apply gradient penalty regularization to train wasserstein GAN
+                    if self.LOSS.apply_gp:
+                        gp_loss = losses.cal_grad_penalty(real_images=real_images,
+                                                          real_labels=real_labels,
+                                                          fake_images=fake_images,
+                                                          discriminator=self.Dis,
+                                                          device=self.local_rank)
+                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.gp_lambda * gp_loss
+
+                    # apply deep regret analysis regularization to train wasserstein GAN
+                    if self.LOSS.apply_dra:
+                        dra_loss = losses.cal_dra_penalty(real_images=real_images,
+                                                          real_labels=real_labels,
+                                                          discriminator=self.Dis,
+                                                          device=self.local_rank)
+                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.dra_lambda * dra_loss
+
+                    # apply max gradient penalty regularization to train Lipschitz GAN
+                    if self.LOSS.apply_maxgp:
+                        maxgp_loss = losses.cal_maxgrad_penalty(real_images=real_images,
+                                                                real_labels=real_labels,
+                                                                fake_images=fake_images,
+                                                                discriminator=self.Dis,
+                                                                device=self.local_rank)
+                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.maxgp_lambda * maxgp_loss
+
+                    if self.LOSS.apply_r1_reg and not self.is_stylegan:
+                        self.r1_penalty = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                            images=real_images,
+                                                            device=self.local_rank)
+                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.r1_lambda * self.r1_penalty
+
+                    # adjust gradients for applying gradient accumluation trick
+                    dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
+                    batch_counter += 1
+
+                # accumulate gradients of the discriminator
+                if self.RUN.mixed_precision and not self.is_stylegan:
+                    self.scaler.scale(dis_acml_loss).backward()
+                else:
+                    dis_acml_loss.backward()
+
+            # update the discriminator using the pre-defined optimizer
+            if self.RUN.mixed_precision and not self.is_stylegan:
+                self.scaler.step(self.OPTIMIZATION.d_optimizer)
+                self.scaler.update()
+            else:
+                self.OPTIMIZATION.d_optimizer.step()
+
+            if self.LOSS.apply_r1_reg and (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
+                self.OPTIMIZATION.d_optimizer.zero_grad()
+                for acml_index in range(self.OPTIMIZATION.acml_steps):
+                    real_images = real_image_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
+                    real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
+                    real_images.requires_grad_(True)
+                    real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
+                    self.r1_penalty = misc.enable_allreduce(real_dict) + self.r1_lambda*losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                                                                                   images=real_images)
+                    self.r1_penalty.backward()
+
+                    if self.AUG.apply_ada:
+                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                        device=self.local_rank)
+                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
+                self.OPTIMIZATION.d_optimizer.step()
+
+            # apply ada heuristics
+            if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
+                if self.DDP:
+                    dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
+                ada_heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
+                adjust = np.sign(ada_heuristic - self.AUG.ada_target) * (self.dis_sign_real[1].item()) / (self.AUG.ada_kimg * 1000)
+                self.ada_p = min(torch.as_tensor(1.), max(self.ada_p + adjust, torch.as_tensor(0.)))
+                self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
+                self.dis_sign_real_log.copy_(self.dis_sign_real), self.dis_sign_fake_log.copy_(self.dis_sign_fake)
+                self.dis_logit_real_log.copy_(self.dis_logit_real), self.dis_logit_fake_log.copy_(self.dis_logit_fake)
+                self.dis_sign_real.mul_(0), self.dis_sign_fake.mul_(0)
+                self.dis_logit_real.mul_(0), self.dis_logit_fake.mul_(0)
+
+            # clip weights to restrict the discriminator to satisfy 1-Lipschitz constraint
+            if self.LOSS.apply_wc:
+                for p in self.Dis.parameters():
+                    p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
+        return real_cond_loss, dis_acml_loss
+
+    # -----------------------------------------------------------------------------
+    # train Generator
+    # -----------------------------------------------------------------------------
+    def train_generator(self, current_step):
+        # toggle gradients of the generator and discriminator
+        misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        self.Gen.apply(misc.track_bn_statistics)
+        for step_index in range(self.OPTIMIZATION.g_updates_per_step):
+            self.OPTIMIZATION.g_optimizer.zero_grad()
+            for acml_step in range(self.OPTIMIZATION.acml_steps):
+                with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
+                    # sample fake images and labels from p(G(z), y)
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
+                        z_prior=self.MODEL.z_prior,
+                        truncation_factor=-1.0,
+                        batch_size=self.OPTIMIZATION.batch_size,
+                        z_dim=self.MODEL.z_dim,
+                        num_classes=self.DATA.num_classes,
+                        y_sampler="totally_random",
+                        radius=self.LOSS.radius,
+                        generator=self.Gen,
+                        discriminator=self.Dis,
+                        is_train=True,
+                        LOSS=self.LOSS,
+                        RUN=self.RUN,
+                        device=self.local_rank,
+                        generator_mapping=self.Gen_mapping,
+                        generator_synthesis=self.Gen_synthesis,
+                        is_stylegan=self.is_stylegan,
+                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                        cal_trsp_cost=True if self.LOSS.apply_lo else False)
+
+                    # apply differentiable augmentations if "apply_diffaug" is True
+                    fake_images_ = self.AUG.series_augment(fake_images)
+
+                    # calculate adv_output, embed, proxy, and cls_output using the discriminator
+                    fake_dict = self.Dis(fake_images_, fake_labels)
+
+                    if self.AUG.apply_ada:
+                        # accumulate discriminator output informations for logging
+                        self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                        device=self.local_rank)
+                        self.dis_logit_fake += torch.tensor((fake_dict["adv_output"].sum().item(),
+                                                            self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
+
+                    # apply top k sampling for discarding bottom 1-k samples which are 'in-between modes'
+                    if self.LOSS.apply_topk:
+                        fake_dict["adv_output"] = torch.topk(fake_dict["adv_output"], int(self.topk)).values
+
+                    # calculate adversarial loss defined by "LOSS.adv_loss"
+                    if self.LOSS.adv_loss == "MH":
+                        gen_acml_loss = self.LOSS.mh_lambda * self.LOSS.g_loss(DDP=self.DDP, **fake_dict, )
+                    else:
+                        gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"], DDP=self.DDP)
+
+                    # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
+                    if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
+                        fake_cond_loss = self.cond_loss(**fake_dict)
+                        gen_acml_loss += self.LOSS.cond_lambda * fake_cond_loss
+                        if self.MODEL.aux_cls_type == "TAC":
+                            tac_gen_loss = -self.cond_loss_mi(**fake_dict)
+                            gen_acml_loss += self.LOSS.tac_gen_lambda * tac_gen_loss
+                        elif self.MODEL.aux_cls_type == "ADC":
+                            adc_fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
+                            adc_fake_cond_loss = -self.cond_loss(**adc_fake_dict)
+                            gen_acml_loss += self.LOSS.cond_lambda * adc_fake_cond_loss
+                        pass
+
+                    # apply feature matching regularization to stabilize adversarial dynamics
+                    if self.LOSS.apply_fm:
+                        real_image_basket, real_label_basket = self.sample_data_basket()
+                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True)
+                        real_labels = real_label_basket[0].to(self.local_rank, non_blocking=True)
+                        real_images_ = self.AUG.series_augment(real_images)
+                        real_dict = self.Dis(real_images_, real_labels)
+
+                        mean_match_loss = self.fm_loss(real_dict["h"].detach(), fake_dict["h"])
+                        gen_acml_loss += self.LOSS.fm_lambda * mean_match_loss
+
+                    # add transport cost for latent optimization training
+                    if self.LOSS.apply_lo:
+                        gen_acml_loss += self.LOSS.lo_lambda * trsp_cost
+
+                    # apply latent consistency regularization for generating diverse images
+                    if self.LOSS.apply_zcr:
+                        fake_zcr_loss = -1 * self.l2_loss(fake_images, fake_images_eps)
+                        gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
+
+                    # adjust gradients for applying gradient accumluation trick
+                    gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
+
+                # accumulate gradients of the generator
+                if self.RUN.mixed_precision and not self.is_stylegan:
+                    self.scaler.scale(gen_acml_loss).backward()
+                else:
+                    gen_acml_loss.backward()
+
+            # update the generator using the pre-defined optimizer
+            if self.RUN.mixed_precision and not self.is_stylegan:
+                self.scaler.step(self.OPTIMIZATION.g_optimizer)
+                self.scaler.update()
+            else:
+                self.OPTIMIZATION.g_optimizer.step()
+
+            # apply path length regularization
+            if self.STYLEGAN2.apply_pl_reg and (self.OPTIMIZATION.g_updates_per_step*current_step + step_index) % self.STYLEGAN2.g_reg_interval == 0:
+                self.OPTIMIZATION.g_optimizer.zero_grad()
+                for acml_index in range(self.OPTIMIZATION.acml_steps):
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
+                        z_prior=self.MODEL.z_prior,
+                        truncation_factor=-1.0,
+                        batch_size=self.OPTIMIZATION.batch_size // 2,
+                        z_dim=self.MODEL.z_dim,
+                        num_classes=self.DATA.num_classes,
+                        y_sampler="totally_random",
+                        radius=self.LOSS.radius,
+                        generator=self.Gen,
+                        discriminator=self.Dis,
+                        is_train=True,
+                        LOSS=self.LOSS,
+                        RUN=self.RUN,
+                        device=self.local_rank,
+                        generator_mapping=self.Gen_mapping,
+                        generator_synthesis=self.Gen_synthesis,
+                        is_stylegan=self.is_stylegan,
+                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                        cal_trsp_cost=True if self.LOSS.apply_lo else False)
+
+                    self.pl_reg_loss = fake_images[:,0,0,0].mean()*0 + \
+                        self.pl_lambda*self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws)
+                    self.pl_reg_loss.backward()
+
+                self.OPTIMIZATION.g_optimizer.step()
+
+            # if ema is True: update parameters of the Gen_ema in adaptive way
+            if self.MODEL.apply_g_ema:
+                self.ema.update(current_step)
+        return gen_acml_loss
+
+    # -----------------------------------------------------------------------------
+    # log training statistics
+    # -----------------------------------------------------------------------------
+    def log_train_statistics(self, current_step, real_cond_loss, gen_acml_loss, dis_acml_loss):
+        self.wandb_step = current_step + 1
+        if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
+            cls_loss = real_cond_loss.item()
+        else:
+            cls_loss = "N/A"
+
+        log_message = LOG_FORMAT.format(
+            step=current_step + 1,
+            progress=(current_step + 1) / self.OPTIMIZATION.total_steps,
+            elapsed=misc.elapsed_time(self.start_time),
+            gen_loss=gen_acml_loss.item(),
+            dis_loss=dis_acml_loss.item(),
+            cls_loss=cls_loss,
+            topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
+            ada_p=self.ada_p if self.AUG.apply_ada else "N/A",
+        )
+        self.logger.info(log_message)
+
+        # save loss values in wandb event file and .npz format
+        loss_dict = {
+            "gen_loss": gen_acml_loss.item(),
+            "dis_loss": dis_acml_loss.item(),
+            "cls_loss": 0.0 if cls_loss == "N/A" else cls_loss,
+        }
+
+        wandb.log(loss_dict, step=self.wandb_step)
+
+        save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
+                                                  value_dict=loss_dict,
+                                                  step=current_step + 1,
+                                                  interval=self.RUN.print_every)
+        misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
+                            name="losses",
+                            dictionary=save_dict)
+
+        if self.AUG.apply_ada:
+            dis_output_dict = {
+                        "dis_sign_real": (self.dis_sign_real_log[0]/self.dis_sign_real_log[1]).item(),
+                        "dis_sign_fake": (self.dis_sign_fake_log[0]/self.dis_sign_fake_log[1]).item(),
+                        "dis_logit_real": (self.dis_logit_real_log[0]/self.dis_logit_real_log[1]).item(),
+                        "dis_logit_fake": (self.dis_logit_fake_log[0]/self.dis_logit_fake_log[1]).item(),
+                    }
+            wandb.log(dis_output_dict, step=self.wandb_step)
+            wandb.log({"ada_p": self.ada_p.item()}, step=self.wandb_step)
+
+        if self.LOSS.apply_r1_reg:
+            wandb.log({"r1_reg_loss": self.r1_penalty.item()}, step=self.wandb_step)
+
+        if self.STYLEGAN2.apply_pl_reg:
+            wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
+
+        # calculate the spectral norms of all weights in the generator for monitoring purpose
+        if self.MODEL.apply_g_sn:
+            gen_sigmas = misc.calculate_all_sn(self.Gen, prefix="Gen")
+            wandb.log(gen_sigmas, step=self.wandb_step)
+
+        # calculate the spectral norms of all weights in the discriminator for monitoring purpose
+        if self.MODEL.apply_d_sn:
+            dis_sigmas = misc.calculate_all_sn(self.Dis, prefix="Dis")
+            wandb.log(dis_sigmas, step=self.wandb_step)
+
+    # -----------------------------------------------------------------------------
+    # visualize fake images for monitoring purpose.
+    # -----------------------------------------------------------------------------
+    def visualize_fake_images(self, num_cols, current_step):
+        if self.global_rank == 0:
+            self.logger.info("Visualize (num_rows x 8) fake image canvans.")
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+
+            fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                       truncation_factor=self.RUN.truncation_factor,
+                                                                       batch_size=self.OPTIMIZATION.batch_size,
+                                                                       z_dim=self.MODEL.z_dim,
+                                                                       num_classes=self.DATA.num_classes,
+                                                                       y_sampler="totally_random",
+                                                                       radius="N/A",
+                                                                       generator=generator,
+                                                                       discriminator=self.Dis,
+                                                                       is_train=False,
+                                                                       LOSS=self.LOSS,
+                                                                       RUN=self.RUN,
+                                                                       device=self.local_rank,
+                                                                       is_stylegan=self.is_stylegan,
+                                                                       generator_mapping=generator_mapping,
+                                                                       generator_synthesis=generator_synthesis,
+                                                                       style_mixing_p=0.0,
+                                                                       cal_trsp_cost=False)
+
+        misc.plot_img_canvas(images=(fake_images.detach().cpu() + 1) / 2,
+                             save_path=join(self.RUN.save_dir,
+                                            "figures/{run_name}/generated_canvas_{step}.png".format(run_name=self.run_name,
+                                                                                                    step=current_step)),
+                             num_cols=num_cols,
+                             logger=self.logger,
+                             logging=self.global_rank == 0 and self.logger)
+
+        wandb.log({"generated_images": wandb.Image(fake_images)}, step=self.wandb_step)
+
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+
+    # -----------------------------------------------------------------------------
+    # evaluate GAN using IS, FID, and Precision and recall.
+    # -----------------------------------------------------------------------------
+    def evaluate(self, step, writing=True):
+        if self.global_rank == 0:
+            self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        is_best, num_split, nearest_k= False, 1, 5
+        is_acc = True if self.DATA.name == "ImageNet" else False
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+
+            kl_score, kl_std, top1, top5 = ins.eval_generator(data_loader=self.eval_dataloader,
+                                                              generator=generator,
+                                                              discriminator=self.Dis,
+                                                              eval_model=self.eval_model,
+                                                              num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                              y_sampler="totally_random",
+                                                              split=num_split,
+                                                              batch_size=self.OPTIMIZATION.batch_size,
+                                                              z_prior=self.MODEL.z_prior,
+                                                              truncation_factor=self.RUN.truncation_factor,
+                                                              z_dim=self.MODEL.z_dim,
+                                                              num_classes=self.DATA.num_classes,
+                                                              LOSS=self.LOSS,
+                                                              RUN=self.RUN,
+                                                              is_stylegan=self.is_stylegan,
+                                                              generator_mapping=generator_mapping,
+                                                              generator_synthesis=generator_synthesis,
+                                                              is_acc=is_acc,
+                                                              device=self.local_rank,
+                                                              logger=self.logger,
+                                                              disable_tqdm=self.global_rank != 0)
+
+            fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
+                                                  generator=generator,
+                                                  generator_mapping=generator_mapping,
+                                                  generator_synthesis=generator_synthesis,
+                                                  discriminator=self.Dis,
+                                                  eval_model=self.eval_model,
+                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                  y_sampler="totally_random",
+                                                  cfgs=self.cfgs,
+                                                  device=self.local_rank,
+                                                  logger=self.logger,
+                                                  pre_cal_mean=self.mu,
+                                                  pre_cal_std=self.sigma,
+                                                  disable_tqdm=self.global_rank != 0)
+
+            prc, rec, dns, cvg = prdc_trained.calculate_prdc(data_loader=self.eval_dataloader,
+                                                             eval_model=self.eval_model,
+                                                             num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                             cfgs=self.cfgs,
+                                                             generator=generator,
+                                                             generator_mapping=generator_mapping,
+                                                             generator_synthesis=generator_synthesis,
+                                                             discriminator=self.Dis,
+                                                             nearest_k=nearest_k,
+                                                             device=self.local_rank,
+                                                             logger=self.logger,
+                                                             disable_tqdm=self.global_rank != 0)
+
+            if self.best_fid is None or fid_score <= self.best_fid:
+                self.best_fid, self.best_step, is_best, prc_best, rec_best, dns_best, cvg_best =\
+                    fid_score, step, True, prc, rec, dns, cvg
+
+            if self.global_rank == 0 and writing:
+                wandb.log({"IS score": kl_score}, step=self.wandb_step)
+                wandb.log({"FID score": fid_score}, step=self.wandb_step)
+                wandb.log({"Improved Precision": prc}, step=self.wandb_step)
+                wandb.log({"Improved Recall": rec}, step=self.wandb_step)
+                wandb.log({"Density": dns}, step=self.wandb_step)
+                wandb.log({"Coverage": cvg}, step=self.wandb_step)
+                if is_acc:
+                    wandb.log({"{eval_model} Top1 acc": top1}, eval_model=self.RUN.eval_backbone, step=self.wandb_step)
+                    wandb.log({"{eval_model} Top5 acc": top5}, eval_model=self.RUN.eval_backbone, step=self.wandb_step)
 
             if self.global_rank == 0:
-                self.writer.add_scalars('FID score', {'using {type} moments'.format(type=self.eval_type):fid_score}, step)
-                self.writer.add_scalars('F_beta score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta}, step)
-                self.writer.add_scalars('F_beta_inv score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):f_beta_inv}, step)
-                self.writer.add_scalars('IS score', {'{num} generated images'.format(num=str(self.num_eval[self.eval_type])):kl_score}, step)
-                self.writer.add_figure('PR_Curve', PR_Curve, global_step=step)
-                if self.conditional_strategy in ['ProjGAN', 'ContraGAN', 'Proxy_NCA_GAN']:
-                    self.writer.add_figure('Similarity_heatmap', sim_heatmap, global_step=step)
-                self.logger.info('F_{beta} score (Step: {step}, Using {type} images): {F_beta}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta=f_beta))
-                self.logger.info('F_1/{beta} score (Step: {step}, Using {type} images): {F_beta_inv}'.format(beta=beta4PR, step=step, type=self.eval_type, F_beta_inv=f_beta_inv))
-                self.logger.info('FID score (Step: {step}, Using {type} moments): {FID}'.format(step=step, type=self.eval_type, FID=fid_score))
-                self.logger.info('Inception score (Step: {step}, {num} generated images): {IS}'.format(step=step, num=str(self.num_eval[self.eval_type]), IS=kl_score))
-                if self.train:
-                    self.logger.info('Best FID score (Step: {step}, Using {type} moments): {FID}'.format(step=self.best_step, type=self.eval_type, FID=self.best_fid))
+                self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
+                    step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
+                self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(
+                    step=step, type=self.RUN.ref_dataset, FID=fid_score))
+                self.logger.info("Improved Precision (Step: {step}, Using {type} images): {prc}".format(
+                    step=step, type=self.RUN.ref_dataset, prc=prc))
+                self.logger.info("Improved Recall (Step: {step}, Using {type} images): {rec}".format(
+                    step=step, type=self.RUN.ref_dataset, rec=rec))
+                self.logger.info("Density (Step: {step}, Using {type} images): {dns}".format(
+                    step=step, type=self.RUN.ref_dataset, dns=dns))
+                self.logger.info("Coverage (Step: {step}, Using {type} images): {cvg}".format(
+                    step=step, type=self.RUN.ref_dataset, cvg=cvg))
 
-            self.run_image_visualization(nrow=self.cfgs.nrow, ncol=self.cfgs.ncol, standing_statistics=False, standing_step="N/A")
+                if is_acc:
+                    self.logger.info("{eval_model} Top1 acc: (Step: {step}, {num} generated images): {Top1}".format(
+                        eval_model=self.RUN.eval_backbone ,step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top1=top1))
+                    self.logger.info("{eval_model} Top5 acc: (Step: {step}, {num} generated images): {Top5}".format(
+                        eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top5=top5))
 
-            self.dis_model.train()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
+                if self.training:
+                    self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
+                        step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
+                    # save metric values in .npz format
+                    metric_dict = {
+                        "IS": kl_score,
+                        "FID": fid_score,
+                        "Improved_Precision": prc,
+                        "Improved_Recall": rec,
+                        "Density": dns,
+                        "Coverage": cvg,
+                        "Top1": top1,
+                        "Top5": top5
+                    }
+
+                    save_dict = misc.accm_values_convert_dict(list_dict=self.metric_list_dict,
+                                                              value_dict=metric_dict,
+                                                              step=step,
+                                                              interval=self.RUN.save_every)
+                    misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
+                                       name="metrics",
+                                       dictionary=save_dict)
+
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         return is_best
-    ################################################################################################################################
 
+    # -----------------------------------------------------------------------------
+    # save the trained generator, generator_ema, and discriminator.
+    # -----------------------------------------------------------------------------
+    def save(self, step, is_best):
+        when = "best" if is_best is True else "current"
+        misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+        Gen, Gen_ema, Dis = misc.peel_models(self.Gen, self.Gen_ema, self.Dis)
 
-    ################################################################################################################################
-    def save_images(self, is_generate, standing_statistics, standing_step, png=True, npz=True):
-        if self.global_rank == 0: self.logger.info('Start save images....')
-        if standing_statistics: self.counter += 1
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            self.dis_model.eval()
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
+        g_states = {"state_dict": Gen.state_dict(), "optimizer": self.OPTIMIZATION.g_optimizer.state_dict()}
+
+        d_states = {
+            "state_dict": Dis.state_dict(),
+            "optimizer": self.OPTIMIZATION.d_optimizer.state_dict(),
+            "seed": self.RUN.seed,
+            "run_name": self.run_name,
+            "step": step,
+            "epoch": self.epoch_counter,
+            "topk": self.topk,
+            "ada_p": self.ada_p,
+            "best_step": self.best_step,
+            "best_fid": self.best_fid,
+            "best_fid_ckpt": self.RUN.ckpt_dir
+        }
+
+        if self.Gen_ema is not None:
+            g_ema_states = {"state_dict": Gen_ema.state_dict()}
+
+        misc.save_model(model="G", when=when, step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_states)
+        misc.save_model(model="D", when=when, step=step, ckpt_dir=self.RUN.ckpt_dir, states=d_states)
+        if self.Gen_ema is not None:
+            misc.save_model(model="G_ema", when=when, step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_ema_states)
+
+        if when == "best":
+            misc.save_model(model="G", when="current", step=step, ckpt_dir=self.RUN.ckpt_dir, states=g_states)
+            misc.save_model(model="D", when="current", step=step, ckpt_dir=self.RUN.ckpt_dir, states=d_states)
+            if self.Gen_ema is not None:
+                misc.save_model(model="G_ema",
+                                when="current",
+                                step=step,
+                                ckpt_dir=self.RUN.ckpt_dir,
+                                states=g_ema_states)
+
+        if self.global_rank == 0 and self.logger:
+            self.logger.info("Save model to {}".format(self.RUN.ckpt_dir))
+
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+
+    # -----------------------------------------------------------------------------
+    # save fake images to examine generated images qualitatively and calculate official IS.
+    # -----------------------------------------------------------------------------
+    def save_fake_images(self, png=True, npz=True):
+        if self.global_rank == 0:
+            self.logger.info("Save {num_images} generated images in png or npz format.".format(
+                num_images=self.num_eval[self.RUN.ref_dataset]))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             if png:
-                save_images_png(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
-                                self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
-                                self.latent_op_alpha, self.latent_op_beta, self.local_rank)
+                misc.save_images_png(data_loader=self.eval_dataloader,
+                                     generator=generator,
+                                     discriminator=self.Dis,
+                                     is_generate=True,
+                                     num_images=self.num_eval[self.RUN.ref_dataset],
+                                     y_sampler="totally_random",
+                                     batch_size=self.OPTIMIZATION.batch_size,
+                                     z_prior=self.MODEL.z_prior,
+                                     truncation_factor=self.RUN.truncation_factor,
+                                     z_dim=self.MODEL.z_dim,
+                                     num_classes=self.DATA.num_classes,
+                                     LOSS=self.LOSS,
+                                     RUN=self.RUN,
+                                     is_stylegan=self.is_stylegan,
+                                     generator_mapping=generator_mapping,
+                                     generator_synthesis=generator_synthesis,
+                                     directory=join(self.RUN.save_dir, "samples", self.run_name),
+                                     device=self.local_rank)
             if npz:
-                save_images_npz(self.run_name, self.eval_dataloader, self.num_eval[self.eval_type], self.num_classes, generator,
-                                self.dis_model, is_generate, self.truncated_factor, self.prior, self.latent_op, self.latent_op_step,
-                                self.latent_op_alpha, self.latent_op_beta, self.local_rank)
+                misc.save_images_npz(data_loader=self.eval_dataloader,
+                                     generator=generator,
+                                     discriminator=self.Dis,
+                                     is_generate=True,
+                                     num_images=self.num_eval[self.RUN.ref_dataset],
+                                     y_sampler="totally_random",
+                                     batch_size=self.OPTIMIZATION.batch_size,
+                                     z_prior=self.MODEL.z_prior,
+                                     truncation_factor=self.RUN.truncation_factor,
+                                     z_dim=self.MODEL.z_dim,
+                                     num_classes=self.DATA.num_classes,
+                                     LOSS=self.LOSS,
+                                     RUN=self.RUN,
+                                     is_stylegan=self.is_stylegan,
+                                     generator_mapping=generator_mapping,
+                                     generator_synthesis=generator_synthesis,
+                                     directory=join(self.RUN.save_dir, "samples", self.run_name),
+                                     device=self.local_rank)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
-    ################################################################################################################################
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # run k-nearest neighbor analysis to identify whether GAN memorizes the training images or not.
+    # -----------------------------------------------------------------------------
+    def run_k_nearest_neighbor(self, dataset, num_rows, num_cols):
+        if self.global_rank == 0:
+            self.logger.info(
+                "Run K-nearest neighbor analysis using fake and {ref} dataset.".format(ref=self.RUN.ref_dataset))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
 
-    ################################################################################################################################
-    def run_image_visualization(self, nrow, ncol, standing_statistics, standing_step):
-        if self.global_rank == 0: self.logger.info('Start visualize images....')
-        if standing_statistics: self.counter += 1
-        assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
-            if self.zcr:
-                zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, self.truncated_factor, self.num_classes,
-                                                     self.sigma_noise, self.local_rank, sampler=self.sampler)
-            else:
-                zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, self.truncated_factor, self.num_classes, None,
-                                                 self.local_rank, sampler=self.sampler)
-
-            if self.latent_op:
-                zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
-                                        self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                        False, self.local_rank)
-
-            generated_images = generator(zs, fake_labels, evaluation=True)
-
-            plot_img_canvas((generated_images.detach().cpu()+1)/2, "./figures/{run_name}/generated_canvas.png".\
-                            format(run_name=self.run_name), ncol, self.logger, logging=True)
-
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
-    ################################################################################################################################
-
-
-    ################################################################################################################################
-    def run_nearest_neighbor(self, nrow, ncol, standing_statistics, standing_step):
-        if self.global_rank == 0: self.logger.info('Start nearest neighbor analysis....')
-        if standing_statistics: self.counter += 1
-        assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
-
-            resnet50_model = torch.hub.load('pytorch/vision:v0.6.0', 'resnet50', pretrained=True)
+            resnet50_model = torch.hub.load("pytorch/vision:v0.6.0", "resnet50", pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.local_rank)
-            if self.n_gpus > 1:
+            if self.OPTIMIZATION.world_size > 1:
                 resnet50_conv = DataParallel(resnet50_conv, output_device=self.local_rank)
             resnet50_conv.eval()
 
-            for c in tqdm(range(self.num_classes)):
-                fake_images, fake_labels = generate_images_for_KNN(self.batch_size, c, generator, self.dis_model, self.truncated_factor, self.prior, self.latent_op,
-                                                                   self.latent_op_step, self.latent_op_alpha, self.latent_op_beta, self.local_rank)
-                fake_image = torch.unsqueeze(fake_images[0], dim=0)
-                fake_anchor_embedding = torch.squeeze(resnet50_conv((fake_image+1)/2))
+            for c in tqdm(range(self.DATA.num_classes)):
+                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                        truncation_factor=self.RUN.truncation_factor,
+                                                                        batch_size=self.OPTIMIZATION.batch_size,
+                                                                        z_dim=self.MODEL.z_dim,
+                                                                        num_classes=self.DATA.num_classes,
+                                                                        y_sampler=c,
+                                                                        radius="N/A",
+                                                                        generator=generator,
+                                                                        discriminator=self.Dis,
+                                                                        is_train=False,
+                                                                        LOSS=self.LOSS,
+                                                                        RUN=self.RUN,
+                                                                        device=self.local_rank,
+                                                                        is_stylegan=self.is_stylegan,
+                                                                        generator_mapping=generator_mapping,
+                                                                        generator_synthesis=generator_synthesis,
+                                                                        style_mixing_p=0.0,
+                                                                        cal_trsp_cost=False)
 
-                num_samples, target_sampler = target_class_sampler(self.train_dataset, c)
-                batch_size = self.batch_size if num_samples >= self.batch_size else num_samples
-                train_dataloader = torch.utils.data.DataLoader(self.train_dataset, batch_size=batch_size, shuffle=False, sampler=target_sampler,
-                                                               num_workers=self.num_workers, pin_memory=True)
-                train_iter = iter(train_dataloader)
-                for batch_idx in range(num_samples//batch_size):
-                    real_images, real_labels = next(train_iter)
+                fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
+                fake_anchor_embed = torch.squeeze(resnet50_conv((fake_anchor + 1) / 2))
+
+                num_samples, target_sampler = sample.make_target_cls_sampler(dataset=dataset, target_class=c)
+                batch_size = self.OPTIMIZATION.batch_size if num_samples >= self.OPTIMIZATION.batch_size else num_samples
+                c_dataloader = torch.utils.data.DataLoader(dataset=dataset,
+                                                           batch_size=batch_size,
+                                                           shuffle=False,
+                                                           sampler=target_sampler,
+                                                           num_workers=self.RUN.num_workers,
+                                                           pin_memory=True)
+
+                c_iter = iter(c_dataloader)
+                for batch_idx in range(num_samples // batch_size):
+                    real_images, real_labels = next(c_iter)
                     real_images = real_images.to(self.local_rank)
-                    real_embeddings = torch.squeeze(resnet50_conv((real_images+1)/2))
+                    real_embed = torch.squeeze(resnet50_conv((real_images + 1) / 2))
                     if batch_idx == 0:
-                        distances = torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()
-                        holder = real_images.detach().cpu().numpy()
+                        distances = torch.square(real_embed - fake_anchor_embed).mean(dim=1).detach().cpu().numpy()
+                        image_holder = real_images.detach().cpu().numpy()
                     else:
-                        distances = np.concatenate([distances, torch.square(real_embeddings - fake_anchor_embedding).mean(dim=1).detach().cpu().numpy()], axis=0)
-                        holder = np.concatenate([holder, real_images.detach().cpu().numpy()], axis=0)
+                        distances = np.concatenate([
+                            distances,
+                            torch.square(real_embed - fake_anchor_embed).mean(dim=1).detach().cpu().numpy()
+                        ],
+                                                   axis=0)
+                        image_holder = np.concatenate([image_holder, real_images.detach().cpu().numpy()], axis=0)
 
-                nearest_indices = (-distances).argsort()[-(ncol-1):][::-1]
-                if c % nrow == 0:
-                    canvas = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
-                elif c % nrow == nrow-1:
-                    row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
+                nearest_indices = (-distances).argsort()[-(num_cols - 1):][::-1]
+                if c % num_rows == 0:
+                    canvas = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
+                elif c % num_rows == num_rows - 1:
+                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
+                                                axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
-                    plot_img_canvas((torch.from_numpy(canvas)+1)/2, "./figures/{run_name}/Fake_anchor_{ncol}NN_{cls}_classes.png".\
-                                    format(run_name=self.run_name, ncol=ncol, cls=c+1), ncol, self.logger, logging=False)
+                    misc.plot_img_canvas(images=(torch.from_numpy(canvas)+1)/2,
+                                         save_path=join(self.RUN.save_dir, "figures/{run_name}/fake_anchor_{num_cols}NN_{cls}_classes.png".\
+                                                        format(run_name=self.run_name, num_cols=num_cols, cls=c+1)),
+                                         num_cols=num_cols,
+                                         logger=self.logger,
+                                         logging=self.global_rank == 0 and self.logger)
                 else:
-                    row_images = np.concatenate([fake_image.detach().cpu().numpy(), holder[nearest_indices]], axis=0)
+                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
+                                                axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
-    ################################################################################################################################
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # conduct latent interpolation analysis to identify the quaility of latent space (Z)
+    # -----------------------------------------------------------------------------
+    def run_linear_interpolation(self, num_rows, num_cols, fix_z, fix_y, num_saves=100):
+        assert int(fix_z) * int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
+        if self.global_rank == 0:
+            flag = "fix_z" if fix_z else "fix_y"
+            self.logger.info("Run linear interpolation analysis ({flag}) {num} times.".format(flag=flag, num=num_saves))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
 
-    ################################################################################################################################
-    def run_linear_interpolation(self, nrow, ncol, fix_z, fix_y, standing_statistics, standing_step, num_images=100):
-        if self.global_rank == 0: self.logger.info('Start linear interpolation analysis....')
-        if standing_statistics: self.counter += 1
-        assert self.batch_size % 8 ==0, "batch size should be devided by 8!"
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
-            shared = generator.module.shared if isinstance(generator, DataParallel) or isinstance(generator, DistributedDataParallel) else generator.shared
-            assert int(fix_z)*int(fix_y) != 1, "unable to switch fix_z and fix_y on together!"
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
-            for num in tqdm(range(num_images)):
+            shared = misc.peel_model(generator).shared
+            for ns in tqdm(range(num_saves)):
                 if fix_z:
-                    zs = torch.randn(nrow, 1, self.z_dim, device=self.local_rank)
-                    zs = zs.repeat(1, ncol, 1).view(-1, self.z_dim)
+                    zs = torch.randn(num_rows, 1, self.MODEL.z_dim, device=self.local_rank)
+                    zs = zs.repeat(1, num_cols, 1).view(-1, self.MODEL.z_dim)
                     name = "fix_z"
                 else:
-                    zs = interp(torch.randn(nrow, 1, self.z_dim, device=self.local_rank),
-                                torch.randn(nrow, 1, self.z_dim, device=self.local_rank),
-                                ncol - 2).view(-1, self.z_dim)
+                    zs = misc.interpolate(torch.randn(num_rows, 1, self.MODEL.z_dim, device=self.local_rank),
+                                          torch.randn(num_rows, 1, self.MODEL.z_dim, device=self.local_rank),
+                                          num_cols - 2).view(-1, self.MODEL.z_dim)
 
                 if fix_y:
-                    ys = sample_1hot(nrow, self.num_classes, device=self.local_rank)
-                    ys = shared(ys).view(nrow, 1, -1)
-                    ys = ys.repeat(1, ncol, 1).view(nrow * (ncol), -1)
+                    ys = sample.sample_onehot(batch_size=num_rows,
+                                              num_classes=self.DATA.num_classes,
+                                              device=self.local_rank)
+                    ys = shared(ys).view(num_rows, 1, -1)
+                    ys = ys.repeat(1, num_cols, 1).view(num_rows * (num_cols), -1)
                     name = "fix_y"
                 else:
-                    ys = interp(shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                                shared(sample_1hot(nrow, self.num_classes)).view(nrow, 1, -1),
-                                ncol-2).view(nrow * (ncol), -1)
+                    ys = misc.interpolate(
+                        shared(sample.sample_onehot(num_rows, self.DATA.num_classes)).view(num_rows, 1, -1),
+                        shared(sample.sample_onehot(num_rows, self.DATA.num_classes)).view(num_rows, 1, -1),
+                        num_cols - 2).view(num_rows * (num_cols), -1)
 
-                interpolated_images = generator(zs, None, shared_label=ys, evaluation=True)
+                interpolated_images = generator(zs, None, shared_label=ys)
 
-                plot_img_canvas((interpolated_images.detach().cpu()+1)/2, "./figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\
-                                format(num=num, run_name=self.run_name, fix_flag=name), ncol, self.logger, logging=False)
+                misc.plot_img_canvas(images=(interpolated_images.detach().cpu()+1)/2,
+                                     save_path=join(self.RUN.save_dir, "figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\
+                                                    format(num=ns, run_name=self.run_name, fix_flag=name)),
+                                     num_cols=num_cols,
+                                     logger=self.logger,
+                                     logging=False)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
-    ################################################################################################################################
+        if self.global_rank == 0 and self.logger:
+            print("Save figures to {}/*_Interpolated_images_{}.png".format(
+                join(self.RUN.save_dir, "figures", self.run_name), flag))
 
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
-    ################################################################################################################################
-    def run_frequency_analysis(self, num_images, standing_statistics, standing_step):
-        if self.global_rank == 0: self.logger.info('Start frequency analysis....')
-        if standing_statistics: self.counter += 1
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
+    # -----------------------------------------------------------------------------
+    # visualize shifted fourier spectrums of real and fake images
+    # -----------------------------------------------------------------------------
+    def run_frequency_analysis(self, dataloader):
+        if self.global_rank == 0:
+            self.logger.info("Run frequency analysis (use {num} fake and {ref} images).".\
+                             format(num=len(dataloader), ref=self.RUN.ref_dataset))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
 
-            train_iter = iter(self.train_dataloader)
-            num_batches = num_images//self.batch_size
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+
+            data_iter = iter(dataloader)
+            num_batches = len(dataloader) // self.OPTIMIZATION.batch_size
             for i in range(num_batches):
-                if self.zcr:
-                    zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, self.truncated_factor, self.num_classes,
-                                                           self.sigma_noise, self.local_rank)
-                else:
-                    zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, self.truncated_factor, self.num_classes,
-                                                     None, self.local_rank)
+                real_images, real_labels = next(data_iter)
+                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                        truncation_factor=self.RUN.truncation_factor,
+                                                                        batch_size=self.OPTIMIZATION.batch_size,
+                                                                        z_dim=self.MODEL.z_dim,
+                                                                        num_classes=self.DATA.num_classes,
+                                                                        y_sampler="totally_random",
+                                                                        radius="N/A",
+                                                                        generator=generator,
+                                                                        discriminator=self.Dis,
+                                                                        is_train=False,
+                                                                        LOSS=self.LOSS,
+                                                                        RUN=self.RUN,
+                                                                        device=self.local_rank,
+                                                                        is_stylegan=self.is_stylegan,
+                                                                        generator_mapping=generator_mapping,
+                                                                        generator_synthesis=generator_synthesis,
+                                                                        style_mixing_p=0.0,
+                                                                        cal_trsp_cost=False)
+                fake_images = fake_images.detach().cpu().numpy()
 
-                if self.latent_op:
-                    zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
-                                         self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                         False, self.local_rank)
-
-                real_images, real_labels = next(train_iter)
-                fake_images = generator(zs, fake_labels, evaluation=True).detach().cpu().numpy()
-
-                real_images = np.asarray((real_images + 1)*127.5, np.uint8)
-                fake_images = np.asarray((fake_images + 1)*127.5, np.uint8)
+                real_images = np.asarray((real_images + 1) * 127.5, np.uint8)
+                fake_images = np.asarray((fake_images + 1) * 127.5, np.uint8)
 
                 if i == 0:
                     real_array = real_images
                     fake_array = fake_images
                 else:
-                    real_array = np.concatenate([real_array, real_images], axis = 0)
-                    fake_array = np.concatenate([fake_array, fake_images], axis = 0)
+                    real_array = np.concatenate([real_array, real_images], axis=0)
+                    fake_array = np.concatenate([fake_array, fake_images], axis=0)
 
             N, C, H, W = np.shape(real_array)
-            real_r, real_g, real_b = real_array[:,0,:,:], real_array[:,1,:,:], real_array[:,2,:,:]
+            real_r, real_g, real_b = real_array[:, 0, :, :], real_array[:, 1, :, :], real_array[:, 2, :, :]
             real_gray = 0.2989 * real_r + 0.5870 * real_g + 0.1140 * real_b
-            fake_r, fake_g, fake_b = fake_array[:,0,:,:], fake_array[:,1,:,:], fake_array[:,2,:,:]
+            fake_r, fake_g, fake_b = fake_array[:, 0, :, :], fake_array[:, 1, :, :], fake_array[:, 2, :, :]
             fake_gray = 0.2989 * fake_r + 0.5870 * fake_g + 0.1140 * fake_b
             for j in tqdm(range(N)):
-                real_gray_f = np.fft.fft2(real_gray[j] - ndimage.median_filter(real_gray[j], size= H//8))
-                fake_gray_f = np.fft.fft2(fake_gray[j] - ndimage.median_filter(fake_gray[j], size=H//8))
+                real_gray_f = np.fft.fft2(real_gray[j] - ndimage.median_filter(real_gray[j], size=H // 8))
+                fake_gray_f = np.fft.fft2(fake_gray[j] - ndimage.median_filter(fake_gray[j], size=H // 8))
 
                 real_gray_f_shifted = np.fft.fftshift(real_gray_f)
                 fake_gray_f_shifted = np.fft.fftshift(fake_gray_f)
 
                 if j == 0:
-                    real_gray_spectrum = 20*np.log(np.abs(real_gray_f_shifted))/N
-                    fake_gray_spectrum = 20*np.log(np.abs(fake_gray_f_shifted))/N
+                    real_gray_spectrum = 20 * np.log(np.abs(real_gray_f_shifted)) / N
+                    fake_gray_spectrum = 20 * np.log(np.abs(fake_gray_f_shifted)) / N
                 else:
-                    real_gray_spectrum += 20*np.log(np.abs(real_gray_f_shifted))/N
-                    fake_gray_spectrum += 20*np.log(np.abs(fake_gray_f_shifted))/N
+                    real_gray_spectrum += 20 * np.log(np.abs(real_gray_f_shifted)) / N
+                    fake_gray_spectrum += 20 * np.log(np.abs(fake_gray_f_shifted)) / N
 
-            plot_spectrum_image(real_gray_spectrum, fake_gray_spectrum, self.run_name, self.logger, logging=True)
+        misc.plot_spectrum_image(real_spectrum=real_gray_spectrum,
+                                 fake_spectrum=fake_gray_spectrum,
+                                 directory=join(self.RUN.save_dir, "figures", self.run_name),
+                                 logger=self.logger,
+                                 logging=self.global_rank == 0 and self.logger)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
-    ################################################################################################################################
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
+    # -----------------------------------------------------------------------------
+    # visualize discriminator's embeddings of real or fake images using TSNE
+    # -----------------------------------------------------------------------------
+    def run_tsne(self, dataloader):
+        if self.global_rank == 0:
+            self.logger.info("Start TSNE analysis using randomly sampled 10 classes.")
+            self.logger.info("Use {ref} dataset and the same amount of generated images for visualization.".format(
+                ref=self.RUN.ref_dataset))
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
 
-    ################################################################################################################################
-    def run_tsne(self, dataloader, standing_statistics, standing_step):
-        if self.global_rank == 0: self.logger.info('Start tsne analysis....')
-        if standing_statistics: self.counter += 1
-        with torch.no_grad() if self.latent_op is False else dummy_context_mgr() as mpc:
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=False, counter=self.counter)
-            if isinstance(self.gen_model, DataParallel) or isinstance(self.gen_model, DistributedDataParallel):
-                dis_model = self.dis_model.module
-            else:
-                dis_model = self.dis_model
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
-            save_output = SaveOutput()
-            hook_handles = []
-            real, fake = {}, {}
-            tsne_iter = iter(dataloader)
-            num_batches = len(dataloader.dataset)//self.batch_size
-            for name, layer in dis_model.named_children():
+            save_output, real, fake, hook_handles = misc.SaveOutput(), {}, {}, []
+            for name, layer in misc.peel_model(self.Dis).named_children():
                 if name == "linear1":
                     handle = layer.register_forward_pre_hook(save_output)
                     hook_handles.append(handle)
 
+            tsne_iter = iter(dataloader)
+            num_batches = len(dataloader.dataset) // self.OPTIMIZATION.batch_size
             for i in range(num_batches):
-                if self.zcr:
-                    zs, fake_labels, zs_t = sample_latents(self.prior, self.batch_size, self.z_dim, self.truncated_factor, self.num_classes,
-                                                           self.sigma_noise, self.local_rank)
-                else:
-                    zs, fake_labels = sample_latents(self.prior, self.batch_size, self.z_dim, self.truncated_factor, self.num_classes,
-                                                     None, self.local_rank)
-
-                if self.latent_op:
-                    zs = latent_optimise(zs, fake_labels, self.gen_model, self.dis_model, self.conditional_strategy,
-                                         self.latent_op_step, self.latent_op_rate, self.latent_op_alpha, self.latent_op_beta,
-                                         False, self.local_rank)
-
                 real_images, real_labels = next(tsne_iter)
                 real_images, real_labels = real_images.to(self.local_rank), real_labels.to(self.local_rank)
-                fake_images = generator(zs, fake_labels, evaluation=True)
 
-                if self.conditional_strategy == "ACGAN":
-                    cls_out_real, dis_out_real = self.dis_model(real_images, real_labels)
-                elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                    dis_out_real = self.dis_model(real_images, real_labels)
-                elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                    cls_proxies_real, cls_embed_real, dis_out_real = self.dis_model(real_images, real_labels)
-                else:
-                    raise NotImplementedError
-
+                real_dict = self.Dis(real_images, real_labels)
                 if i == 0:
                     real["embeds"] = save_output.outputs[0][0].detach().cpu().numpy()
                     real["labels"] = real_labels.detach().cpu().numpy()
                 else:
-                    real["embeds"] = np.concatenate([real["embeds"], save_output.outputs[0][0].cpu().detach().numpy()], axis=0)
+                    real["embeds"] = np.concatenate([real["embeds"], save_output.outputs[0][0].cpu().detach().numpy()],
+                                                    axis=0)
                     real["labels"] = np.concatenate([real["labels"], real_labels.detach().cpu().numpy()])
 
                 save_output.clear()
 
-                if self.conditional_strategy == "ACGAN":
-                    cls_out_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                elif self.conditional_strategy == "ProjGAN" or self.conditional_strategy == "no":
-                    dis_out_fake = self.dis_model(fake_images, fake_labels)
-                elif self.conditional_strategy in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-                    cls_proxies_fake, cls_embed_fake, dis_out_fake = self.dis_model(fake_images, fake_labels)
-                else:
-                    raise NotImplementedError
+                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                           truncation_factor=self.RUN.truncation_factor,
+                                                                           batch_size=self.OPTIMIZATION.batch_size,
+                                                                           z_dim=self.MODEL.z_dim,
+                                                                           num_classes=self.DATA.num_classes,
+                                                                           y_sampler="totally_random",
+                                                                           radius="N/A",
+                                                                           generator=generator,
+                                                                           discriminator=self.Dis,
+                                                                           is_train=False,
+                                                                           LOSS=self.LOSS,
+                                                                           RUN=self.RUN,
+                                                                           device=self.local_rank,
+                                                                           is_stylegan=self.is_stylegan,
+                                                                           generator_mapping=generator_mapping,
+                                                                           generator_synthesis=generator_synthesis,
+                                                                           style_mixing_p=0.0,
+                                                                           cal_trsp_cost=False)
 
+                fake_dict = self.Dis(fake_images, fake_labels)
                 if i == 0:
                     fake["embeds"] = save_output.outputs[0][0].detach().cpu().numpy()
                     fake["labels"] = fake_labels.detach().cpu().numpy()
                 else:
-                    fake["embeds"] = np.concatenate([fake["embeds"], save_output.outputs[0][0].cpu().detach().numpy()], axis=0)
+                    fake["embeds"] = np.concatenate([fake["embeds"], save_output.outputs[0][0].cpu().detach().numpy()],
+                                                    axis=0)
                     fake["labels"] = np.concatenate([fake["labels"], fake_labels.detach().cpu().numpy()])
 
                 save_output.clear()
 
-            # t-SNE
             tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
-            if self.num_classes > 10:
-                 cls_indices = np.random.permutation(self.num_classes)[:10]
-                 real["embeds"] = real["embeds"][np.isin(real["labels"], cls_indices)]
-                 real["labels"] = real["labels"][np.isin(real["labels"], cls_indices)]
-                 fake["embeds"] = fake["embeds"][np.isin(fake["labels"], cls_indices)]
-                 fake["labels"] = fake["labels"][np.isin(fake["labels"], cls_indices)]
+            if self.DATA.num_classes > 10:
+                cls_indices = np.random.permutation(self.DATA.num_classes)[:10]
+                real["embeds"] = real["embeds"][np.isin(real["labels"], cls_indices)]
+                real["labels"] = real["labels"][np.isin(real["labels"], cls_indices)]
+                fake["embeds"] = fake["embeds"][np.isin(fake["labels"], cls_indices)]
+                fake["labels"] = fake["labels"][np.isin(fake["labels"], cls_indices)]
 
             real_tsne_results = tsne.fit_transform(real["embeds"])
-            plot_tsne_scatter_plot(real, real_tsne_results, "real", self.run_name, self.logger, logging=True)
-            fake_tsne_results = tsne.fit_transform(fake["embeds"])
-            plot_tsne_scatter_plot(fake, fake_tsne_results, "fake", self.run_name, self.logger, logging=True)
+            misc.plot_tsne_scatter_plot(df=real,
+                                        tsne_results=real_tsne_results,
+                                        flag="real",
+                                        directory=join(self.RUN.save_dir, "figures", self.run_name),
+                                        logger=self.logger,
+                                        logging=self.global_rank == 0 and self.logger)
 
-            generator = change_generator_mode(self.gen_model, self.Gen_copy, self.bn_stat_OnTheFly, standing_statistics, standing_step,
-                                              self.prior, self.batch_size, self.z_dim, self.num_classes, self.local_rank, training=True, counter=self.counter)
-    ################################################################################################################################
+            fake_tsne_results = tsne.fit_transform(fake["embeds"])
+            misc.plot_tsne_scatter_plot(df=fake,
+                                        tsne_results=fake_tsne_results,
+                                        flag="fake",
+                                        directory=join(self.RUN.save_dir, "figures", self.run_name),
+                                        logger=self.logger,
+                                        logging=self.global_rank == 0 and self.logger)
+
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+
+    # -----------------------------------------------------------------------------
+    # calculate intra-class FID (iFID) to identify intra-class diversity
+    # -----------------------------------------------------------------------------
+    def calulate_intra_class_fid(self, dataset):
+        if self.global_rank == 0:
+            self.logger.info("Start calculating iFID (use {num} fake images per class and train images as the reference).".\
+                             format(num=self.num_eval[self.RUN.ref_dataset]))
+
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        fids = []
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+
+            for c in tqdm(range(self.DATA.num_classes)):
+                num_samples, target_sampler = sample.make_target_cls_sampler(dataset, c)
+                batch_size = self.OPTIMIZATION.batch_size if num_samples >= self.OPTIMIZATION.batch_size else num_samples
+                dataloader = torch.utils.data.DataLoader(dataset,
+                                                         batch_size=batch_size,
+                                                         shuffle=False,
+                                                         sampler=target_sampler,
+                                                         num_workers=self.RUN.num_workers,
+                                                         pin_memory=True,
+                                                         drop_last=True)
+
+                mu, sigma = fid.calculate_moments(data_loader=dataloader,
+                                                  generator="N/A",
+                                                  generator_mapping="N/A",
+                                                  generator_synthesis="N/A",
+                                                  discriminator="N/A",
+                                                  eval_model=self.eval_model,
+                                                  is_generate=False,
+                                                  num_generate="N/A",
+                                                  y_sampler="N/A",
+                                                  batch_size=batch_size,
+                                                  z_prior="N/A",
+                                                  truncation_factor="N/A",
+                                                  z_dim="N/A",
+                                                  num_classes=1,
+                                                  LOSS="N/A",
+                                                  RUN=self.RUN,
+                                                  is_stylegan=False,
+                                                  device=self.local_rank,
+                                                  disable_tqdm=True)
+
+                ifid_score, _, _ = fid.calculate_fid(data_loader="N/A",
+                                                     generator=generator,
+                                                     generator_mapping=generator_mapping,
+                                                     generator_synthesis=generator_synthesis,
+                                                     discriminator=self.Dis,
+                                                     eval_model=self.eval_model,
+                                                     num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                     y_sampler=c,
+                                                     cfgs=self.cfgs,
+                                                     device=self.local_rank,
+                                                     logger=self.logger,
+                                                     pre_cal_mean=mu,
+                                                     pre_cal_std=sigma,
+                                                     disable_tqdm=True)
+
+                fids.append(ifid_score)
+
+                # save iFID values in .npz format
+                metric_dict = {"iFID": ifid_score}
+
+                save_dict = misc.accm_values_convert_dict(list_dict={"iFID": []},
+                                                          value_dict=metric_dict,
+                                                          step=c,
+                                                          interval=1)
+                misc.save_dict_npy(directory=join(self.RUN.save_dir, "values", self.run_name),
+                                   name="iFID",
+                                   dictionary=save_dict)
+
+        if self.global_rank == 0 and self.logger:
+            self.logger.info("Average iFID score: {iFID}".format(iFID=sum(fids, 0.0) / len(fids)))
+
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+
+    # -----------------------------------------------------------------------------
+    # perform semantic (closed-form) factorization for latent nevigation
+    # -----------------------------------------------------------------------------
+    def run_semantic_factorization(self, num_rows, num_cols, maximum_variations):
+        if self.global_rank == 0:
+            self.logger.info("Perform semantic factorization for latent nevigation.")
+
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
+        with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
+            misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+            generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+
+            zs, fake_labels, _ = sample.sample_zy(z_prior=self.MODEL.z_prior,
+                                                  batch_size=self.OPTIMIZATION.batch_size,
+                                                  z_dim=self.MODEL.z_dim,
+                                                  num_classes=self.DATA.num_classes,
+                                                  truncation_factor=self.RUN.truncation_factor,
+                                                  y_sampler="totally_random",
+                                                  radius="N/A",
+                                                  device=self.local_rank)
+
+            for i in tqdm(range(self.OPTIMIZATION.batch_size)):
+                images_canvas = sefa.apply_sefa(generator=generator,
+                                                backbone=self.MODEL.backbone,
+                                                z=zs[i],
+                                                fake_label=fake_labels[i],
+                                                num_semantic_axis=num_rows,
+                                                maximum_variations=maximum_variations,
+                                                num_cols=num_cols)
+
+                misc.plot_img_canvas(images=(images_canvas.detach().cpu()+1)/2,
+                                     save_path=join(self.RUN.save_dir, "figures/{run_name}/{idx}_sefa_images.png".\
+                                                    format(idx=i, run_name=self.run_name)),
+                                     num_cols=num_cols,
+                                     logger=self.logger,
+                                     logging=False)
+
+        if self.global_rank == 0 and self.logger:
+            print("Save figures to {}/*_sefa_images.png".format(join(self.RUN.save_dir, "figures", self.run_name)))
+
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
+
+    # -----------------------------------------------------------------------------
+    # compute classifier accuracy score (CAS) to identify class-conditional precision and recall
+    # -----------------------------------------------------------------------------
+    def compute_GAN_train_or_test_classifier_accuracy_score(self, GAN_train=False, GAN_test=False):
+        assert GAN_train*GAN_test == 0, "cannot conduct GAN_train and GAN_test togather."
+        if self.global_rank == 0:
+            if GAN_train:
+                phase, metric = "train", "recall"
+            else:
+                phase, metric = "test", "precision"
+            self.logger.info("compute GAN_{phase} Classifier Accuracy Score (CAS) to identify class-conditional {metric}.". \
+                             format(phase=phase, metric=metric))
+
+        if self.gen_ctlr.standing_statistics:
+            self.gen_ctlr.std_stat_counter += 1
+
+        misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
+        generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+
+        best_top1, best_top5, cas_setting = 0.0, 0.0, self.MISC.cas_setting[self.DATA.name]
+        model = resnet.ResNet(dataset=self.DATA.name,
+                              depth=cas_setting["depth"],
+                              num_classes=self.DATA.num_classes,
+                              bottleneck=cas_setting["bottleneck"]).to("cuda")
+
+        optimizer = torch.optim.SGD(params=model.parameters(),
+                                    lr=cas_setting["lr"],
+                                    momentum=cas_setting["momentum"],
+                                    weight_decay=cas_setting["weight_decay"],
+                                    nesterov=True)
+
+        if self.OPTIMIZATION.world_size > 1:
+            model = DataParallel(model, output_device=self.local_rank)
+
+        epoch_trained = 0
+        if self.RUN.ckpt_dir is not None and self.RUN.resume_classifier_train:
+            is_pre_trained_model, mode = ckpt.check_is_pre_trained_model(ckpt_dir=self.RUN.ckpt_dir,
+                                                                         GAN_train=GAN_train,
+                                                                         GAN_test=GAN_test)
+            if is_pre_trained_model:
+                epoch_trained, best_top1, best_top5, best_epoch = ckpt.load_GAN_train_test_model(model=model,
+                                                                                                 mode=mode,
+                                                                                                 optimizer=optimizer,
+                                                                                                 RUN=self.RUN)
+
+        for current_epoch in tqdm(range(epoch_trained, cas_setting["epochs"])):
+            model.train()
+            optimizer.zero_grad()
+            ops.adjust_learning_rate(optimizer=optimizer,
+                                     lr_org=cas_setting["lr"],
+                                     epoch=current_epoch,
+                                     total_epoch=cas_setting["epochs"],
+                                     dataset=self.DATA.name)
+
+            train_top1_acc, train_top5_acc, train_loss = misc.AverageMeter(), misc.AverageMeter(), misc.AverageMeter()
+            for i, (images, labels) in enumerate(self.train_dataloader):
+                if GAN_train:
+                    images, labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                     truncation_factor=self.RUN.truncation_factor,
+                                                                     batch_size=self.OPTIMIZATION.batch_size,
+                                                                     z_dim=self.MODEL.z_dim,
+                                                                     num_classes=self.DATA.num_classes,
+                                                                     y_sampler="totally_random",
+                                                                     radius="N/A",
+                                                                     generator=generator,
+                                                                     discriminator=self.Dis,
+                                                                     is_train=False,
+                                                                     LOSS=self.LOSS,
+                                                                     RUN=self.RUN,
+                                                                     device=self.local_rank,
+                                                                     is_stylegan=self.is_stylegan,
+                                                                     generator_mapping=generator_mapping,
+                                                                     generator_synthesis=generator_synthesis,
+                                                                     style_mixing_p=0.0,
+                                                                     cal_trsp_cost=False)
+                else:
+                    images, labels = images.to(self.local_rank), labels.to(self.local_rank)
+
+                logits = model(images)
+                ce_loss = self.ce_loss(logits, labels)
+
+                train_acc1, train_acc5 = misc.accuracy(logits.data, labels, topk=(1, 5))
+
+                train_loss.update(ce_loss.item(), images.size(0))
+                train_top1_acc.update(train_acc1.item(), images.size(0))
+                train_top5_acc.update(train_acc5.item(), images.size(0))
+
+                ce_loss.backward()
+                optimizer.step()
+
+            valid_acc1, valid_acc5, valid_loss = self.validate_classifier(model=model,
+                                                                          generator=generator,
+                                                                          generator_mapping=generator_mapping,
+                                                                          generator_synthesis=generator_synthesis,
+                                                                          epoch=current_epoch,
+                                                                          GAN_test=GAN_test,
+                                                                          setting=cas_setting)
+
+            is_best = valid_acc1 > best_top1
+            best_top1 = max(valid_acc1, best_top1)
+            if is_best:
+                best_top5, best_epoch = valid_acc5, current_epoch
+                model_ = misc.peel_model(model)
+                states = {"state_dict": model_.state_dict(), "optimizer": optimizer.state_dict(), "epoch": current_epoch+1,
+                          "best_top1": best_top1, "best_top5": best_top5, "best_epoch": best_epoch}
+                misc.save_model_c(states, mode, self.RUN)
+
+            if self.local_rank == 0:
+                self.logger.info("Current best accuracy: Top-1: {top1:.4f}% and Top-5 {top5:.4f}%".format(top1=best_top1, top5=best_top5))
+                self.logger.info("Save model to {}".format(self.RUN.ckpt_dir))
+
+    # -----------------------------------------------------------------------------
+    # validate GAN_train or GAN_test classifier using generated or training dataset
+    # -----------------------------------------------------------------------------
+    def validate_classifier(self,model, generator, generator_mapping, generator_synthesis, epoch, GAN_test, setting):
+        model.eval()
+        valid_top1_acc, valid_top5_acc, valid_loss = misc.AverageMeter(), misc.AverageMeter(), misc.AverageMeter()
+        for i, (images, labels) in enumerate(self.train_dataloader):
+            if GAN_test:
+                images, labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                                                                 truncation_factor=self.RUN.truncation_factor,
+                                                                 batch_size=self.OPTIMIZATION.batch_size,
+                                                                 z_dim=self.MODEL.z_dim,
+                                                                 num_classes=self.DATA.num_classes,
+                                                                 y_sampler="totally_random",
+                                                                 radius="N/A",
+                                                                 generator=generator,
+                                                                 discriminator=self.Dis,
+                                                                 is_train=False,
+                                                                 LOSS=self.LOSS,
+                                                                 RUN=self.RUN,
+                                                                 device=self.local_rank,
+                                                                 is_stylegan=self.is_stylegan,
+                                                                 generator_mapping=generator_mapping,
+                                                                 generator_synthesis=generator_synthesis,
+                                                                 style_mixing_p=0.0,
+                                                                 cal_trsp_cost=False)
+            else:
+                images, labels = images.to(self.local_rank), labels.to(self.local_rank)
+
+            output = model(images)
+            ce_loss = self.ce_loss(output, labels)
+
+            valid_acc1, valid_acc5 = misc.accuracy(output.data, labels, topk=(1, 5))
+
+            valid_loss.update(ce_loss.item(), images.size(0))
+            valid_top1_acc.update(valid_acc1.item(), images.size(0))
+            valid_top5_acc.update(valid_acc5.item(), images.size(0))
+
+        if self.local_rank == 0:
+            self.logger.info("Top 1-acc {top1.val:.4f} ({top1.avg:.4f})\t"
+                             "Top 5-acc {top5.val:.4f} ({top5.avg:.4f})".format(top1=valid_top1_acc, top5=valid_top5_acc))
+        return valid_top1_acc.avg, valid_top5_acc.avg, valid_loss.avg

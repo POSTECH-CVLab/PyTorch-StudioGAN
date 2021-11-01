@@ -4,139 +4,58 @@
 
 # src/utils/misc.py
 
-
-import numpy as np
+from os.path import dirname, exists, join, isfile
+from datetime import datetime
+from collections import defaultdict
 import random
 import math
 import os
 import sys
-import shutil
+import glob
 import warnings
-import seaborn as sns
-import matplotlib.pyplot as plt
-from os.path import dirname, abspath, exists, join
-from scipy import linalg
-from datetime import datetime
-from tqdm import tqdm
+
+from torch.nn import DataParallel
+from torchvision.datasets import CIFAR10, CIFAR100
+from torch.nn.parallel import DistributedDataParallel
+from torchvision.utils import save_image
 from itertools import chain
-from collections import defaultdict
-
-from metrics.FID import generate_images
-from utils.sample import sample_latents
-from utils.losses import latent_optimise
-
+from tqdm import tqdm
+from scipy import linalg
 import torch
 import torch.nn.functional as F
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from torch.nn import DataParallel
-from torch.nn.parallel import DistributedDataParallel
-from torchvision.utils import save_image
+import shutil
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
+import utils.sample as sample
+import utils.losses as losses
+import utils.ckpt as ckpt
+
+
+class make_empty_object(object):
+    pass
 
 
 class dummy_context_mgr():
     def __enter__(self):
         return None
+
     def __exit__(self, exc_type, exc_value, traceback):
         return False
 
 
-class Adaptive_Augment(object):
-    def __init__(self, prev_ada_p, ada_target, ada_length, batch_size, rank):
-        self.prev_ada_p = prev_ada_p
-        self.ada_target = ada_target
-        self.ada_length = ada_length
-        self.batch_size = batch_size
-        self.rank = rank
+class SaveOutput:
+    def __init__(self):
+        self.outputs = []
 
-        self.ada_aug_step = self.ada_target/self.ada_length
+    def __call__(self, module, module_input):
+        self.outputs.append(module_input)
 
-
-    def initialize(self):
-        self.ada_augment = torch.tensor([0.0, 0.0], device = self.rank)
-        if self.prev_ada_p is not None:
-            self.ada_aug_p = self.prev_ada_p
-        else:
-            self.ada_aug_p = 0.0
-        return self.ada_aug_p
-
-
-    def update(self, logits):
-        ada_aug_data = torch.tensor((torch.sign(logits).sum().item(), logits.shape[0]), device=self.rank)
-        self.ada_augment += ada_aug_data
-        if self.ada_augment[1] > (self.batch_size*4 - 1):
-            authen_out_signs, num_outputs = self.ada_augment.tolist()
-            r_t_stat = authen_out_signs/num_outputs
-            sign = 1 if r_t_stat > self.ada_target else -1
-            self.ada_aug_p += sign*self.ada_aug_step*num_outputs
-            self.ada_aug_p = min(1.0, max(0.0, self.ada_aug_p))
-            self.ada_augment.mul_(0.0)
-        return self.ada_aug_p
-
-
-def flatten_dict(init_dict):
-    res_dict = {}
-    if type(init_dict) is not dict:
-        return res_dict
-
-    for k, v in init_dict.items():
-        if type(v) == dict:
-            res_dict.update(flatten_dict(v))
-        else:
-            res_dict[k] = v
-    return res_dict
-
-
-def setattr_cls_from_kwargs(cls, kwargs):
-    kwargs = flatten_dict(kwargs)
-    for key in kwargs.keys():
-        value = kwargs[key]
-        setattr(cls, key, value)
-
-
-def dict2clsattr(train_configs, model_configs):
-    cfgs = {}
-    for k, v in chain(train_configs.items(), model_configs.items()):
-        cfgs[k] = v
-
-    class cfg_container: pass
-    cfg_container.train_configs = train_configs
-    cfg_container.model_configs = model_configs
-    setattr_cls_from_kwargs(cfg_container, cfgs)
-    return cfg_container
-
-
-# fix python, numpy, torch seed
-def fix_all_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.cuda.manual_seed(seed)
-
-
-def setup(rank, world_size, backend="nccl"):
-    if sys.platform == 'win32':
-        # Distributed package only covers collective communications with Gloo
-        # backend and FileStore on Windows platform. Set init_method parameter
-        # in init_process_group to a local file.
-        # Example init_method="file:///f:/libtmp/some_file"
-        init_method="file:///{your local file path}"
-
-        # initialize the process group
-        dist.init_process_group(
-            backend,
-            init_method=init_method,
-            rank=rank,
-            world_size=world_size
-        )
-    else:
-        # initialize the process group
-        dist.init_process_group(backend,
-                                init_method="tcp://%s:%s" % (os.environ['MASTER_ADDR'], os.environ['MASTER_PORT']),
-                                rank=rank,
-                                world_size=world_size)
+    def clear(self):
+        self.outputs = []
 
 
 class GatherLayer(torch.autograd.Function):
@@ -160,122 +79,180 @@ class GatherLayer(torch.autograd.Function):
         return grad_out
 
 
+class GeneratorController(object):
+    def __init__(self, generator, generator_mapping, generator_synthesis, batch_statistics, standing_statistics,
+                 standing_max_batch, standing_step, cfgs, device, global_rank, logger, std_stat_counter):
+        self.generator = generator
+        self.generator_mapping = generator_mapping
+        self.generator_synthesis = generator_synthesis
+        self.batch_statistics = batch_statistics
+        self.standing_statistics = standing_statistics
+        self.standing_max_batch = standing_max_batch
+        self.standing_step = standing_step
+        self.cfgs = cfgs
+        self.device = device
+        self.global_rank = global_rank
+        self.logger = logger
+        self.std_stat_counter = std_stat_counter
+
+    def prepare_generator(self):
+        if self.standing_statistics:
+            if self.std_stat_counter > 1:
+                self.generator.eval()
+                self.generator.apply(set_deterministic_op_trainable)
+            else:
+                self.generator.train()
+                apply_standing_statistics(generator=self.generator,
+                                          standing_max_batch=self.standing_max_batch,
+                                          standing_step=self.standing_step,
+                                          DATA=self.cfgs.DATA,
+                                          MODEL=self.cfgs.MODEL,
+                                          LOSS=self.cfgs.LOSS,
+                                          OPTIMIZATION=self.cfgs.OPTIMIZATION,
+                                          RUN=self.cfgs.RUN,
+                                          STYLEGAN2=self.cfgs.STYLEGAN2,
+                                          device=self.device,
+                                          global_rank=self.global_rank,
+                                          logger=self.logger)
+                self.generator.eval()
+                self.generator.apply(set_deterministic_op_trainable)
+        else:
+            self.generator.eval()
+            if self.batch_statistics:
+                self.generator.apply(set_bn_trainable)
+                self.generator.apply(untrack_bn_statistics)
+            self.generator.apply(set_deterministic_op_trainable)
+        return self.generator, self.generator_mapping, self.generator_synthesis
+
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
+def accuracy(output, target, topk=(1,)):
+    """Computes the precision@k for the specified values of k"""
+    maxk = max(topk)
+    batch_size = target.size(0)
+
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+    res = []
+    for k in topk:
+        correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+        wrong_k = batch_size - correct_k
+        res.append(100 - wrong_k.mul_(100.0 / batch_size))
+    return res
+
+
+def prepare_folder(names, save_dir):
+    for name in names:
+        folder_path = join(save_dir, name)
+        if not exists(folder_path):
+            os.makedirs(folder_path)
+
+
+def download_data_if_possible(data_name, data_dir):
+    if data_name == "CIFAR10":
+        data = CIFAR10(root=data_dir, train=True, download=True)
+    elif data_name == "CIFAR100":
+        data = CIFAR100(root=data_dir, train=True, download=True)
+
+
+def fix_seed(seed):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)
+
+
+def setup(rank, world_size, backend="nccl"):
+    if sys.platform == "win32":
+        # Distributed package only covers collective communications with Gloo
+        # backend and FileStore on Windows platform. Set init_method parameter
+        # in init_process_group to a local file.
+        # Example init_method="file:///f:/libtmp/some_file"
+        init_method = "file:///{your local file path}"
+
+        # initialize the process group
+        dist.init_process_group(backend, init_method=init_method, rank=rank, world_size=world_size)
+    else:
+        # initialize the process group
+        dist.init_process_group(backend,
+                                init_method="tcp://%s:%s" % (os.environ["MASTER_ADDR"], os.environ["MASTER_PORT"]),
+                                rank=rank,
+                                world_size=world_size)
+
+
 def cleanup():
     dist.destroy_process_group()
 
 
 def count_parameters(module):
-    return 'Number of parameters: {}'.format(sum([p.data.nelement() for p in module.parameters()]))
+    return "Number of parameters: {num}".format(num=sum([p.data.nelement() for p in module.parameters()]))
 
 
-def define_sampler(dataset_name, conditional_strategy, batch_size, num_classes):
-    if conditional_strategy != "no":
-        if dataset_name == "cifar10" or batch_size >= num_classes*8:
-            sampler = "class_order_all"
-        else:
-            sampler = "class_order_some"
-    else:
-        sampler = "default"
-    return sampler
-
-
-def check_flags(train_configs, model_configs, n_gpus):
-    if model_configs['train']['model']['architecture'] == "dcgan":
-        assert model_configs['data_processing']['img_size'] == 32, "Sry,\
-            StudioGAN does not support dcgan models for generation of images larger than 32 resolution."
-
-    if train_configs['freeze_layers'] > -1:
-        assert train_configs['checkpoint_folder'] is not None,\
-            "Freezing discriminator needs a pre-trained model."
-
-    if train_configs['distributed_data_parallel']:
-        msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, and tsne analysis with DDP. " +\
-            "Please change DDP with a single GPU training or DataParallel instead."
-        assert train_configs['image_visualization'] + train_configs['k_nearest_neighbor'] + train_configs['interpolation'] +\
-            train_configs['frequency_analysis'] + train_configs['tsne_analysis'] == 0, msg
-
-    if model_configs['train']['model']['conditional_strategy'] in ["NT_Xent_GAN", "Proxy_NCA_GAN", "ContraGAN"]:
-        assert not train_configs['distributed_data_parallel'], \
-        "StudioGAN does not support DDP training for NT_Xent_GAN, Proxy_NCA_GAN, and ContraGAN"
-
-    if train_configs['train']*train_configs['standing_statistics']:
-        print("When training, StudioGAN does not apply standing_statistics for evaluation. " + \
-              "After training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained model")
-
-    if model_configs['train']['model']['conditional_strategy'] == "ContraGAN":
-        assert model_configs['train']['loss_function']['tempering_type'] == "constant" or \
-            model_configs['train']['loss_function']['tempering_type'] == "continuous" or \
-            model_configs['train']['loss_function']['tempering_type'] == "discrete", \
-            "Tempering_type should be one of constant, continuous, or discrete."
-
-    if model_configs['train']['model']['pos_collected_numerator']:
-        assert model_configs['train']['model']['conditional_strategy'] == "ContraGAN", \
-            "Pos_collected_numerator option is not appliable except for ContraGAN."
-
-    if train_configs['distributed_data_parallel']:
-        msg = 'Evaluation results of the image generation with DDP are not exact. ' + \
-            'Please use a single GPU training mode or DataParallel for exact evluation.'
-        warnings.warn(msg)
-
-    if model_configs['data_processing']['dataset_name'] == 'cifar10':
-        assert train_configs['eval_type'] in ['train', 'test'], "Cifar10 does not contain dataset for validation."
-
-    if train_configs['interpolation']:
-        assert model_configs['train']['model']['architecture'] in ["big_resnet", "biggan_deep"],\
-            "StudioGAN does not support interpolation analysis except for biggan and biggan_deep."
-
-    assert train_configs['bn_stat_OnTheFly']*train_configs['standing_statistics'] == 0, \
-        "You can't turn on train_statistics for bn layers and standing_statistics simultaneously."
-
-    assert model_configs['train']['optimization']['batch_size'] % n_gpus == 0, \
-        "Batch_size should be divided by the number of gpus."
-
-    assert int(model_configs['train']['augmentation']['diff_aug']) * \
-        int(model_configs['train']['augmentation']['ada']) == 0, \
-        "You can't simultaneously apply Differentiable Augmentation (DiffAug) and Adaptive Discriminator Augmentation (ADA)."
-
-    assert int(train_configs['mixed_precision'])*int(model_configs['train']['loss_function']['gradient_penalty_for_dis']) == 0, \
-        "You can't simultaneously apply mixed precision training (mpc) and Gradient Penalty for WGAN-GP."
-
-    assert int(train_configs['mixed_precision'])*int(model_configs['train']['loss_function']['deep_regret_analysis_for_dis']) == 0, \
-        "You can't simultaneously apply mixed precision training (mpc) and Deep Regret Analysis for DRAGAN."
-
-    assert int(model_configs['train']['loss_function']['cr'])*int(model_configs['train']['loss_function']['bcr']) == 0 and \
-        int(model_configs['train']['loss_function']['cr'])*int(model_configs['train']['loss_function']['zcr']) == 0, \
-        "You can't simultaneously turn on Consistency Reg. (CR) and Improved Consistency Reg. (ICR)."
-
-    assert int(model_configs['train']['loss_function']['gradient_penalty_for_dis'])* \
-    int(model_configs['train']['loss_function']['deep_regret_analysis_for_dis']) == 0, \
-        "You can't simultaneously apply Gradient Penalty (GP) and Deep Regret Analysis (DRA)."
-
-
-# Convenience utility to switch off requires_grad
-def toggle_grad(model, on, freeze_layers=-1):
-    try:
-        if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
-            num_blocks = len(model.module.in_dims)
-        else:
-            num_blocks = len(model.in_dims)
-
-        assert freeze_layers < num_blocks,\
-            "can't not freeze the {fl}th block > total {nb} blocks.".format(fl=freeze_layers, nb=num_blocks)
-
-        if freeze_layers == -1:
-            for name, param in model.named_parameters():
-                param.requires_grad = on
-        else:
-            for name, param in model.named_parameters():
-                param.requires_grad = on
-                for layer in range(freeze_layers):
-                    block = "blocks.{layer}".format(layer=layer)
-                    if block in name:
-                        param.requires_grad = False
-    except:
+def toggle_grad(model, grad, num_freeze_layers=-1, is_stylegan=False):
+    model = peel_model(model)
+    if is_stylegan:
         for name, param in model.named_parameters():
-            param.requires_grad = on
+            param.requires_grad = grad
+    else:
+        num_blocks = len(model.in_dims)
+        assert num_freeze_layers < num_blocks,\
+            "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
+                                                                          nb=num_blocks)
+
+        if num_freeze_layers == -1:
+            for name, param in model.named_parameters():
+                param.requires_grad = grad
+        else:
+            assert grad, "cannot freeze the model when grad is False"
+            for name, param in model.named_parameters():
+                param.requires_grad = True
+                for layer in range(num_freeze_layers):
+                    block_name = "blocks.{layer}".format(layer=layer)
+                    if block_name in name:
+                        param.requires_grad = False
 
 
-def set_bn_train(m):
+def load_log_dicts(directory, file_name, ph):
+    try:
+        log_dict = ckpt.load_prev_dict(directory=directory, file_name=file_name)
+    except:
+        log_dict = ph
+    return log_dict
+
+
+def make_model_require_grad(model):
+    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
+        model = model.module
+
+    for name, param in model.named_parameters():
+        param.requires_grad = True
+
+
+def identity(x):
+    return x
+
+
+def set_bn_trainable(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.train()
 
@@ -290,21 +267,18 @@ def track_bn_statistics(m):
         m.track_running_stats = True
 
 
-def set_deterministic_op_train(m):
+def set_deterministic_op_trainable(m):
     if isinstance(m, torch.nn.modules.conv.Conv2d):
         m.train()
-
     if isinstance(m, torch.nn.modules.conv.ConvTranspose2d):
         m.train()
-
     if isinstance(m, torch.nn.modules.linear.Linear):
         m.train()
-
     if isinstance(m, torch.nn.modules.Embedding):
         m.train()
 
 
-def reset_bn_stat(m):
+def reset_bn_statistics(m):
     if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
         m.reset_running_stats()
 
@@ -312,17 +286,128 @@ def reset_bn_stat(m):
 def elapsed_time(start_time):
     now = datetime.now()
     elapsed = now - start_time
-    return str(elapsed).split('.')[0]  # remove milliseconds
+    return str(elapsed).split(".")[0]  # remove milliseconds
 
 
 def reshape_weight_to_matrix(weight):
     weight_mat = weight
-    dim =0
+    dim = 0
     if dim != 0:
-        # permute dim to front
         weight_mat = weight_mat.permute(dim, *[d for d in range(weight_mat.dim()) if d != dim])
     height = weight_mat.size(0)
     return weight_mat.reshape(height, -1)
+
+
+def calculate_all_sn(model, prefix):
+    sigmas = {}
+    with torch.no_grad():
+        for name, param in model.named_parameters():
+            operations = model
+            if "weight_orig" in name:
+                splited_name = name.split(".")
+                for name_element in splited_name[:-1]:
+                    operations = getattr(operations, name_element)
+                weight_orig = reshape_weight_to_matrix(operations.weight_orig)
+                weight_u = operations.weight_u
+                weight_v = operations.weight_v
+                sigmas[prefix + "_" + name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v)).item()
+    return sigmas
+
+
+def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN, STYLEGAN2,
+                              device, global_rank, logger):
+    generator.train()
+    generator.apply(reset_bn_statistics)
+    if global_rank == 0:
+        logger.info("Acuumulate statistics of batchnorm layers to improve generation performance.")
+    for i in tqdm(range(standing_step)):
+        batch_size_per_gpu = standing_max_batch // OPTIMIZATION.world_size
+        if RUN.distributed_data_parallel:
+            rand_batch_size = random.randint(1, batch_size_per_gpu)
+        else:
+            rand_batch_size = random.randint(1, batch_size_per_gpu) * OPTIMIZATION.world_size
+        fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
+                                                                   truncation_factor=-1,
+                                                                   batch_size=rand_batch_size,
+                                                                   z_dim=MODEL.z_dim,
+                                                                   num_classes=DATA.num_classes,
+                                                                   y_sampler="totally_random",
+                                                                   radius="N/A",
+                                                                   generator=generator,
+                                                                   discriminator=None,
+                                                                   is_train=True,
+                                                                   LOSS=LOSS,
+                                                                   RUN=RUN,
+                                                                   is_stylegan=MODEL.backbone=="stylegan2",
+                                                                   generator_mapping=None,
+                                                                   generator_synthesis=None,
+                                                                   style_mixing_p=0.0,
+                                                                   device=device,
+                                                                   cal_trsp_cost=False)
+    generator.eval()
+
+
+def make_GAN_trainable(Gen, Gen_ema, Dis):
+    Gen.train()
+    Gen.apply(track_bn_statistics)
+    if Gen_ema is not None:
+        Gen_ema.train()
+        Gen_ema.apply(track_bn_statistics)
+
+    Dis.train()
+    Dis.apply(track_bn_statistics)
+
+
+def make_GAN_untrainable(Gen, Gen_ema, Dis):
+    Gen.eval()
+    Gen.apply(set_deterministic_op_trainable)
+    if Gen_ema is not None:
+        Gen_ema.eval()
+        Gen_ema.apply(set_deterministic_op_trainable)
+
+    Dis.eval()
+    Dis.apply(set_deterministic_op_trainable)
+
+
+def peel_models(Gen, Gen_ema, Dis):
+    if isinstance(Dis, DataParallel) or isinstance(Dis, DistributedDataParallel):
+        dis = Dis.module
+    else:
+        dis = Dis
+
+    if isinstance(Gen, DataParallel) or isinstance(Gen, DistributedDataParallel):
+        gen = Gen.module
+    else:
+        gen = Gen
+
+    if Gen_ema is not None:
+        if isinstance(Gen_ema, DataParallel) or isinstance(Gen_ema, DistributedDataParallel):
+            gen_ema = Gen_ema.module
+        else:
+            gen_ema = Gen_ema
+    else:
+        gen_ema = None
+    return gen, gen_ema, dis
+
+
+def peel_model(model):
+    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
+        model = model.module
+    return model
+
+
+def save_model(model, when, step, ckpt_dir, states):
+    model_tpl = "model={model}-{when}-weights-step={step}.pth"
+    model_ckpt_list = glob.glob(join(ckpt_dir, model_tpl.format(model=model, when=when, step="*")))
+    if len(model_ckpt_list) > 0:
+        find_and_remove(model_ckpt_list[0])
+
+    torch.save(states, join(ckpt_dir, model_tpl.format(model=model, when=when, step=step)))
+
+
+def save_model_c(states, mode, RUN):
+    ckpt_path = join(RUN.ckpt_dir, "model=C-{mode}-best-weights.pth".format(mode=mode))
+    torch.save(states, ckpt_path)
 
 
 def find_string(list_, string):
@@ -332,117 +417,28 @@ def find_string(list_, string):
 
 
 def find_and_remove(path):
-    if os.path.isfile(path):
+    if isfile(path):
         os.remove(path)
 
 
-def calculate_all_sn(model):
-    sigmas = {}
-    with torch.no_grad():
-        for name, param in model.named_parameters():
-            if "weight" in name and "bn" not in name and "shared" not in name and "deconv" not in name:
-                if "blocks" in name:
-                    splited_name = name.split('.')
-                    idx = find_string(splited_name, 'blocks')
-                    block_idx = int(splited_name[int(idx+1)])
-                    module_idx = int(splited_name[int(idx+2)])
-                    operation_name = splited_name[idx+3]
-                    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
-                        operations = model.module.blocks[block_idx][module_idx]
-                    else:
-                        operations = model.blocks[block_idx][module_idx]
-                    operation = getattr(operations, operation_name)
-                else:
-                    splited_name = name.split('.')
-                    idx = find_string(splited_name, 'module') if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel) else -1
-                    operation_name = splited_name[idx+1]
-                    if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
-                        operation = getattr(model.module, operation_name)
-                    else:
-                        operation = getattr(model, operation_name)
-
-                weight_orig = reshape_weight_to_matrix(operation.weight_orig)
-                weight_u = operation.weight_u
-                weight_v = operation.weight_v
-                sigmas[name] = torch.dot(weight_u, torch.mv(weight_orig, weight_v))
-    return sigmas
-
-
-def apply_accumulate_stat(generator, acml_step, prior, batch_size, z_dim, num_classes, device):
-    generator.train()
-    generator.apply(reset_bn_stat)
-    for i in range(acml_step):
-        new_batch_size = random.randint(1, batch_size)
-        z, fake_labels = sample_latents(prior, new_batch_size, z_dim, -1.0, num_classes, None, device)
-        generated_images = generator(z, fake_labels)
-    generator.eval()
-
-
-def change_generator_mode(gen, gen_copy, bn_stat_OnTheFly, standing_statistics, standing_step,
-                          prior, batch_size, z_dim, num_classes, device, training, counter):
-    gen_tmp = gen if gen_copy is None else gen_copy
-
-    if training:
-        gen.train()
-        gen_tmp.train()
-        gen_tmp.apply(track_bn_statistics)
-        return gen_tmp
-
-    if standing_statistics:
-        if counter > 1:
-            gen_tmp.eval()
-            gen_tmp.apply(set_deterministic_op_train)
-        else:
-            gen_tmp.train()
-            apply_accumulate_stat(gen_tmp, standing_step, prior, batch_size, z_dim, num_classes, device)
-            gen_tmp.eval()
-            gen_tmp.apply(set_deterministic_op_train)
-    else:
-        gen_tmp.eval()
-        if bn_stat_OnTheFly:
-            gen_tmp.apply(set_bn_train)
-            gen_tmp.apply(untrack_bn_statistics)
-        gen_tmp.apply(set_deterministic_op_train)
-    return gen_tmp
-
-
-def plot_img_canvas(images, save_path, nrow, logger, logging=True):
-    if logger is None: logging = False
+def plot_img_canvas(images, save_path, num_cols, logger, logging=True):
+    if logger is None:
+        logging = False
     directory = dirname(save_path)
 
-    if not exists(abspath(directory)):
+    if not exists(directory):
         os.makedirs(directory)
 
-    save_image(images, save_path, padding=0, nrow=nrow)
-    if logging: logger.info("Saved image to {}".format(save_path))
+    save_image(images, save_path, padding=0, nrow=num_cols)
+    if logging:
+        logger.info("Save image canvas to {}".format(save_path))
 
 
-def plot_pr_curve(precision, recall, run_name, logger, logging=True):
-    if logger is None: logging=False
-    directory = join('./figures', run_name)
+def plot_spectrum_image(real_spectrum, fake_spectrum, directory, logger, logging=True):
+    if logger is None:
+        logging = False
 
-    if not exists(abspath(directory)):
-        os.makedirs(directory)
-
-    save_path = join(directory, "pr_curve.png")
-
-    fig, ax = plt.subplots()
-    ax.plot([0, 1], [0, 1], linestyle='--')
-    ax.plot(recall, precision)
-    ax.grid(True)
-    ax.set_xlabel('Recall (Higher is better)', fontsize=15)
-    ax.set_ylabel('Precision (Higher is better)', fontsize=15)
-    fig.tight_layout()
-    fig.savefig(save_path)
-    if logging: logger.info("Save image to {}".format(save_path))
-    return fig
-
-
-def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, logging=True):
-    if logger is None: logging=False
-    directory = join('./figures', run_name)
-
-    if not exists(abspath(directory)):
+    if not exists(directory):
         os.makedirs(directory)
 
     save_path = join(directory, "dfft_spectrum.png")
@@ -451,103 +447,85 @@ def plot_spectrum_image(real_spectrum, fake_spectrum, run_name, logger, logging=
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
 
-    ax1.imshow(real_spectrum, cmap='viridis')
+    ax1.imshow(real_spectrum, cmap="viridis")
     ax1.set_title("Spectrum of real images")
 
-    ax2.imshow(fake_spectrum, cmap='viridis')
+    ax2.imshow(fake_spectrum, cmap="viridis")
     ax2.set_title("Spectrum of fake images")
     fig.savefig(save_path)
-    if logging: logger.info("Save image to {}".format(save_path))
+    if logging:
+        logger.info("Save image to {}".format(save_path))
 
 
-def plot_tsne_scatter_plot(df, tsne_results, flag, run_name, logger, logging=True):
-    if logger is None: logging=False
-    directory = join('./figures', run_name, flag)
+def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=True):
+    if logger is None:
+        logging = False
 
-    if not exists(abspath(directory)):
+    if not exists(directory):
         os.makedirs(directory)
 
-    save_path = join(directory, "tsne_scatter.png")
+    save_path = join(directory, "tsne_scatter_{flag}.png".format(flag=flag))
 
-    df['tsne-2d-one'] = tsne_results[:,0]
-    df['tsne-2d-two'] = tsne_results[:,1]
-    plt.figure(figsize=(16,10))
-    sns.scatterplot(
-        x="tsne-2d-one", y="tsne-2d-two",
-        hue="labels",
-        palette=sns.color_palette("hls", 10),
-        data=df,
-        legend="full",
-        alpha=0.5
-    ).legend(fontsize = 15, loc ='upper right')
+    df["tsne-2d-one"] = tsne_results[:, 0]
+    df["tsne-2d-two"] = tsne_results[:, 1]
+    plt.figure(figsize=(16, 10))
+    sns.scatterplot(x="tsne-2d-one",
+                    y="tsne-2d-two",
+                    hue="labels",
+                    palette=sns.color_palette("hls", 10),
+                    data=df,
+                    legend="full",
+                    alpha=0.5).legend(fontsize=15, loc="upper right")
     plt.title("TSNE result of {flag} images".format(flag=flag), fontsize=25)
-    plt.xlabel('', fontsize=7)
-    plt.ylabel('', fontsize=7)
+    plt.xlabel("", fontsize=7)
+    plt.ylabel("", fontsize=7)
     plt.savefig(save_path)
-    if logging: logger.info("Save image to {}".format(save_path))
+    if logging:
+        logger.info("Save image to {path}".format(path=save_path))
 
 
-def plot_sim_heatmap(similarity, xlabels, ylabels, run_name, logger, logging=True):
-    if logger is None: logging=False
-    directory = join('./figures', run_name)
-
-    if not exists(abspath(directory)):
-        os.makedirs(directory)
-
-    save_path = join(directory, "sim_heatmap.png")
-
-    sns.set(style="white")
-    fig, ax = plt.subplots(figsize=(18, 18))
-    cmap = sns.diverging_palette(220, 20, as_cmap=True)
-    # Generate a mask for the upper triangle
-    mask = np.zeros_like(similarity, dtype=np.bool)
-    mask[np.triu_indices_from(mask, k=1)] = True
-
-
-    # Draw the heatmap with the mask and correct aspect ratio
-    sns.heatmap(similarity, mask=mask, cmap=cmap, center=0.5,
-            xticklabels=xlabels, yticklabels=ylabels,
-            square=True, linewidths=.5, fmt='.2f',
-            annot=True, cbar_kws={"shrink": .5}, vmax=1)
-
-    ax.set_title("Heatmap of cosine similarity scores").set_fontsize(15)
-    ax.set_xlabel("")
-    ax.set_ylabel("")
-
-    fig.savefig(save_path)
-    if logging: logger.info("Save image to {}".format(save_path))
-    return fig
-
-
-def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
-                    truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
-    if is_generate is True:
-        batch_size = data_loader.batch_size
-        n_batches = math.ceil(float(num_samples) / float(batch_size))
+def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
+                    truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
+                    directory, device):
+    num_batches = math.ceil(float(num_images) / float(batch_size))
+    if is_generate:
+        image_type = "fake"
     else:
-        batch_size = data_loader.batch_size
-        total_instance = len(data_loader.dataset)
-        n_batches = math.ceil(float(num_samples) / float(batch_size))
+        image_type = "real"
         data_iter = iter(data_loader)
 
-    data_iter = iter(data_loader)
-    type = "fake" if is_generate is True else "real"
-    print("Save {num_samples} {type} images in npz format....".format(num_samples=num_samples, type=type))
+    print("Save {num_images} {image_type} images in npz format.".format(num_images=num_images, image_type=image_type))
 
-    directory = join('./samples', run_name, type, "npz")
-    if exists(abspath(directory)):
-        shutil.rmtree(abspath(directory))
+    directory = join(directory, image_type, "npz")
+    if exists(directory):
+        shutil.rmtree(directory)
     os.makedirs(directory)
 
     x = []
     y = []
-    with torch.no_grad() if latent_op is False else dummy_context_mgr() as mpc:
-        for i in tqdm(range(0, n_batches), disable=False):
-            start = i*batch_size
+    with torch.no_grad() if not LOSS.apply_lo else dummy_context_mgr() as mpc:
+        for i in tqdm(range(0, num_batches)):
+            start = i * batch_size
             end = start + batch_size
             if is_generate:
-                images, labels = generate_images(batch_size, generator, discriminator, truncated_factor, prior, latent_op,
-                                             latent_op_step, latent_op_alpha, latent_op_beta,  device)
+                images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
+                                                                 truncation_factor=truncation_factor,
+                                                                 batch_size=batch_size,
+                                                                 z_dim=z_dim,
+                                                                 num_classes=num_classes,
+                                                                 y_sampler=y_sampler,
+                                                                 radius="N/A",
+                                                                 generator=generator,
+                                                                 discriminator=discriminator,
+                                                                 is_train=False,
+                                                                 LOSS=LOSS,
+                                                                 RUN=RUN,
+                                                                 is_stylegan=is_stylegan,
+                                                                 generator_mapping=generator_mapping,
+                                                                 generator_synthesis=generator_synthesis,
+                                                                 style_mixing_p=0.0,
+                                                                 device=device,
+                                                                 cal_trsp_cost=False)
             else:
                 try:
                     images, labels = next(data_iter)
@@ -556,43 +534,57 @@ def save_images_npz(run_name, data_loader, num_samples, num_classes, generator, 
 
             x += [np.uint8(255 * (images.detach().cpu().numpy() + 1) / 2.)]
             y += [labels.detach().cpu().numpy()]
-    x = np.concatenate(x, 0)[:num_samples]
-    y = np.concatenate(y, 0)[:num_samples]
-    print('Images shape: %s, Labels shape: %s' % (x.shape, y.shape))
+
+    x = np.concatenate(x, 0)[:num_images]
+    y = np.concatenate(y, 0)[:num_images]
+    print("Images shape: {image_shape}, Labels shape: {label_shape}".format(image_shape=x.shape, label_shape=y.shape))
     npz_filename = join(directory, "samples.npz")
-    print('Saving npz to %s' % npz_filename)
-    np.savez(npz_filename, **{'x' : x, 'y' : y})
+    print("Finish saving npz to {file_name}".format(file_name=npz_filename))
+    np.savez(npz_filename, **{"x": x, "y": y})
 
 
-def save_images_png(run_name, data_loader, num_samples, num_classes, generator, discriminator, is_generate,
-                    truncated_factor,  prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
-    if is_generate is True:
-        batch_size = data_loader.batch_size
-        n_batches = math.ceil(float(num_samples) / float(batch_size))
+def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
+                    truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
+                    directory, device):
+    num_batches = math.ceil(float(num_images) / float(batch_size))
+    if is_generate:
+        image_type = "fake"
     else:
-        batch_size = data_loader.batch_size
-        total_instance = len(data_loader.dataset)
-        n_batches = math.ceil(float(num_samples) / float(batch_size))
+        image_type = "real"
         data_iter = iter(data_loader)
 
-    data_iter = iter(data_loader)
-    type = "fake" if is_generate is True else "real"
-    print("Save {num_samples} {type} images in png format....".format(num_samples=num_samples, type=type))
+    print("Save {num_images} {image_type} images in png format.".format(num_images=num_images, image_type=image_type))
 
-    directory = join('./samples', run_name, type, "png")
-    if exists(abspath(directory)):
-        shutil.rmtree(abspath(directory))
+    directory = join(directory, image_type, "png")
+    if exists(directory):
+        shutil.rmtree(directory)
     os.makedirs(directory)
     for f in range(num_classes):
         os.makedirs(join(directory, str(f)))
 
-    with torch.no_grad() if latent_op is False else dummy_context_mgr() as mpc:
-        for i in tqdm(range(0, n_batches), disable=False):
-            start = i*batch_size
+    with torch.no_grad() if not LOSS.apply_lo else dummy_context_mgr() as mpc:
+        for i in tqdm(range(0, num_batches), disable=False):
+            start = i * batch_size
             end = start + batch_size
             if is_generate:
-                images, labels = generate_images(batch_size, generator, discriminator, truncated_factor, prior, latent_op,
-                                             latent_op_step, latent_op_alpha, latent_op_beta,  device)
+                images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
+                                                                 truncation_factor=truncation_factor,
+                                                                 batch_size=batch_size,
+                                                                 z_dim=z_dim,
+                                                                 num_classes=num_classes,
+                                                                 y_sampler=y_sampler,
+                                                                 radius="N/A",
+                                                                 generator=generator,
+                                                                 discriminator=discriminator,
+                                                                 is_train=False,
+                                                                 LOSS=LOSS,
+                                                                 RUN=RUN,
+                                                                 is_stylegan=is_stylegan,
+                                                                 generator_mapping=generator_mapping,
+                                                                 generator_synthesis=generator_synthesis,
+                                                                 style_mixing_p=0.0,
+                                                                 device=device,
+                                                                 cal_trsp_cost=False)
             else:
                 try:
                     images, labels = next(data_iter)
@@ -600,52 +592,90 @@ def save_images_png(run_name, data_loader, num_samples, num_classes, generator, 
                     break
 
             for idx, img in enumerate(images.detach()):
-                if batch_size*i + idx < num_samples:
-                    save_image((img+1)/2, join(directory, str(labels[idx].item()), '{idx}.png'.format(idx=batch_size*i + idx)))
+                if batch_size * i + idx < num_images:
+                    save_image((img + 1) / 2,
+                               join(directory, str(labels[idx].item()), "{idx}.png".format(idx=batch_size * i + idx)))
                 else:
                     pass
-    print('Save png to ./generated_images/%s' % run_name)
+
+    print("Finish saving png images to {directory}/*/*.png".format(directory=directory))
 
 
-def generate_images_for_KNN(batch_size, real_label, gen_model, dis_model, truncated_factor, prior, latent_op, latent_op_step, latent_op_alpha, latent_op_beta, device):
-    if isinstance(gen_model, DataParallel) or isinstance(gen_model, DistributedDataParallel):
-        z_dim = gen_model.module.z_dim
-        num_classes = gen_model.module.num_classes
-        conditional_strategy = dis_model.module.conditional_strategy
-    else:
-        z_dim = gen_model.z_dim
-        num_classes = gen_model.num_classes
-        conditional_strategy = dis_model.conditional_strategy
-
-    zs, fake_labels = sample_latents(prior, batch_size, z_dim, truncated_factor, num_classes, None, device, real_label)
-
-    if latent_op:
-        zs = latent_optimise(zs, fake_labels, gen_model, dis_model, conditional_strategy, latent_op_step, 1.0,
-                            latent_op_alpha, latent_op_beta, False, device)
-
+def orthogonalize_model(model, strength=1e-4, blacklist=[]):
     with torch.no_grad():
-        batch_images = gen_model(zs, fake_labels, evaluation=True)
-
-    return batch_images, list(fake_labels.detach().cpu().numpy())
-
-
-class SaveOutput:
-    def __init__(self):
-        self.outputs = []
-
-    def __call__(self, module, module_input):
-    # def __call__(self, module, module_in, module_out):
-        self.outputs.append(module_input)
-
-    def clear(self):
-        self.outputs = []
+        for param in model.parameters():
+            if len(param.shape) < 2 or any([param is item for item in blacklist]):
+                continue
+            w = param.view(param.shape[0], -1)
+            grad = (2 * torch.mm(torch.mm(w, w.t()) * (1. - torch.eye(w.shape[0], device=w.device)), w))
+            param.grad.data += strength * grad.view(param.shape)
 
 
-def calculate_ortho_reg(m, rank):
-    with torch.enable_grad():
-        reg = 1e-6
-        param_flat = m.view(m.shape[0], -1)
-        sym = torch.mm(param_flat, torch.t(param_flat))
-        sym -= torch.eye(param_flat.shape[0]).to(rank)
-        ortho_loss = reg * sym.abs().sum()
-    return ortho_loss
+def interpolate(x0, x1, num_midpoints):
+    lerp = torch.linspace(0, 1.0, num_midpoints + 2, device="cuda").to(x0.dtype)
+    return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))
+
+
+def accm_values_convert_dict(list_dict, value_dict, step, interval):
+    for name, value_list in list_dict.items():
+        try:
+            value_list[step // interval - 1] = value_dict[name]
+        except IndexError:
+            try:
+                value_list += [value_dict[name]]
+            except:
+                raise KeyError
+
+        list_dict[name] = value_list
+    return list_dict
+
+
+def save_dict_npy(directory, name, dictionary):
+    if not exists(directory):
+        os.makedirs(directory)
+
+    save_path = join(directory, name + ".npy")
+    np.save(save_path, dictionary)
+
+
+def load_ImageNet_label_dict():
+    label_table = open("./src/utils/ImageNet_label.txt", 'r')
+    label_dict, label = {}, 0
+    while True:
+        line = label_table.readline()
+        if not line: break
+        folder = line.split(' ')[0]
+        label_dict[folder] = label
+        label += 1
+    return label_dict
+
+def compute_gradient(fx, logits, label, num_classes):
+    probs = torch.nn.Softmax(dim=1)(logits.detach().cpu())
+    gt_prob = F.one_hot(label, num_classes)
+    oneMp = gt_prob - probs
+    preds = (probs*gt_prob).sum(-1)
+    grad = torch.mean(fx.unsqueeze(1) * oneMp.unsqueeze(2), dim=0)
+    return fx.norm(dim=1), preds, torch.norm(grad, dim=1)
+
+def load_parameters(src, dst, strict=True):
+    mismatch_names = []
+    for dst_key, dst_value in dst.items():
+        if dst_key in src:
+            if dst_value.shape == src[dst_key].shape:
+                dst[dst_key].copy_(src[dst_key])
+            else:
+                mismatch_names.append(dst_key)
+                err = "source tensor {key}({src}) does not match with destination tensor {key}({dst}).".\
+                    format(key=dst_key, src=src[dst_key].shape, dst=dst_value.shape)
+                assert not strict, err
+        else:
+            mismatch_names.append(dst_key)
+            assert not strict, "dst_key is not in src_dict."
+    return mismatch_names
+
+def enable_allreduce(dict_):
+    loss = 0
+    for key, value in dict_.items():
+        if value is not None and key != "label":
+            loss += value.mean()*0
+    return loss

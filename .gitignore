@@ -4,3 +4,8 @@ db.sqlite3
 *.DS_Store
 media/
 res/
+logs/
+.vscode/
+save/
+data/
+wandb/

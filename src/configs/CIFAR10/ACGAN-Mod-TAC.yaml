@@ -1,0 +1,13 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "AC"
+  aux_cls_type: "TAC"
+LOSS:
+  adv_loss: "hinge"
+  cond_lambda: 1.0
+  tac_gen_labmda: 1.0
+  tac_dis_labmda: 1.0

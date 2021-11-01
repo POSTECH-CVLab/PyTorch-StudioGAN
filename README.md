@@ -6,14 +6,15 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
-※ Thank GeorgeBatch for your helpful [ipynb documentations](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/tree/master/colab) on how to use StudioGAN in Colab environment.
-
 #  Features
-- Extensive GAN implementations using PyTorch
-- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets
-- Better performance and lower memory consumption than original implementations
-- Providing pre-trained models that are fully compatible with up-to-date PyTorch environment
-- Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, LARS, Tensorboard Visualization, and other analysis methods
+- Extensive GAN implementations using PyTorch.
+- The only repository to train/evaluate BigGAN and StyleGAN2 baselines in a unified training pipeline.
+- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, CUB200, and ImageNet datasets.
+- Provide pre-trained models that are fully compatible with up-to-date PyTorch environment.
+- Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!).
+- Better performance and lower memory consumption than original implementations.
+- Support 7 evaluation metrics including iFID, improved precision & recall, and density & coverage. 
+- Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
 #  Implemented GANs
 
@@ -29,190 +30,198 @@
 | [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR'18 |  ResNet | cBN | PD | Hinge | False |
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR'18 |  ResNet | cBN | PD | Hinge | False |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML'19 |  ResNet | cBN | PD | Hinge | False |
+| [**TACGAN**](https://arxiv.org/abs/1907.02690) | Neurips'19 |  Big ResNet | cBN | TAC | Hinge | True |
+| [**LGAN**](https://arxiv.org/abs/1902.05687) | ICML'19 |  ResNet | N/A | N/A | Vanilla | False |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet | cBN | PD | Hinge | True |
 | [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet Deep | cBN | PD | Hinge | True |
 | **BigGAN-Mod**<sup>[[3]](#footnote_3)</sup> | - |  Big ResNet | cBN | PD | Hinge | True |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv'19 |  Big ResNet | cBN | PD | Hinge | True |
-| [**BigGAN + DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
-| [**BigGAN + ADA**](https://arxiv.org/abs/2006.06676) | Neurips'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips'20 | Big ResNet | cBN | CL | Hinge | True |
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | - | - | - | - | - |
+| [**StyleGAN2**](https://arxiv.org/abs/1912.04958) | CVPR' 20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD | Hinge | True |
+| [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'20 | - | - | - | - | - |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips'20 | Big ResNet | cBN | 2C | Hinge | True |
+| [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |  - | - | - | - | - |
+| [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'20 |  - | - | - | - | - |
+| [**MHGAN**](https://arxiv.org/abs/1912.04216) | WACV'21 |  Big ResNet | cBN | MH | MH | True |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | AAAI'21 |  Big ResNet | cBN | PD | Hinge | True |
+| [**ADCGAN**](https://arxiv.org/abs/2107.10060) | arXiv'21 | Big ResNet | cBN | ADC | Hinge | True |
+| [**ReACGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) | Neurips'21 | Big ResNet | cBN | D2D-CE | Hinge | True |
 
 GC/DC indicates the way how we inject label information to the Generator or Discriminator.
 
 [EMA](https://openreview.net/forum?id=SJgw_sRqFQ): Exponential Moving Average update to the generator.
 [cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization.
+[cAdaIN](https://arxiv.org/abs/1812.04948): Conditional version of Adaptive Instance Normalization.
 [AC](https://arxiv.org/abs/1610.09585) : Auxiliary Classifier.
 [PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator.
-[CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning.
-
-
-## To be Implemented
-
-| Method | Venue | Architecture | GC | DC | Loss | EMA |
-|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
-| [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | - | - | Vanilla | True |
-
+[TAC](https://arxiv.org/abs/1907.02690): Twin Auxiliary Classifier.
+[SPD](https://arxiv.org/abs/1812.04948) : Modified PD for StyleGAN.
+[2C](https://arxiv.org/abs/2006.12681) : Conditional Contrastive loss.
+[MH](https://arxiv.org/abs/1912.04216) : Multi-Hinge loss.
+[ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
+[D2D-CE](https://arxiv.org/abs/2006.12681) : Data-to-Data Cross-Entropy.
 
 
 # Requirements
 
-Please refer to [requirements.md](./docs/requirements.md) for more information.
-
-You can install the recommended environment as follows:
-
+First, install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
 ```bash
-conda env create -f environment.yml -n studiogan
+pip3 install torch==1.10.0+cu111 torchvision==0.11.1+cu111 torchaudio==0.10.0+cu111 -f https://download.pytorch.org/whl/cu111/torch_stable.html
 ```
 
-With docker, you can use:
+Then, use the following command to install the rest of the libraries:
 ```bash
-docker pull mgkang/studiogan:latest
-```
-
-This is my command to make a container named "studioGAN". 
-
-Also, you can use port number 6006 to connect the tensoreboard. 
-```bash
-docker run -it --gpus all --shm-size 128g -p 6006:6006 --name studioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
+pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg prdc
 ```
 
 
 # Quick Start
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``.
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -c CONFIG_PATH
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DataParallel``
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``.
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+```
+
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DistributedDataParallel`` using GPUs ``(0, 1, 2, 3)``, ``Synchronized batch norm``, and ``Mixed precision``.
+```bash
+export MASTER_ADDR="localhost"
+export MASTER_PORT=2222
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -sync_bn -mpc 
 ```
 
 Try ``python3 src/main.py`` to see available options.
 
 
-Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
-```bash
-~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
-```
-<p align="center">
-  <img width="85%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/tensorboard_1.png" />
-</p>
-
 ## Dataset
 
-* CIFAR10: StudioGAN will automatically download the dataset once you execute ``main.py``.
+* CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
-* Tiny Imagenet, Imagenet, or a custom dataset:
-  1. download [Tiny Imagenet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) and [Imagenet](http://www.image-net.org). Prepare your own dataset.
+* Tiny ImageNet, ImageNet, or a custom dataset:
+  1. download [Tiny ImageNet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) and [ImageNet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
 ```
-┌── docs
-├── src
-└── data
-    └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
-        ├── train
-        │   ├── cls0
-        │   │   ├── train0.png
-        │   │   ├── train1.png
-        │   │   └── ...
-        │   ├── cls1
+data
+└── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
+    ├── train
+    │   ├── cls0
+    │   │   ├── train0.png
+    │   │   ├── train1.png
+    │   │   └── ...
+    │   ├── cls1
+    │   └── ...
+    └── valid
+        ├── cls0
+        │   ├── valid0.png
+        │   ├── valid1.png
         │   └── ...
-        └── valid
-            ├── cls0
-            │   ├── valid0.png
-            │   ├── valid1.png
-            │   └── ...
-            ├── cls1
-            └── ...
+        ├── cls1
+        └── ...
 ```
 
-## Supported Training Techniques
+## Supported Training/Testing Techniques
+
+* Load All Data in Main Memory
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  ```
 
 * DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html))
   ```bash
   ### NODE_0, 4_GPUs, All ports are open to NODE_1
-  docker run -it --gpus all --shm-size 128g --name studioGAN --network=host -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
-  
-  ~/code>>> export NCCL_SOCKET_IFNAME=^docker0,lo
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
-
-  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 0 -c CONFIG_PATH
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 0 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   ```bash
   ### NODE_1, 4_GPUs, All ports are open to NODE_0
-  docker run -it --gpus all --shm-size 128g --name studioGAN --network=host -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
-  
-  ~/code>>> export NCCL_SOCKET_IFNAME=^docker0,lo
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
-
-  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 1 -c CONFIG_PATH
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 1 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
-※ StudioGAN does not support DDP training for ContraGAN. This is because conducting contrastive learning requires a 'gather' operation to calculate the exact conditional contrastive loss. 
+* [Synchronized BatchNorm](https://arxiv.org/abs/1502.03167)
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  ```
 
 * [Mixed Precision Training](https://arxiv.org/abs/1710.03740)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
+  
+* [Freeze Discriminator](https://arxiv.org/abs/2002.10964)
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t --freezeD FREEZED -ckpt SOURCE_CKPT -cfg TARGET_CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  ```
+
 * [Standing Statistics](https://arxiv.org/abs/1809.11096)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
-* Synchronized BatchNorm
+
+* [Batch Statistics](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -batch_stat -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
-* Load All Data in Main Memory
+  
+* [Truncation Trick](https://arxiv.org/abs/1809.11096)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -l -c CONFIG_PATH
+  # For BigGAN family
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_factor TRUNCATION_FACTOR -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+
+  # For StyleGAN2
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_cutoff TRUNCATION_CUTOFF -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
-* [LARS](https://github.com/kakaobrain/torchlars)
+
+* [Discriminator Driven Latent Sampling (DDLS)](https://arxiv.org/abs/2003.06060)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -l -c CONFIG_PATH -LARS
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -lgv -lgv_rate LGV_RATE -lgv_std LGV_STD -lgv_decay LGV_DECAY -lgv_decay_steps LGV_DECAY_STEPS -lgv_steps LGV_STEPS -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
 
 # Analyzing Generated Images
 
-The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
+StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, Frequency analysis, TSNE analysis, and Semantic factorization``. All results will be saved in ``SAVE_DIR/figures/RUN_NAME/*.png``.
 
 * Image Visualization
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -v -cfg CONFIG_PATH -ckpt CKPT -save SAVE_DIR
 ```
+
+<p align="center">
+  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/renew_cfgs/docs/figures/AFHQ_.png" />
+</p>
+
+
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/generated_images1.png" />
 </p>
 
-
 * K-Nearest Neighbor Analysis (we have fixed K=7, the images in the first column are generated images.)
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -knn -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
 ```
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/knn_1.png" />
 </p>
 
-
 * Linear Interpolation (applicable only to conditional Big ResNet models)
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -itp -cfg CONFIG_PATH -ckpt CKPT -save SAVE_DIR
 ```
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/interpolated_images.png" />
 </p>
 
-
 * Frequency Analysis
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -fa -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
 ```
 <p align="center">
   <img width="60%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/diff_spectrum1.png" />
@@ -221,14 +230,20 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -fa -std_stat --standing_step S
 
 * TSNE Analysis
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -tsne -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -tsne -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
 ```
 <p align="center">
   <img width="80%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/TSNE_results.png" />
 </p>
 
+* Semantic Factorization for BigGAN
+```bash
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sefa_max SEFA_MAX -cfg CONFIG_PATH -ckpt CKPT -save SAVE_PATH
+```
 
 ##  Metrics
+
+StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, and --eval_backbone "SwAV"`` options, respectively.
 
 ### Inception Score (IS)
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
@@ -254,23 +269,34 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 ### Precision and Recall (PR: F_1/8=Weights Precision, F_8=Weights Recall)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
-# Benchmark
+### Improved Precision and Recall (Prc, Rec)
+Improved precision and recall are developed to make up for the shortcomings of the precision and recall. Like IS, FID, calculating improved precision and recall requires the pre-trained Inception-V3 model. StudioGAN uses the PyTorch implementation provided by [developers of density and coverage scores](https://github.com/clovaai/generative-evaluation-prdc). 
 
-#### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
+### Density and Coverage (Dns, Cvg)
+Density and coverage metrics can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metrics are known to be robust to outliers, and they can detect identical real and fake distributions. StudioGAN uses the [authors' official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN follows the author's suggestion for hyperparameter selection.
 
-We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
 
-[CR](https://arxiv.org/abs/1910.12027), [ICR](https://arxiv.org/abs/2002.04724), [DiffAugment](https://arxiv.org/abs/2006.10738), [ADA](https://arxiv.org/abs/2006.06676), and [LO](https://arxiv.org/abs/1912.00953) refer to regularization or optimization techiniques: CR (Consistency Regularization), ICR (Improved Consistency Regularization), DiffAugment (Differentiable Augmentation), ADA (Adaptive Discriminator Augmentation), and LO (Latent Optimization), respectively.
+# Benchmark 
+### ※ Numbers will be updated after the upcomming CVPR 2022 deadline.
+
+#### We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
+
+- We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
+
+- [CR](https://arxiv.org/abs/1910.12027), [ICR](https://arxiv.org/abs/2002.04724), [DiffAugment](https://arxiv.org/abs/2006.10738), [ADA](https://arxiv.org/abs/2006.06676), and [LO](https://arxiv.org/abs/1912.00953) refer to regularization or optimization techiniques: CR (Consistency Regularization), ICR (Improved Consistency Regularization), DiffAugment (Differentiable Augmentation), ADA (Adaptive Discriminator Augmentation), and LO (Latent Optimization), respectively.
 
 ### CIFAR10 (3x32x32)
 
-When training, we used the command below.
+When training and evaluating, we used the command below.
 
 With a single TITAN RTX GPU, training BigGAN takes about 13-15 hours.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --eval_type "test"
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -hdf5 -l -batch_stat -ref "test" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
+
+IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
+
 
 | Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -292,31 +318,24 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --e
 | **BigGAN-Mod + CR** | StudioGAN |  10.380 | 7.178 | 0.994 | 0.993 | [Cfg](./src/configs/CIFAR10/BigGAN-Mod-CR.json) | [Log](./logs/CIFAR10/CRGAN(P)-train-2020_09_17_13_45_19.log) | [Link](https://drive.google.com/drive/folders/1I9HYBU2t2CYmqsrKeeoivYiIUXHqO8k7?usp=sharing) |
 | **BigGAN-Mod + ICR** | StudioGAN | 10.153 | 7.430 | 0.994 | 0.993 | [Cfg](./src/configs/CIFAR10/BigGAN-Mod-ICR.json) | [Log](./logs/CIFAR10/ICRGAN(P)-train-2020_09_17_13_46_09.log) | [Link](https://drive.google.com/drive/folders/1ZsX9Xu7j7MCG0V53FSk5K8HJpnsRIvtw?usp=sharing) |
 | **BigGAN-Mod + DiffAugment** | StudioGAN |  9.775 | 7.157 | 0.996 | 0.993 | [Cfg](./src/configs/CIFAR10/BigGAN-Mod-DiffAug.json) | [Log](./logs/CIFAR10/DiffAugGAN(P)-train-2020_09_18_14_33_57.log) | [Link](https://drive.google.com/drive/folders/1xVN7dQPWMLi8gDZEb5FThkjbFtIdzb6b?usp=sharing) |
-| **BigGAN-Mod + ADA** | StudioGAN | 10.136 | 7.881 | 0.993 | 0.994 | [Cfg](./src/configs/CIFAR10/BigGAN-Mod-ADA.json) | [Log](./logs/CIFAR10/ADAGAN(P)-train-2021_01_31_12_59_51.log) | [Link](https://drive.google.com/drive/folders/1LoQJhYtPl0p49Y5vEDnFSbIyL2_twQW1?usp=sharing) |
 | **BigGAN-Mod + LO** | StudioGAN | - | - | - | - | [Cfg](./src/configs/CIFAR10/BigGAN-Mod-LO.json) |  [Log]() | [Link]() |
 | **ContraGAN** | StudioGAN |  9.729 | 8.065 | 0.993 | 0.992 | [Cfg](./src/configs/CIFAR10/ContraGAN.json) | [Log](./logs/CIFAR10/ContraGAN-train-2020_10_04_21_50_14.log) | [Link](https://drive.google.com/drive/folders/10nxLyB7PyUsaGiBn6xD0e3_teYlB9Q59?usp=sharing) |
 | **ContraGAN + CR** | StudioGAN |  9.812 | 7.685 | 0.995 | 0.993 | [Cfg](./src/configs/CIFAR10/ContraGAN-CR.json) | [Log](./logs/CIFAR10/CRGAN(C)-train-2020_12_04_13_51_40.log) | [Link](https://drive.google.com/drive/folders/1_Bkt_3NE95Ekxo8YG840wSNDTPmQDQb3?usp=sharing) |
 | **ContraGAN + ICR** | StudioGAN |  10.117 | 7.547 | 0.996 | 0.993 | [Cfg](./src/configs/CIFAR10/ContraGAN-ICR.json) | [Log](./logs/CIFAR10/ICRGAN(C)-train-2020_12_04_13_53_13.log) | [Link](https://drive.google.com/drive/folders/1vXoYnKEw3YwLG6ZutYFz_LCLr10VGa9T?usp=sharing) |
 | **ContraGAN + DiffAugment** | StudioGAN | 9.996 | 7.193 | 0.995 | 0.990 | [Cfg](./src/configs/CIFAR10/ContraGAN-DiffAug.json) | [Log](./logs/CIFAR10/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | [Link](https://drive.google.com/drive/folders/1MKZgtyLg79Ti2nWRea6sAWMY1KfMqoKI?usp=sharing) |
-| **ContraGAN + ADA** | StudioGAN | 9.411 | 10.830 | 0.990 | 0.964 | [Cfg](./src/configs/CIFAR10/ContraGAN-ADA.json) | [Log](./logs/CIFAR10/ADAGAN(C)-train-2021_01_31_12_59_47.log) | [Link](https://drive.google.com/drive/folders/1JzSvohfIsEXKwqEUnezyRsfBiiLVMMo-?usp=sharing) |
-
-When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
-
-IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "test"
-```
 
 ### Tiny ImageNet (3x64x64)
 
-When training, we used the command below.
+When training and evaluating, we used the command below.
 
 With 4 TITAN RTX GPUs, training BigGAN takes about 2 days.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --eval_type "valid"
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -hdf5 -l -batch_stat -ref "valid" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
+
+IS, FID, and F_beta values are computed using 10K validation and 10K generated Images.
+
 
 | Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -334,21 +353,12 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -stat_otf -c CONFIG_PA
 | **BigGAN-Mod + CR** | StudioGAN | 14.887 | 21.488 | 0.969 | 0.936 | [Cfg](./src/configs/TINY_ILSVRC2012/BigGAN-Mod-CR.json) | [Log](./logs/TINY_IMAGENET/CRGAN(P)-train-2021_01_01_08_55_18.log) | [Link](https://drive.google.com/drive/folders/17w4QgeINDNcfOT0fpHLALIRnEZ_Z36ze?usp=sharing) |
 | **BigGAN-Mod + ICR** | StudioGAN | 5.605 | 91.326 | 0.525 | 0.399 | [Cfg](./src/configs/TINY_ILSVRC2012/BigGAN-Mod-ICR.json) | [Log](./logs/TINY_IMAGENET/ICRGAN(P)-train-2021_01_04_11_19_15.log)|  [Link](https://drive.google.com/drive/folders/1dU-NzqIauXbK_JJf6aWT45IPmtbyti0T?usp=sharing) |
 | **BigGAN-Mod + DiffAugment** | StudioGAN | 17.075 | 16.338 | 0.979 | 0.971 | [Cfg](./src/configs/TINY_ILSVRC2012/BigGAN-Mod-DiffAug.json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(P)-train-2021_01_17_04_59_53.log) | [Link](https://drive.google.com/drive/folders/1YXfQgDcrEQCzviSStZsmVKTBlg4gs1Jg?usp=sharing) |
-| **BigGAN-Mod + ADA** | StudioGAN | 15.158 | 24.121 | 0.953 | 0.942 | [Cfg](./src/configs/TINY_ILSVRC2012/BigGAN-Mod-ADA.json) | [Log](./logs/TINY_IMAGENET/ADAGAN(P)-train-2021_02_16_15_41_34.log) | [Link](https://drive.google.com/drive/folders/1KzyHoGp44YJ9bUyKQ6Ysm7T6RV2CUFNa?usp=sharing) |
 | **BigGAN-Mod + LO** | StudioGAN | - | - | - | - | [Cfg](./src/configs/TINY_ILSVRC2012/BigGAN-Mod-LO.json) | [Log](-) | [Link](-) |
 | **ContraGAN** | StudioGAN | 13.494 | 27.027 | 0.975 | 0.902 | [Cfg](./src/configs/TINY_ILSVRC2012/ContraGAN.json) | [Log](./logs/TINY_IMAGENET/ContraGAN-train-2021_01_01_09_35_08.log)| [Link](https://drive.google.com/drive/folders/1wFwCf0Zgjc5ODMNhS_9EPlstNh71ouC_?usp=sharing) |
 | **ContraGAN + CR** | StudioGAN | 15.623 | 19.716 | 0.983 | 0.941 | [Cfg](./src/configs/TINY_ILSVRC2012/ContraGAN-CR.json) | [Log](./logs/TINY_IMAGENET/CRGAN(C)-train-2021_01_01_08_56_13.log) | [Link](https://drive.google.com/drive/folders/1Iv1EilJDQ4V5L28KecRDC1ENoWpbVjwe?usp=sharing) |
 | **ContraGAN + ICR** | StudioGAN | 15.830 | 21.940 | 0.980 | 0.944 | [Cfg](./src/configs/TINY_ILSVRC2012/ContraGAN-ICR.json) | [Log](./logs/TINY_IMAGENET/ICRGAN(C)-train-2021_01_03_12_11_56.log) | [Link](https://drive.google.com/drive/folders/1VxSRKEk3ZPoNSU1GGzY2phJkagmnsYvX?usp=sharing) |
 | **ContraGAN + DiffAugment** | StudioGAN | 17.303 | 15.755 | 0.984 | 0.962 | [Cfg](./src/configs/TINY_ILSVRC2012/ContraGAN-DiffAug.json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(C)-train-2021_01_17_04_59_40.log) | [Link](https://drive.google.com/drive/folders/1tk5zDV-HCFEnPhHgST7PzmwR5ZXiaT3S?usp=sharing) |
-| **ContraGAN + ADA** | StudioGAN | 8.398 | 55.025 | 0.878 | 0.677 | [Cfg](./src/configs/TINY_ILSVRC2012/ContraGAN-ADA.json) | [Log](./logs/TINY_IMAGENET/ADAGAN(C)-train-2021_02_16_15_41_20.log) | [Link](https://drive.google.com/drive/folders/1SmY4l_ns3sXonEsXZG88eLY-X8mb9GT2?usp=sharing) |
 
-When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
-
-IS, FID, and F_beta values are computed using 10K validation and 10K generated Images.
-
-```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
-```
 
 ### ImageNet (3x128x128)
 
@@ -357,8 +367,10 @@ When training, we used the command below.
 With 8 TESLA V100 GPUs, training BigGAN2048 takes about a month.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -sync_bn -stat_otf -c CONFIG_PATH --eval_type "valid"
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -hdf5 -l -sync_bn --eval_type "valid" -cfg CONFIG_PATH -std_stat -std_max STD_MAX -std_step STD_STEP -data DATA_PATH -save SAVE_PATH
 ```
+
+IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -370,14 +382,6 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -sync_bn -stat_otf -c 
 | **BigGAN** | StudioGAN | 99.705 | 7.893 | 0.985 | 0.989 | [Cfg](./src/configs/ILSVRC2012/BigGAN2048.json) | [Log](./logs/IMAGENET/BigGAN2048-train-2020_11_17_15_17_48.log) | [Link](https://drive.google.com/drive/folders/1_RTYZ0RXbVLWufE7bbWPvp8n_QJbA8K0?usp=sharing) |
 | **ContraGAN + TTUR** | [Paper](https://arxiv.org/abs/2006.12681) | 31.101 | 19.693 | 0.951 | 0.927 | [Cfg](./src/configs/ILSVRC2012/ContraGAN256_TTUR.json) | [Log](./logs/IMAGENET/contra_biggan_imagenet128_hinge_no-train-2020_08_08_18_45_52.log) | [Link](https://drive.google.com/drive/folders/1ywFuPOY1jo6xd6COHaIlnspIThKUotgL?usp=sharing) |
 | **ContraGAN** | StudioGAN | 25.249 | 25.161 | 0.947 | 0.855 | [Cfg](./src/configs/ILSVRC2012/ContraGAN256.json) | [Log](./logs/IMAGENET/ContraGAN256-train-2021_01_25_13_55_18.log) | [Link](https://drive.google.com/drive/folders/1pbP6LQ00VF7si-LXLvd_D00Pk5_E_JnP?usp=sharing) |
-
-When evaluating, the statistics of batch normalization layers are calculated in advance (moving average of the previous statistics).
-
-IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
-
-```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -l -sync_bn -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
-```
 
 ## StudioGAN thanks the following Repos for the code sharing
 
@@ -391,9 +395,11 @@ Implementation Details: https://github.com/ajbrock/BigGAN-PyTorch
 
 Architecture Details: https://github.com/google/compare_gan
 
+StyleGAN2: https://github.com/NVlabs/stylegan2
+
 DiffAugment: https://github.com/mit-han-lab/data-efficient-gans
 
-Adaptive Discriminator Augmentation: https://github.com/rosinality/stylegan2-pytorch
+Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
 
 Tensorflow IS: https://github.com/openai/improved-gan
 
@@ -403,11 +409,16 @@ Pytorch FID: https://github.com/mseitzer/pytorch-fid
 
 Tensorflow Precision and Recall: https://github.com/msmsajjadi/precision-recall-distributions
 
-torchlars: https://github.com/kakaobrain/torchlars
+PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-evaluation-prdc
 
+PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
+
+
+## License
+PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN and StyleGAN-ADA are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), Synchronized batch normalization is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE), HDF5 generator is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/hdf5.py), and differentiable SimCLR-style augmentations is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/simclr_aug.py).
 
 ## Citation
-StudioGAN is established for the following research project. Please cite our work if you use StudioGAN.
+StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
 ```bib
 @inproceedings{kang2020ContraGAN,
   title   = {{ContraGAN: Contrastive Learning for Conditional Image Generation}},
@@ -417,6 +428,14 @@ StudioGAN is established for the following research project. Please cite our wor
 }
 ```
 
+```bib
+@inproceedings{kang2021ReACGAN,
+  title   = {{Rebooting ACGAN: Auxiliary Classifier GANs with Stable Training}},
+  author  = {Minguk Kang, Woohyeon Shim, Minsu Cho, and Jaesik Park},
+  journal = {Conference on Neural Information Processing Systems (NeurIPS)},
+  year    = {2021}
+}
+```
 ---------------------------------------
 
 <a name="footnote_1">[1]</a> Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.

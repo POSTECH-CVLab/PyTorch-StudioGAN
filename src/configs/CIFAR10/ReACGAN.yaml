@@ -1,0 +1,31 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  backbone: "big_resnet"
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "D2DCE"
+  normalize_d_embed: True
+  d_embed_dim: 512
+  apply_g_sn: True
+  apply_d_sn: True
+  apply_attn: True
+  attn_g_loc: [2]
+  attn_d_loc: [1]
+  z_dim: 80
+  g_shared_dim: 128
+  g_conv_dim: 96
+  d_conv_dim: 96
+  apply_g_ema: True
+  g_ema_decay: 0.9999
+  g_ema_start: 1000
+LOSS:
+  adv_loss: "hinge"
+  cond_lambda: 0.5
+  m_p: 0.98
+  temperature: 0.5
+OPTIMIZATION:
+  batch_size: 128
+  g_lr: 0.00028284271
+  d_lr: 0.00028284271
