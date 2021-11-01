@@ -268,16 +268,16 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
 ### Improved Precision and Recall (Prc, Rec)
-Improved precision and recall is developed to make up for the shortcomings of the precision and recall metric. Like IS, FID, calculating improved precision and recall requires the pre-trained Inception-V3 model. StudioGAN uses the PyTorch implementation provided by [developers of density and coverage metric](https://github.com/clovaai/generative-evaluation-prdc). 
+Improved precision and recall are developed to make up for the shortcomings of the precision and recall. Like IS, FID, calculating improved precision and recall requires the pre-trained Inception-V3 model. StudioGAN uses the PyTorch implementation provided by [developers of density and coverage scores](https://github.com/clovaai/generative-evaluation-prdc). 
 
 ### Density and Coverage (Dns, Cvg)
-Density and coverage metric can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metric is known to be robust to outliers and to have the ability to detect identical real and fake distributions. StudioGAN uses the [authors official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN adopts the author's suggestion for hyperparameter selection.
+Density and coverage metrics can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metrics are known to be robust to outliers, and they can detect identical real and fake distributions. StudioGAN uses the [authors' official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN follows the author's suggestion for hyperparameter selection.
 
 
 # Benchmark 
-### ※ Numbers will be updated after the upcomming CVPR deadline)
+### ※ Numbers will be updated after the upcomming CVPR deadline
 
-#### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
+#### We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
 We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
 
@@ -285,13 +285,16 @@ We report the best IS, FID, and F_beta values of various GANs. B. S. means batch
 
 ### CIFAR10 (3x32x32)
 
-When training, we used the command below.
+When training and evaluating, we used the command below.
 
 With a single TITAN RTX GPU, training BigGAN takes about 13-15 hours.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --eval_type "test"
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -hdf5 -l -batch_stat -ref "test" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
+
+IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
+
 
 | Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -321,23 +324,18 @@ CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --e
 | **ContraGAN + DiffAugment** | StudioGAN | 9.996 | 7.193 | 0.995 | 0.990 | [Cfg](./src/configs/CIFAR10/ContraGAN-DiffAug.json) | [Log](./logs/CIFAR10/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | [Link](https://drive.google.com/drive/folders/1MKZgtyLg79Ti2nWRea6sAWMY1KfMqoKI?usp=sharing) |
 | **ContraGAN + ADA** | StudioGAN | 9.411 | 10.830 | 0.990 | 0.964 | [Cfg](./src/configs/CIFAR10/ContraGAN-ADA.json) | [Log](./logs/CIFAR10/ADAGAN(C)-train-2021_01_31_12_59_47.log) | [Link](https://drive.google.com/drive/folders/1JzSvohfIsEXKwqEUnezyRsfBiiLVMMo-?usp=sharing) |
 
-When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
-
-IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "test"
-```
-
 ### Tiny ImageNet (3x64x64)
 
-When training, we used the command below.
+When training and evaluating, we used the command below.
 
 With 4 TITAN RTX GPUs, training BigGAN takes about 2 days.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -stat_otf -c CONFIG_PATH --eval_type "valid"
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -hdf5 -l -batch_stat -ref "valid" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
+
+IS, FID, and F_beta values are computed using 10K validation and 10K generated Images.
+
 
 | Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -363,14 +361,6 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -stat_otf -c CONFIG_PA
 | **ContraGAN + DiffAugment** | StudioGAN | 17.303 | 15.755 | 0.984 | 0.962 | [Cfg](./src/configs/TINY_ILSVRC2012/ContraGAN-DiffAug.json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(C)-train-2021_01_17_04_59_40.log) | [Link](https://drive.google.com/drive/folders/1tk5zDV-HCFEnPhHgST7PzmwR5ZXiaT3S?usp=sharing) |
 | **ContraGAN + ADA** | StudioGAN | 8.398 | 55.025 | 0.878 | 0.677 | [Cfg](./src/configs/TINY_ILSVRC2012/ContraGAN-ADA.json) | [Log](./logs/TINY_IMAGENET/ADAGAN(C)-train-2021_02_16_15_41_20.log) | [Link](https://drive.google.com/drive/folders/1SmY4l_ns3sXonEsXZG88eLY-X8mb9GT2?usp=sharing) |
 
-When evaluating, the statistics of batch normalization layers are calculated on the fly (statistics of a batch).
-
-IS, FID, and F_beta values are computed using 10K validation and 10K generated Images.
-
-```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -l -stat_otf -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
-```
-
 ### ImageNet (3x128x128)
 
 When training, we used the command below.
@@ -378,8 +368,10 @@ When training, we used the command below.
 With 8 TESLA V100 GPUs, training BigGAN2048 takes about a month.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -sync_bn -stat_otf -c CONFIG_PATH --eval_type "valid"
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -hdf5 -l -sync_bn --eval_type "valid" -cfg CONFIG_PATH -std_stat -std_max STD_MAX -std_step STD_STEP -data DATA_PATH -save SAVE_PATH
 ```
+
+IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -391,14 +383,6 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -l -sync_bn -stat_otf -c 
 | **BigGAN** | StudioGAN | 99.705 | 7.893 | 0.985 | 0.989 | [Cfg](./src/configs/ILSVRC2012/BigGAN2048.json) | [Log](./logs/IMAGENET/BigGAN2048-train-2020_11_17_15_17_48.log) | [Link](https://drive.google.com/drive/folders/1_RTYZ0RXbVLWufE7bbWPvp8n_QJbA8K0?usp=sharing) |
 | **ContraGAN + TTUR** | [Paper](https://arxiv.org/abs/2006.12681) | 31.101 | 19.693 | 0.951 | 0.927 | [Cfg](./src/configs/ILSVRC2012/ContraGAN256_TTUR.json) | [Log](./logs/IMAGENET/contra_biggan_imagenet128_hinge_no-train-2020_08_08_18_45_52.log) | [Link](https://drive.google.com/drive/folders/1ywFuPOY1jo6xd6COHaIlnspIThKUotgL?usp=sharing) |
 | **ContraGAN** | StudioGAN | 25.249 | 25.161 | 0.947 | 0.855 | [Cfg](./src/configs/ILSVRC2012/ContraGAN256.json) | [Log](./logs/IMAGENET/ContraGAN256-train-2021_01_25_13_55_18.log) | [Link](https://drive.google.com/drive/folders/1pbP6LQ00VF7si-LXLvd_D00Pk5_E_JnP?usp=sharing) |
-
-When evaluating, the statistics of batch normalization layers are calculated in advance (moving average of the previous statistics).
-
-IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
-
-```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -l -sync_bn -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --eval_type "valid"
-```
 
 ## StudioGAN thanks the following Repos for the code sharing
 
