@@ -125,7 +125,7 @@ data
         └── ...
 ```
 
-## Supported Training Techniques
+## Supported Training/Testing Techniques
 
 * Load All Data in Main Memory
   ```bash
@@ -160,8 +160,6 @@ data
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t --freezeD FREEZED -ckpt SOURCE_CKPT -cfg TARGET_CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
-
-## Supported Evaluation Techniques
 
 * [Standing Statistics](https://arxiv.org/abs/1809.11096)
   ```bash
@@ -199,7 +197,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -v -cfg CONFIG_PATH -ckpt CKPT 
 ```
 
 <p align="center">
-  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/renew_cfgs/docs/figures/AFHQ.png" />
+  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/renew_cfgs/docs/figures/AFHQ_.png" />
 </p>
 
 
