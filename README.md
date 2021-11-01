@@ -44,7 +44,7 @@
 | [**ADCGAN**](https://arxiv.org/abs/2107.10060) | arXiv'21 | Big ResNet | cBN | ADC | Hinge | True |
 | [**ReACGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) | Neurips'21 | Big ResNet | cBN | D2D-CE | Hinge | True |
 | [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |  - | - | - | - | - |
-| [**Adaptive Discriminator Augmentation (ADA)**](https://arxiv.org/abs/2006.06676) | Neurips'20 |  - | - | - | - | - |
+| [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'20 |  - | - | - | - | - |
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | - | - | - | - | - |
 | [**Top-K training**](https://arxiv.org/abs/2002.06224) | Neurips'20 | - | - | - | - | - |
 
