@@ -325,6 +325,9 @@ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
 | **ContraGAN + ICR** | StudioGAN |  10.117 | 7.547 | 0.996 | 0.993 | [Cfg](./src/configs/CIFAR10/ContraGAN-ICR.yaml) | [Log](./logs/CIFAR10/ICRGAN(C)-train-2020_12_04_13_53_13.log) | [Link](https://drive.google.com/drive/folders/1vXoYnKEw3YwLG6ZutYFz_LCLr10VGa9T?usp=sharing) |
 | **ContraGAN + DiffAugment** | StudioGAN | 9.996 | 7.193 | 0.995 | 0.990 | [Cfg](./src/configs/CIFAR10/ContraGAN-DiffAug.yaml) | [Log](./logs/CIFAR10/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | [Link](https://drive.google.com/drive/folders/1MKZgtyLg79Ti2nWRea6sAWMY1KfMqoKI?usp=sharing) |
 | **ReACGAN** | StudioGAN | 9.974 | 7.792 | 0.995 | 0.990 | [Cfg](./src/configs/CIFAR10/ReACGAN.yaml) | [Log](./logs/CIFAR10/CCMGAN-train-2021_04_28_12_09_23.log) | [Link](https://drive.google.com/drive/folders/1MKZgtyLg79Ti2nWRea6sAWMY1KfMqoKI?usp=sharing) |
+| **StyleGAN2** | StudioGAN | - | - | - | - | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | - | - |
+| **StyleGAN2 + D2D-CE** | StudioGAN | - | - | - | - | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | - | - |
+
 
 
 ### Tiny ImageNet (3x64x64)
