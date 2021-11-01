@@ -78,17 +78,17 @@ pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wand
 
 # Quick Start
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``.
 ```bash
 CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``.
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DistributedDataParallel`` using GPUs ``(0, 1, 2, 3)``, ``Synchronized batch norm``, and ``Mixed precision``
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DistributedDataParallel`` using GPUs ``(0, 1, 2, 3)``, ``Synchronized batch norm``, and ``Mixed precision``.
 ```bash
 export MASTER_ADDR="localhost"
 export MASTER_PORT=2222
@@ -178,6 +178,7 @@ data
   ```
   
 * [Truncation Trick](https://arxiv.org/abs/1809.11096)
+
   For BigGAN family
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_factor TRUNCATION_FACTOR -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
