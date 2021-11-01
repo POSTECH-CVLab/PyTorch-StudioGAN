@@ -166,7 +166,7 @@ data
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
 
-* Batch Statistics
+* [Batch Statistics](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN)
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -batch_stat -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
