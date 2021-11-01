@@ -65,6 +65,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 # Requirements
 
 Installing minimum requirements:
+
 PyTorch >= 1.7 (1.10 is recommended)
 ```bash
 pip install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg prdc
