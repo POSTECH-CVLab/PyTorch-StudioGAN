@@ -6,14 +6,15 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
-※ Thank GeorgeBatch for your helpful [ipynb documentations](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/tree/master/colab) on how to use StudioGAN in Colab environment.
-
 #  Features
 - Extensive GAN implementations using PyTorch
-- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, and ImageNet datasets
+- The only repository to train/evaluate BigGAN and StyleGAN2 baselines in a unified training pipeline 
+- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, CUB200, and ImageNet datasets
+- Provide pre-trained models that are fully compatible with up-to-date PyTorch environment
+- Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!)
 - Better performance and lower memory consumption than original implementations
-- Providing pre-trained models that are fully compatible with up-to-date PyTorch environment
-- Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, LARS, Tensorboard Visualization, and other analysis methods
+- Support seven evaluation metrics including iFID, improved precision & recall, and density & coverage 
+- Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods
 
 #  Implemented GANs
 
@@ -29,16 +30,23 @@
 | [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR'18 |  ResNet | cBN | PD | Hinge | False |
 | [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR'18 |  ResNet | cBN | PD | Hinge | False |
 | [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML'19 |  ResNet | cBN | PD | Hinge | False |
+| [**TACGAN**](https://arxiv.org/abs/1907.02690) | Neurips'19 |  Big ResNet | cBN | TAC | Hinge | True |
+| [**LGAN**](https://arxiv.org/abs/1902.05687) | ICML'19 |  ResNet | N/A | N/A | Vanilla | False |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet | cBN | PD | Hinge | True |
 | [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet Deep | cBN | PD | Hinge | True |
 | **BigGAN-Mod**<sup>[[3]](#footnote_3)</sup> | - |  Big ResNet | cBN | PD | Hinge | True |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | arXiv'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
+| [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD | Hinge | True |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | AAAI'21 |  Big ResNet | cBN | PD | Hinge | True |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv'19 |  Big ResNet | cBN | PD | Hinge | True |
-| [**BigGAN + DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
-| [**BigGAN + ADA**](https://arxiv.org/abs/2006.06676) | Neurips'20 |  Big ResNet | cBN | PD/CL | Hinge | True |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips'20 | Big ResNet | cBN | CL | Hinge | True |
+| [**MHGAN**](https://arxiv.org/abs/1912.04216) | WACV'21 |  Big ResNet | cBN | MH | MH | True |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips'20 | Big ResNet | cBN | 2C | Hinge | True |
+| [**ADCGAN**](https://arxiv.org/abs/2107.10060) | arXiv'21 | Big ResNet | cBN | ADC | Hinge | True |
+| [**ReACGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) | Neurips'21 | Big ResNet | cBN | D2D-CE | Hinge | True |
+| [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |  - | - | - | - | - |
+| [**Adaptive Discriminator Augmentation (ADA)**](https://arxiv.org/abs/2006.06676) | Neurips'20 |  - | - | - | - | - |
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | - | - | - | - | - |
+| [**Top-K training**](https://arxiv.org/abs/2002.06224) | Neurips'20 | - | - | - | - | - |
 
 GC/DC indicates the way how we inject label information to the Generator or Discriminator.
 
