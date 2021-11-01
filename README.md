@@ -135,18 +135,14 @@ data
 * DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html))
   ```bash
   ### NODE_0, 4_GPUs, All ports are open to NODE_1
-  
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
-
   ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 0 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   ```bash
   ### NODE_1, 4_GPUs, All ports are open to NODE_0
-  
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
-
   ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 1 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
