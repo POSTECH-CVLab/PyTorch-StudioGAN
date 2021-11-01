@@ -196,38 +196,35 @@ data
 
 # Analyzing Generated Images
 
-The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, and Frequency analysis``. All results will be saved in ``./figures/RUN_NAME/*.png``.
+The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, Frequency analysis, TSNE analysis, and Semantic factorization``. All results will be saved in ``SAVE_DIR/figures/RUN_NAME/*.png``.
 
 * Image Visualization
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -iv -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -v -cfg CONFIG_PATH -ckpt CKPT -save SAVE_DIR
 ```
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/generated_images1.png" />
 </p>
 
-
 * K-Nearest Neighbor Analysis (we have fixed K=7, the images in the first column are generated images.)
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -knn -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -knn -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
 ```
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/knn_1.png" />
 </p>
 
-
 * Linear Interpolation (applicable only to conditional Big ResNet models)
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -itp -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -itp -cfg CONFIG_PATH -ckpt CKPT -save SAVE_DIR
 ```
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/interpolated_images.png" />
 </p>
 
-
 * Frequency Analysis
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -fa -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -fa -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
 ```
 <p align="center">
   <img width="60%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/diff_spectrum1.png" />
@@ -236,12 +233,16 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -fa -std_stat --standing_step S
 
 * TSNE Analysis
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -tsne -std_stat --standing_step STANDING_STEP -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -tsne -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
 ```
 <p align="center">
   <img width="80%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/TSNE_results.png" />
 </p>
 
+* Semantic Factorization for BigGAN
+```bash
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sefa_max SEFA_MAX -cfg CONFIG_PATH -ckpt CKPT -save SAVE_PATH
+```
 
 ##  Metrics
 
