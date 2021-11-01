@@ -187,7 +187,7 @@ data
 
 # Analyzing Generated Images
 
-The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, Frequency analysis, TSNE analysis, and Semantic factorization``. All results will be saved in ``SAVE_DIR/figures/RUN_NAME/*.png``.
+StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linear interpolation, Frequency analysis, TSNE analysis, and Semantic factorization``. All results will be saved in ``SAVE_DIR/figures/RUN_NAME/*.png``.
 
 * Image Visualization
 ```bash
@@ -243,6 +243,8 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 
 ##  Metrics
 
+StudioGAN supports ``Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID``. Users can turn on the options for calculating ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` using -iFID, -GAN_train, -GAN_test, --eval_backbone "SwAV", respectively.
+
 ### Inception Score (IS)
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
 
@@ -277,7 +279,7 @@ Density and coverage metrics can estimate the fidelity and diversity of generate
 # Benchmark 
 ### ※ Numbers will be updated after the upcomming CVPR deadline
 
-#### ! We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
+#### We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
 - We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
 
