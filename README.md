@@ -275,7 +275,7 @@ Density and coverage metric can estimate the fidelity and diversity of generated
 
 
 # Benchmark 
-## (Numbers will be updated after the upcomming CVPR deadline)
+### ※ Numbers will be updated after the upcomming CVPR deadline)
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
