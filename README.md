@@ -7,14 +7,14 @@
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
 #  Features
-- Extensive GAN implementations using PyTorch
-- The only repository to train/evaluate BigGAN and StyleGAN2 baselines in a unified training pipeline 
-- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, CUB200, and ImageNet datasets
-- Provide pre-trained models that are fully compatible with up-to-date PyTorch environment
-- Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!)
-- Better performance and lower memory consumption than original implementations
-- Support seven evaluation metrics including iFID, improved precision & recall, and density & coverage 
-- Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods
+- Extensive GAN implementations using PyTorch.
+- The only repository to train/evaluate BigGAN and StyleGAN2 baselines in a unified training pipeline.
+- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, CUB200, and ImageNet datasets.
+- Provide pre-trained models that are fully compatible with up-to-date PyTorch environment.
+- Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!).
+- Better performance and lower memory consumption than original implementations.
+- Support seven evaluation metrics including iFID, improved precision & recall, and density & coverage. 
+- Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
 #  Implemented GANs
 
@@ -52,18 +52,15 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 
 [EMA](https://openreview.net/forum?id=SJgw_sRqFQ): Exponential Moving Average update to the generator.
 [cBN](https://arxiv.org/abs/1610.07629) : conditional Batch Normalization.
+[cAdaIN](https://arxiv.org/abs/1812.04948): Conditional version of Adaptive Instance Normalization.
 [AC](https://arxiv.org/abs/1610.09585) : Auxiliary Classifier.
 [PD](https://arxiv.org/abs/1802.05637) : Projection Discriminator.
-[CL](https://arxiv.org/abs/2006.12681) : Contrastive Learning.
-
-
-## To be Implemented
-
-| Method | Venue | Architecture | GC | DC | Loss | EMA |
-|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
-| [**StyleGAN2**](https://arxiv.org/abs/1806.00420) | CVPR' 20 | StyleNet | - | - | Vanilla | True |
-
-
+[TAC](https://arxiv.org/abs/1907.02690): Twin Auxiliary Classifier.
+[SPD](https://arxiv.org/abs/1812.04948) : Modified PD for StyleGAN.
+[2C](https://arxiv.org/abs/2006.12681) : Conditional Contrastive loss.
+[MH](https://arxiv.org/abs/1912.04216) : Multi-Hinge loss.
+[ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
+[D2D-CE](https://arxiv.org/abs/2006.12681) : Data-to-Data Cross-Entropy.
 
 # Requirements
 
