@@ -13,7 +13,7 @@
 - Provide pre-trained models that are fully compatible with up-to-date PyTorch environment.
 - Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!).
 - Better performance and lower memory consumption than original implementations.
-- Support seven evaluation metrics including iFID, improved precision & recall, and density & coverage. 
+- Support 7 evaluation metrics including iFID, improved precision & recall, and density & coverage. 
 - Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
 #  Implemented GANs
@@ -100,31 +100,30 @@ Try ``python3 src/main.py`` to see available options.
 
 ## Dataset
 
-* CIFAR10: StudioGAN will automatically download the dataset once you execute ``main.py``.
+* CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
-* Tiny Imagenet, Imagenet, or a custom dataset:
-  1. download [Tiny Imagenet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) and [Imagenet](http://www.image-net.org). Prepare your own dataset.
+* Tiny ImageNet, ImageNet, or a custom dataset:
+  1. download [Tiny ImageNet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) and [ImageNet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
 ```
-┌── docs
-├── src
-└── data
-    └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
-        ├── train
-        │   ├── cls0
-        │   │   ├── train0.png
-        │   │   ├── train1.png
-        │   │   └── ...
-        │   ├── cls1
+
+data
+└── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
+    ├── train
+    │   ├── cls0
+    │   │   ├── train0.png
+    │   │   ├── train1.png
+    │   │   └── ...
+    │   ├── cls1
+    │   └── ...
+    └── valid
+        ├── cls0
+        │   ├── valid0.png
+        │   ├── valid1.png
         │   └── ...
-        └── valid
-            ├── cls0
-            │   ├── valid0.png
-            │   ├── valid1.png
-            │   └── ...
-            ├── cls1
-            └── ...
+        ├── cls1
+        └── ...
 ```
 
 ## Supported Training Techniques
@@ -132,47 +131,38 @@ Try ``python3 src/main.py`` to see available options.
 * DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html))
   ```bash
   ### NODE_0, 4_GPUs, All ports are open to NODE_1
-  docker run -it --gpus all --shm-size 128g --name studioGAN --network=host -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
   
-  ~/code>>> export NCCL_SOCKET_IFNAME=^docker0,lo
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
 
-  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 0 -c CONFIG_PATH
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -tn 2 -cn 0
   ```
   ```bash
   ### NODE_1, 4_GPUs, All ports are open to NODE_0
-  docker run -it --gpus all --shm-size 128g --name studioGAN --network=host -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
   
-  ~/code>>> export NCCL_SOCKET_IFNAME=^docker0,lo
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
 
-  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -n 2 -nr 1 -c CONFIG_PATH
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -tn 2 -cn 1
   ```
-  
-※ StudioGAN does not support DDP training for ContraGAN. This is because conducting contrastive learning requires a 'gather' operation to calculate the exact conditional contrastive loss. 
 
 * [Mixed Precision Training](https://arxiv.org/abs/1710.03740)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
 * [Standing Statistics](https://arxiv.org/abs/1809.11096)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat --standing_step STANDING_STEP -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
 * Synchronized BatchNorm
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
 * Load All Data in Main Memory
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -l -c CONFIG_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
-* [LARS](https://github.com/kakaobrain/torchlars)
-  ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -l -c CONFIG_PATH -LARS
-  ```
+
 
 # Analyzing Generated Images
 
