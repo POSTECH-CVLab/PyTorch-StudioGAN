@@ -62,14 +62,16 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
 [D2D-CE](https://arxiv.org/abs/2006.12681) : Data-to-Data Cross-Entropy.
 
-# Requirements
+# Minimum requirements
 
-Installing minimum requirements:
-
-PyTorch >= 1.7 (1.10 is recommended)
+First install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
 ```bash
-pip install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg prdc
+pip3 install torch==1.10.0+cu111 torchvision==0.11.1+cu111 torchaudio==0.10.0+cu111 -f https://download.pytorch.org/whl/cu111/torch_stable.html
+```
 
+Then, use the following command to install misc libraries:
+```bash
+pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg prdc
 ```
 
 This is my command to make a container named "studioGAN". 
