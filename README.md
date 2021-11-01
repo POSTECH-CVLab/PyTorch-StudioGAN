@@ -175,9 +175,7 @@ data
   ```bash
   # For BigGAN family
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_factor TRUNCATION_FACTOR -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
-  ```
-  
-  ```bash
+
   # For StyleGAN2
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_cutoff TRUNCATION_CUTOFF -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
