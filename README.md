@@ -64,17 +64,11 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 
 # Requirements
 
-Please refer to [requirements.md](./docs/requirements.md) for more information.
-
-You can install the recommended environment as follows:
-
+Installing minimum requirements:
+PyTorch >= 1.7 (1.10 is recommended)
 ```bash
-conda env create -f environment.yml -n studiogan
-```
+pip install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg prdc
 
-With docker, you can use:
-```bash
-docker pull mgkang/studiogan:latest
 ```
 
 This is my command to make a container named "studioGAN". 
