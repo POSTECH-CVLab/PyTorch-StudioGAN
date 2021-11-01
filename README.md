@@ -62,6 +62,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
 [D2D-CE](https://arxiv.org/abs/2006.12681) : Data-to-Data Cross-Entropy.
 
+\\
 # Requirements
 
 First, install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
