@@ -243,7 +243,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 
 ##  Metrics
 
-StudioGAN supports ``Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID``. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, --eval_backbone "SwAV"`` options, respectively.
+StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, --eval_backbone, and "SwAV"`` options, respectively.
 
 ### Inception Score (IS)
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
@@ -277,7 +277,7 @@ Density and coverage metrics can estimate the fidelity and diversity of generate
 
 
 # Benchmark 
-### ※ Numbers will be updated after the upcomming CVPR deadline.
+### ※ Numbers will be updated after the upcomming CVPR 2022 deadline.
 
 #### We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
@@ -416,6 +416,9 @@ PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-eva
 
 PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
 
+
+## License
+PyTorch-StudioGAN is an open-source library under the MIT license (MIT) with the exception of Style-GAN2 and StyleGAN2 + ADA related implementations, which are under the NVIDIA source code license.
 
 ## Citation
 StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
