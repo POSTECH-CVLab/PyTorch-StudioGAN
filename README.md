@@ -415,7 +415,7 @@ PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-p
 
 
 ## License
-PyTorch-StudioGAN is an open-source library under the MIT license (MIT) with the exception of StyleGAN2 and StyleGAN2 + ADA related implementations, which are under the NVIDIA source code license.
+PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN and StyleGAN-ADA are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), Synchronized batch normalization is licensed under [MIT license](), HDF5 generator is licensed under [MIT license](), and Differentiable SimCLR-style augmentations for is licensed under [MIT license]().
 
 ## Citation
 StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
