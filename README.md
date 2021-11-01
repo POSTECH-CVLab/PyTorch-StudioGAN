@@ -107,7 +107,6 @@ Try ``python3 src/main.py`` to see available options.
   2. make the folder structure of the dataset as follows:
 
 ```
-
 data
 └── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
     ├── train
