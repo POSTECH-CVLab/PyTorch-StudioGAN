@@ -127,6 +127,11 @@ data
 
 ## Supported Training Techniques
 
+* Load All Data in Main Memory
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  ```
+
 * DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html))
   ```bash
   ### NODE_0, 4_GPUs, All ports are open to NODE_1
@@ -134,7 +139,7 @@ data
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
 
-  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -tn 2 -cn 0
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 0 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   ```bash
   ### NODE_1, 4_GPUs, All ports are open to NODE_0
@@ -142,26 +147,51 @@ data
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
 
-  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -tn 2 -cn 1
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 1 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  ```
+  
+* [Synchronized BatchNorm](https://arxiv.org/abs/1502.03167)
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
 
 * [Mixed Precision Training](https://arxiv.org/abs/1710.03740)
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
-* [Standing Statistics](https://arxiv.org/abs/1809.11096)
+  
+* [Freeze Discriminator](https://arxiv.org/abs/2002.10964)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
-  ```
-* Synchronized BatchNorm
-  ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
-  ```
-* Load All Data in Main Memory
-  ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t --freezeD FREEZED -ckpt SOURCE_CKPT -cfg TARGET_CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
 
+## Supported Evaluation Techniques
+
+* [Standing Statistics](https://arxiv.org/abs/1809.11096)
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  ```
+
+* Batch Statistics
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -batch_stat -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  ```
+  
+* [Truncation Trick](https://arxiv.org/abs/1809.11096)
+  For BigGAN family
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_factor TRUNCATION_FACTOR -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  ```
+
+  For StyleGAN2
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_cutoff TRUNCATION_CUTOFF -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  ```
+
+* [Discriminator Driven Latent Sampling (DDLS)](https://arxiv.org/abs/2003.06060)
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -lgv -lgv_rate LGV_RATE -lgv_std LGV_STD -lgv_decay LGV_DECAY -lgv_decay_steps LGV_DECAY_STEPS -lgv_steps LGV_STEPS -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  ```
 
 # Analyzing Generated Images
 
