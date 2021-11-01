@@ -62,45 +62,39 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
 [D2D-CE](https://arxiv.org/abs/2006.12681) : Data-to-Data Cross-Entropy.
 
-# Minimum requirements
+# Requirements
 
-First install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
+First, install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
 ```bash
 pip3 install torch==1.10.0+cu111 torchvision==0.11.1+cu111 torchaudio==0.10.0+cu111 -f https://download.pytorch.org/whl/cu111/torch_stable.html
 ```
 
-Then, use the following command to install misc libraries:
+Then, use the following command to install the rest of the libraries:
 ```bash
 pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg prdc
 ```
-
-This is my command to make a container named "studioGAN". 
-
-Also, you can use port number 6006 to connect the tensoreboard. 
-```bash
-docker run -it --gpus all --shm-size 128g -p 6006:6006 --name studioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
-```
-
 
 # Quick Start
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -c CONFIG_PATH
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPUs ``(0, 1, 2, 3)`` and ``DataParallel``
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -c CONFIG_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+```
+
+* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DistributedDataParallel`` using GPUs ``(0, 1, 2, 3)``, ``Synchronized batch norm``, and ``Mixed precision``
+```bash
+export MASTER_ADDR="localhost"
+export MASTER_PORT=2222
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -sync_bn -mpc 
 ```
 
 Try ``python3 src/main.py`` to see available options.
 
-
-Via Tensorboard, you can monitor trends of ``IS, FID, F_beta, Authenticity Accuracies, and the largest singular values``:
-```bash
-~ PyTorch-StudioGAN/logs/RUN_NAME>>> tensorboard --logdir=./ --port PORT
-```
 <p align="center">
   <img width="85%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/tensorboard_1.png" />
 </p>
