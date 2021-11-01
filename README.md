@@ -364,7 +364,6 @@ IS, FID, and F_beta values are computed using 10K validation and 10K generated I
 | **ContraGAN + DiffAugment** | StudioGAN | 17.303 | 15.755 | 0.984 | 0.962 | [Cfg](./src/configs/TINY_ILSVRC2012/ContraGAN-DiffAug.json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(C)-train-2021_01_17_04_59_40.log) | [Link](https://drive.google.com/drive/folders/1tk5zDV-HCFEnPhHgST7PzmwR5ZXiaT3S?usp=sharing) |
 | **ReACGAN** | StudioGAN | 14.162 | 26.586 | 0.975 | 0.897 | [Cfg](./src/configs/TINY_ILSVRC2012/ReACGAN.json) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(C)-train-2021_01_17_04_59_40.log) | [Link](https://drive.google.com/drive/folders/1tk5zDV-HCFEnPhHgST7PzmwR5ZXiaT3S?usp=sharing) |
 
-
 ### ImageNet (3x128x128)
 
 When training, we used the command below.
