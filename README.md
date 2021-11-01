@@ -277,11 +277,11 @@ Density and coverage metrics can estimate the fidelity and diversity of generate
 # Benchmark 
 ### ※ Numbers will be updated after the upcomming CVPR deadline
 
-#### We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
+#### ! We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
-We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
+- We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
 
-[CR](https://arxiv.org/abs/1910.12027), [ICR](https://arxiv.org/abs/2002.04724), [DiffAugment](https://arxiv.org/abs/2006.10738), [ADA](https://arxiv.org/abs/2006.06676), and [LO](https://arxiv.org/abs/1912.00953) refer to regularization or optimization techiniques: CR (Consistency Regularization), ICR (Improved Consistency Regularization), DiffAugment (Differentiable Augmentation), ADA (Adaptive Discriminator Augmentation), and LO (Latent Optimization), respectively.
+- [CR](https://arxiv.org/abs/1910.12027), [ICR](https://arxiv.org/abs/2002.04724), [DiffAugment](https://arxiv.org/abs/2006.10738), [ADA](https://arxiv.org/abs/2006.06676), and [LO](https://arxiv.org/abs/1912.00953) refer to regularization or optimization techiniques: CR (Consistency Regularization), ICR (Improved Consistency Regularization), DiffAugment (Differentiable Augmentation), ADA (Adaptive Discriminator Augmentation), and LO (Latent Optimization), respectively.
 
 ### CIFAR10 (3x32x32)
 
