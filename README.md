@@ -268,15 +268,13 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
 ### Improved Precision and Recall
-Improved precision and recall is developed to make up for the shortcomings
-
-Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
+Improved precision and recall is developed to make up for the shortcomings of the precision and recall metric. Like IS, FID, calculating improved precision and recall requires the pre-trained Inception-V3 model. StudioGAN uses the PyTorch implementation provided by [developers of density and coverage metric](https://github.com/clovaai/generative-evaluation-prdc). 
 
 ### Density and Coverage
-Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
+Density and coverage metric can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metric is known to be robust to outliers and to have the ability to detect identical real and fake distributions. StudioGAN uses the [authors official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN adopts the author's suggestion for hyperparameter selection.
 
 
-# Benchmark
+# Benchmark (Update will finished after upcomming CVPR deadline)
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
