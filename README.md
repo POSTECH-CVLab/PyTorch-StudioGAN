@@ -268,7 +268,9 @@ FID is a widely used metric to evaluate the performance of a GAN model. Calculat
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
 ### Improved Precision and Recall
-Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
+Improved precision and recall is developed to make up for the shortcomings
+
+Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
 ### Density and Coverage
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
@@ -431,7 +433,7 @@ PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-p
 
 
 ## Citation
-StudioGAN is established for the following research project. Please cite our work if you use StudioGAN.
+StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
 ```bib
 @inproceedings{kang2020ContraGAN,
   title   = {{ContraGAN: Contrastive Learning for Conditional Image Generation}},
