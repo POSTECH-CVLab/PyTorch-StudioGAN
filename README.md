@@ -202,6 +202,11 @@ The StudioGAN supports ``Image visualization, K-nearest neighbor analysis, Linea
 ```bash
 CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -v -cfg CONFIG_PATH -ckpt CKPT -save SAVE_DIR
 ```
+
+<p align="center">
+  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/AFHQ.png" />
+</p>
+
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/generated_images1.png" />
 </p>
