@@ -62,7 +62,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
 [D2D-CE](https://arxiv.org/abs/2006.12681) : Data-to-Data Cross-Entropy.
 
-\\
+
 # Requirements
 
 First, install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
@@ -74,6 +74,7 @@ Then, use the following command to install the rest of the libraries:
 ```bash
 pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg prdc
 ```
+
 
 # Quick Start
 
@@ -96,9 +97,6 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DA
 
 Try ``python3 src/main.py`` to see available options.
 
-<p align="center">
-  <img width="85%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/tensorboard_1.png" />
-</p>
 
 ## Dataset
 
