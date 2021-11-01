@@ -39,7 +39,7 @@
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | - | - | - | - | - |
 | [**StyleGAN2**](https://arxiv.org/abs/1912.04958) | CVPR' 20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
 | [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD | Hinge | True |
-| [**Top-K training**](https://arxiv.org/abs/2002.06224) | Neurips'20 | - | - | - | - | - |
+| [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'20 | - | - | - | - | - |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips'20 | Big ResNet | cBN | 2C | Hinge | True |
 | [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |  - | - | - | - | - |
 | [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'20 |  - | - | - | - | - |
