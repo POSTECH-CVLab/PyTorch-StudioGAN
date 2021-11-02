@@ -46,7 +46,7 @@
 | [**MHGAN**](https://arxiv.org/abs/1912.04216) | WACV'21 |  Big ResNet | cBN | MH | MH | True |
 | [**ICRGAN**](https://arxiv.org/abs/2002.04724) | AAAI'21 |  Big ResNet | cBN | PD | Hinge | True |
 | [**ADCGAN**](https://arxiv.org/abs/2107.10060) | arXiv'21 | Big ResNet | cBN | ADC | Hinge | True |
-| [**ReACGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) | Neurips'21 | Big ResNet | cBN | D2D-CE | Hinge | True |
+| [**ReACGAN**](https://arxiv.org/abs/2111.01118) | Neurips'21 | Big ResNet | cBN | D2D-CE | Hinge | True |
 
 GC/DC indicates the way how we inject label information to the Generator or Discriminator.
 
@@ -60,7 +60,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [2C](https://arxiv.org/abs/2006.12681) : Conditional Contrastive loss.
 [MH](https://arxiv.org/abs/1912.04216) : Multi-Hinge loss.
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
-[D2D-CE](https://arxiv.org/abs/2006.12681) : Data-to-Data Cross-Entropy.
+[D2D-CE](https://arxiv.org/abs/2111.01118) : Data-to-Data Cross-Entropy.
 
 
 # Requirements
