@@ -110,7 +110,7 @@ Try ``python3 src/main.py`` to see available options.
 
 ```
 data
-└── ILSVRC2012 or TINY_ILSVRC2012 or CUSTOM
+└── ImageNet or Tiny_ImageNet or CUSTOM
     ├── train
     │   ├── cls0
     │   │   ├── train0.png
