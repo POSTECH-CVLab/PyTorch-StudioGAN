@@ -14,7 +14,7 @@
 - Support Inception_V3 and SwAV backbones for GAN evaluation.
 - Verify the reproducibility of StyleGAN2 and BigGAN.
 - Fix bugs in FreezeD, DDP training, Mixed Precision training, and ADA.
-- Support Discriminator Driven Latent Sampling (DDLS), Semantic Factorization (SeFa) for BigGAN evaluation.
+- Support Discriminator Driven Latent Sampling, Semantic Factorization for BigGAN evaluation.
 - Support Wandb logging instead of Tensorboard.
 
 #  Features
