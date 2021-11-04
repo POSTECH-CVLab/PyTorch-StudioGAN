@@ -7,15 +7,15 @@
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
 #  Release Notes (v.0.3.0)
-- Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN (our new paper)
-- Add five types of differentiable augmentation for data efficient GAN training: CR, DiffAugment, ADA, SimCLR, BYOL
-- Implement SOTA techniques for improved GAN training: Top-K training, Feature mapping, R1 regularization, MaxGP
-- Remove Precision & Recall and add Improved Precision & Recall, Density & Coverage, iFID, and CAS for more reliable evaluation
-- Support Inception_V3 and SwAV backbones for GAN evaluation
+- Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN (our new paper).
+- Add five types of differentiable augmentation: CR, DiffAugment, ADA, SimCLR, BYOL.
+- Implement usefule regularizations: Top-K training, Feature Matching, R1-Regularization, MaxGP
+- Remove Precision & Recall and add Improved Precision & Recall, Density & Coverage, iFID, and CAS for evaluation.
+- Support Inception_V3 and SwAV backbones for GAN evaluation.
 - Verify the reproducibility of StyleGAN2 and BigGAN.
 - Fix bugs in FreezeD, DDP training, Mixed Precision training, and ADA.
-- Support Discriminator Driven Latent Sampling, Semantic Factorization for BigGAN evaluation
-- Support Wandb logging instead of Tensorboard
+- Support Discriminator Driven Latent Sampling, Semantic Factorization for BigGAN evaluation.
+- Support Wandb logging instead of Tensorboard.
 
 #  Features
 - Extensive GAN implementations using PyTorch.
