@@ -49,6 +49,8 @@
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv'19 |  Big ResNet | cBN | PD | Hinge | True |
 | [**StyleGAN2**](https://arxiv.org/abs/1912.04958) | CVPR' 20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
 | [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD | Hinge | True |
+| [**BigGAN + DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 | Big ResNet | cBN | PD | Hinge | True |
+| [**StyleGAN2 + ADA**](https://arxiv.org/abs/2006.06676) | Neurips'20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips'20 | Big ResNet | cBN | 2C | Hinge | True |
 | [**MHGAN**](https://arxiv.org/abs/1912.04216) | WACV'21 |  Big ResNet | cBN | MH | MH | True |
 | [**ICRGAN**](https://arxiv.org/abs/2002.04724) | AAAI'21 |  Big ResNet | cBN | PD | Hinge | True |
@@ -70,7 +72,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [D2D-CE](https://arxiv.org/abs/2111.01118) : Data-to-Data Cross-Entropy.
 
 #  Differentiable Augmentations
-| Method | Venue | Target Loss/Arch. |
+| Method | Venue | Target Loss |
 |:-----------|:-------------:|:-------------:|
 | [**CR**](https://arxiv.org/abs/1910.12027) | ICLR'2020 | - |
 | [**SimCLR**](https://arxiv.org/abs/2002.05709) | ICML'2020 | - |
@@ -79,11 +81,11 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 | [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'2020 | Logistic |
 
 #  Training Technique and MISC
-| Method | Venue | Target Loss/Arch. |
+| Method | Venue | Target Architecture |
 |:-----------|:-------------:|:-------------:|
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | Except for StyleGAN2 |
 | [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'2020 | - |
-| [**SeFA**](https://arxiv.org/abs/2007.06600) | CVPR'2021 | BigGAN |
+| [**SeFa**](https://arxiv.org/abs/2007.06600) | CVPR'2021 | BigGAN |
 
 #  Implemented Metrics
 | Method | Venue | Architecture |
