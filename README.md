@@ -178,12 +178,12 @@ data
 
 ## Supported Training/Testing Techniques
 
-* Load All Data in Main Memory ``-hdf5 -l``
+* Load All Data in Main Memory (``-hdf5 -l``)
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
 
-* DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html)) ``-DDP``
+* DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html)) (``-DDP``)
   ```bash
   ### NODE_0, 4_GPUs, All ports are open to NODE_1
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
@@ -197,20 +197,20 @@ data
   ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 1 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
-* [Mixed Precision Training](https://arxiv.org/abs/1710.03740)
+* [Mixed Precision Training](https://arxiv.org/abs/1710.03740) (``-mpc``)
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
 * Change batch norm statistics to improve generation results
   ```bash
-  # Synchronized batchNorm
+  # Synchronized batchNorm (-sync_bn)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   
-  # Standing statistics
+  # Standing statistics (-std_stat, -std_max, -std_step)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   
-  # Batch statistics
+  # Batch statistics (-batch_stat)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -batch_stat -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
   
