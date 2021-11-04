@@ -9,8 +9,8 @@
 #  Release Notes (v.0.3.0)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN (our new paper).
 - Add five types of differentiable augmentation: CR, DiffAugment, ADA, SimCLR, BYOL.
-- Implement usefule regularizations: Top-K training, Feature Matching, R1-Regularization, MaxGP
-- Remove Precision & Recall and add Improved Precision & Recall, Density & Coverage, iFID, and CAS for evaluation.
+- Implement useful regularizations: Top-K training, Feature Matching, R1-Regularization, MaxGP
+- Add Improved Precision & Recall, Density & Coverage, iFID, and CAS for reliable evaluation.
 - Support Inception_V3 and SwAV backbones for GAN evaluation.
 - Verify the reproducibility of StyleGAN2 and BigGAN.
 - Fix bugs in FreezeD, DDP training, Mixed Precision training, and ADA.
