@@ -87,11 +87,11 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 #  Differentiable Augmentations and The Others
 | Method | Venue | Target Loss/Arch. |
 |:-----------|:-------------:|:-------------:|
-| [**Augmentation used in CR**](https://arxiv.org/abs/1910.12027) | ICLR'2020 | - |
-| [**Augmentation used in SimCLR**](https://arxiv.org/abs/2002.05709) | ICML'2020 | - |
-| [**Augmentation used in DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'2020 | - |
-| [**Augmentation used in BYOL**](https://arxiv.org/abs/2006.07733) | Neurips'2020 | - |
-| [**Adaptive Discriminator Augmentation (ADA)**](https://arxiv.org/abs/2006.06676) | Neurips'2020 | - |
+| [**Consistency Regularization**](https://arxiv.org/abs/1910.12027) | ICLR'2020 | - |
+| [**SimCLR**](https://arxiv.org/abs/2002.05709) | ICML'2020 | - |
+| [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'2020 | - |
+| [**BYOL**](https://arxiv.org/abs/2006.07733) | Neurips'2020 | - |
+| [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'2020 | - |
 
 # Requirements
 
