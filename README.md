@@ -76,14 +76,17 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 #  Implemented Metrics
 | Method | Venue | Architecture |
 |:-----------|:-------------:|:-------------:|
-| [**Inception Score**](https://arxiv.org/abs/1606.03498) | Neurips'16 | Inception_V3 |
-| [**Frechet Inception Distance**](https://arxiv.org/abs/1706.08500) | Neurips'17 | Inception_V3 |
-| **Intra-class Frechet Inception Distance** | - | Inception_V3 |
+| [**Inception Score (IS)**](https://arxiv.org/abs/1606.03498) | Neurips'16 | Inception_V3 |
+| [**Frechet Inception Distance (FID)**](https://arxiv.org/abs/1706.08500) | Neurips'17 | Inception_V3 |
+| **Intra-class FID** | - | Inception_V3 |
 | [**Improved Precision & Recall**](https://arxiv.org/abs/1904.06991) | Neurips'19 | Inception_V3 |
-| [**Classifier Accuracy Score**](https://arxiv.org/abs/1905.10887) | Neurips'19 | Inception_V3 |
+| [**Classifier Accuracy Score (CAS)**](https://arxiv.org/abs/1905.10887) | Neurips'19 | Inception_V3 |
 | [**Density & Coverage**](https://arxiv.org/abs/2002.09797) | ICML'20 | Inception_V3 |
 | [**SwAV FID**](https://openreview.net/forum?id=NeRdBeTionN) | ICLR'21 | SwAV |
 
+#  Differentiable Augmentations and The Others
+| Method | Venue | Target Loss/Arch. |
+| [**Augmentation used in CR**](https://arxiv.org/abs/1606.03498) | ICLR'2020 | - |
 
 # Requirements
 
