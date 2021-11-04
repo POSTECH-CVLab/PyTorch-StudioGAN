@@ -202,7 +202,7 @@ data
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
-* Change batch norm statistics
+* Change Batch Normalization Statistics
   ```bash
   # Synchronized batchNorm (-sync_bn)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
