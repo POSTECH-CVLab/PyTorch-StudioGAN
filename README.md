@@ -8,11 +8,11 @@
 
 #  Release Notes (v.0.3.0)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN (our new paper)
-- Add 5 types of differentiable augmentation for data efficient GAN training: CR, DiffAugment, ADA, SimCLR, BYOL
+- Add five types of differentiable augmentation for data efficient GAN training: CR, DiffAugment, ADA, SimCLR, BYOL
 - Implement SOTA techniques for improved GAN training: Top-K training, Feature mapping, R1 regularization, MaxGP
 - Remove Precision & Recall and add Improved Precision & Recall, Density & Coverage, iFID, and CAS for more reliable evaluation
 - Support Inception_V3 and SwAV backbones for GAN evaluation
-- Verify the reproducibility of StyleGAN2 and BigGAN. 
+- Verify the reproducibility of StyleGAN2 and BigGAN.
 - Fix bugs in FreezeD, DDP training, Mixed Precision training, and ADA.
 - Support Discriminator Driven Latent Sampling, Semantic Factorization for BigGAN evaluation
 - Support Wandb logging instead of Tensorboard
