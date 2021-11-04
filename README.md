@@ -123,7 +123,11 @@ docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/c
 
 # Quick Start
 
-Before starting, users should login wandb using their own ID and password.
+Before starting, users should login wandb using their personal API key.
+
+```bash
+wandb login PERSONAL_API_KEY
+```
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``.
 ```bash
@@ -174,12 +178,12 @@ data
 
 ## Supported Training/Testing Techniques
 
-* Load All Data in Main Memory
+* Load All Data in Main Memory ``-hdf5 -l``
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
 
-* DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html))
+* DistributedDataParallel (Please refer to [Here](https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html)) ``-DDP``
   ```bash
   ### NODE_0, 4_GPUs, All ports are open to NODE_1
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
@@ -193,28 +197,20 @@ data
   ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 1 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
-* [Synchronized BatchNorm](https://arxiv.org/abs/1502.03167)
-  ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
-  ```
-
 * [Mixed Precision Training](https://arxiv.org/abs/1710.03740)
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
-* [Freeze Discriminator](https://arxiv.org/abs/2002.10964)
+* Change batch norm statistics to improve generation results
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t --freezeD FREEZED -ckpt SOURCE_CKPT -cfg TARGET_CONFIG_PATH -data DATA_PATH -save SAVE_PATH
-  ```
-
-* [Standing Statistics](https://arxiv.org/abs/1809.11096)
-  ```bash
+  # Synchronized batchNorm
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  
+  # Standing statistics
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
-  ```
-
-* [Batch Statistics](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN)
-  ```bash
+  
+  # Batch statistics
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -batch_stat -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
   
@@ -230,6 +226,11 @@ data
 * [Discriminator Driven Latent Sampling (DDLS)](https://arxiv.org/abs/2003.06060)
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -lgv -lgv_rate LGV_RATE -lgv_std LGV_STD -lgv_decay LGV_DECAY -lgv_decay_steps LGV_DECAY_STEPS -lgv_steps LGV_STEPS -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  ```
+
+* [Freeze Discriminator](https://arxiv.org/abs/2002.10964)
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t --freezeD FREEZED -ckpt SOURCE_CKPT -cfg TARGET_CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
 
 # Analyzing Generated Images
