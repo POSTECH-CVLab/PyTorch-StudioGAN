@@ -8,11 +8,14 @@
 
 #  Release Notes (v.0.3.0)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN (our new paper)
-- Add 5 types of differentiable augmentation for data efficient training: CR, DiffAugment, ADA, SimCLR, BYOL
-- Support Wandb logging instead of Tensorboard
+- Add 5 types of differentiable augmentation for data efficient GAN training: CR, DiffAugment, ADA, SimCLR, BYOL
 - Implement SOTA techniques for improved GAN training: Top-K training, Feature mapping, R1 regularization, MaxGP
 - Remove Precision & Recall and add Improved Precision & Recall, Density & Coverage, iFID, and CAS for more reliable evaluation
-- 
+- Support Inception_V3 and SwAV backbones for GAN evaluation
+- Verify the reproducibility of StyleGAN2 and BigGAN. 
+- Fix bugs in FreezeD, DDP training, Mixed Precision training, and ADA.
+- Support Discriminator Driven Latent Sampling, Semantic Factorization for BigGAN evaluation
+- Support Wandb logging instead of Tensorboard
 
 #  Features
 - Extensive GAN implementations using PyTorch.
@@ -21,7 +24,7 @@
 - Provide pre-trained models that are fully compatible with up-to-date PyTorch environment.
 - Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!).
 - Better performance and lower memory consumption than original implementations.
-- Support 7 evaluation metrics including iFID, improved precision & recall, and density & coverage. 
+- Support 6 evaluation metrics including iFID, improved precision & recall, and density & coverage. 
 - Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
 #  Implemented GANs
