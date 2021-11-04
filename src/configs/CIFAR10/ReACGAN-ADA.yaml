@@ -36,6 +36,6 @@ AUG:
   apply_ada: True
   ada_aug_type: "bgc"
   ada_initial_augment_p: 0
-  ada_target: 0.6
+  ada_target: 0.7
   ada_kimg: 500
   ada_interval: 4
