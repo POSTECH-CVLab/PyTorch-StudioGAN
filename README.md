@@ -110,6 +110,18 @@ Then, use the following command to install the rest of the libraries:
 pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg prdc
 ```
 
+With docker, you can use:
+```bash
+docker pull mgkang/studio_gan:latest
+```
+
+This is my command to make a container named "studioGAN".
+
+Also, you can use port number 6006 to connect the tensoreboard.
+
+```bash
+docker run -it --gpus all --shm-size 128g -p 6006:6006 --name studioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studio_gan:latest /bin/bash
+```
 
 # Quick Start
 
