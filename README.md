@@ -71,7 +71,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
 [D2D-CE](https://arxiv.org/abs/2111.01118) : Data-to-Data Cross-Entropy.
 
-#  Implemented Differentiable Augmentations
+#  Differentiable Augmentations
 | Method | Venue | Target Loss |
 |:-----------|:-------------:|:-------------:|
 | [**CR**](https://arxiv.org/abs/1910.12027) | ICLR'2020 | - |
@@ -80,14 +80,14 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 | [**BYOL**](https://arxiv.org/abs/2006.07733) | Neurips'2020 | - |
 | [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'2020 | Logistic |
 
-#  Implemented Training Techniques and Misc
+#  Training Techniques and Misc
 | Method | Venue | Target Architecture |
 |:-----------|:-------------:|:-------------:|
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | Except for StyleGAN2 |
 | [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'2020 | - |
 | [**SeFa**](https://arxiv.org/abs/2007.06600) | CVPR'2021 | BigGAN |
 
-#  Implemented Metrics
+#  Evaluation Metrics
 | Method | Venue | Architecture |
 |:-----------|:-------------:|:-------------:|
 | [**Inception Score (IS)**](https://arxiv.org/abs/1606.03498) | Neurips'16 | Inception_V3 |
