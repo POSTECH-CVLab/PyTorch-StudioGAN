@@ -24,7 +24,7 @@
 - Provide pre-trained models that are fully compatible with up-to-date PyTorch environment.
 - Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!).
 - Better performance and lower memory consumption than original implementations.
-- Support 6 evaluation metrics including iFID, improved precision & recall, density & coverage, and CAS. 
+- Support seven evaluation metrics including iFID, improved precision & recall, density & coverage, and CAS. 
 - Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
 #  Implemented GANs
@@ -76,7 +76,14 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 #  Implemented Metrics
 | Method | Venue | Architecture |
 |:-----------|:-------------:|:-------------:|
-| [**Inception Score**](https://arxiv.org/abs/1606.03498) | Neurips'16 | Inception_V3 | N/A | N/A | Vanilla | False |
+| [**Inception Score**](https://arxiv.org/abs/1606.03498) | Neurips'16 | Inception_V3 |
+| [**Frechet Inception Distance**](https://arxiv.org/abs/1706.08500) | Neurips'17 | Inception_V3 |
+| **Intra-class Frechet Inception Distance** | - | Inception_V3 |
+| [**Improved Precision & Recall**](https://arxiv.org/abs/1904.06991) | Neurips'19 | Inception_V3 |
+| [**Classifier Accuracy Score**](https://arxiv.org/abs/1905.10887) | Neurips'19 | Inception_V3 |
+| [**Density & Coverage**](https://arxiv.org/abs/2002.09797) | ICML'20 | Inception_V3 |
+| [**SwAV FID**](https://openreview.net/forum?id=NeRdBeTionN) | ICLR'21 | SwAV |
+
 
 # Requirements
 
