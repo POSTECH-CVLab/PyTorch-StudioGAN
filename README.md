@@ -115,12 +115,10 @@ With docker, you can use:
 docker pull mgkang/studio_gan:latest
 ```
 
-This is my command to make a container named "studioGAN".
-
-Also, you can use port number 6006 to connect the tensoreboard.
+This is my command to make a container named "StudioGAN".
 
 ```bash
-docker run -it --gpus all --shm-size 128g -p 6006:6006 --name studioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studio_gan:latest /bin/bash
+docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studio_gan:latest /bin/bash
 ```
 
 # Quick Start
