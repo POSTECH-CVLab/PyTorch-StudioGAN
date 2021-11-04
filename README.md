@@ -202,7 +202,7 @@ data
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
-* Change batch norm statistics to improve generation results
+* Change batch norm statistics
   ```bash
   # Synchronized batchNorm (-sync_bn)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
@@ -216,19 +216,19 @@ data
   
 * [Truncation Trick](https://arxiv.org/abs/1809.11096)
   ```bash
-  # For BigGAN family
+  # For BigGAN family (``--truncation_factor``)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_factor TRUNCATION_FACTOR -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
 
-  # For StyleGAN2
+  # For StyleGAN2 (``--truncation_cutoff``)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_cutoff TRUNCATION_CUTOFF -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
 
-* [Discriminator Driven Latent Sampling (DDLS)](https://arxiv.org/abs/2003.06060)
+* [Discriminator Driven Latent Sampling (DDLS)](https://arxiv.org/abs/2003.06060) (``-lgv -lgv_rate -lgv_std -lgv_decay -lgv_decay_steps -lgv_steps``)
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -lgv -lgv_rate LGV_RATE -lgv_std LGV_STD -lgv_decay LGV_DECAY -lgv_decay_steps LGV_DECAY_STEPS -lgv_steps LGV_STEPS -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
 
-* [Freeze Discriminator](https://arxiv.org/abs/2002.10964)
+* [Freeze Discriminator](https://arxiv.org/abs/2002.10964) (``-freezeD``)
   ```bash
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t --freezeD FREEZED -ckpt SOURCE_CKPT -cfg TARGET_CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
