@@ -6,7 +6,7 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
-#  Release Notes (v.0.3.0)
+#  Release Notes (v.0.3.0, 2021.10.05)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, [ReACGAN (our new paper)](https://arxiv.org/abs/2111.01118).
 - Add five types of differentiable augmentation: CR, DiffAugment, ADA, SimCLR, BYOL.
 - Implement useful regularizations: Top-K training, Feature Matching, R1-Regularization, MaxGP
@@ -24,7 +24,7 @@
 - Provide pre-trained models that are fully compatible with up-to-date PyTorch environment.
 - Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!).
 - Better performance and lower memory consumption than original implementations.
-- Support 6 evaluation metrics including iFID, improved precision & recall, and density & coverage. 
+- Support 6 evaluation metrics including iFID, improved precision & recall, density & coverage, and CAS. 
 - Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
 #  Implemented GANs
@@ -73,6 +73,10 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
 [D2D-CE](https://arxiv.org/abs/2111.01118) : Data-to-Data Cross-Entropy.
 
+#  Implemented Metrics
+| Method | Venue | Architecture |
+|:-----------|:-------------:|:-------------:|
+| [**Inception Score**](https://arxiv.org/abs/1606.03498) | Neurips'16 | Inception_V3 | N/A | N/A | Vanilla | False |
 
 # Requirements
 
