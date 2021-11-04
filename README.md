@@ -14,7 +14,7 @@
 - Support Inception_V3 and SwAV backbones for GAN evaluation.
 - Verify the reproducibility of StyleGAN2 and BigGAN.
 - Fix bugs in FreezeD, DDP training, Mixed Precision training, and ADA.
-- Support Discriminator Driven Latent Sampling, Semantic Factorization for BigGAN evaluation.
+- Support Discriminator Driven Latent Sampling (DDLS), Semantic Factorization (SeFa) for BigGAN evaluation.
 - Support Wandb logging instead of Tensorboard.
 
 #  Features
@@ -86,7 +86,8 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 
 #  Differentiable Augmentations and The Others
 | Method | Venue | Target Loss/Arch. |
-| [**Augmentation used in CR**](https://arxiv.org/abs/1606.03498) | ICLR'2020 | - |
+|:-----------|:-------------:|:-------------:|
+| [**Augmentation used in CR**](https://arxiv.org/abs/1910.12027) | ICLR'2020 | - |
 
 # Requirements
 
