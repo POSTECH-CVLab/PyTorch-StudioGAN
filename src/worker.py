@@ -774,8 +774,8 @@ class WORKER(object):
                 wandb.log({"Density": dns}, step=self.wandb_step)
                 wandb.log({"Coverage": cvg}, step=self.wandb_step)
                 if is_acc:
-                    wandb.log({"{eval_model} Top1 acc": top1}, eval_model=self.RUN.eval_backbone, step=self.wandb_step)
-                    wandb.log({"{eval_model} Top5 acc": top5}, eval_model=self.RUN.eval_backbone, step=self.wandb_step)
+                    wandb.log({"{eval_model} Top1 acc".format(eval_model=self.RUN.eval_backbone): top1}, step=self.wandb_step)
+                    wandb.log({"{eval_model} Top5 acc".format(eval_model=self.RUN.eval_backbone): top5}, step=self.wandb_step)
 
             if self.global_rank == 0:
                 self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
