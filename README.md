@@ -47,13 +47,9 @@
 | [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet Deep | cBN | PD | Hinge | True |
 | **BigGAN-Mod**<sup>[[3]](#footnote_3)</sup> | - |  Big ResNet | cBN | PD | Hinge | True |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv'19 |  Big ResNet | cBN | PD | Hinge | True |
-| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | - | - | - | - | - |
 | [**StyleGAN2**](https://arxiv.org/abs/1912.04958) | CVPR' 20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
 | [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD | Hinge | True |
-| [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'20 | - | - | - | - | - |
 | [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips'20 | Big ResNet | cBN | 2C | Hinge | True |
-| [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |  - | - | - | - | - |
-| [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'20 |  - | - | - | - | - |
 | [**MHGAN**](https://arxiv.org/abs/1912.04216) | WACV'21 |  Big ResNet | cBN | MH | MH | True |
 | [**ICRGAN**](https://arxiv.org/abs/2002.04724) | AAAI'21 |  Big ResNet | cBN | PD | Hinge | True |
 | [**ADCGAN**](https://arxiv.org/abs/2107.10060) | arXiv'21 | Big ResNet | cBN | ADC | Hinge | True |
@@ -73,6 +69,22 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
 [D2D-CE](https://arxiv.org/abs/2111.01118) : Data-to-Data Cross-Entropy.
 
+#  Differentiable Augmentations
+| Method | Venue | Target Loss/Arch. |
+|:-----------|:-------------:|:-------------:|
+| [**CR**](https://arxiv.org/abs/1910.12027) | ICLR'2020 | - |
+| [**SimCLR**](https://arxiv.org/abs/2002.05709) | ICML'2020 | - |
+| [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'2020 | - |
+| [**BYOL**](https://arxiv.org/abs/2006.07733) | Neurips'2020 | - |
+| [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'2020 | Logistic |
+
+#  Training Technique and MISC
+| Method | Venue | Target Loss/Arch. |
+|:-----------|:-------------:|:-------------:|
+| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | Except for StyleGAN2 |
+| [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'2020 | - |
+| [**SeFA**](https://arxiv.org/abs/2007.06600) | CVPR'2021 | BigGAN |
+
 #  Implemented Metrics
 | Method | Venue | Architecture |
 |:-----------|:-------------:|:-------------:|
@@ -83,15 +95,6 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 | [**Classifier Accuracy Score (CAS)**](https://arxiv.org/abs/1905.10887) | Neurips'19 | Inception_V3 |
 | [**Density & Coverage**](https://arxiv.org/abs/2002.09797) | ICML'20 | Inception_V3 |
 | [**SwAV FID**](https://openreview.net/forum?id=NeRdBeTionN) | ICLR'21 | SwAV |
-
-#  Differentiable Augmentations and The Others
-| Method | Venue | Target Loss/Arch. |
-|:-----------|:-------------:|:-------------:|
-| [**CR**](https://arxiv.org/abs/1910.12027) | ICLR'2020 | - |
-| [**SimCLR**](https://arxiv.org/abs/2002.05709) | ICML'2020 | - |
-| [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'2020 | - |
-| [**BYOL**](https://arxiv.org/abs/2006.07733) | Neurips'2020 | - |
-| [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'2020 | - |
 
 # Requirements
 
