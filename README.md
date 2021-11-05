@@ -305,7 +305,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 
 StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, and --eval_backbone "SwAV"`` options, respectively.
 
-### Inception Score (IS)
+### 1. Inception Score (IS)
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
@@ -322,16 +322,16 @@ Keep in mind that you need to have TensorFlow 1.3 or earlier version installed!
 
 Note that StudioGAN logs Pytorch-based IS during the training.
 
-### Frechet Inception Distance (FID)
+### 2. Frechet Inception Distance (FID)
 FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires the pre-trained Inception-V3 network, and modern approaches use [Tensorflow-based FID](https://github.com/bioinf-jku/TTUR). StudioGAN utilizes the [PyTorch-based FID](https://github.com/mseitzer/pytorch-fid) to test GAN models in the same PyTorch environment. We show that the PyTorch based FID implementation provides [almost the same results](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Table3.png) with the TensorFlow implementation (See Appendix F of [our paper](https://arxiv.org/abs/2006.12681)).
 
-### Improved Precision and Recall (Prc, Rec)
+### 3. Improved Precision and Recall (Prc, Rec)
 Improved precision and recall are developed to make up for the shortcomings of the precision and recall. Like IS, FID, calculating improved precision and recall requires the pre-trained Inception-V3 model. StudioGAN uses the PyTorch implementation provided by [developers of density and coverage scores](https://github.com/clovaai/generative-evaluation-prdc). 
 
-### Density and Coverage (Dns, Cvg)
+### 4. Density and Coverage (Dns, Cvg)
 Density and coverage metrics can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metrics are known to be robust to outliers, and they can detect identical real and fake distributions. StudioGAN uses the [authors' official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN follows the author's suggestion for hyperparameter selection.
 
-### Precision and Recall (PR: F_1/8=Precision, F_8=Recall, Will be deprecated)
+### 5. Precision and Recall (PR: F_1/8=Precision, F_8=Recall, Will be deprecated)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
 # Benchmark 
@@ -392,6 +392,7 @@ CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -ref "train" -cfg CONFIG_PATH
 IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | Dns(⭡) | Cvg(⭡) | Cfg | Log | Weights |
+|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | **StyleGAN2**<sup>[5](#footnote_1)</sup> | [Paper](https://arxiv.org/abs/2006.06676) | 9.53<sup>[4](#footnote_4)</sup> | 6.96 | - | - | - | - | - |
 | **StyleGAN2 + ADA**<sup>[5](#footnote_5)</sup> | [Paper](https://arxiv.org/abs/2006.06676) | 10.14<sup>[4](#footnote_4)</sup> | 2.42 | - | - | - | - | - |
 | **StyleGAN2** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | TBA | TBA |
@@ -471,8 +472,8 @@ CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -ref "train" -cfg CONFIG_PATH
 IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
-| **StyleGAN2** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | TBA | TBA |
-| **StyleGAN2 + D2D-CE** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | TBA | TBA |
+| **StyleGAN2 + ADA** | StudioGAN | 12.907 | 4.992 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-SPD-ADA.yaml) |  |  |
+| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 12.792 | 4.950 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-D2DCE-ADA.yaml) |  |  |
 
 
 ## StudioGAN thanks the following Repos for the code sharing
@@ -538,4 +539,4 @@ StudioGAN is established for the following research projects. Please cite our wo
 
 <a name="footnote_4">[4]</a> IS is computed using Tensorflow official code.
 
-<a name="footnote_5">[4]</a> The difference in FID values between the original StyleGAN implementation and StudioGAN is caused by the presence of random flip augmentation.
+<a name="footnote_5">[4]</a> The difference in FID values between the original StyleGAN2 and StudioGAN implementation is caused by the presence of random flip augmentation.
