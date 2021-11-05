@@ -471,10 +471,10 @@ CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -ref "train" -cfg CONFIG_PATH
 
 IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
 
-| Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
+| Method | Reference | IS(⭡) | FID(⭣) | Dns(⭡) | Cvg(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| **StyleGAN2 + ADA** | StudioGAN | 12.907 | 4.992 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-SPD-ADA.yaml) |  |  |
-| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 12.792 | 4.950 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-D2DCE-ADA.yaml) |  |  |
+| **StyleGAN2 + ADA** | StudioGAN | 12.907 | 4.992 | 1.282 | 0.835 | [Cfg](./src/configs/AFHQ/StyleGAN2-SPD-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/AFHQ/StyleGAN2-SPD-ADA-train-2021_10_18_16_01_19.log) | TBA |
+| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 12.792 | 4.950 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-D2DCE-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/AFHQ/StyleGAN2-D2DCE-ADA-train-2021_10_24_03_59_32.log) | TBA |
 
 
 ## StudioGAN thanks the following Repos for the code sharing
