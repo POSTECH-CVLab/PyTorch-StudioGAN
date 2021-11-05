@@ -340,6 +340,8 @@ Precision measures how accurately the generator can learn the target distributio
 
 We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
 
+To download all checkpoints reported in StudioGAN, Please [click here](https://drive.google.com/drive/folders/1CDM96Ic-99KdCDYTALkqvoAliprEnltC?usp=sharing)
+
 [CR](https://arxiv.org/abs/1910.12027), [ICR](https://arxiv.org/abs/2002.04724), [DiffAugment](https://arxiv.org/abs/2006.10738), [ADA](https://arxiv.org/abs/2006.06676), and [LO](https://arxiv.org/abs/1912.00953) refer to regularization or optimization techiniques: CR (Consistency Regularization), ICR (Improved Consistency Regularization), DiffAugment (Differentiable Augmentation), ADA (Adaptive Discriminator Augmentation), and LO (Latent Optimization), respectively.
 
 ### CIFAR10 (3x32x32)
@@ -395,10 +397,10 @@ IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | **StyleGAN2**<sup>[5](#footnote_1)</sup> | [Paper](https://arxiv.org/abs/2006.06676) | 9.53<sup>[4](#footnote_4)</sup> | 6.96 | - | - | - | - | - |
 | **StyleGAN2 + ADA**<sup>[5](#footnote_5)</sup> | [Paper](https://arxiv.org/abs/2006.06676) | 10.14<sup>[4](#footnote_4)</sup> | 2.42 | - | - | - | - | - |
-| **StyleGAN2** | StudioGAN | 10.149 | 3.889 | 0.979 | 0.893 | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-train-2021_10_18_00_40_38.log) | TBA |
-| **StyleGAN2 + D2D-CE** | StudioGAN | 10.320 | 3.385 | 0.974 | 0.899 | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-D2DCE-train-2021_10_16_13_21_26.log) | TBA |
-| **StyleGAN2 + ADA** | StudioGAN | 10.477 | 2.316 | 1.049 | 0.929 | [Cfg](./src/configs/CIFAR10/StyleGAN2-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-ADA-train-2021_10_16_13_21_43.log) | TBA |
-| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 10.548 | 2.325 | 1.052 | 0.929 | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-D2DCE-ADA-08-train-2021_10_18_14_12_03.log) | TBA |
+| **StyleGAN2** | StudioGAN | 10.149 | 3.889 | 0.979 | 0.893 | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-train-2021_10_18_00_40_38.log) | [Link](https://drive.google.com/drive/folders/1YEMvPXzYNQWCkMCv83-3J6QC2tMbdy6Y?usp=sharing) |
+| **StyleGAN2 + D2D-CE** | StudioGAN | 10.320 | 3.385 | 0.974 | 0.899 | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-D2DCE-train-2021_10_16_13_21_26.log) | [Link](https://drive.google.com/drive/folders/1oOMN_w-Ij3Bx_vQP5z5_PCfbdf1Xd8Dz?usp=sharing) |
+| **StyleGAN2 + ADA** | StudioGAN | 10.477 | 2.316 | 1.049 | 0.929 | [Cfg](./src/configs/CIFAR10/StyleGAN2-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-ADA-train-2021_10_16_13_21_43.log) | [Link](https://drive.google.com/drive/folders/1A9eEM_iYlaMQQ0ga_ulVXVEyMmGLr8pP?usp=sharing) |
+| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 10.548 | 2.325 | 1.052 | 0.929 | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-D2DCE-ADA-08-train-2021_10_18_14_12_03.log) | [Link](https://drive.google.com/drive/folders/1TVlpUt9XYwxbAjGV4D7OGkLE3mR8jjkE?usp=sharing) |
 
 ### Tiny ImageNet (3x64x64)
 
@@ -466,10 +468,10 @@ IS, FID, and F_beta values are computed using 50K validation and 50K generated I
 When training and evaluating, we used the command below.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
+IS, FID, Dns, Cvg values are computed using 14,630 train and 14,630 generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | Dns(⭡) | Cvg(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
