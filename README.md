@@ -331,13 +331,12 @@ Improved precision and recall are developed to make up for the shortcomings of t
 ### Density and Coverage (Dns, Cvg)
 Density and coverage metrics can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metrics are known to be robust to outliers, and they can detect identical real and fake distributions. StudioGAN uses the [authors' official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN follows the author's suggestion for hyperparameter selection.
 
-### Precision and Recall (will be deprecated)
+### Precision and Recall (PR: F_1/8=Precision, F_8=Recall, Will be deprecated)
 Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
 # Benchmark 
-### ※ Numbers will be updated after the upcomming CVPR 2022 deadline.
 
-#### We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
+#### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
 We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
 
@@ -381,10 +380,24 @@ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
 | **ContraGAN + ICR** | StudioGAN |  10.117 | 7.547 | 0.996 | 0.993 | [Cfg](./src/configs/CIFAR10/ContraGAN-ICR.yaml) | [Log](./logs/CIFAR10/ICRGAN(C)-train-2020_12_04_13_53_13.log) | [Link](https://drive.google.com/drive/folders/1vXoYnKEw3YwLG6ZutYFz_LCLr10VGa9T?usp=sharing) |
 | **ContraGAN + DiffAugment** | StudioGAN | 9.996 | 7.193 | 0.995 | 0.990 | [Cfg](./src/configs/CIFAR10/ContraGAN-DiffAug.yaml) | [Log](./logs/CIFAR10/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | [Link](https://drive.google.com/drive/folders/1MKZgtyLg79Ti2nWRea6sAWMY1KfMqoKI?usp=sharing) |
 | **ReACGAN** | StudioGAN | 9.974 | 7.792 | 0.995 | 0.990 | [Cfg](./src/configs/CIFAR10/ReACGAN.yaml) | [Log](./logs/CIFAR10/CCMGAN-train-2021_04_28_12_09_23.log) | [Link](https://drive.google.com/drive/folders/12zTo4SD9idpqNuF9a8iVrGZUPVapr4jz?usp=sharing) |
+
+### CIFAR10 (3x32x32) using StyleGAN2
+
+When training and evaluating, we used the command below.
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+```
+
+IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
+
+| Method | Reference | IS(⭡) | FID(⭣) | Dns(⭡) | Cvg(⭡) | Cfg | Log | Weights |
+| **StyleGAN2**<sup>[5](#footnote_1)</sup> | [Paper](https://arxiv.org/abs/2006.06676) | 9.53<sup>[4](#footnote_4)</sup> | 6.96 | - | - | - | - | - |
+| **StyleGAN2 + ADA**<sup>[5](#footnote_5)</sup> | [Paper](https://arxiv.org/abs/2006.06676) | 10.14<sup>[4](#footnote_4)</sup> | 2.42 | - | - | - | - | - |
 | **StyleGAN2** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | TBA | TBA |
 | **StyleGAN2 + D2D-CE** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | TBA | TBA |
-
-
+| **StyleGAN2 + ADA** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | TBA | TBA |
+| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | TBA | TBA |
 
 ### Tiny ImageNet (3x64x64)
 
@@ -446,6 +459,21 @@ IS, FID, and F_beta values are computed using 50K validation and 50K generated I
 | **ContraGAN** | StudioGAN | 25.249 | 25.161 | 0.947 | 0.855 | [Cfg](./src/configs/ImageNet/ContraGAN-256.yaml) | [Log](./logs/IMAGENET/ContraGAN256-train-2021_01_25_13_55_18.log) | [Link](https://drive.google.com/drive/folders/1pbP6LQ00VF7si-LXLvd_D00Pk5_E_JnP?usp=sharing) |
 | **ReACGAN** | StudioGAN | 67.416 | 13.907 | 0.977 | 0.977 | [Cfg](./src/configs/ImageNet/ReACGAN-256.yaml) | [Log](./logs/IMAGENET/CCMGAN256-train-2021_04_30_19_04_27.log) | [Link](https://drive.google.com/drive/folders/1lWw6Oh_Mjc7BKiSUKhWxfgP9QLc45g8a?usp=sharing) |
 | **ReACGAN** | StudioGAN | 96.299 | 8.206 | 0.989 | 0.989 | [Cfg](./src/configs/ImageNet/ReACGAN-2048.yaml) | [Log](./logs/IMAGENET/CCMGAN2048-train-2021_06_22_06_11_37.log) | [Link](https://drive.google.com/drive/folders/1XkGZb8nVjpAyYYC8gFRWngiZredIluSo?usp=sharing) |
+
+### AFHQ (3x512x512) using StyleGAN2
+
+When training and evaluating, we used the command below.
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+```
+
+IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
+
+| Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
+| **StyleGAN2** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | TBA | TBA |
+| **StyleGAN2 + D2D-CE** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | TBA | TBA |
+
 
 ## StudioGAN thanks the following Repos for the code sharing
 
@@ -509,3 +537,5 @@ StudioGAN is established for the following research projects. Please cite our wo
 <a name="footnote_3">[3]</a> Our re-implementation of [BigGAN/BigGAN-Deep (ICLR'18)](https://arxiv.org/abs/1809.11096) with slight modifications, which bring strong performance enhancement for the experiment using CIFAR10.
 
 <a name="footnote_4">[4]</a> IS is computed using Tensorflow official code.
+
+<a name="footnote_5">[4]</a> The difference in FID values between the original StyleGAN implementation and StudioGAN is caused by the presence of random flip augmentation.
