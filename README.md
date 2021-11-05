@@ -382,6 +382,8 @@ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
 | **ContraGAN + ICR** | StudioGAN |  10.117 | 7.547 | 0.996 | 0.993 | [Cfg](./src/configs/CIFAR10/ContraGAN-ICR.yaml) | [Log](./logs/CIFAR10/ICRGAN(C)-train-2020_12_04_13_53_13.log) | [Link](https://drive.google.com/drive/folders/1vXoYnKEw3YwLG6ZutYFz_LCLr10VGa9T?usp=sharing) |
 | **ContraGAN + DiffAugment** | StudioGAN | 9.996 | 7.193 | 0.995 | 0.990 | [Cfg](./src/configs/CIFAR10/ContraGAN-DiffAug.yaml) | [Log](./logs/CIFAR10/DiffAugGAN(C)-train-2020_11_14_16_20_04.log) | [Link](https://drive.google.com/drive/folders/1MKZgtyLg79Ti2nWRea6sAWMY1KfMqoKI?usp=sharing) |
 | **ReACGAN** | StudioGAN | 9.974 | 7.792 | 0.995 | 0.990 | [Cfg](./src/configs/CIFAR10/ReACGAN.yaml) | [Log](./logs/CIFAR10/CCMGAN-train-2021_04_28_12_09_23.log) | [Link](https://drive.google.com/drive/folders/12zTo4SD9idpqNuF9a8iVrGZUPVapr4jz?usp=sharing) |
+| **ReACGAN + CR** | StudioGAN | 9.833 | 7.176 | 0.996 | 0.993 | [Cfg](./src/configs/CIFAR10/ReACGAN-CR.yaml) | [Log](./logs/CIFAR10/CCMGAN-train-2021_05_03_12_19_16.log) | [Link](https://drive.google.com/drive/folders/1-g7pxQ1nQnkjexiKmPk5GnO5im-6QHIe?usp=sharing) |
+| **ReACGAN + DiffAugment** | StudioGAN | 10.181 | 6.717| 0.996 | 0.994 | [Cfg](./src/configs/CIFAR10/ReACGAN-DiffAug.yaml) | [Log](./logs/CIFAR10/CCMGAN-train-2021_05_03_12_20_37.log) | [Link](https://drive.google.com/drive/folders/1nzUrYuoofkekN-LM3SIaNMS3EQT43nGO?usp=sharing) |
 
 ### CIFAR10 (3x32x32) using StyleGAN2
 
@@ -436,6 +438,8 @@ IS, FID, and F_beta values are computed using 10K validation and 10K generated I
 | **ContraGAN + ICR** | StudioGAN | 15.830 | 21.940 | 0.980 | 0.944 | [Cfg](./src/configs/Tiny_ImageNet/ContraGAN-ICR.yaml) | [Log](./logs/TINY_IMAGENET/ICRGAN(C)-train-2021_01_03_12_11_56.log) | [Link](https://drive.google.com/drive/folders/1VxSRKEk3ZPoNSU1GGzY2phJkagmnsYvX?usp=sharing) |
 | **ContraGAN + DiffAugment** | StudioGAN | 17.303 | 15.755 | 0.984 | 0.962 | [Cfg](./src/configs/Tiny_ImageNet/ContraGAN-DiffAug.yaml) | [Log](./logs/TINY_IMAGENET/DiffAugGAN(C)-train-2021_01_17_04_59_40.log) | [Link](https://drive.google.com/drive/folders/1tk5zDV-HCFEnPhHgST7PzmwR5ZXiaT3S?usp=sharing) |
 | **ReACGAN** | StudioGAN | 14.162 | 26.586 | 0.975 | 0.897 | [Cfg](./src/configs/Tiny_ImageNet/ReACGAN.yaml) | [Log](./logs/TINY_IMAGENET/CCMGAN-train-2021_04_26_11_14_49.log) | [Link](https://drive.google.com/drive/folders/1369q8KtPI1_lenz_Qk17Dc77AMsxUh1W?usp=sharing) |
+| **ReACGAN + CR** | StudioGAN | 16.505 | 20.251 | 0.982 | 0.934 | [Cfg](./src/configs/Tiny_ImageNet/ReACGAN-CR.yaml) | [Log](./logs/TINY_IMAGENET/CCMGAN-train-2021_05_03_19_37_26.log) | [Link](https://drive.google.com/drive/folders/1mwVfwHlq8YCqD7Ao2YUsh7DQ1f8_3_lX?usp=sharing) |
+| **ReACGAN + DiffAugment** | StudioGAN | 20.479 | 14.348 | 0.988 | 0.971 | [Cfg](./src/configs/Tiny_ImageNet/ReACGAN-DiffAug.yaml) | [Log](./logs/TINY_IMAGENET/CCMGAN-train-2021_05_03_15_36_29.log) | [Link](https://drive.google.com/drive/folders/1YGMM4iw2qopgAhCaCm7rPEMx2GbTTWX_?usp=sharing) |
 
 
 ### ImageNet (3x128x128)
