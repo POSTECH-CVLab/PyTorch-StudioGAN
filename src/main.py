@@ -22,7 +22,7 @@ import utils.hdf5 as hdf5
 import utils.log as log
 import utils.misc as misc
 
-RUN_NAME_FORMAT = ("{framework}-" "{phase}-" "{timestamp}")
+RUN_NAME_FORMAT = ("{data_name}-" "{framework}-" "{phase}-" "{timestamp}")
 
 
 def load_configs_initialize_training():
@@ -120,7 +120,10 @@ def load_configs_initialize_training():
     cfgs.OPTIMIZATION.world_size = gpus_per_node * cfgs.RUN.total_nodes
     cfgs.check_compatability()
 
-    run_name = log.make_run_name(RUN_NAME_FORMAT, framework=cfgs.RUN.cfg_file.split("/")[-1][:-5], phase="train")
+    run_name = log.make_run_name(RUN_NAME_FORMAT,
+                                 data_name= cfgs.DATA.name,
+                                 framework=cfgs.RUN.cfg_file.split("/")[-1][:-5],
+                                 phase="train")
 
     crop_long_edge = False if cfgs.DATA in cfgs.MISC.no_proc_data else True
     resize_size = None if cfgs.DATA in cfgs.MISC.no_proc_data else cfgs.DATA.img_size
