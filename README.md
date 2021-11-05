@@ -29,10 +29,8 @@
 
 
 For inquiries, please contact us at the following email addresses:
-```
-Minguk Kang: mgkang@postech.ac.kr
-Joonghyuk Shin: jhshin4727@postech.ac.kr
-```
+Minguk Kang: <mgkang@postech.ac.kr>
+Joonghyuk Shin: <jhshin4727@postech.ac.kr>
 
 #  Implemented GANs
 
