@@ -27,6 +27,15 @@
 - Support seven evaluation metrics including iFID, improved precision & recall, density & coverage, and CAS. 
 - Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
+#  Inquiry
+
+For inquiries, please contact us at the following email addresses:
+
+```
+Minguk Kang: mgkang@postech.ac.kr
+Joonghyuk Shin: jhshin4727@postech.ac.kr
+```
+
 #  Implemented GANs
 
 | Method | Venue | Architecture | GC | DC | Loss | EMA |
@@ -472,15 +481,15 @@ IS, FID, and F_beta values are computed using 50K validation and 50K generated I
 When training and evaluating, we used the command below.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, Dns, Cvg values are computed using 14,630 train and 14,630 generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | Dns(⭡) | Cvg(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
-| **StyleGAN2 + ADA** | StudioGAN | 12.907 | 4.992 | 1.282 | 0.835 | [Cfg](./src/configs/AFHQ/StyleGAN2-SPD-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/AFHQ/StyleGAN2-SPD-ADA-train-2021_10_18_16_01_19.log) | TBA |
-| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 12.792 | 4.950 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-D2DCE-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/AFHQ/StyleGAN2-D2DCE-ADA-train-2021_10_24_03_59_32.log) | TBA |
+| **StyleGAN2 + ADA** | StudioGAN | 12.907 | 4.992 | 1.282 | 0.835 | [Cfg](./src/configs/AFHQ/StyleGAN2-SPD-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/AFHQ/StyleGAN2-SPD-ADA-train-2021_10_18_16_01_19.log) | [Link](https://drive.google.com/drive/folders/1TjBH8eJTDgpvRdG5d84Wfh62gb9aKWUK?usp=sharing) |
+| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 12.792 | 4.950 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-D2DCE-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/AFHQ/StyleGAN2-D2DCE-ADA-train-2021_10_24_03_59_32.log) | [Link](https://drive.google.com/drive/folders/1GN5JL6XquzvJkWSsQn00oJguMHCm-w94?usp=sharing) |
 
 
 ## StudioGAN thanks the following Repos for the code sharing
