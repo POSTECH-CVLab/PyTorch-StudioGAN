@@ -6,7 +6,7 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
-#  Release Notes (v.0.3.0, 21.10.05)
+#  Release Notes (v.0.3.0)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, [ReACGAN (our new paper)](https://arxiv.org/abs/2111.01118).
 - Add five types of differentiable augmentation: CR, DiffAugment, ADA, SimCLR, BYOL.
 - Implement useful regularizations: Top-K training, Feature Matching, R1-Regularization, MaxGP
@@ -552,4 +552,4 @@ StudioGAN is established for the following research projects. Please cite our wo
 
 <a name="footnote_4">[4]</a> IS is computed using Tensorflow official code.
 
-<a name="footnote_5">[4]</a> The difference in FID values between the original StyleGAN2 and StudioGAN implementation is caused by the presence of random flip augmentation.
+<a name="footnote_5">[5]</a> The difference in FID values between the original StyleGAN2 and StudioGAN implementation is caused by the presence of random flip augmentation.
