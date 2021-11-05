@@ -386,7 +386,7 @@ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
 When training and evaluating, we used the command below.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
@@ -395,10 +395,10 @@ IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | **StyleGAN2**<sup>[5](#footnote_1)</sup> | [Paper](https://arxiv.org/abs/2006.06676) | 9.53<sup>[4](#footnote_4)</sup> | 6.96 | - | - | - | - | - |
 | **StyleGAN2 + ADA**<sup>[5](#footnote_5)</sup> | [Paper](https://arxiv.org/abs/2006.06676) | 10.14<sup>[4](#footnote_4)</sup> | 2.42 | - | - | - | - | - |
-| **StyleGAN2** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | TBA | TBA |
-| **StyleGAN2 + D2D-CE** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | TBA | TBA |
-| **StyleGAN2 + ADA** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | TBA | TBA |
-| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | TBA | TBA | TBA | TBA | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | TBA | TBA |
+| **StyleGAN2** | StudioGAN | 10.149 | 3.889 | 0.979 | 0.893 | [Cfg](./src/configs/CIFAR10/StyleGAN2.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-train-2021_10_18_00_40_38.log) | TBA |
+| **StyleGAN2 + D2D-CE** | StudioGAN | 10.320 | 3.385 | 0.974 | 0.899 | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-D2DCE-train-2021_10_16_13_21_26.log) | TBA |
+| **StyleGAN2 + ADA** | StudioGAN | 10.477 | 2.316 | 1.049 | 0.929 | [Cfg](./src/configs/CIFAR10/StyleGAN2-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-ADA-train-2021_10_16_13_21_43.log) | TBA |
+| **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 10.548 | 2.325 | 1.052 | 0.929 | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-D2DCE-ADA-08-train-2021_10_18_14_12_03.log) | TBA |
 
 ### Tiny ImageNet (3x64x64)
 
@@ -472,6 +472,7 @@ CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -ref "train" -cfg CONFIG_PATH
 IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | F_1/8(⭡) | F_8(⭡) | Cfg | Log | Weights |
+|:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
 | **StyleGAN2 + ADA** | StudioGAN | 12.907 | 4.992 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-SPD-ADA.yaml) |  |  |
 | **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 12.792 | 4.950 | - | - | [Cfg](./src/configs/AFHQ/StyleGAN2-D2DCE-ADA.yaml) |  |  |
 
