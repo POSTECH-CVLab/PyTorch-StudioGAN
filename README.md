@@ -305,7 +305,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 
 StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, and --eval_backbone "SwAV"`` options, respectively.
 
-``### Inception Score (IS)``
+### Inception Score (IS)
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
