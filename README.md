@@ -305,7 +305,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 
 StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, and --eval_backbone "SwAV"`` options, respectively.
 
-### Inception Score (IS)
+```### Inception Score (IS)```
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
@@ -325,16 +325,14 @@ Note that StudioGAN logs Pytorch-based IS during the training.
 ### Frechet Inception Distance (FID)
 FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires the pre-trained Inception-V3 network, and modern approaches use [Tensorflow-based FID](https://github.com/bioinf-jku/TTUR). StudioGAN utilizes the [PyTorch-based FID](https://github.com/mseitzer/pytorch-fid) to test GAN models in the same PyTorch environment. We show that the PyTorch based FID implementation provides [almost the same results](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Table3.png) with the TensorFlow implementation (See Appendix F of [our paper](https://arxiv.org/abs/2006.12681)).
 
-
-### Precision and Recall (PR: F_1/8=Weights Precision, F_8=Weights Recall)
-Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
-
 ### Improved Precision and Recall (Prc, Rec)
 Improved precision and recall are developed to make up for the shortcomings of the precision and recall. Like IS, FID, calculating improved precision and recall requires the pre-trained Inception-V3 model. StudioGAN uses the PyTorch implementation provided by [developers of density and coverage scores](https://github.com/clovaai/generative-evaluation-prdc). 
 
 ### Density and Coverage (Dns, Cvg)
 Density and coverage metrics can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metrics are known to be robust to outliers, and they can detect identical real and fake distributions. StudioGAN uses the [authors' official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN follows the author's suggestion for hyperparameter selection.
 
+### Precision and Recall (will be deprecated)
+Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
 
 # Benchmark 
 ### ※ Numbers will be updated after the upcomming CVPR 2022 deadline.
