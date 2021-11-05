@@ -252,7 +252,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -v -cfg CONFIG_PATH -ckpt CKPT 
 </p>
 
 <p align="center">
-  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Anime.png" />
+  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Anime_.png" />
 </p>
 
 * K-Nearest Neighbor Analysis (we have fixed K=7, the images in the first column are generated images.)
