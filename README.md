@@ -399,7 +399,7 @@ When training and evaluating, we used the command below.
 CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-IS, FID, Dns, Cvg values are computed using 50K train and 50K generated Images.
+IS, FID, Dns, and Cvg values are computed using 50K train and 50K generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | Dns(⭡) | Cvg(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
@@ -481,7 +481,7 @@ When training and evaluating, we used the command below.
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-IS, FID, Dns, Cvg values are computed using 14,630 train and 14,630 generated Images.
+IS, FID, Dns, and Cvg values are computed using 14,630 train and 14,630 generated Images.
 
 | Method | Reference | IS(⭡) | FID(⭣) | Dns(⭡) | Cvg(⭡) | Cfg | Log | Weights |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:
