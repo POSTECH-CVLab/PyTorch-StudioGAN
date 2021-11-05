@@ -296,6 +296,10 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/fox.png" />
 </p>
 
+<p align="center">
+  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/boat.png" />
+</p>
+
 
 ##  Metrics
 
