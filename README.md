@@ -292,6 +292,10 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -tsne -cfg CONFIG_PATH -ckpt CK
 ```bash
 CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sefa_max SEFA_MAX -cfg CONFIG_PATH -ckpt CKPT -save SAVE_PATH
 ```
+<p align="center">
+  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/fox.png" />
+</p>
+
 
 ##  Metrics
 
