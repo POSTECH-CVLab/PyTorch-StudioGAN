@@ -249,7 +249,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -v -cfg CONFIG_PATH -ckpt CKPT 
 ```
 
 <p align="center">
-  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/renew_cfgs/docs/figures/AFHQ_.png" />
+  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/AFHQ_.png" />
 </p>
 
 
