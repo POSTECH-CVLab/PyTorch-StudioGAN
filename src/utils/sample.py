@@ -148,14 +148,14 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
 
     if zs_eps is not None:
         if is_stylegan:
-            fake_images = stylegan_generate_images(zs=zs_eps,
-                                                   fake_labels=fake_labels,
-                                                   num_classes=num_classes,
-                                                   style_mixing_p=style_mixing_p,
-                                                   generator_mapping=generator_mapping,
-                                                   generator_synthesis=generator_synthesis,
-                                                   truncation_psi=truncation_factor,
-                                                   truncation_cutoff=RUN.truncation_cutoff)
+            ws_eps, fake_images_eps = stylegan_generate_images(zs=zs_eps,
+                                                               fake_labels=fake_labels,
+                                                               num_classes=num_classes,
+                                                               style_mixing_p=style_mixing_p,
+                                                               generator_mapping=generator_mapping,
+                                                               generator_synthesis=generator_synthesis,
+                                                               truncation_psi=truncation_factor,
+                                                               truncation_cutoff=RUN.truncation_cutoff)
         else:
             _, fake_images_eps = generator(zs_eps, fake_labels, eval=not is_train)
     else:
