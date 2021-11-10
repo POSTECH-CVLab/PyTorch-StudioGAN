@@ -82,26 +82,28 @@ class Generator(nn.Module):
 
         self.z_dim = z_dim
         self.g_shared_dim = g_shared_dim
+        self.g_cond_mtd = g_cond_mtd
         self.num_classes = num_classes
         self.mixed_precision = mixed_precision
         self.in_dims = g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
         self.bottom = bottom_collection[str(img_size)]
         self.num_blocks = len(self.in_dims)
-        self.chunk_size = z_dim // (self.num_blocks + 1)
+        self.chunk_size = self.z_dim if self.g_cond_mtd == "W/O" else z_dim // (self.num_blocks + 1)
         self.hier_z_dim = self.chunk_size + self.g_shared_dim
         assert self.z_dim % (self.num_blocks + 1) == 0, "z_dim should be divided by the number of blocks"
 
         self.linear0 = MODULES.g_linear(in_features=self.chunk_size, out_features=self.in_dims[0] * self.bottom * self.bottom, bias=True)
 
-        self.shared = ops.embedding(num_embeddings=self.num_classes, embedding_dim=self.g_shared_dim)
+        if not self.g_cond_mtd == "W/O":
+            self.shared = ops.embedding(num_embeddings=self.num_classes, embedding_dim=self.g_shared_dim)
 
         self.blocks = []
         for index in range(self.num_blocks):
             self.blocks += [[
                 GenBlock(in_channels=self.in_dims[index],
                          out_channels=self.out_dims[index],
-                         g_cond_mtd=g_cond_mtd,
+                         g_cond_mtd=self.g_cond_mtd,
                          hier_z_dim=self.hier_z_dim,
                          MODULES=MODULES)
             ]]
@@ -120,13 +122,16 @@ class Generator(nn.Module):
 
     def forward(self, z, label, shared_label=None, eval=False):
         with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
-            zs = torch.split(z, self.chunk_size, 1)
-            z = zs[0]
-            if shared_label is None:
-                shared_label = self.shared(label)
+            if self.g_cond_mtd != "W/O":
+                zs = torch.split(z, self.chunk_size, 1)
+                z = zs[0]
+                if shared_label is None:
+                    shared_label = self.shared(label)
+                else:
+                    pass
+                labels = [torch.cat([shared_label, item], 1) for item in zs[1:]]
             else:
-                pass
-            labels = [torch.cat([shared_label, item], 1) for item in zs[1:]]
+                labels = [None]*self.chunk_size
 
             act = self.linear0(z)
             act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
