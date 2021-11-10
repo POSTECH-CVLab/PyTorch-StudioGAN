@@ -96,7 +96,7 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
             if is_stylegan:
                 assert 0 <= truncation_factor <= 1, "Stylegan truncation_factor must lie btw 0(strong truncation) ~ 1(no truncation)"
             else:
-                assert 0 <= truncation_factor, "truncation_factor must lie btw 0(no truncation) ~ inf(strong truncation)"
+                assert 0 <= truncation_factor, "truncation_factor must lie btw 0(strong truncation) ~ inf(no truncation)"
 
     zs, fake_labels, zs_eps = sample_zy(z_prior=z_prior,
                                         batch_size=batch_size,
