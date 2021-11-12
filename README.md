@@ -27,12 +27,6 @@
 - Support seven evaluation metrics including iFID, improved precision & recall, density & coverage, and CAS. 
 - Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
-
-For inquiries, please contact us at the following email addresses:
-
-* Minguk Kang: <mgkang@postech.ac.kr>
-* Joonghyuk Shin: <jhshin4727@postech.ac.kr>
-
 #  Implemented GANs
 
 | Method | Venue | Architecture | GC | DC | Loss | EMA |
