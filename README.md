@@ -219,11 +219,7 @@ data
   
 * [Truncation Trick](https://arxiv.org/abs/1809.11096)
   ```bash
-  # For BigGAN family (--truncation_factor)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_factor TRUNCATION_FACTOR -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
-
-  # For StyleGAN2 (--truncation_cutoff)
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_cutoff TRUNCATION_CUTOFF -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
 
 * [DDLS](https://arxiv.org/abs/2003.06060) (``-lgv -lgv_rate -lgv_std -lgv_decay -lgv_decay_steps -lgv_steps``)
