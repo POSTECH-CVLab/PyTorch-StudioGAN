@@ -75,7 +75,8 @@ def load_configs_initialize_training():
     parser.add_argument("-t", "--train", action="store_true")
     parser.add_argument("-hdf5", "--load_train_hdf5", action="store_true", help="load train images from a hdf5 file for fast I/O")
     parser.add_argument("-l", "--load_data_in_memory", action="store_true", help="put the whole train dataset on the main memory for fast I/O")
-    parser.add_argument("-e", "--eval", action="store_true")
+    parser.add_argument("-metrics", "--eval_metrics", nargs='*', default=['fid'],
+                        help="evaluation metrics to use during training, a subset list of ['fid', 'is', 'prdc'], empty means no evaluation")
     parser.add_argument("-s", "--save_fake_images", action="store_true")
     parser.add_argument("-v", "--vis_fake_images", action="store_true", help=" visualize image canvas")
     parser.add_argument("-knn", "--k_nearest_neighbor", action="store_true", help="conduct k-nearest neighbor analysis")
