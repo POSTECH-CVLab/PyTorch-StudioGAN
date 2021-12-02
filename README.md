@@ -131,6 +131,10 @@ Before starting, users should login wandb using their personal API key.
 ```bash
 wandb login PERSONAL_API_KEY
 ```
+From release 0.3.0, you can now define which evaluation metrics to use using ``-metrics`` option. Not specifying option defaults to calculating FID only. 
+i.e. ``-metrics is fid`` calculates only IS and FID. 
+i.e. ``-metrics none`` skips evaluation.
+
 
 * Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``.
 ```bash
