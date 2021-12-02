@@ -574,6 +574,10 @@ class Configurations(object):
                 raise NotImplementedError
 
     def check_compatability(self):
+        if len(self.RUN.eval_metrics):
+            for item in self.RUN.eval_metrics:
+                assert item in ["is", "fid", "prdc", "none"], "-metrics option can only contain is, fid, prdc or none for skipping evaluation."
+
         if self.RUN.load_data_in_memory:
             assert self.RUN.load_train_hdf5, "load_data_in_memory option is appliable with the load_train_hdf5 (-hdf5) option."
 

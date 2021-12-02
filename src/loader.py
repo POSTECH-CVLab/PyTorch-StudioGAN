@@ -43,6 +43,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     mu, sigma, eval_model, num_rows, num_cols = None, None, None, 10, 8
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
     metric_list_dict = {}
+    if "none" in cfgs.RUN.eval_metrics:
+        cfgs.RUN.eval_metrics = []
     if "is" in cfgs.RUN.eval_metrics:
         metric_list_dict.update({"IS": [], "Top1_acc": [], "Top5_acc": []})
     if "fid" in cfgs.RUN.eval_metrics:
@@ -247,13 +249,13 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # load a pre-trained network (InceptionV3 or ResNet50 trained using SwAV)
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.eval_metrics is not None or cfgs.RUN.intra_class_fid:
+    if len(cfgs.RUN.eval_metrics) or cfgs.RUN.intra_class_fid:
         eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
                                       world_size=cfgs.OPTIMIZATION.world_size,
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                       device=local_rank)
 
-    if cfgs.RUN.eval_metrics is not None:
+    if len(cfgs.RUN.eval_metrics):
         mu, sigma = pp.prepare_moments_calculate_ins(data_loader=eval_dataloader,
                                                      eval_model=eval_model,
                                                      splits=1,
@@ -326,7 +328,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                    worker.visualize_fake_images(num_cols=num_cols, current_step=step)
 
                 # evaluate GAN for monitoring purpose
-                if cfgs.RUN.eval_metrics is not None:
+                if len(cfgs.RUN.eval_metrics) :
                     is_best = worker.evaluate(step=step, metrics=cfgs.RUN.eval_metrics)
 
                 # save GAN in "./checkpoints/RUN_NAME/*"
@@ -356,7 +358,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                      Gen_ema=Gen_ema,
                                      ema=ema)
 
-    if cfgs.RUN.eval_metrics is not None:
+    if len(cfgs.RUN.eval_metrics):
         if global_rank == 0:
             print(""), logger.info("-" * 80)
         _ = worker.evaluate(step=best_step, metrics=cfgs.RUN.eval_metrics, writing=False)
