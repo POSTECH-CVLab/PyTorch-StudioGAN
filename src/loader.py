@@ -42,9 +42,16 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         cfgs.AUG.ada_initial_augment_p, 0, 0, cfgs.OPTIMIZATION.batch_size, 0, None, None, False
     mu, sigma, eval_model, num_rows, num_cols = None, None, None, 10, 8
     loss_list_dict = {"gen_loss": [], "dis_loss": [], "cls_loss": []}
-    metric_list_dict = {"IS": [], "FID": [], "Improved_Precision": [], "Improved_Recall": [],
-                        "Density": [], "Coverage": []}
-
+    metric_list_dict = {}
+    if "none" in cfgs.RUN.eval_metrics:
+        cfgs.RUN.eval_metrics = []
+    if "is" in cfgs.RUN.eval_metrics:
+        metric_list_dict.update({"IS": [], "Top1_acc": [], "Top5_acc": []})
+    if "fid" in cfgs.RUN.eval_metrics:
+        metric_list_dict.update({"FID": []})
+    if "prdc" in cfgs.RUN.eval_metrics:
+        metric_list_dict.update({"Improved_Precision": [], "Improved_Recall": [], "Density":[], "Coverage": []})
+    
     # -----------------------------------------------------------------------------
     # determine cuda, cudnn, and backends settings.
     # -----------------------------------------------------------------------------
@@ -114,7 +121,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         train_dataset = None
 
-    if cfgs.RUN.eval + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
+    if len(cfgs.RUN.eval_metrics) + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         if local_rank == 0:
             logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
@@ -154,7 +161,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         train_dataloader = None
 
-    if cfgs.RUN.eval + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
+    if len(cfgs.RUN.eval_metrics) + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         eval_dataloader = DataLoader(dataset=eval_dataset,
                                      batch_size=cfgs.OPTIMIZATION.batch_size,
                                      shuffle=False,
@@ -242,13 +249,13 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # load a pre-trained network (InceptionV3 or ResNet50 trained using SwAV)
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.eval or cfgs.RUN.intra_class_fid:
+    if len(cfgs.RUN.eval_metrics) or cfgs.RUN.intra_class_fid:
         eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
                                       world_size=cfgs.OPTIMIZATION.world_size,
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                       device=local_rank)
 
-    if cfgs.RUN.eval:
+    if len(cfgs.RUN.eval_metrics):
         mu, sigma = pp.prepare_moments_calculate_ins(data_loader=eval_dataloader,
                                                      eval_model=eval_model,
                                                      splits=1,
@@ -287,7 +294,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     )
 
     # -----------------------------------------------------------------------------
-    # train GAN until "total_setps" generator updates
+    # train GAN until "total_steps" generator updates
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
         if global_rank == 0: logger.info("Start training!")
@@ -321,8 +328,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                    worker.visualize_fake_images(num_cols=num_cols, current_step=step)
 
                 # evaluate GAN for monitoring purpose
-                if cfgs.RUN.eval:
-                    is_best = worker.evaluate(step=step)
+                if len(cfgs.RUN.eval_metrics) :
+                    is_best = worker.evaluate(step=step, metrics=cfgs.RUN.eval_metrics)
 
                 # save GAN in "./checkpoints/RUN_NAME/*"
                 if global_rank == 0:
@@ -351,10 +358,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                      Gen_ema=Gen_ema,
                                      ema=ema)
 
-    if cfgs.RUN.eval:
+    if len(cfgs.RUN.eval_metrics):
         if global_rank == 0:
             print(""), logger.info("-" * 80)
-        _ = worker.evaluate(step=best_step, writing=False)
+        _ = worker.evaluate(step=best_step, metrics=cfgs.RUN.eval_metrics, writing=False)
 
     if cfgs.RUN.save_fake_images:
         if global_rank == 0:

@@ -699,7 +699,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # evaluate GAN using IS, FID, and Precision and recall.
     # -----------------------------------------------------------------------------
-    def evaluate(self, step, writing=True):
+    def evaluate(self, step, metrics, writing=True):
         if self.global_rank == 0:
             self.logger.info("Start Evaluation ({step} Step): {run_name}".format(step=step, run_name=self.run_name))
         if self.gen_ctlr.standing_statistics:
@@ -711,108 +711,105 @@ class WORKER(object):
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+            metric_dict = {}
 
-            kl_score, kl_std, top1, top5 = ins.eval_generator(data_loader=self.eval_dataloader,
-                                                              generator=generator,
-                                                              discriminator=self.Dis,
-                                                              eval_model=self.eval_model,
-                                                              num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                              y_sampler="totally_random",
-                                                              split=num_split,
-                                                              batch_size=self.OPTIMIZATION.batch_size,
-                                                              z_prior=self.MODEL.z_prior,
-                                                              truncation_factor=self.RUN.truncation_factor,
-                                                              z_dim=self.MODEL.z_dim,
-                                                              num_classes=self.DATA.num_classes,
-                                                              LOSS=self.LOSS,
-                                                              RUN=self.RUN,
-                                                              is_stylegan=self.is_stylegan,
-                                                              generator_mapping=generator_mapping,
-                                                              generator_synthesis=generator_synthesis,
-                                                              is_acc=is_acc,
-                                                              device=self.local_rank,
-                                                              logger=self.logger,
-                                                              disable_tqdm=self.global_rank != 0)
+            if "is" in metrics:
+                kl_score, kl_std, top1, top5 = ins.eval_generator(data_loader=self.eval_dataloader,
+                                                                generator=generator,
+                                                                discriminator=self.Dis,
+                                                                eval_model=self.eval_model,
+                                                                num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                                y_sampler="totally_random",
+                                                                split=num_split,
+                                                                batch_size=self.OPTIMIZATION.batch_size,
+                                                                z_prior=self.MODEL.z_prior,
+                                                                truncation_factor=self.RUN.truncation_factor,
+                                                                z_dim=self.MODEL.z_dim,
+                                                                num_classes=self.DATA.num_classes,
+                                                                LOSS=self.LOSS,
+                                                                RUN=self.RUN,
+                                                                is_stylegan=self.is_stylegan,
+                                                                generator_mapping=generator_mapping,
+                                                                generator_synthesis=generator_synthesis,
+                                                                is_acc=is_acc,
+                                                                device=self.local_rank,
+                                                                logger=self.logger,
+                                                                disable_tqdm=self.global_rank != 0)
+                if self.global_rank == 0:
+                    self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
+                        step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
+                    if is_acc:
+                        self.logger.info("{eval_model} Top1 acc: (Step: {step}, {num} generated images): {Top1}".format(
+                            eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top1=top1))
+                        self.logger.info("{eval_model} Top5 acc: (Step: {step}, {num} generated images): {Top5}".format(
+                            eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top5=top5))
+                    if writing:
+                        wandb.log({"IS score": kl_score}, step=self.wandb_step)
+                        if is_acc:
+                            wandb.log({"{eval_model} Top1 acc".format(eval_model=self.RUN.eval_backbone): top1}, step=self.wandb_step)
+                            wandb.log({"{eval_model} Top5 acc".format(eval_model=self.RUN.eval_backbone): top5}, step=self.wandb_step)
+                    if self.training:
+                        metric_dict.update({"IS": kl_score, "Top1_acc": top1, "Top5_acc": top5})
 
-            fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
-                                                  generator=generator,
-                                                  generator_mapping=generator_mapping,
-                                                  generator_synthesis=generator_synthesis,
-                                                  discriminator=self.Dis,
-                                                  eval_model=self.eval_model,
-                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                  y_sampler="totally_random",
-                                                  cfgs=self.cfgs,
-                                                  device=self.local_rank,
-                                                  logger=self.logger,
-                                                  pre_cal_mean=self.mu,
-                                                  pre_cal_std=self.sigma,
-                                                  disable_tqdm=self.global_rank != 0)
+            if "fid" in metrics:
+                fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
+                                                    generator=generator,
+                                                    generator_mapping=generator_mapping,
+                                                    generator_synthesis=generator_synthesis,
+                                                    discriminator=self.Dis,
+                                                    eval_model=self.eval_model,
+                                                    num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                    y_sampler="totally_random",
+                                                    cfgs=self.cfgs,
+                                                    device=self.local_rank,
+                                                    logger=self.logger,
+                                                    pre_cal_mean=self.mu,
+                                                    pre_cal_std=self.sigma,
+                                                    disable_tqdm=self.global_rank != 0)
+                if self.global_rank == 0:
+                    self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(
+                        step=step, type=self.RUN.ref_dataset, FID=fid_score))
+                    if writing:
+                        wandb.log({"FID score": fid_score}, step=self.wandb_step)
+                    if self.best_fid is None or fid_score <= self.best_fid:
+                        self.best_fid, self.best_step, is_best = fid_score, step, True
+                    if self.training:
+                        metric_dict.update({"FID": fid_score})
+                        self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
+                            step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
-            prc, rec, dns, cvg = prdc_trained.calculate_prdc(data_loader=self.eval_dataloader,
-                                                             eval_model=self.eval_model,
-                                                             num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                             cfgs=self.cfgs,
-                                                             generator=generator,
-                                                             generator_mapping=generator_mapping,
-                                                             generator_synthesis=generator_synthesis,
-                                                             discriminator=self.Dis,
-                                                             nearest_k=nearest_k,
-                                                             device=self.local_rank,
-                                                             logger=self.logger,
-                                                             disable_tqdm=self.global_rank != 0)
-
-            if self.best_fid is None or fid_score <= self.best_fid:
-                self.best_fid, self.best_step, is_best, prc_best, rec_best, dns_best, cvg_best =\
-                    fid_score, step, True, prc, rec, dns, cvg
-
-            if self.global_rank == 0 and writing:
-                wandb.log({"IS score": kl_score}, step=self.wandb_step)
-                wandb.log({"FID score": fid_score}, step=self.wandb_step)
-                wandb.log({"Improved Precision": prc}, step=self.wandb_step)
-                wandb.log({"Improved Recall": rec}, step=self.wandb_step)
-                wandb.log({"Density": dns}, step=self.wandb_step)
-                wandb.log({"Coverage": cvg}, step=self.wandb_step)
-                if is_acc:
-                    wandb.log({"{eval_model} Top1 acc".format(eval_model=self.RUN.eval_backbone): top1}, step=self.wandb_step)
-                    wandb.log({"{eval_model} Top5 acc".format(eval_model=self.RUN.eval_backbone): top5}, step=self.wandb_step)
+            if "prdc" in metrics:
+                prc, rec, dns, cvg = prdc_trained.calculate_prdc(data_loader=self.eval_dataloader,
+                                                                eval_model=self.eval_model,
+                                                                num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                                cfgs=self.cfgs,
+                                                                generator=generator,
+                                                                generator_mapping=generator_mapping,
+                                                                generator_synthesis=generator_synthesis,
+                                                                discriminator=self.Dis,
+                                                                nearest_k=nearest_k,
+                                                                device=self.local_rank,
+                                                                logger=self.logger,
+                                                                disable_tqdm=self.global_rank != 0)
+                if self.global_rank == 0:
+                    self.logger.info("Improved Precision (Step: {step}, Using {type} images): {prc}".format(
+                        step=step, type=self.RUN.ref_dataset, prc=prc))
+                    self.logger.info("Improved Recall (Step: {step}, Using {type} images): {rec}".format(
+                        step=step, type=self.RUN.ref_dataset, rec=rec))
+                    self.logger.info("Density (Step: {step}, Using {type} images): {dns}".format(
+                        step=step, type=self.RUN.ref_dataset, dns=dns))
+                    self.logger.info("Coverage (Step: {step}, Using {type} images): {cvg}".format(
+                        step=step, type=self.RUN.ref_dataset, cvg=cvg))
+                    if writing:
+                        wandb.log({"Improved Precision": prc}, step=self.wandb_step)
+                        wandb.log({"Improved Recall": rec}, step=self.wandb_step)
+                        wandb.log({"Density": dns}, step=self.wandb_step)
+                        wandb.log({"Coverage": cvg}, step=self.wandb_step)
+                    if self.training:
+                        metric_dict.update({"Improved_Precision": prc, "Improved_Recall": rec, "Density": dns, "Coverage": cvg})
 
             if self.global_rank == 0:
-                self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
-                    step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
-                self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(
-                    step=step, type=self.RUN.ref_dataset, FID=fid_score))
-                self.logger.info("Improved Precision (Step: {step}, Using {type} images): {prc}".format(
-                    step=step, type=self.RUN.ref_dataset, prc=prc))
-                self.logger.info("Improved Recall (Step: {step}, Using {type} images): {rec}".format(
-                    step=step, type=self.RUN.ref_dataset, rec=rec))
-                self.logger.info("Density (Step: {step}, Using {type} images): {dns}".format(
-                    step=step, type=self.RUN.ref_dataset, dns=dns))
-                self.logger.info("Coverage (Step: {step}, Using {type} images): {cvg}".format(
-                    step=step, type=self.RUN.ref_dataset, cvg=cvg))
-
-                if is_acc:
-                    self.logger.info("{eval_model} Top1 acc: (Step: {step}, {num} generated images): {Top1}".format(
-                        eval_model=self.RUN.eval_backbone ,step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top1=top1))
-                    self.logger.info("{eval_model} Top5 acc: (Step: {step}, {num} generated images): {Top5}".format(
-                        eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top5=top5))
-
                 if self.training:
-                    self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
-                        step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
-
-                    # save metric values in .npz format
-                    metric_dict = {
-                        "IS": kl_score,
-                        "FID": fid_score,
-                        "Improved_Precision": prc,
-                        "Improved_Recall": rec,
-                        "Density": dns,
-                        "Coverage": cvg,
-                        "Top1": top1,
-                        "Top5": top5
-                    }
-
                     save_dict = misc.accm_values_convert_dict(list_dict=self.metric_list_dict,
                                                               value_dict=metric_dict,
                                                               step=step,

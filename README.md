@@ -131,22 +131,25 @@ Before starting, users should login wandb using their personal API key.
 ```bash
 wandb login PERSONAL_API_KEY
 ```
+From release 0.3.0, you can now define which evaluation metrics to use through ``-metrics`` option. Not specifying option defaults to calculating FID only. 
+i.e. ``-metrics is fid`` calculates only IS and FID and ``-metrics none`` skips evaluation.
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` using GPU ``0``.
+
+* Train (``-t``) and evaluate FID, IS, Prc, Rec, Dns, Cvg (``-metrics fid is prdc``) of the model defined in ``CONFIG_PATH`` using GPU ``0``.
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics fid is -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``.
+* Train (``-t``) and evaluate FID of the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``. Evaluation of FID does not require (``-metrics``) argument!
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-* Train (``-t``) and evaluate (``-e``) the model defined in ``CONFIG_PATH`` through ``DistributedDataParallel`` using GPUs ``(0, 1, 2, 3)``, ``Synchronized batch norm``, and ``Mixed precision``.
+* Train (``-t``) and skip evaluation (``-metrics none``) of the model defined in ``CONFIG_PATH`` through ``DistributedDataParallel`` using GPUs ``(0, 1, 2, 3)``, ``Synchronized batch norm``, and ``Mixed precision``.
 ```bash
 export MASTER_ADDR="localhost"
 export MASTER_PORT=2222
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -sync_bn -mpc 
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -metrics none -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -sync_bn -mpc 
 ```
 
 Try ``python3 src/main.py`` to see available options.
@@ -191,13 +194,13 @@ data
   ### NODE_0, 4_GPUs, All ports are open to NODE_1
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
-  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 0 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -DDP -tn 2 -cn 0 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   ```bash
   ### NODE_1, 4_GPUs, All ports are open to NODE_0
   ~/code>>> export MASTER_ADDR=PUBLIC_IP_OF_NODE_0
   ~/code>>> export MASTER_PORT=AVAILABLE_PORT_OF_NODE_0
-  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -DDP -tn 2 -cn 1 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+  ~/code/PyTorch-StudioGAN>>> CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -DDP -tn 2 -cn 1 -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
 * [Mixed Precision Training](https://arxiv.org/abs/1710.03740) (``-mpc``)
@@ -211,20 +214,20 @@ data
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   
   # Standing statistics (-std_stat, -std_max, -std_step)
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -std_stat -std_max STD_MAX -std_step STD_STEP -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   
   # Batch statistics (-batch_stat)
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -batch_stat -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -batch_stat -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
   
 * [Truncation Trick](https://arxiv.org/abs/1809.11096)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e --truncation_factor TRUNCATION_FACTOR -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py --truncation_factor TRUNCATION_FACTOR -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
 
 * [DDLS](https://arxiv.org/abs/2003.06060) (``-lgv -lgv_rate -lgv_std -lgv_decay -lgv_decay_steps -lgv_steps``)
   ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -e -lgv -lgv_rate LGV_RATE -lgv_std LGV_STD -lgv_decay LGV_DECAY -lgv_decay_steps LGV_DECAY_STEPS -lgv_steps LGV_STEPS -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -lgv -lgv_rate LGV_RATE -lgv_std LGV_STD -lgv_decay LGV_DECAY -lgv_decay_steps LGV_DECAY_STEPS -lgv_steps LGV_STEPS -cfg CONFIG_PATH -ckpt CKPT -data DATA_PATH -save SAVE_PATH
   ```
 
 * [Freeze Discriminator](https://arxiv.org/abs/2002.10964) (``-freezeD``)
@@ -350,7 +353,7 @@ When training and evaluating, we used the command below.
 With a single TITAN RTX GPU, training BigGAN takes about 13-15 hours.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -e -hdf5 -l -batch_stat -ref "test" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -hdf5 -l -batch_stat -ref "test" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
@@ -389,7 +392,7 @@ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
 When training and evaluating, we used the command below.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -e -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, Dns, and Cvg values are computed using 50K train and 50K generated Images.
@@ -410,7 +413,7 @@ When training and evaluating, we used the command below.
 With 4 TITAN RTX GPUs, training BigGAN takes about 2 days.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -hdf5 -l -batch_stat -ref "valid" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -batch_stat -ref "valid" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, and F_beta values are computed using 10K validation and 10K generated Images.
@@ -448,7 +451,7 @@ When training, we used the command below.
 With 8 TESLA V100 GPUs, training BigGAN2048 takes about a month.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -e -hdf5 -l -sync_bn --eval_type "valid" -cfg CONFIG_PATH -std_stat -std_max STD_MAX -std_step STD_STEP -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -sync_bn --eval_type "valid" -cfg CONFIG_PATH -std_stat -std_max STD_MAX -std_step STD_STEP -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
@@ -471,7 +474,7 @@ IS, FID, and F_beta values are computed using 50K validation and 50K generated I
 When training and evaluating, we used the command below.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -e -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, Dns, and Cvg values are computed using 14,630 train and 14,630 generated Images.
