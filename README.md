@@ -135,9 +135,9 @@ From release 0.3.0, you can now define which evaluation metrics to use through `
 i.e. ``-metrics is fid`` calculates only IS and FID and ``-metrics none`` skips evaluation.
 
 
-* Train (``-t``) and evaluate FID, IS, Prc, Rec, Dns, Cvg (``-metrics fid is prdc``) of the model defined in ``CONFIG_PATH`` using GPU ``0``.
+* Train (``-t``) and evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of the model defined in ``CONFIG_PATH`` using GPU ``0``.
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics fid is -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics is fid prdc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 * Train (``-t``) and evaluate FID of the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``. Evaluation of FID does not require (``-metrics``) argument!
@@ -353,7 +353,7 @@ When training and evaluating, we used the command below.
 With a single TITAN RTX GPU, training BigGAN takes about 13-15 hours.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -hdf5 -l -batch_stat -ref "test" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -hdf5 -l -batch_stat -metrics is fid prdc -ref "test" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
@@ -392,7 +392,7 @@ IS, FID, and F_beta values are computed using 10K test and 10K generated Images.
 When training and evaluating, we used the command below.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,1 python3 src/main.py -t -hdf5 -l -mpc -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, Dns, and Cvg values are computed using 50K train and 50K generated Images.
@@ -413,7 +413,7 @@ When training and evaluating, we used the command below.
 With 4 TITAN RTX GPUs, training BigGAN takes about 2 days.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -batch_stat -ref "valid" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -batch_stat -metrics is fid prdc -ref "valid" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, and F_beta values are computed using 10K validation and 10K generated Images.
@@ -451,7 +451,7 @@ When training, we used the command below.
 With 8 TESLA V100 GPUs, training BigGAN2048 takes about a month.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -sync_bn --eval_type "valid" -cfg CONFIG_PATH -std_stat -std_max STD_MAX -std_step STD_STEP -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -sync_bn -metrics is fid prdc --eval_type "valid" -cfg CONFIG_PATH -std_stat -std_max STD_MAX -std_step STD_STEP -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
@@ -474,7 +474,7 @@ IS, FID, and F_beta values are computed using 50K validation and 50K generated I
 When training and evaluating, we used the command below.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -hdf5 -l -mpc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -hdf5 -l -mpc -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, Dns, and Cvg values are computed using 14,630 train and 14,630 generated Images.
