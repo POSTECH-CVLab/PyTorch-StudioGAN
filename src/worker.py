@@ -213,7 +213,6 @@ class WORKER(object):
                 pass
             self.train_iter = iter(self.train_dataloader)
             real_image_basket, real_label_basket = next(self.train_iter)
-
         real_image_basket = torch.split(real_image_basket, self.OPTIMIZATION.batch_size)
         real_label_basket = torch.split(real_label_basket, self.OPTIMIZATION.batch_size)
         return real_image_basket, real_label_basket
@@ -715,26 +714,26 @@ class WORKER(object):
 
             if "is" in metrics:
                 kl_score, kl_std, top1, top5 = ins.eval_generator(data_loader=self.eval_dataloader,
-                                                                generator=generator,
-                                                                discriminator=self.Dis,
-                                                                eval_model=self.eval_model,
-                                                                num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                                y_sampler="totally_random",
-                                                                split=num_split,
-                                                                batch_size=self.OPTIMIZATION.batch_size,
-                                                                z_prior=self.MODEL.z_prior,
-                                                                truncation_factor=self.RUN.truncation_factor,
-                                                                z_dim=self.MODEL.z_dim,
-                                                                num_classes=self.DATA.num_classes,
-                                                                LOSS=self.LOSS,
-                                                                RUN=self.RUN,
-                                                                is_stylegan=self.is_stylegan,
-                                                                generator_mapping=generator_mapping,
-                                                                generator_synthesis=generator_synthesis,
-                                                                is_acc=is_acc,
-                                                                device=self.local_rank,
-                                                                logger=self.logger,
-                                                                disable_tqdm=self.global_rank != 0)
+                                                                  generator=generator,
+                                                                  discriminator=self.Dis,
+                                                                  eval_model=self.eval_model,
+                                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                                  y_sampler="totally_random",
+                                                                  split=num_split,
+                                                                  batch_size=self.OPTIMIZATION.batch_size,
+                                                                  z_prior=self.MODEL.z_prior,
+                                                                  truncation_factor=self.RUN.truncation_factor,
+                                                                  z_dim=self.MODEL.z_dim,
+                                                                  num_classes=self.DATA.num_classes,
+                                                                  LOSS=self.LOSS,
+                                                                  RUN=self.RUN,
+                                                                  is_stylegan=self.is_stylegan,
+                                                                  generator_mapping=generator_mapping,
+                                                                  generator_synthesis=generator_synthesis,
+                                                                  is_acc=is_acc,
+                                                                  device=self.local_rank,
+                                                                  logger=self.logger,
+                                                                  disable_tqdm=self.global_rank != 0)
                 if self.global_rank == 0:
                     self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
                         step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
@@ -753,19 +752,19 @@ class WORKER(object):
 
             if "fid" in metrics:
                 fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
-                                                    generator=generator,
-                                                    generator_mapping=generator_mapping,
-                                                    generator_synthesis=generator_synthesis,
-                                                    discriminator=self.Dis,
-                                                    eval_model=self.eval_model,
-                                                    num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                    y_sampler="totally_random",
-                                                    cfgs=self.cfgs,
-                                                    device=self.local_rank,
-                                                    logger=self.logger,
-                                                    pre_cal_mean=self.mu,
-                                                    pre_cal_std=self.sigma,
-                                                    disable_tqdm=self.global_rank != 0)
+                                                      generator=generator,
+                                                      generator_mapping=generator_mapping,
+                                                      generator_synthesis=generator_synthesis,
+                                                      discriminator=self.Dis,
+                                                      eval_model=self.eval_model,
+                                                      num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                      y_sampler="totally_random",
+                                                      cfgs=self.cfgs,
+                                                      device=self.local_rank,
+                                                      logger=self.logger,
+                                                      pre_cal_mean=self.mu,
+                                                      pre_cal_std=self.sigma,
+                                                      disable_tqdm=self.global_rank != 0)
                 if self.global_rank == 0:
                     self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(
                         step=step, type=self.RUN.ref_dataset, FID=fid_score))
@@ -780,17 +779,17 @@ class WORKER(object):
 
             if "prdc" in metrics:
                 prc, rec, dns, cvg = prdc_trained.calculate_prdc(data_loader=self.eval_dataloader,
-                                                                eval_model=self.eval_model,
-                                                                num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                                cfgs=self.cfgs,
-                                                                generator=generator,
-                                                                generator_mapping=generator_mapping,
-                                                                generator_synthesis=generator_synthesis,
-                                                                discriminator=self.Dis,
-                                                                nearest_k=nearest_k,
-                                                                device=self.local_rank,
-                                                                logger=self.logger,
-                                                                disable_tqdm=self.global_rank != 0)
+                                                                 eval_model=self.eval_model,
+                                                                 num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                                 cfgs=self.cfgs,
+                                                                 generator=generator,
+                                                                 generator_mapping=generator_mapping,
+                                                                 generator_synthesis=generator_synthesis,
+                                                                 discriminator=self.Dis,
+                                                                 nearest_k=nearest_k,
+                                                                 device=self.local_rank,
+                                                                 logger=self.logger,
+                                                                 disable_tqdm=self.global_rank != 0)
                 if self.global_rank == 0:
                     self.logger.info("Improved Precision (Step: {step}, Using {type} images): {prc}".format(
                         step=step, type=self.RUN.ref_dataset, prc=prc))

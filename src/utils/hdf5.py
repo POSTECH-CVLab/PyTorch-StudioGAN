@@ -26,6 +26,7 @@ import os
 
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import numpy as np
 import h5py as h5
 
 from data_util import Dataset_
@@ -48,6 +49,7 @@ def make_hdf5(name, img_size, crop_long_edge, resize_size, data_dir, DATA, RUN):
                            crop_long_edge=crop_long_edge,
                            resize_size=resize_size,
                            random_flip=False,
+                           normalize=False,
                            hdf5_path=None,
                            load_data_in_memory=False)
 
@@ -60,7 +62,7 @@ def make_hdf5(name, img_size, crop_long_edge, resize_size, data_dir, DATA, RUN):
 
         print("Start to load {name} into an HDF5 file with chunk size 500.".format(name=name))
         for i, (x, y) in enumerate(tqdm(dataloader)):
-            x = (255 * ((x + 1) / 2.0)).byte().numpy()
+            x = np.transpose(x.numpy(), (0, 2, 3, 1))
             y = y.numpy()
             if i == 0:
                 with h5.File(file_path, "w") as f:
@@ -68,8 +70,8 @@ def make_hdf5(name, img_size, crop_long_edge, resize_size, data_dir, DATA, RUN):
                     imgs_dset = f.create_dataset("imgs",
                                                  x.shape,
                                                  dtype="uint8",
-                                                 maxshape=(len(dataset), 3, img_size, img_size),
-                                                 chunks=(500, 3, img_size, img_size),
+                                                 maxshape=(len(dataset), img_size, img_size, 3),
+                                                 chunks=(500, img_size, img_size, 3),
                                                  compression=False)
                     print("Image chunks chosen as {chunk}".format(chunk=str(imgs_dset.chunks)))
                     imgs_dset[...] = x

@@ -219,6 +219,9 @@ class Configurations(object):
         # beta values for Adam optimizer
         self.OPTIMIZATION.beta1 = 0.5
         self.OPTIMIZATION.beta2 = 0.999
+        # whether to optimize discriminator first,
+        # if True: optimize D -> optimize G
+        self.OPTIMIZATION.d_first = True
         # the number of generator updates per step
         self.OPTIMIZATION.g_updates_per_step = 1
         # the number of discriminator updates per step
@@ -598,8 +601,7 @@ class Configurations(object):
 
         if self.RUN.langevin_sampling:
             msg = "Langevin sampling cannot be used for training only."
-            assert self.RUN.eval + \
-                self.RUN.vis_fake_images + \
+            assert self.RUN.vis_fake_images + \
                 self.RUN.k_nearest_neighbor + \
                 self.RUN.interpolation + \
                 self.RUN.frequency_analysis + \
@@ -617,7 +619,7 @@ class Configurations(object):
             assert self.RUN.ckpt_dir is not None, "Freezing discriminator needs a pre-trained model.\
                 Please specify the checkpoint directory (using -ckpt) for loading a pre-trained discriminator."
 
-        if not self.RUN.train and self.RUN.eval:
+        if not self.RUN.train and self.RUN.eval_metrics != "none":
             assert self.RUN.ckpt_dir is not None, "Specify -ckpt CHECKPOINT_FOLDER to evaluate GAN without training."
 
         if self.RUN.GAN_train + self.RUN.GAN_test > 1:
@@ -748,6 +750,8 @@ class Configurations(object):
         if self.RUN.GAN_train or self.RUN.GAN_test:
             assert not self.MODEL.d_cond_mtd == "W/O", \
                 "Classifier Accuracy Score (CAS) is defined only when the GAN is trained by a class-conditioned way."
+
+        assert self.RUN.resize_fn in ["legacy", "clean"], "resizing flag should be logacy or clean!"
 
         assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
             \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \

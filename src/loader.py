@@ -51,7 +51,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         metric_list_dict.update({"FID": []})
     if "prdc" in cfgs.RUN.eval_metrics:
         metric_list_dict.update({"Improved_Precision": [], "Improved_Recall": [], "Density":[], "Coverage": []})
-    
+
     # -----------------------------------------------------------------------------
     # determine cuda, cudnn, and backends settings.
     # -----------------------------------------------------------------------------
@@ -114,6 +114,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                  crop_long_edge=cfgs.PRE.crop_long_edge,
                                  resize_size=cfgs.PRE.resize_size,
                                  random_flip=cfgs.PRE.apply_rflip,
+                                 normalize=True,
                                  hdf5_path=hdf5_path,
                                  load_data_in_memory=cfgs.RUN.load_data_in_memory)
         if local_rank == 0:
@@ -127,10 +128,11 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
                                 data_dir=cfgs.RUN.data_dir,
                                 train=True if cfgs.RUN.ref_dataset == "train" else False,
-                                crop_long_edge=False if cfgs.DATA in cfgs.MISC.no_proc_data else True,
-                                resize_size=None if cfgs.DATA in cfgs.MISC.no_proc_data else cfgs.DATA.img_size,
+                                crop_long_edge=False if cfgs.DATA.name in cfgs.MISC.no_proc_data else True,
+                                resize_size=None if cfgs.DATA.name in cfgs.MISC.no_proc_data else cfgs.DATA.img_size,
                                 random_flip=False,
                                 hdf5_path=None,
+                                normalize=False,
                                 load_data_in_memory=False)
         if local_rank == 0:
             logger.info("Eval dataset size: {dataset_size}".format(dataset_size=len(eval_dataset)))
@@ -251,6 +253,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if len(cfgs.RUN.eval_metrics) or cfgs.RUN.intra_class_fid:
         eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
+                                      resize_fn=cfgs.RUN.resize_fn,
                                       world_size=cfgs.OPTIMIZATION.world_size,
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                       device=local_rank)
@@ -301,12 +304,12 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.training, worker.topk = True, topk
         worker.prepare_train_iter(epoch_counter=epoch)
         while step <= cfgs.OPTIMIZATION.total_steps:
-            if cfgs.MODEL.backbone == "stylegan2":
-                gen_acml_loss = worker.train_generator(current_step=step)
+            if cfgs.OPTIMIZATION.d_first:
                 real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
+                gen_acml_loss = worker.train_generator(current_step=step)
             else:
-                real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
                 gen_acml_loss = worker.train_generator(current_step=step)
+                real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
 
             if global_rank == 0 and (step + 1) % cfgs.RUN.print_every == 0:
                 worker.log_train_statistics(current_step=step,
@@ -405,7 +408,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         worker.run_semantic_factorization(num_rows=cfgs.RUN.num_semantic_axis,
                                           num_cols=num_cols,
                                           maximum_variations=cfgs.RUN.maximum_variations)
-
     if cfgs.RUN.GAN_train:
         if global_rank == 0:
             print(""), logger.info("-" * 80)

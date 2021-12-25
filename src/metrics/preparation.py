@@ -9,8 +9,11 @@ import os
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel as DDP
+from PIL import Image
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.transforms as transforms
 import numpy as np
 
 from metrics.inception_net import InceptionV3
@@ -20,15 +23,19 @@ import utils.misc as misc
 
 
 class LoadEvalModel(object):
-    def __init__(self, eval_backbone, world_size, distributed_data_parallel, device):
+    def __init__(self, eval_backbone, resize_fn, world_size, distributed_data_parallel, device):
         super(LoadEvalModel, self).__init__()
         self.eval_backbone = eval_backbone
+        self.resize_fn = resize_fn
         self.save_output = misc.SaveOutput()
+        self.resize_inside = False if self.resize_fn == "clean" else True
 
         if self.eval_backbone == "Inception_V3":
-            self.model = InceptionV3().to(device)
+            self.res, self.mean, self.std = 299, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]
+            self.model = InceptionV3(resize_input=self.resize_inside).to(device)
         elif self.eval_backbone == "SwAV":
-            self.model = torch.hub.load('facebookresearch/swav', 'resnet50').to(device)
+            self.res, self.mean, self.std = 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+            self.model = torch.hub.load("facebookresearch/swav", "resnet50").to(device)
             hook_handles = []
             for name, layer in self.model.named_children():
                 if name == "fc":
@@ -36,6 +43,17 @@ class LoadEvalModel(object):
                     hook_handles.append(handle)
         else:
             raise NotImplementedError
+
+        if resize_fn == "clean":
+            trsf_list = [transforms.ToPILImage(),
+                         transforms.Resize(self.res, interpolation=Image.BICUBIC, antialias=True),
+                         transforms.ToTensor(),
+                         transforms.Normalize(self.mean, self.std)]
+        elif resize_fn == "legacy":
+            trsf_list = [transforms.ToPILImage(),
+                         transforms.ToTensor(),
+                         transforms.Normalize(self.mean, self.std)]
+        self.trsf = transforms.Compose(trsf_list)
 
         if world_size > 1 and distributed_data_parallel:
             misc.make_model_require_grad(self.model)
@@ -49,14 +67,19 @@ class LoadEvalModel(object):
         self.model.eval()
 
     def get_outputs(self, x):
+        x = list(map(lambda x: self.trsf(x), list(x)))
+        x = torch.stack(x, 0).to("cuda")
+
         if self.eval_backbone == "Inception_V3":
             repres, logits = self.model(x)
-        else:
+        elif self.eval_backbone == "SwAV":
+            if self.resize_fn == "legacy":
+                x = F.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
+
             logits = self.model(x)
             repres = self.save_output.outputs[0][0]
             self.save_output.clear()
         return repres, logits
-
 
 def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger, device):
     disable_tqdm = device != 0
@@ -65,7 +88,7 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
     if not exists(moment_dir):
         os.makedirs(moment_dir)
     moment_path = join(moment_dir, cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
-                       cfgs.RUN.eval_backbone + "_moments.npz")
+                       cfgs.RUN.resize_fn + "_" + cfgs.RUN.eval_backbone + "_moments.npz")
     is_file = os.path.isfile(moment_path)
     if is_file:
         mu = np.load(moment_path)["mu"]

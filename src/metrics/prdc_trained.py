@@ -21,7 +21,6 @@ def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior,
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         real_images, real_labels = next(data_iter)
-        real_images, real_labels = real_images.to(device), real_labels.to(device)
         fake_images, _, _, _, _ = sample.generate_images(z_prior=z_prior,
                                                          truncation_factor=truncation_factor,
                                                          batch_size=batch_size,
@@ -40,6 +39,8 @@ def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior,
                                                          generator_synthesis=generator_synthesis,
                                                          style_mixing_p=0.0,
                                                          cal_trsp_cost=False)
+        fake_images = (fake_images+1)*127.5
+        fake_images = fake_images.detach().cpu().type(torch.uint8)
 
         real_embeddings, _ = eval_model.get_outputs(real_images)
         fake_embeddings, _ = eval_model.get_outputs(fake_images)

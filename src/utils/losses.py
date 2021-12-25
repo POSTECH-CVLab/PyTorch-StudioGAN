@@ -295,19 +295,23 @@ class PathLengthRegularizer:
 def d_vanilla(d_logit_real, d_logit_fake, DDP):
     device = d_logit_real.get_device()
     ones = torch.ones_like(d_logit_real, device=device, requires_grad=False)
-    d_loss = -torch.mean(nn.LogSigmoid()(d_logit_real) + (ones - d_logit_fake.sigmoid() + 1e-6).log())
+    d_loss = -torch.mean(nn.LogSigmoid()(d_logit_real) + nn.LogSigmoid()(ones - d_logit_fake))
     return d_loss
+
 
 def g_vanilla(d_logit_fake, DDP):
     return -torch.mean(nn.LogSigmoid()(d_logit_fake))
+
 
 def d_logistic(d_logit_real, d_logit_fake, DDP):
     d_loss = F.softplus(-d_logit_real) + F.softplus(d_logit_fake)
     return d_loss.mean()
 
+
 def g_logistic(d_logit_fake, DDP):
     # basically same as g_vanilla.
     return F.softplus(-d_logit_fake).mean()
+
 
 def d_ls(d_logit_real, d_logit_fake, DDP):
     d_loss = 0.5 * (d_logit_real - torch.ones_like(d_logit_real))**2 + 0.5 * (d_logit_fake)**2

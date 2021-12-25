@@ -11,6 +11,7 @@ from torch.nn.parallel import DistributedDataParallel
 from sklearn.metrics import top_k_accuracy_score
 from tqdm import tqdm
 import torch
+import numpy as np
 
 import utils.sample as sample
 import utils.misc as misc
@@ -73,6 +74,9 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
                                                                    style_mixing_p=0.0,
                                                                    device=device,
                                                                    cal_trsp_cost=False)
+        fake_images = (fake_images+1)*127.5
+        fake_images = fake_images.detach().cpu().type(torch.uint8)
+
         ps = inception_softmax(eval_model, fake_images)
         ps_holder.append(ps)
         if is_acc:
@@ -101,7 +105,6 @@ def eval_dataset(data_loader, eval_model, splits, batch_size, device, disable_tq
 
     for i in tqdm(range(num_batches), disable=disable_tqdm):
         real_images, real_labels = next(dataset_iter)
-        real_images = real_images.to(device)
         ps = inception_softmax(eval_model, real_images)
         ps_holder.append(ps)
 

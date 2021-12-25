@@ -94,14 +94,13 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
                                                              generator_synthesis=generator_synthesis,
                                                              style_mixing_p=0.0,
                                                              cal_trsp_cost=False)
-            images = images.to(device)
+            images = (images+1)*127.5
+            images = images.detach().cpu().type(torch.uint8)
         else:
             try:
-                feed_list = next(data_iter)
-                images = feed_list[0].to(device)
+                images, labels = next(data_iter)
             except StopIteration:
                 break
-
         with torch.no_grad():
             embeddings, logits = eval_model.get_outputs(images)
 

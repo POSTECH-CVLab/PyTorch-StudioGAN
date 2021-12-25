@@ -77,6 +77,8 @@ def load_configs_initialize_training():
     parser.add_argument("-l", "--load_data_in_memory", action="store_true", help="put the whole train dataset on the main memory for fast I/O")
     parser.add_argument("-metrics", "--eval_metrics", nargs='+', default=['fid'],
                         help="evaluation metrics to use during training, a subset list of ['fid', 'is', 'prdc'] or none")
+    parser.add_argument("--resize_fn", type=str, default="legacy", help="wheter to use PIL.bicubic resizing for calculating clean metrics\
+                        in ['legacy', 'clean']")
     parser.add_argument("-s", "--save_fake_images", action="store_true")
     parser.add_argument("-v", "--vis_fake_images", action="store_true", help=" visualize image canvas")
     parser.add_argument("-knn", "--k_nearest_neighbor", action="store_true", help="conduct k-nearest neighbor analysis")
@@ -100,7 +102,7 @@ def load_configs_initialize_training():
     run_cfgs = vars(args)
 
     if not args.train and \
-            not args.eval and \
+            "none" in args.eval_metrics and \
             not args.save_fake_images and \
             not args.vis_fake_images and \
             not args.k_nearest_neighbor and \
@@ -126,8 +128,8 @@ def load_configs_initialize_training():
                                  framework=cfgs.RUN.cfg_file.split("/")[-1][:-5],
                                  phase="train")
 
-    crop_long_edge = False if cfgs.DATA in cfgs.MISC.no_proc_data else True
-    resize_size = None if cfgs.DATA in cfgs.MISC.no_proc_data else cfgs.DATA.img_size
+    crop_long_edge = False if cfgs.DATA.name in cfgs.MISC.no_proc_data else True
+    resize_size = None if cfgs.DATA.name in cfgs.MISC.no_proc_data else cfgs.DATA.img_size
     if cfgs.RUN.load_train_hdf5:
         hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(name=cfgs.DATA.name,
                                                                 img_size=cfgs.DATA.img_size,
