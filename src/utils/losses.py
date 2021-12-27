@@ -13,7 +13,7 @@ import numpy as np
 
 from utils.style_ops import conv2d_gradfix
 import utils.ops as ops
-import utils.misc as misc
+import utils.misc.GatherLayer as GatherLayer
 
 
 class CrossEntropyLoss(torch.nn.Module):
@@ -70,9 +70,9 @@ class ConditionalContrastiveLoss(torch.nn.Module):
 
     def forward(self, embed, proxy, label, **_):
         if self.DDP:
-            embed = torch.cat(misc.GatherLayer.apply(embed), dim=0)
-            proxy = torch.cat(misc.GatherLayer.apply(proxy), dim=0)
-            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+            embed = torch.cat(GatherLayer.apply(embed), dim=0)
+            proxy = torch.cat(GatherLayer.apply(proxy), dim=0)
+            label = torch.cat(GatherLayer.apply(label), dim=0)
 
         sim_matrix = self.calculate_similarity_matrix(embed, embed)
         sim_matrix = torch.exp(self._remove_diag(sim_matrix) / self.temperature)
@@ -122,9 +122,9 @@ class MiConditionalContrastiveLoss(torch.nn.Module):
 
     def forward(self, mi_embed, mi_proxy, label, **_):
         if self.DDP:
-            mi_embed = torch.cat(misc.GatherLayer.apply(mi_embed), dim=0)
-            mi_proxy = torch.cat(misc.GatherLayer.apply(mi_proxy), dim=0)
-            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+            mi_embed = torch.cat(GatherLayer.apply(mi_embed), dim=0)
+            mi_proxy = torch.cat(GatherLayer.apply(mi_proxy), dim=0)
+            label = torch.cat(GatherLayer.apply(label), dim=0)
 
         sim_matrix = self.calculate_similarity_matrix(mi_embed, mi_embed)
         sim_matrix = torch.exp(self._remove_diag(sim_matrix) / self.temperature)
@@ -177,9 +177,9 @@ class Data2DataCrossEntropyLoss(torch.nn.Module):
     def forward(self, embed, proxy, label, **_):
         # If train a GAN throuh DDP, gather all data on the master rank
         if self.DDP:
-            embed = torch.cat(misc.GatherLayer.apply(embed), dim=0)
-            proxy = torch.cat(misc.GatherLayer.apply(proxy), dim=0)
-            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+            embed = torch.cat(GatherLayer.apply(embed), dim=0)
+            proxy = torch.cat(GatherLayer.apply(proxy), dim=0)
+            label = torch.cat(GatherLayer.apply(label), dim=0)
 
         # calculate similarities between sample embeddings
         sim_matrix = self.calculate_similarity_matrix(embed, embed) + self.m_p - 1
@@ -244,9 +244,9 @@ class MiData2DataCrossEntropyLoss(torch.nn.Module):
     def forward(self, mi_embed, mi_proxy, label, **_):
         # If train a GAN throuh DDP, gather all data on the master rank
         if self.DDP:
-            mi_embed = torch.cat(misc.GatherLayer.apply(mi_embed), dim=0)
-            mi_proxy = torch.cat(misc.GatherLayer.apply(mi_proxy), dim=0)
-            label = torch.cat(misc.GatherLayer.apply(label), dim=0)
+            mi_embed = torch.cat(GatherLayer.apply(mi_embed), dim=0)
+            mi_proxy = torch.cat(GatherLayer.apply(mi_proxy), dim=0)
+            label = torch.cat(GatherLayer.apply(label), dim=0)
 
         # calculate similarities between sample embeddings
         sim_matrix = self.calculate_similarity_matrix(mi_embed, mi_embed) + self.m_p - 1
