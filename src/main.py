@@ -77,7 +77,7 @@ def load_configs_initialize_training():
     parser.add_argument("-l", "--load_data_in_memory", action="store_true", help="put the whole train dataset on the main memory for fast I/O")
     parser.add_argument("-metrics", "--eval_metrics", nargs='+', default=['fid'],
                         help="evaluation metrics to use during training, a subset list of ['fid', 'is', 'prdc'] or none")
-    parser.add_argument("--resize_fn", type=str, default="legacy", help="wheter to use PIL.bicubic resizing for calculating clean metrics\
+    parser.add_argument("--resize_fn", type=str, default="legacy", help="which mode to use PIL.bicubic resizing for calculating clean metrics\
                         in ['legacy', 'clean']")
     parser.add_argument("-s", "--save_fake_images", action="store_true")
     parser.add_argument("-v", "--vis_fake_images", action="store_true", help=" visualize image canvas")
