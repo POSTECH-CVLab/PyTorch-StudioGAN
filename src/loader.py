@@ -132,7 +132,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                 resize_size=None if cfgs.DATA.name in cfgs.MISC.no_proc_data else cfgs.DATA.img_size,
                                 random_flip=False,
                                 hdf5_path=None,
-                                normalize=False,
+                                normalize=True,
                                 load_data_in_memory=False)
         if local_rank == 0:
             logger.info("Eval dataset size: {dataset_size}".format(dataset_size=len(eval_dataset)))

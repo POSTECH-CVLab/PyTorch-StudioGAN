@@ -74,15 +74,14 @@ class Dataset_(Dataset):
                 self.trsf_list += [RandomCropLongEdge() if self.train else CenterCropLongEdge()]
             if resize_size is not None:
                 self.trsf_list += [transforms.Resize(resize_size, Image.BICUBIC, antialias=True)]
-            if self.normalize:
-                self.trsf_list += [transforms.ToTensor()]
         else:
-            self.trsf_list += [transforms.ToTensor()]
+            self.trsf_list += [transforms.ToPILImage()]
 
         if self.random_flip:
             self.trsf_list += [transforms.RandomHorizontalFlip()]
 
         if self.normalize:
+            self.trsf_list += [transforms.ToTensor()]
             self.trsf_list += [transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
         else:
             self.trsf_list += [transforms.PILToTensor()]
