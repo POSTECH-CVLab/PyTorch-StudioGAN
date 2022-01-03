@@ -683,7 +683,7 @@ class WORKER(object):
                                                                        style_mixing_p=0.0,
                                                                        cal_trsp_cost=False)
 
-        misc.plot_img_canvas(images=(fake_images.detach().cpu() + 1) / 2,
+        misc.plot_img_canvas(images=fake_images.detach().cpu(),
                              save_path=join(self.RUN.save_dir,
                                             "figures/{run_name}/generated_canvas_{step}.png".format(run_name=self.run_name,
                                                                                                     step=current_step)),
@@ -999,7 +999,7 @@ class WORKER(object):
                     row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
                                                 axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
-                    misc.plot_img_canvas(images=(torch.from_numpy(canvas)+1)/2,
+                    misc.plot_img_canvas(images=torch.from_numpy(canvas),
                                          save_path=join(self.RUN.save_dir, "figures/{run_name}/fake_anchor_{num_cols}NN_{cls}_classes.png".\
                                                         format(run_name=self.run_name, num_cols=num_cols, cls=c+1)),
                                          num_cols=num_cols,
@@ -1054,7 +1054,7 @@ class WORKER(object):
 
                 interpolated_images = generator(zs, None, shared_label=ys)
 
-                misc.plot_img_canvas(images=(interpolated_images.detach().cpu()+1)/2,
+                misc.plot_img_canvas(images=interpolated_images.detach().cpu(),
                                      save_path=join(self.RUN.save_dir, "figures/{run_name}/{num}_Interpolated_images_{fix_flag}.png".\
                                                     format(num=ns, run_name=self.run_name, fix_flag=name)),
                                      num_cols=num_cols,
@@ -1352,7 +1352,7 @@ class WORKER(object):
                                                 maximum_variations=maximum_variations,
                                                 num_cols=num_cols)
 
-                misc.plot_img_canvas(images=(images_canvas.detach().cpu()+1)/2,
+                misc.plot_img_canvas(images=images_canvas.detach().cpu(),
                                      save_path=join(self.RUN.save_dir, "figures/{run_name}/{idx}_sefa_images.png".\
                                                     format(idx=i, run_name=self.run_name)),
                                      num_cols=num_cols,

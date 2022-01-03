@@ -74,8 +74,6 @@ def eval_generator(data_loader, generator, discriminator, eval_model, num_genera
                                                                    style_mixing_p=0.0,
                                                                    device=device,
                                                                    cal_trsp_cost=False)
-        fake_images = (fake_images+1)*127.5
-        fake_images = fake_images.detach().cpu().type(torch.uint8)
 
         ps = inception_softmax(eval_model, fake_images)
         ps_holder.append(ps)

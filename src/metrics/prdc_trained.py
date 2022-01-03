@@ -39,8 +39,6 @@ def compute_real_fake_embeddings(data_loader, num_generate, batch_size, z_prior,
                                                          generator_synthesis=generator_synthesis,
                                                          style_mixing_p=0.0,
                                                          cal_trsp_cost=False)
-        fake_images = (fake_images+1)*127.5
-        fake_images = fake_images.detach().cpu().type(torch.uint8)
 
         real_embeddings, _ = eval_model.get_outputs(real_images)
         fake_embeddings, _ = eval_model.get_outputs(fake_images)

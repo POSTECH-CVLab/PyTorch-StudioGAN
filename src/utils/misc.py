@@ -22,6 +22,7 @@ from itertools import chain
 from tqdm import tqdm
 from scipy import linalg
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
 import torch.multiprocessing as mp
 import shutil
@@ -407,7 +408,7 @@ def plot_img_canvas(images, save_path, num_cols, logger, logging=True):
     if not exists(directory):
         os.makedirs(directory)
 
-    save_image(images, save_path, padding=0, nrow=num_cols)
+    save_image(((images + 1)/2).clampe(0.0, 1.0), save_path, padding=0, nrow=num_cols)
     if logging:
         logger.info("Save image canvas to {}".format(save_path))
 
@@ -510,7 +511,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
                 except StopIteration:
                     break
 
-            x += [np.uint8(255 * (images.detach().cpu().numpy() + 1) / 2.)]
+            x += [np.uint8((255*(images.detach().cpu().numpy() + 1)/2).clamp(0, 255))]
             y += [labels.detach().cpu().numpy()]
 
     x = np.concatenate(x, 0)[:num_images]
@@ -571,7 +572,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
 
             for idx, img in enumerate(images.detach()):
                 if batch_size * i + idx < num_images:
-                    save_image((img + 1) / 2,
+                    save_image(((img+1) / 2).clamp(0.0, 1.0),
                                join(directory, str(labels[idx].item()), "{idx}.png".format(idx=batch_size * i + idx)))
                 else:
                     pass
@@ -627,6 +628,7 @@ def load_ImageNet_label_dict():
         label += 1
     return label_dict
 
+
 def compute_gradient(fx, logits, label, num_classes):
     probs = torch.nn.Softmax(dim=1)(logits.detach().cpu())
     gt_prob = F.one_hot(label, num_classes)
@@ -634,6 +636,7 @@ def compute_gradient(fx, logits, label, num_classes):
     preds = (probs*gt_prob).sum(-1)
     grad = torch.mean(fx.unsqueeze(1) * oneMp.unsqueeze(2), dim=0)
     return fx.norm(dim=1), preds, torch.norm(grad, dim=1)
+
 
 def load_parameters(src, dst, strict=True):
     mismatch_names = []
@@ -650,6 +653,7 @@ def load_parameters(src, dst, strict=True):
             mismatch_names.append(dst_key)
             assert not strict, "dst_key is not in src_dict."
     return mismatch_names
+
 
 def enable_allreduce(dict_):
     loss = 0

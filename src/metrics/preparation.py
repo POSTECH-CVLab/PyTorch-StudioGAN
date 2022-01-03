@@ -20,6 +20,7 @@ from metrics.inception_net import InceptionV3
 import metrics.fid as fid
 import metrics.ins as ins
 import utils.misc as misc
+import utils.resize as resize
 
 
 class LoadEvalModel(object):
@@ -28,13 +29,12 @@ class LoadEvalModel(object):
         self.eval_backbone = eval_backbone
         self.resize_fn = resize_fn
         self.save_output = misc.SaveOutput()
-        self.resize_inside = False if self.resize_fn == "clean" else True
 
         if self.eval_backbone == "Inception_V3":
-            self.res, self.mean, self.std = 299, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]
-            self.model = InceptionV3(resize_input=self.resize_inside).to(device)
+            self.res, mean, std = 299, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]
+            self.model = InceptionV3(resize_input=False, normalize_input=False).to(device)
         elif self.eval_backbone == "SwAV":
-            self.res, self.mean, self.std = 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+            self.res, mean, std = 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
             self.model = torch.hub.load("facebookresearch/swav", "resnet50").to(device)
             hook_handles = []
             for name, layer in self.model.named_children():
@@ -44,16 +44,10 @@ class LoadEvalModel(object):
         else:
             raise NotImplementedError
 
-        if resize_fn == "clean":
-            trsf_list = [transforms.ToPILImage(),
-                         transforms.Resize(self.res, interpolation=Image.BICUBIC, antialias=True),
-                         transforms.ToTensor(),
-                         transforms.Normalize(self.mean, self.std)]
-        elif resize_fn == "legacy":
-            trsf_list = [transforms.ToPILImage(),
-                         transforms.ToTensor(),
-                         transforms.Normalize(self.mean, self.std)]
-        self.trsf = transforms.Compose(trsf_list)
+        self.resizer = resize.build_resizer(mode=resize_fn, size=self.res)
+        self.trsf = transforms.Compose([transforms.ToTensor()])
+        self.mean = torch.Tensor(mean).view(1, 3, 1, 1).to("cuda")
+        self.std = torch.Tensor(std).view(1, 3, 1, 1).to("cuda")
 
         if world_size > 1 and distributed_data_parallel:
             misc.make_model_require_grad(self.model)
@@ -67,15 +61,16 @@ class LoadEvalModel(object):
         self.model.eval()
 
     def get_outputs(self, x):
-        x = list(map(lambda x: self.trsf(x), list(x)))
-        x = torch.stack(x, 0).to("cuda")
+        x = (127.5*x + 127.5).clamp(0, 255)
+        x = x.detach().cpu().numpy().astype(np.uint8)
+        x = x.transpose((0, 2, 3, 1))
+        x = list(map(lambda x: self.trsf(self.resizer(x)), list(x)))
+        x = torch.stack(x, 0).to("cuda")/255.0
+        x = (x - self.mean)/self.std
 
         if self.eval_backbone == "Inception_V3":
             repres, logits = self.model(x)
         elif self.eval_backbone == "SwAV":
-            if self.resize_fn == "legacy":
-                x = F.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
-
             logits = self.model(x)
             repres = self.save_output.outputs[0][0]
             self.save_output.clear()
