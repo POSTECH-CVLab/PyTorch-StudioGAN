@@ -408,7 +408,7 @@ def plot_img_canvas(images, save_path, num_cols, logger, logging=True):
     if not exists(directory):
         os.makedirs(directory)
 
-    save_image(((images + 1)/2).clampe(0.0, 1.0), save_path, padding=0, nrow=num_cols)
+    save_image(((images + 1)/2).clamp(0.0, 1.0), save_path, padding=0, nrow=num_cols)
     if logging:
         logger.info("Save image canvas to {}".format(save_path))
 
@@ -511,7 +511,7 @@ def save_images_npz(data_loader, generator, discriminator, is_generate, num_imag
                 except StopIteration:
                     break
 
-            x += [np.uint8((255*(images.detach().cpu().numpy() + 1)/2).clamp(0, 255))]
+            x += [np.uint8((127.5*images.detach().cpu().numpy() + 127.5).clip(0, 255))]
             y += [labels.detach().cpu().numpy()]
 
     x = np.concatenate(x, 0)[:num_images]
@@ -572,7 +572,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
 
             for idx, img in enumerate(images.detach()):
                 if batch_size * i + idx < num_images:
-                    save_image(((img+1) / 2).clamp(0.0, 1.0),
+                    save_image(((img+1)/2).clamp(0.0, 1.0),
                                join(directory, str(labels[idx].item()), "{idx}.png".format(idx=batch_size * i + idx)))
                 else:
                     pass
