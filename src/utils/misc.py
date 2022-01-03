@@ -25,6 +25,7 @@ import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 import torch.multiprocessing as mp
+import torchvision.transforms as transforms
 import shutil
 import numpy as np
 import seaborn as sns

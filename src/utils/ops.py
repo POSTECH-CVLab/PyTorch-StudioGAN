@@ -8,6 +8,7 @@ from torch.nn.utils import spectral_norm
 from torch.nn import init
 import torch
 import torch.nn as nn
+import numpy as np
 
 
 class ConditionalBatchNorm2d(nn.Module):
@@ -210,3 +211,17 @@ def adjust_learning_rate(optimizer, lr_org, epoch, total_epoch, dataset):
 
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
+
+def quantize_images(x):
+    x = (127.5*x + 127.5).clamp(0, 255)
+    x = x.detach().cpu().numpy().astype(np.uint8)
+    return x
+
+
+def resize_images(x, resizer, ToTensor, mean, std, device="cuda"):
+    x = x.transpose((0, 2, 3, 1))
+    x = list(map(lambda x: ToTensor(resizer(x)), list(x)))
+    x = torch.stack(x, 0).to(device)
+    x = (x/255.0 - mean)/std
+    return x

@@ -35,6 +35,7 @@ import utils.misc as misc
 import utils.losses as losses
 import utils.sefa as sefa
 import utils.ops as ops
+import utils.resize as resize
 import wandb
 
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
@@ -929,15 +930,19 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     def run_k_nearest_neighbor(self, dataset, num_rows, num_cols):
         if self.global_rank == 0:
-            self.logger.info(
-                "Run K-nearest neighbor analysis using fake and {ref} dataset.".format(ref=self.RUN.ref_dataset))
-        if self.gen_ctlr.standing_statistics:
-            self.gen_ctlr.std_stat_counter += 1
+            self.logger.info("Run K-nearest neighbor analysis using fake and {ref} dataset.".format(ref=self.RUN.ref_dataset))
+        if self.gen_ctlr.standing_statistics: self.gen_ctlr.std_stat_counter += 1
 
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
+
+            res, mean, std = 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+            resizer = resize.build_resizer(mode=self.RUN.resize_fn, size=res)
+            trsf = transforms.Compose([transforms.ToTensor()])
+            mean = torch.Tensor(mean).view(1, 3, 1, 1).to("cuda")
+            std = torch.Tensor(std).view(1, 3, 1, 1).to("cuda")
 
             resnet50_model = torch.hub.load("pytorch/vision:v0.6.0", "resnet50", pretrained=True)
             resnet50_conv = nn.Sequential(*list(resnet50_model.children())[:-1]).to(self.local_rank)
@@ -964,9 +969,10 @@ class WORKER(object):
                                                                         generator_synthesis=generator_synthesis,
                                                                         style_mixing_p=0.0,
                                                                         cal_trsp_cost=False)
-
                 fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
-                fake_anchor_embed = torch.squeeze(resnet50_conv((fake_anchor + 1) / 2))
+                fake_anchor = ops.quantize_images(fake_anchor)
+                fake_anchor = ops.resize_images(fake_anchor, resizer, trsf, mean, std)
+                fake_anchor_embed = torch.squeeze(resnet50_conv(fake_anchor))
 
                 num_samples, target_sampler = sample.make_target_cls_sampler(dataset=dataset, target_class=c)
                 batch_size = self.OPTIMIZATION.batch_size if num_samples >= self.OPTIMIZATION.batch_size else num_samples
@@ -976,12 +982,12 @@ class WORKER(object):
                                                            sampler=target_sampler,
                                                            num_workers=self.RUN.num_workers,
                                                            pin_memory=True)
-
                 c_iter = iter(c_dataloader)
-                for batch_idx in range(num_samples // batch_size):
+                for batch_idx in range(num_samples//batch_size):
                     real_images, real_labels = next(c_iter)
-                    real_images = real_images.to(self.local_rank)
-                    real_embed = torch.squeeze(resnet50_conv((real_images + 1) / 2))
+                    real_images = ops.quantize_images(real_images)
+                    real_images = ops.resize_images(real_images, resizer, trsf, mean, std)
+                    real_embed = torch.squeeze(resnet50_conv(real_images))
                     if batch_idx == 0:
                         distances = torch.square(real_embed - fake_anchor_embed).mean(dim=1).detach().cpu().numpy()
                         image_holder = real_images.detach().cpu().numpy()
@@ -997,8 +1003,7 @@ class WORKER(object):
                 if c % num_rows == 0:
                     canvas = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
                 elif c % num_rows == num_rows - 1:
-                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
-                                                axis=0)
+                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
                     misc.plot_img_canvas(images=torch.from_numpy(canvas),
                                          save_path=join(self.RUN.save_dir, "figures/{run_name}/fake_anchor_{num_cols}NN_{cls}_classes.png".\
@@ -1007,8 +1012,7 @@ class WORKER(object):
                                          logger=self.logger,
                                          logging=self.global_rank == 0 and self.logger)
                 else:
-                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]],
-                                                axis=0)
+                    row_images = np.concatenate([fake_anchor.detach().cpu().numpy(), image_holder[nearest_indices]], axis=0)
                     canvas = np.concatenate((canvas, row_images), axis=0)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)

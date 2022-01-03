@@ -20,6 +20,7 @@ from metrics.inception_net import InceptionV3
 import metrics.fid as fid
 import metrics.ins as ins
 import utils.misc as misc
+import utils.ops as ops
 import utils.resize as resize
 
 
@@ -61,12 +62,8 @@ class LoadEvalModel(object):
         self.model.eval()
 
     def get_outputs(self, x):
-        x = (127.5*x + 127.5).clamp(0, 255)
-        x = x.detach().cpu().numpy().astype(np.uint8)
-        x = x.transpose((0, 2, 3, 1))
-        x = list(map(lambda x: self.trsf(self.resizer(x)), list(x)))
-        x = torch.stack(x, 0).to("cuda")/255.0
-        x = (x - self.mean)/self.std
+        x = ops.quantize_images(x)
+        x = ops.resize_images(x, self.resizer, self.trsf, self.mean, self.std)
 
         if self.eval_backbone == "Inception_V3":
             repres, logits = self.model(x)
