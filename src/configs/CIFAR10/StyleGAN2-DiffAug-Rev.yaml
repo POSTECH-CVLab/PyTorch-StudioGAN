@@ -1,0 +1,59 @@
+# Guidelines for StyleGAN2-DiffAug config
+# Don't change cfgs except for the explained below as comment.
+# Changing other cfgs will cause it to deviate from original StyleGAN paper settings.
+# g_cond_mtd can be changed btw ["N/A", "cAdaIN"]
+# d_cond_mtd can be changed btw ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE", "SPD"]
+# z_dim, w_dim should be fixed to 512 regardless of image size.
+# apply_g_ema should be true for stable results.
+# apply_r1_reg should be true.
+# g_reg_interval, d_reg_interval is fixed to 4, 16 regardless of image size.
+# pl_reg is disabled only for cifar10.
+# d_architecture is 'orig' for cifar10.
+# style_mixing_p should be 0.9 for all settings except for cifar10 (0)
+# for total_step, batch_size, d_epilogue_mbstd_group_size, g/d_lr, r1_lambda, g_ema_kimg
+# g_ema_rampup, mapping_network, check StyleGAN2 section in src/config.py
+
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  backbone: "stylegan2"
+  g_cond_mtd: "cAdaIN"
+  d_cond_mtd: "SPD"
+  g_act_fn: "Auto"
+  d_act_fn: "Auto"
+  z_prior: "gaussian"
+  z_dim: 512
+  w_dim: 512
+  g_conv_dim: "N/A"
+  d_conv_dim: "N/A"
+  apply_g_ema: True
+LOSS:
+  adv_loss: "logistic"
+  apply_r1_reg: True
+  r1_lambda: 0.01
+OPTIMIZATION:
+  # These values will be slightly changed if lazy regularization is applied.
+  g_lr: 0.0025
+  d_lr: 0.0025
+  beta1: 0
+  beta2: 0.99
+  d_first: False
+  g_updates_per_step: 1
+  d_updates_per_step: 1
+  total_steps: 1000000
+AUG:
+  apply_diffaug: True
+  diffaug_type: "diffaug"
+STYLEGAN2:
+  g_reg_interval: 4
+  d_reg_interval: 16
+  mapping_network: 2
+  style_mixing_p: 0
+  g_ema_kimg: 500
+  g_ema_rampup: 0.05
+  apply_pl_reg: False
+  pl_weight: 0
+  d_architecture: "orig"
+  d_epilogue_mbstd_group_size: 32

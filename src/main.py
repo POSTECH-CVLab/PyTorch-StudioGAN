@@ -77,6 +77,7 @@ def load_configs_initialize_training():
     parser.add_argument("-l", "--load_data_in_memory", action="store_true", help="put the whole train dataset on the main memory for fast I/O")
     parser.add_argument("-metrics", "--eval_metrics", nargs='+', default=['fid'],
                         help="evaluation metrics to use during training, a subset list of ['fid', 'is', 'prdc'] or none")
+    parser.add_argument("--num_eval", type=int, default=1, help="number of runs for final evaluation.")
     parser.add_argument("--resize_fn", type=str, default="legacy", help="which mode to use PIL.bicubic resizing for calculating clean metrics\
                         in ['legacy', 'clean']")
     parser.add_argument("-s", "--save_fake_images", action="store_true")
@@ -98,6 +99,7 @@ def load_configs_initialize_training():
     parser.add_argument("-every", "--save_every", type=int, default=2000, help="save interval")
     parser.add_argument('--eval_backbone', type=str, default='Inception_V3', help="[SwAV, Inception_V3]")
     parser.add_argument("-ref", "--ref_dataset", type=str, default="train", help="reference dataset for evaluation[train/valid/test]")
+    parser.add_argument("--is_ref_dataset", action="store_true", help="whether to calculate a inception score of the ref dataset.")
     args = parser.parse_args()
     run_cfgs = vars(args)
 
@@ -124,7 +126,7 @@ def load_configs_initialize_training():
     cfgs.check_compatability()
 
     run_name = log.make_run_name(RUN_NAME_FORMAT,
-                                 data_name= cfgs.DATA.name,
+                                 data_name=cfgs.DATA.name,
                                  framework=cfgs.RUN.cfg_file.split("/")[-1][:-5],
                                  phase="train")
 
@@ -145,8 +147,7 @@ def load_configs_initialize_training():
     misc.prepare_folder(names=cfgs.MISC.base_folders, save_dir=cfgs.RUN.save_dir)
     misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
 
-    if cfgs.RUN.seed == -1:
-        cfgs.RUN.seed = random.randint(1, 4096)
+    if cfgs.RUN.seed == -1: cfgs.RUN.seed = random.randint(1, 4096)
 
     if cfgs.OPTIMIZATION.world_size == 1:
         print("You have chosen a specific GPU. This will completely disable data parallelism.")

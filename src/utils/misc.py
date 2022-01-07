@@ -598,14 +598,16 @@ def interpolate(x0, x1, num_midpoints):
 
 def accm_values_convert_dict(list_dict, value_dict, step, interval):
     for name, value_list in list_dict.items():
-        try:
-            value_list[step // interval - 1] = value_dict[name]
-        except IndexError:
+        if step is None:
+            value_list += [value_dict[name]]
+        else:
             try:
-                value_list += [value_dict[name]]
-            except:
-                raise KeyError
-
+                value_list[step // interval - 1] = value_dict[name]
+            except IndexError:
+                try:
+                    value_list += [value_dict[name]]
+                except:
+                    raise KeyError
         list_dict[name] = value_list
     return list_dict
 
