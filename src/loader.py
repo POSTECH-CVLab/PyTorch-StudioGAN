@@ -232,8 +232,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       RUN=cfgs.RUN,
                                       logger=logger,
                                       global_rank=global_rank,
-                                      device=local_rank)
-
+                                      device=local_rank,
+                                      cfg_file=cfgs.RUN.cfg_file)
+        
         if topk == "initialize":
             topk == cfgs.OPTIMIZATION.batch_size
         if cfgs.MODEL.backbone == "stylegan2":

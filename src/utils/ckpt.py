@@ -65,7 +65,7 @@ def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, loa
 
 
 def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer, run_name, apply_g_ema, Gen_ema, ema,
-                         is_train, RUN, logger, global_rank, device):
+                         is_train, RUN, logger, global_rank, device, cfg_file):
     when = "best" if load_best is True else "current"
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-{when}-weights-step*.pth".format(when=when)))[0]
     Dis_ckpt_path = glob.glob(join(ckpt_dir, "model=D-{when}-weights-step*.pth".format(when=when)))[0]
@@ -76,7 +76,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
               optimizer=g_optimizer,
               ckpt_path=Gen_ckpt_path,
               load_model=True,
-              load_opt=False if prev_run_name in blacklist or is_freezeD else True,
+              load_opt=False if prev_run_name in blacklist or is_freezeD or not is_train else True,
               load_misc=False,
               is_freezeD=is_freezeD)
 
@@ -85,9 +85,12 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
                   optimizer=d_optimizer,
                   ckpt_path=Dis_ckpt_path,
                   load_model=True,
-                  load_opt=False if prev_run_name in blacklist or is_freezeD else True,
+                  load_opt=False if prev_run_name in blacklist or is_freezeD or not is_train else True,
                   load_misc=True,
                   is_freezeD=is_freezeD)
+    
+    if not is_train:
+        prev_run_name = cfg_file[cfg_file.rindex("/")+1:cfg_file.index(".yaml")]+prev_run_name[prev_run_name.index("-train"):]
 
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
