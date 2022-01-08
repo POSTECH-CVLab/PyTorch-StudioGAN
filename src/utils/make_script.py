@@ -64,9 +64,9 @@ def get_proper_configs(parsed_args):
 
 def write_script(ckpt_cfg_dict, parsed_args):
     with open("eval_"+parsed_args.dataset+".sh", "w") as f:
-        prefix_style = "CUDA_VISIBLE_DEVICES=0 python src/main.py -hdf5 -l -metrics is fid prdc" + " -data " + parsed_args.dataset_path + " -save ../studiogan/"+ parsed_args.dataset + datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + " --num_eval " + str(parsed_args.num_eval)
+        prefix_style = "CUDA_VISIBLE_DEVICES=0 python src/main.py -hdf5 -l -metrics is fid prdc" + " -data " + parsed_args.dataset_path + " -save ../studiogan/"+ parsed_args.dataset + datetime.now().strftime("_%Y_%m_%d_%H_%M_%S") + " --num_eval " + str(parsed_args.num_eval)
         if parsed_args.dataset == "ImageNet":
-            prefix_ = "CUDA_VISIBLE_DEVICES=0 python src/main.py -hdf5 -l -std_stat -std_max 256 -std_step 256 -metrics is fid prdc" + " -data " + parsed_args.dataset_path + " -save ../studiogan/"+ parsed_args.dataset + datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + " --num_eval " + str(parsed_args.num_eval)
+            prefix_ = "CUDA_VISIBLE_DEVICES=0 python src/main.py -hdf5 -l -std_stat -std_max 256 -std_step 256 -metrics is fid prdc" + " -data " + parsed_args.dataset_path + " -save ../studiogan/"+ parsed_args.dataset + datetime.now().strftime("_%Y_%m_%d_%H_%M_%S") + " --num_eval " + str(parsed_args.num_eval)
             valid = " -ref valid"
         else:
             prefix_ = "CUDA_VISIBLE_DEVICES=0 python src/main.py -hdf5 -l -batch_stat -metrics is fid prdc" + " -data " + parsed_args.dataset_path + " -save ../studiogan/"+ parsed_args.dataset + datetime.now().strftime("_%Y_%m_%d_%H_%M_%S")+ " --num_eval " + str(parsed_args.num_eval)
