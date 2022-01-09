@@ -145,7 +145,7 @@ class Configurations(object):
         # whether to apply deep regret analysis regularization
         self.LOSS.apply_dra = False
         # strength of the deep regret analysis regularization
-        self.LOSS.dra_labmda = "N/A"
+        self.LOSS.dra_lambda = "N/A"
         # whther to apply max gradient penalty to let the discriminator satisfy Lipschitzness
         self.LOSS.apply_maxgp = False
         # strength of the maxgp regularization

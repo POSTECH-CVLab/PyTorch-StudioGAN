@@ -42,7 +42,7 @@ def write_excel(parsed_args):
             row += 1
     
     valid = "valid" if parsed_args.dataset == "ImageNet" else "test"
-    for log in log_list:
+    for log in sorted(log_list):
         with open(os.path.join(parsed_args.log_path, log), 'r') as f:
             lines = f.readlines()
             num_run = 0
