@@ -88,7 +88,7 @@ def calculate_moments(data_loader, eval_model, num_generate, batch_size, quantiz
 
         acts = torch.cat(acts, dim=0)
         if DDP: acts = torch.cat(losses.GatherLayer.apply(acts), dim=0)
-        acts = acts.detach().cpu().numpy()[:total_instance]
+        acts = acts.detach().cpu().numpy()[:total_instance].astype(np.float64)
 
     mu = np.mean(acts, axis=0)
     sigma = np.cov(acts, rowvar=False)

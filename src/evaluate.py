@@ -119,14 +119,14 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     dset1_dataloader = DataLoader(dataset=dset1,
                                   batch_size=batch_size,
-                                  shuffle=(dset1_sampler is None),
+                                  shuffle=False,
                                   pin_memory=True,
                                   num_workers=args.num_workers,
                                   sampler=dset1_sampler,
                                   drop_last=False)
     dset2_dataloader = DataLoader(dataset=dset2,
                                   batch_size=batch_size,
-                                  shuffle=(dset2_sampler is None),
+                                  shuffle=False,
                                   pin_memory=True,
                                   num_workers=args.num_workers,
                                   sampler=dset2_sampler,
@@ -184,11 +184,11 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
             print("Inception score of dset2 ({num} images): {IS}".format(num=str(len(dset2)), IS=dset2_kl_score))
 
     if "fid" in args.eval_metrics:
-        mu1 = np.mean(dset1_feats.detach().cpu().numpy()[:len(dset1)], axis=0)
-        sigma1 = np.cov(dset1_feats.detach().cpu().numpy()[:len(dset1)], rowvar=False)
+        mu1 = np.mean(dset1_feats.detach().cpu().numpy().astype(np.float64)[:len(dset1)], axis=0)
+        sigma1 = np.cov(dset1_feats.detach().cpu().numpy().astype(np.float64)[:len(dset1)], rowvar=False)
 
-        mu2 = np.mean(dset2_feats.detach().cpu().numpy()[:len(dset2)], axis=0)
-        sigma2 = np.cov(dset2_feats.detach().cpu().numpy()[:len(dset2)], rowvar=False)
+        mu2 = np.mean(dset2_feats.detach().cpu().numpy().astype(np.float64)[:len(dset2)], axis=0)
+        sigma2 = np.cov(dset2_feats.detach().cpu().numpy().astype(np.float64)[:len(dset2)], rowvar=False)
 
         fid_score = fid.frechet_inception_distance(mu1, sigma1, mu2, sigma2)
         if local_rank == 0:
