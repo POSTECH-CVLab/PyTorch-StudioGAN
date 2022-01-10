@@ -145,7 +145,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # define dataloaders for train and evaluation.
     # -----------------------------------------------------------------------------
     if cfgs.RUN.distributed_data_parallel:
-        cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size // cfgs.OPTIMIZATION.world_size
+        cfgs.OPTIMIZATION.batch_size = cfgs.OPTIMIZATION.batch_size//cfgs.OPTIMIZATION.world_size
 
     if cfgs.RUN.train and cfgs.RUN.distributed_data_parallel:
         train_sampler = DistributedSampler(train_dataset,
@@ -183,7 +183,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
         eval_dataloader = DataLoader(dataset=eval_dataset,
                                      batch_size=cfgs.OPTIMIZATION.batch_size,
-                                     shuffle=(eval_sampler is None),
+                                     shuffle=False,
                                      pin_memory=True,
                                      num_workers=cfgs.RUN.num_workers,
                                      sampler=eval_sampler,
