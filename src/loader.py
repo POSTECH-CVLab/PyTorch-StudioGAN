@@ -122,7 +122,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         train_dataset = None
 
-    if len(cfgs.RUN.eval_metrics) + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
+    if len(cfgs.RUN.eval_metrics) + +cfgs.RUN.save_real_images + cfgs.RUN.k_nearest_neighbor + \
+            cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         if local_rank == 0:
             logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
@@ -169,7 +170,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         train_dataloader = None
 
-    if len(cfgs.RUN.eval_metrics) + cfgs.RUN.k_nearest_neighbor + cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
+    if len(cfgs.RUN.eval_metrics) + +cfgs.RUN.save_real_images + cfgs.RUN.k_nearest_neighbor + \
+            cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         if cfgs.RUN.distributed_data_parallel:
             eval_sampler = DistributedSampler(eval_dataset,
                                               num_replicas=cfgs.OPTIMIZATION.world_size,
@@ -234,7 +236,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       global_rank=global_rank,
                                       device=local_rank,
                                       cfg_file=cfgs.RUN.cfg_file)
-        
+
         if topk == "initialize":
             topk == cfgs.OPTIMIZATION.batch_size
         if cfgs.MODEL.backbone == "stylegan2":
@@ -395,10 +397,15 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                 print(""), logger.info("-" * 80)
             _ = worker.evaluate(step=best_step, metrics=cfgs.RUN.eval_metrics, writing=False, training=False)
 
+    if cfgs.RUN.save_real_images:
+        if global_rank == 0:
+            print(""), logger.info("-" * 80)
+        worker.save_real_images()
+
     if cfgs.RUN.save_fake_images:
         if global_rank == 0:
             print(""), logger.info("-" * 80)
-        worker.save_fake_images(png=True, npz=True)
+        worker.save_fake_images()
 
     if cfgs.RUN.vis_fake_images:
         if global_rank == 0:

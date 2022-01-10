@@ -42,23 +42,23 @@ def calculate_kl_div(ps, splits):
     return m_scores, m_std
 
 
-def eval_generator(fake_probs, fake_labels, data_loader, num_generate, split, is_acc):
+def eval_features(probs, labels, data_loader, num_features, split, is_acc):
     if is_acc:
         ImageNet_folder_label_dict = misc.load_ImageNet_label_dict()
         loader_label_folder_dict = {v: k for k, v, in data_loader.dataset.data.class_to_idx.items()}
-        loader_label_holder = fake_labels
+        loader_label_holder = labels
     else:
         top1, top5 = "N/A", "N/A"
 
-    m_scores, m_std = calculate_kl_div(fake_probs[:num_generate], splits=split)
+    m_scores, m_std = calculate_kl_div(probs[:num_features], splits=split)
 
     if is_acc:
         converted_labels = []
         for loader_label in loader_label_holder:
             converted_labels.append(ImageNet_folder_label_dict[loader_label_folder_dict[loader_label]])
-        pred = torch.argmax(fake_probs, 1).detach().cpu().numpy() - 1
-        top1 = top_k_accuracy_score([i + 1 for i in converted_labels], fake_probs[:, 1:1001].detach().cpu().numpy(), k=1)
-        top5 = top_k_accuracy_score([i + 1 for i in converted_labels], fake_probs[:, 1:1001].detach().cpu().numpy(), k=5)
+        pred = torch.argmax(probs, 1).detach().cpu().numpy() - 1
+        top1 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 1:1001].detach().cpu().numpy(), k=1)
+        top5 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 1:1001].detach().cpu().numpy(), k=5)
     return m_scores, m_std, top1, top5
 
 

@@ -627,7 +627,7 @@ class Configurations(object):
                 It is possible to train a GAN using the DDP option and then compute CAS using DP."
 
         if self.RUN.distributed_data_parallel:
-            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, tsne analysis, SeFa, and CAS with DDP. \
+            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, tsne analysis, DDLS, SeFa, and CAS with DDP. \
                 Please change DDP with a single GPU training or DataParallel instead."
             assert self.RUN.vis_fake_images + \
                 self.RUN.k_nearest_neighbor + \
@@ -635,6 +635,7 @@ class Configurations(object):
                 self.RUN.frequency_analysis + \
                 self.RUN.tsne_analysis + \
                 self.RUN.semantic_factorization + \
+                self.RUN.langevin_sampling + \
                 self.RUN.GAN_train + \
                 self.RUN.GAN_test == 0, \
             msg

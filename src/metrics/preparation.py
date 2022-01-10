@@ -64,6 +64,8 @@ class LoadEvalModel(object):
     def get_outputs(self, x, quantize=False):
         if quantize:
             x = ops.quantize_images(x)
+        else:
+            x = x.detach().cpu().numpy().astype(np.uint8)
         x = ops.resize_images(x, self.resizer, self.trsf, self.mean, self.std)
 
         if self.eval_backbone == "Inception_V3":

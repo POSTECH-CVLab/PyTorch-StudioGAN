@@ -707,7 +707,7 @@ class WORKER(object):
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
-        is_best, num_split, nearest_k= False, 1, 5
+        is_best, num_splits, nearest_k = False, 1, 5
         is_acc = True if self.DATA.name == "ImageNet" else False
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
@@ -738,12 +738,12 @@ class WORKER(object):
                                                                    disable_tqdm=self.global_rank != 0)
 
             if "is" in metrics:
-                kl_score, kl_std, top1, top5 = ins.eval_generator(fake_probs=fake_probs,
-                                                                  fake_labels=fake_labels,
-                                                                  data_loader=self.eval_dataloader,
-                                                                  num_generate=self.num_eval[self.RUN.ref_dataset],
-                                                                  split=num_split,
-                                                                  is_acc=is_acc)
+                kl_score, kl_std, top1, top5 = ins.eval_features(probs=fake_probs,
+                                                                 labels=fake_labels,
+                                                                 data_loader=self.eval_dataloader,
+                                                                 num_features=self.num_eval[self.RUN.ref_dataset],
+                                                                 split=num_splits,
+                                                                 is_acc=is_acc)
                 if self.global_rank == 0:
                     self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
                         step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
@@ -874,11 +874,39 @@ class WORKER(object):
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
     # -----------------------------------------------------------------------------
-    # save fake images to examine generated images qualitatively and calculate official IS.
+    # save real images to measure metrics for evaluation.
     # -----------------------------------------------------------------------------
-    def save_fake_images(self, png=True, npz=True):
+    def save_real_images(self):
         if self.global_rank == 0:
-            self.logger.info("Save {num_images} generated images in png or npz format.".format(
+            self.logger.info("save {num_images} real images in png format.".format(
+                num_images=len(self.eval_dataloader.dataset)))
+
+        misc.save_images_png(data_loader=self.eval_dataloader,
+                             generator="N/A",
+                             discriminator="N/A",
+                             is_generate=False,
+                             num_images=len(self.eval_dataloader.dataset),
+                             y_sampler="N/A",
+                             batch_size=self.OPTIMIZATION.batch_size,
+                             z_prior="N/A",
+                             truncation_factor="N/A",
+                             z_dim="N/A",
+                             num_classes=self.DATA.num_classes,
+                             LOSS=self.LOSS,
+                             OPTIMIZATION=self.OPTIMIZATION,
+                             RUN=self.RUN,
+                             is_stylegan=False,
+                             generator_mapping="N/A",
+                             generator_synthesis="N/A",
+                             directory=join(self.RUN.save_dir, "samples", self.run_name),
+                             device=self.local_rank)
+
+    # -----------------------------------------------------------------------------
+    # save fake images to measure metrics for evaluation.
+    # -----------------------------------------------------------------------------
+    def save_fake_images(self):
+        if self.global_rank == 0:
+            self.logger.info("save {num_images} generated images in png format.".format(
                 num_images=self.num_eval[self.RUN.ref_dataset]))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
@@ -888,44 +916,25 @@ class WORKER(object):
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
-            if png:
-                misc.save_images_png(data_loader=self.eval_dataloader,
-                                     generator=generator,
-                                     discriminator=self.Dis,
-                                     is_generate=True,
-                                     num_images=self.num_eval[self.RUN.ref_dataset],
-                                     y_sampler="totally_random",
-                                     batch_size=self.OPTIMIZATION.batch_size,
-                                     z_prior=self.MODEL.z_prior,
-                                     truncation_factor=self.RUN.truncation_factor,
-                                     z_dim=self.MODEL.z_dim,
-                                     num_classes=self.DATA.num_classes,
-                                     LOSS=self.LOSS,
-                                     RUN=self.RUN,
-                                     is_stylegan=self.is_stylegan,
-                                     generator_mapping=generator_mapping,
-                                     generator_synthesis=generator_synthesis,
-                                     directory=join(self.RUN.save_dir, "samples", self.run_name),
-                                     device=self.local_rank)
-            if npz:
-                misc.save_images_npz(data_loader=self.eval_dataloader,
-                                     generator=generator,
-                                     discriminator=self.Dis,
-                                     is_generate=True,
-                                     num_images=self.num_eval[self.RUN.ref_dataset],
-                                     y_sampler="totally_random",
-                                     batch_size=self.OPTIMIZATION.batch_size,
-                                     z_prior=self.MODEL.z_prior,
-                                     truncation_factor=self.RUN.truncation_factor,
-                                     z_dim=self.MODEL.z_dim,
-                                     num_classes=self.DATA.num_classes,
-                                     LOSS=self.LOSS,
-                                     RUN=self.RUN,
-                                     is_stylegan=self.is_stylegan,
-                                     generator_mapping=generator_mapping,
-                                     generator_synthesis=generator_synthesis,
-                                     directory=join(self.RUN.save_dir, "samples", self.run_name),
-                                     device=self.local_rank)
+            misc.save_images_png(data_loader=self.eval_dataloader,
+                                 generator=generator,
+                                 discriminator=self.Dis,
+                                 is_generate=True,
+                                 num_images=self.num_eval[self.RUN.ref_dataset],
+                                 y_sampler="totally_random",
+                                 batch_size=self.OPTIMIZATION.batch_size,
+                                 z_prior=self.MODEL.z_prior,
+                                 truncation_factor=self.RUN.truncation_factor,
+                                 z_dim=self.MODEL.z_dim,
+                                 num_classes=self.DATA.num_classes,
+                                 LOSS=self.LOSS,
+                                 OPTIMIZATION=self.OPTIMIZATION,
+                                 RUN=self.RUN,
+                                 is_stylegan=self.is_stylegan,
+                                 generator_mapping=generator_mapping,
+                                 generator_synthesis=generator_synthesis,
+                                 directory=join(self.RUN.save_dir, "samples", self.run_name),
+                                 device=self.local_rank)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
 
