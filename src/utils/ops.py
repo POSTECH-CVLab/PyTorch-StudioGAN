@@ -214,7 +214,8 @@ def adjust_learning_rate(optimizer, lr_org, epoch, total_epoch, dataset):
 
 
 def quantize_images(x):
-    x = (127.5*x + 127.5).clamp(0, 255)
+    x = (x + 1)/2
+    x = (255.0*x + 0.5).clamp(0.0, 255.0)
     x = x.detach().cpu().numpy().astype(np.uint8)
     return x
 
