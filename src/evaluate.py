@@ -12,6 +12,7 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torchvision.datasets import ImageFolder
+from torch.backends import cudnn
 import torch
 import torch.multiprocessing as mp
 import torchvision.transforms as transforms
@@ -73,6 +74,11 @@ def prepare_evaluation():
 
 
 def evaluate(local_rank, args, world_size, gpus_per_node):
+    # -----------------------------------------------------------------------------
+    # determine cuda, cudnn, and backends settings.
+    # -----------------------------------------------------------------------------
+    cudnn.benchmark, cudnn.deterministic = False, True
+
     # -----------------------------------------------------------------------------
     # initialize all processes and fix seed of each process
     # -----------------------------------------------------------------------------

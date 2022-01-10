@@ -55,10 +55,10 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # determine cuda, cudnn, and backends settings.
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.seed == -1:
-        cudnn.benchmark, cudnn.deterministic = True, False
-    else:
+    if cfgs.RUN.fix_seed:
         cudnn.benchmark, cudnn.deterministic = False, True
+    else:
+        cudnn.benchmark, cudnn.deterministic = True, False
 
     if cfgs.MODEL.backbone == "stylegan2":
         # Improves training speed

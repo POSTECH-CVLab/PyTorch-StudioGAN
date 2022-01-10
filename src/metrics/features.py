@@ -65,17 +65,15 @@ def sample_images_from_loader_and_stack_features(dataloader, eval_model, batch_s
                                                  DDP, device, disable_tqdm):
     eval_model.eval()
     total_instance = len(dataloader.dataset)
-    data_iter = iter(dataloader)
     num_batches = math.ceil(float(total_instance) / float(batch_size))
     if DDP: num_batches = num_batches//world_size + 1
+    data_iter = iter(dataloader)
 
     if device == 0 and not disable_tqdm:
         print("Sample images and stack features ({} images).".format(total_instance))
 
     feature_holder, prob_holder, label_holder = [], [], []
     for i in tqdm(range(0, num_batches), disable=disable_tqdm):
-        start = i * batch_size
-        end = start + batch_size
         try:
             images, labels = next(data_iter)
         except StopIteration:

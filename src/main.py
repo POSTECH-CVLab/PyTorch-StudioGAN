@@ -149,7 +149,11 @@ def load_configs_initialize_training():
     misc.prepare_folder(names=cfgs.MISC.base_folders, save_dir=cfgs.RUN.save_dir)
     misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
 
-    if cfgs.RUN.seed == -1: cfgs.RUN.seed = random.randint(1, 4096)
+    if cfgs.RUN.seed == -1:
+        cfgs.RUN.seed = random.randint(1, 4096)
+        cfgs.RUN.fix_seed = False
+    else:
+        cfgs.RUN.fix_seed = True
 
     if cfgs.OPTIMIZATION.world_size == 1:
         print("You have chosen a specific GPU. This will completely disable data parallelism.")
