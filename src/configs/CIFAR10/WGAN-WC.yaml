@@ -6,3 +6,5 @@ LOSS:
   adv_loss: "wasserstein"
   apply_wc: True
   wc_bound: 0.01
+OPTIMIZATION:
+  d_updates_per_step: 5

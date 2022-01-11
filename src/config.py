@@ -657,7 +657,7 @@ class Configurations(object):
             "To train a GAN with Multi-Hinge loss, both d_cond_mtd and adv_loss must be 'MH'."
 
         if self.MODEL.d_cond_mtd == "MH" or self.LOSS.adv_loss == "MH":
-            assert not self.apply_topk, \
+            assert not self.LOSS.apply_topk, \
             "StudioGAN does not support Topk training for MHGAN."
 
         if self.RUN.train * self.RUN.standing_statistics:
