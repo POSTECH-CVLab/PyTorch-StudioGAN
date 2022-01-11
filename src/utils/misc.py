@@ -464,69 +464,11 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=Tr
         logger.info("Save image to {path}".format(path=save_path))
 
 
-def save_images_npz(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
-                    directory, device):
-    num_batches = math.ceil(float(num_images) / float(batch_size))
-    if is_generate:
-        image_type = "fake"
-    else:
-        image_type = "real"
-        data_iter = iter(data_loader)
-
-    print("Save {num_images} {image_type} images in npz format.".format(num_images=num_images, image_type=image_type))
-
-    directory = join(directory, image_type, "npz")
-    if exists(directory):
-        shutil.rmtree(directory)
-    os.makedirs(directory)
-
-    x = []
-    y = []
-    with torch.no_grad() if not LOSS.apply_lo else dummy_context_mgr() as mpc:
-        for i in tqdm(range(0, num_batches)):
-            start = i * batch_size
-            end = start + batch_size
-            if is_generate:
-                images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                                 truncation_factor=truncation_factor,
-                                                                 batch_size=batch_size,
-                                                                 z_dim=z_dim,
-                                                                 num_classes=num_classes,
-                                                                 y_sampler=y_sampler,
-                                                                 radius="N/A",
-                                                                 generator=generator,
-                                                                 discriminator=discriminator,
-                                                                 is_train=False,
-                                                                 LOSS=LOSS,
-                                                                 RUN=RUN,
-                                                                 is_stylegan=is_stylegan,
-                                                                 generator_mapping=generator_mapping,
-                                                                 generator_synthesis=generator_synthesis,
-                                                                 style_mixing_p=0.0,
-                                                                 device=device,
-                                                                 cal_trsp_cost=False)
-            else:
-                try:
-                    images, labels = next(data_iter)
-                except StopIteration:
-                    break
-
-            x += [np.uint8((127.5*images.detach().cpu().numpy() + 127.5).clip(0, 255))]
-            y += [labels.detach().cpu().numpy()]
-
-    x = np.concatenate(x, 0)[:num_images]
-    y = np.concatenate(y, 0)[:num_images]
-    print("Images shape: {image_shape}, Labels shape: {label_shape}".format(image_shape=x.shape, label_shape=y.shape))
-    npz_filename = join(directory, "samples.npz")
-    print("Finish saving npz to {file_name}".format(file_name=npz_filename))
-    np.savez(npz_filename, **{"x": x, "y": y})
-
-
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping, generator_synthesis,
-                    directory, device):
+                    truncation_factor, z_dim, num_classes, LOSS, OPTIMIZATION, RUN, is_stylegan, generator_mapping,
+                    generator_synthesis, directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
+    if RUN.distributed_data_parallel: num_batches = num_batches//OPTIMIZATION.world_size + 1
     if is_generate:
         image_type = "fake"
     else:
@@ -535,7 +477,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
 
     print("Save {num_images} {image_type} images in png format.".format(num_images=num_images, image_type=image_type))
 
-    directory = join(directory, image_type, "png")
+    directory = join(directory, image_type)
     if exists(directory):
         shutil.rmtree(directory)
     os.makedirs(directory)
@@ -598,14 +540,16 @@ def interpolate(x0, x1, num_midpoints):
 
 def accm_values_convert_dict(list_dict, value_dict, step, interval):
     for name, value_list in list_dict.items():
-        try:
-            value_list[step // interval - 1] = value_dict[name]
-        except IndexError:
+        if step is None:
+            value_list += [value_dict[name]]
+        else:
             try:
-                value_list += [value_dict[name]]
-            except:
-                raise KeyError
-
+                value_list[step // interval - 1] = value_dict[name]
+            except IndexError:
+                try:
+                    value_list += [value_dict[name]]
+                except:
+                    raise KeyError
         list_dict[name] = value_list
     return list_dict
 

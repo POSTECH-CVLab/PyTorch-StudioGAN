@@ -28,6 +28,7 @@ import torch
 import numpy as np
 
 import utils.sample as sample
+import utils.losses as losses
 
 
 def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
@@ -61,53 +62,33 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     return (diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * tr_covmean)
 
 
-def calculate_moments(data_loader, generator, discriminator, eval_model, is_generate, num_generate, y_sampler,
-                      batch_size, z_prior, truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping,
-                      generator_synthesis, device, disable_tqdm):
-    if is_generate:
+def calculate_moments(data_loader, eval_model, num_generate, batch_size, quantize, world_size,
+                      DDP, disable_tqdm, fake_feats=None):
+    if fake_feats is not None:
         total_instance = num_generate
+        acts = fake_feats.detach().cpu().numpy()[:num_generate]
     else:
         total_instance = len(data_loader.dataset)
         data_iter = iter(data_loader)
-    num_batches = math.ceil(float(total_instance) / float(batch_size))
+        num_batches = math.ceil(float(total_instance) / float(batch_size))
+        if DDP: num_batches = num_batches//world_size + 1
 
-    acts = np.empty((total_instance, 2048))
-    for i in tqdm(range(0, num_batches), disable=disable_tqdm):
-        start = i * batch_size
-        end = start + batch_size
-        if is_generate:
-            images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
-                                                             truncation_factor=truncation_factor,
-                                                             batch_size=batch_size,
-                                                             z_dim=z_dim,
-                                                             num_classes=num_classes,
-                                                             y_sampler=y_sampler,
-                                                             radius="N/A",
-                                                             generator=generator,
-                                                             discriminator=discriminator,
-                                                             is_train=False,
-                                                             LOSS=LOSS,
-                                                             RUN=RUN,
-                                                             device=device,
-                                                             is_stylegan=is_stylegan,
-                                                             generator_mapping=generator_mapping,
-                                                             generator_synthesis=generator_synthesis,
-                                                             style_mixing_p=0.0,
-                                                             cal_trsp_cost=False)
-        else:
+        acts = []
+        for i in tqdm(range(0, num_batches), disable=disable_tqdm):
+            start = i * batch_size
+            end = start + batch_size
             try:
                 images, labels = next(data_iter)
             except StopIteration:
                 break
 
-        with torch.no_grad():
-            embeddings, logits = eval_model.get_outputs(images)
+            with torch.no_grad():
+                embeddings, logits = eval_model.get_outputs(images, quantize=quantize)
+                acts.append(embeddings)
 
-        if total_instance >= batch_size:
-            acts[start:end] = embeddings.cpu().data.numpy().reshape(batch_size, -1)
-        else:
-            acts[start:] = embeddings[:total_instance].cpu().data.numpy().reshape(total_instance, -1)
-        total_instance -= images.shape[0]
+        acts = torch.cat(acts, dim=0)
+        if DDP: acts = torch.cat(losses.GatherLayer.apply(acts), dim=0)
+        acts = acts.detach().cpu().numpy()[:total_instance].astype(np.float64)
 
     mu = np.mean(acts, axis=0)
     sigma = np.cov(acts, rowvar=False)
@@ -115,65 +96,38 @@ def calculate_moments(data_loader, generator, discriminator, eval_model, is_gene
 
 
 def calculate_fid(data_loader,
-                  generator,
-                  generator_mapping,
-                  generator_synthesis,
-                  discriminator,
                   eval_model,
                   num_generate,
-                  y_sampler,
                   cfgs,
-                  device,
-                  logger,
                   pre_cal_mean=None,
                   pre_cal_std=None,
+                  quantize=True,
+                  fake_feats=None,
                   disable_tqdm=False):
     eval_model.eval()
 
-    if device == 0 and not disable_tqdm:
-        logger.info("Calculate FID score of generated images ({} images).".format(num_generate))
     if pre_cal_mean is not None and pre_cal_std is not None:
         m1, s1 = pre_cal_mean, pre_cal_std
     else:
         m1, s1 = calculate_moments(data_loader=data_loader,
-                                   generator="N/A",
-                                   discriminator="N/A",
                                    eval_model=eval_model,
-                                   is_generate=False,
                                    num_generate="N/A",
-                                   y_sampler="N/A",
                                    batch_size=cfgs.OPTIMIZATION.batch_size,
-                                   z_prior="N/A",
-                                   truncation_factor="N/A",
-                                   z_dim="N/A",
-                                   num_classes=cfgs.DATA.num_classes,
-                                   LOSS="N/A",
-                                   RUN="N/A",
-                                   is_stylegan=False,
-                                   generator_mapping=None,
-                                   generator_synthesis=None,
-                                   device=device,
-                                   disable_tqdm=disable_tqdm)
+                                   quantize=quantize,
+                                   world_size=cfgs.OPTIMIZATION.world_size,
+                                   DDP=cfgs.RUN.distributed_data_parallel,
+                                   disable_tqdm=disable_tqdm,
+                                   fake_feats=None)
 
     m2, s2 = calculate_moments(data_loader="N/A",
-                               generator=generator,
-                               discriminator=discriminator,
                                eval_model=eval_model,
-                               is_generate=True,
                                num_generate=num_generate,
-                               y_sampler=y_sampler,
                                batch_size=cfgs.OPTIMIZATION.batch_size,
-                               z_prior=cfgs.MODEL.z_prior,
-                               truncation_factor=cfgs.RUN.truncation_factor,
-                               z_dim=cfgs.MODEL.z_dim,
-                               num_classes=cfgs.DATA.num_classes,
-                               LOSS=cfgs.LOSS,
-                               RUN=cfgs.RUN,
-                               is_stylegan=(cfgs.MODEL.backbone=="stylegan2"),
-                               generator_mapping=generator_mapping,
-                               generator_synthesis=generator_synthesis,
-                               device=device,
-                               disable_tqdm=disable_tqdm)
+                               quantize=quantize,
+                               world_size=cfgs.OPTIMIZATION.world_size,
+                               DDP=cfgs.RUN.distributed_data_parallel,
+                               disable_tqdm=disable_tqdm,
+                               fake_feats=fake_feats)
 
     fid_value = frechet_inception_distance(m1, s1, m2, s2)
     return fid_value, m1, s1

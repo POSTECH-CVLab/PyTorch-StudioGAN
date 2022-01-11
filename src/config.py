@@ -145,7 +145,7 @@ class Configurations(object):
         # whether to apply deep regret analysis regularization
         self.LOSS.apply_dra = False
         # strength of the deep regret analysis regularization
-        self.LOSS.dra_labmda = "N/A"
+        self.LOSS.dra_lambda = "N/A"
         # whther to apply max gradient penalty to let the discriminator satisfy Lipschitzness
         self.LOSS.apply_maxgp = False
         # strength of the maxgp regularization
@@ -627,15 +627,15 @@ class Configurations(object):
                 It is possible to train a GAN using the DDP option and then compute CAS using DP."
 
         if self.RUN.distributed_data_parallel:
-            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, tsne analysis, and CAS with DDP. \
+            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, tsne analysis, DDLS, SeFa, and CAS with DDP. \
                 Please change DDP with a single GPU training or DataParallel instead."
             assert self.RUN.vis_fake_images + \
                 self.RUN.k_nearest_neighbor + \
                 self.RUN.interpolation + \
                 self.RUN.frequency_analysis + \
                 self.RUN.tsne_analysis + \
-                self.RUN.intra_class_fid + \
                 self.RUN.semantic_factorization + \
+                self.RUN.langevin_sampling + \
                 self.RUN.GAN_train + \
                 self.RUN.GAN_test == 0, \
             msg

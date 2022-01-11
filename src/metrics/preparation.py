@@ -61,8 +61,11 @@ class LoadEvalModel(object):
     def eval(self):
         self.model.eval()
 
-    def get_outputs(self, x):
-        x = ops.quantize_images(x)
+    def get_outputs(self, x, quantize=False):
+        if quantize:
+            x = ops.quantize_images(x)
+        else:
+            x = x.detach().cpu().numpy().astype(np.uint8)
         x = ops.resize_images(x, self.resizer, self.trsf, self.mean, self.std)
 
         if self.eval_backbone == "Inception_V3":
@@ -73,7 +76,8 @@ class LoadEvalModel(object):
             self.save_output.clear()
         return repres, logits
 
-def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger, device):
+
+def prepare_moments(data_loader, eval_model, quantize, cfgs, logger, device):
     disable_tqdm = device != 0
     eval_model.eval()
     moment_dir = join(cfgs.RUN.save_dir, "moments")
@@ -90,41 +94,33 @@ def prepare_moments_calculate_ins(data_loader, eval_model, splits, cfgs, logger,
             logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
                         format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
         mu, sigma = fid.calculate_moments(data_loader=data_loader,
-                                          generator="N/A",
-                                          discriminator="N/A",
                                           eval_model=eval_model,
-                                          is_generate=False,
                                           num_generate="N/A",
-                                          y_sampler="N/A",
                                           batch_size=cfgs.OPTIMIZATION.batch_size,
-                                          z_prior="N/A",
-                                          truncation_factor="N/A",
-                                          z_dim="N/A",
-                                          num_classes=cfgs.DATA.num_classes,
-                                          LOSS="N/A",
-                                          RUN="N/A",
-                                          is_stylegan=False,
-                                          generator_mapping=None,
-                                          generator_synthesis=None,
-                                          device=device,
-                                          disable_tqdm=disable_tqdm)
+                                          quantize=quantize,
+                                          world_size=cfgs.OPTIMIZATION.world_size,
+                                          DDP=cfgs.RUN.distributed_data_parallel,
+                                          disable_tqdm=disable_tqdm,
+                                          fake_feats=None)
 
         if device == 0:
             logger.info("Save calculated means and covariances to disk.")
         np.savez(moment_path, **{"mu": mu, "sigma": sigma})
-
-    if is_file:
-        pass
-    else:
-        if device == 0:
-            logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
-                        format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
-        is_score, is_std = ins.eval_dataset(data_loader=data_loader,
-                                            eval_model=eval_model,
-                                            splits=splits,
-                                            batch_size=cfgs.OPTIMIZATION.batch_size,
-                                            device=device,
-                                            disable_tqdm=disable_tqdm)
-        if device == 0:
-            logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))
     return mu, sigma
+
+
+def calculate_ins(data_loader, eval_model, quantize, splits, cfgs, logger, device):
+    disable_tqdm = device != 0
+    if device == 0:
+        logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
+                    format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
+    is_score, is_std = ins.eval_dataset(data_loader=data_loader,
+                                        eval_model=eval_model,
+                                        quantize=quantize,
+                                        splits=splits,
+                                        batch_size=cfgs.OPTIMIZATION.batch_size,
+                                        world_size=cfgs.OPTIMIZATION.world_size,
+                                        DDP=cfgs.RUN.distributed_data_parallel,
+                                        disable_tqdm=disable_tqdm)
+    if device == 0:
+        logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))
