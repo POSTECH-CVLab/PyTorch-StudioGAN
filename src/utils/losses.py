@@ -8,8 +8,8 @@ from torch.nn import DataParallel
 from torch import autograd
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.distributed as dist
+import torch.nn.functional as F
 import numpy as np
 
 from utils.style_ops import conv2d_gradfix
