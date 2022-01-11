@@ -316,21 +316,7 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, and SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, and --eval_backbone "SwAV"`` options, respectively. In addition to this, users can calculate metrics with clean-resizer (please refer to [paper](https://arxiv.org/abs/2104.11222)) using --resize_fn clean.
 
 ### 1. Inception Score (IS)
-Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
-
-To compute official IS, you have to make a "samples.npz" file using the command below:
-```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sr -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
-```
-
-It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
-After that, execute TensorFlow official IS implementation. Note that we do not split a dataset into ten folds to calculate IS ten times. We use the entire dataset to compute IS only once, which is the evaluation strategy used in the [CompareGAN](https://github.com/google/compare_gan) repository.  
-```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/inception_tf13.py --run_name RUN_NAME --type "fake"
-```
-Keep in mind that you need to have TensorFlow 1.3 or earlier version installed!
-
-Note that StudioGAN logs Pytorch-based IS during the training.
+Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network. Note that we do not split a dataset into ten folds to calculate IS ten times.
 
 ### 2. Frechet Inception Distance (FID)
 FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires the pre-trained Inception-V3 network, and modern approaches use [Tensorflow-based FID](https://github.com/bioinf-jku/TTUR). StudioGAN utilizes the [PyTorch-based FID](https://github.com/mseitzer/pytorch-fid) to test GAN models in the same PyTorch environment. We show that the PyTorch based FID implementation provides [almost the same results](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Table3.png) with the TensorFlow implementation (See Appendix F of [our paper](https://arxiv.org/abs/2006.12681)).
