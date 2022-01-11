@@ -9,6 +9,8 @@
 # News
 - Our new paper "[Rebooting ACGAN: Auxiliary Classifier GANs with Stable Training (ReACGAN)](https://openreview.net/forum?id=Ja-hVQrfeGZ)" is made public on Neurips 2021 Openreview.
 
+- StudioGAN provides clean-measures (IS, FID, Improved Precision & Recall, and Density & Coverage) using anti-aliasing PIL.BICUBIC resizer.
+
 #  Release Notes (v.0.3.0)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN.
 - Add five types of differentiable augmentation: CR, DiffAugment, ADA, SimCLR, BYOL.
@@ -27,7 +29,8 @@
 - Provide pre-trained models that are fully compatible with up-to-date PyTorch environment.
 - Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!).
 - Better performance and lower memory consumption than original implementations.
-- Support seven evaluation metrics including iFID, improved precision & recall, density & coverage, and CAS. 
+- Support seven evaluation metrics including iFID, improved precision & recall, density & coverage, and CAS.
+- Provide clean-IS, clean-FID, clean-prdc (Improved Precision & Recall, Density & Coverage).
 - Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
 
 #  Implemented GANs
@@ -100,6 +103,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 | [**Classifier Accuracy Score (CAS)**](https://arxiv.org/abs/1905.10887) | Neurips'19 | Inception_V3 |
 | [**Density & Coverage**](https://arxiv.org/abs/2002.09797) | ICML'20 | Inception_V3 |
 | [**SwAV FID**](https://openreview.net/forum?id=NeRdBeTionN) | ICLR'21 | SwAV |
+| [**Clean metrics (IS, FID, PRDC)**](https://arxiv.org/abs/2104.11222) | arXiv'21 | - |
 
 # Requirements
 
@@ -124,38 +128,7 @@ This is my command to make a container named "StudioGAN".
 docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studio_gan:latest /bin/bash
 ```
 
-# Quick Start
-
-Before starting, users should login wandb using their personal API key.
-
-```bash
-wandb login PERSONAL_API_KEY
-```
-From release 0.3.0, you can now define which evaluation metrics to use through ``-metrics`` option. Not specifying option defaults to calculating FID only. 
-i.e. ``-metrics is fid`` calculates only IS and FID and ``-metrics none`` skips evaluation.
-
-
-* Train (``-t``) and evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of the model defined in ``CONFIG_PATH`` using GPU ``0``.
-```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics is fid prdc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
-```
-
-* Train (``-t``) and evaluate FID of the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``. Evaluation of FID does not require (``-metrics``) argument!
-```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
-```
-
-* Train (``-t``) and skip evaluation (``-metrics none``) of the model defined in ``CONFIG_PATH`` through ``DistributedDataParallel`` using GPUs ``(0, 1, 2, 3)``, ``Synchronized batch norm``, and ``Mixed precision``.
-```bash
-export MASTER_ADDR="localhost"
-export MASTER_PORT=2222
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -metrics none -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -sync_bn -mpc 
-```
-
-Try ``python3 src/main.py`` to see available options.
-
-
-## Dataset
+# Dataset
 
 * CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
@@ -182,7 +155,42 @@ data
         └── ...
 ```
 
-## Supported Training/Testing Techniques
+# Quick Start
+
+Before starting, users should login wandb using their personal API key.
+
+```bash
+wandb login PERSONAL_API_KEY
+```
+From release 0.3.0, you can now define which evaluation metrics to use through ``-metrics`` option. Not specifying option defaults to calculating FID only. 
+i.e. ``-metrics is fid`` calculates only IS and FID and ``-metrics none`` skips evaluation.
+
+
+* Train (``-t``) and evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of the model defined in ``CONFIG_PATH`` using GPU ``0``.
+```bash
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics is fid prdc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+```
+
+* Train (``-t``) and evaluate clean-IS, clean-FID, clean-Prc, clean-Rec, clean-Dns, clean-Cvg (``-metrics is fid prdc --resize_fn clean``) of the model defined in ``CONFIG_PATH`` using GPU ``0``.
+```bash
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics is fid prdc --resize_fn clean -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+```
+
+* Train (``-t``) and evaluate FID of the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``. Evaluation of FID does not require (``-metrics``) argument!
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+```
+
+* Train (``-t``) and skip evaluation (``-metrics none``) of the model defined in ``CONFIG_PATH`` through ``DistributedDataParallel`` using GPUs ``(0, 1, 2, 3)``, ``Synchronized batch norm``, and ``Mixed precision``.
+```bash
+export MASTER_ADDR="localhost"
+export MASTER_PORT=2222
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -metrics none -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -DDP -sync_bn -mpc 
+```
+
+Try ``python3 src/main.py`` to see available options.
+
+# Supported Training/Testing Techniques
 
 * Load All Data in Main Memory (``-hdf5 -l``)
   ```bash
@@ -303,16 +311,16 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 </p>
 
 
-##  Metrics
+#  Metrics
 
-StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, and --eval_backbone "SwAV"`` options, respectively.
+StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, and SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, and --eval_backbone "SwAV"`` options, respectively. In addition to this, users can calculate metrics with clean-resizer (please refer to [paper](https://arxiv.org/abs/2104.11222)) using --resize_fn clean.
 
 ### 1. Inception Score (IS)
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network, and recent approaches utilize [OpenAI's TensorFlow implementation](https://github.com/openai/improved-gan).
 
 To compute official IS, you have to make a "samples.npz" file using the command below:
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -s -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sr -c CONFIG_PATH --checkpoint_folder CHECKPOINT_FOLDER --log_output_path LOG_OUTPUT_PATH
 ```
 
 It will automatically create the samples.npz file in the path ``./samples/RUN_NAME/fake/npz/samples.npz``.
@@ -333,14 +341,24 @@ Improved precision and recall are developed to make up for the shortcomings of t
 ### 4. Density and Coverage (Dns, Cvg)
 Density and coverage metrics can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metrics are known to be robust to outliers, and they can detect identical real and fake distributions. StudioGAN uses the [authors' official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN follows the author's suggestion for hyperparameter selection.
 
-### 5. Precision and Recall (PR: F_1/8=Precision, F_8=Recall, Will be deprecated)
-Precision measures how accurately the generator can learn the target distribution. Recall measures how completely the generator covers the target distribution. Like IS and FID, calculating Precision and Recall requires the pre-trained Inception-V3 model. StudioGAN uses the same hyperparameter settings with the [original Precision and Recall implementation](https://github.com/msmsajjadi/precision-recall-distributions), and StudioGAN calculates the F-beta score suggested by [Sajjadi et al](https://arxiv.org/abs/1806.00035).
+#  Evaluating pre-saved image folders
+* Evaluate IS, FID, Prc, Rec, Dns, Cvg (-metrics is fid prdc) of image folders saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
+```bash
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1 DSET1 --dset2 DSET2
+```
+
+* Evaluate clean-IS, clean-FID, clean-Prc, clean-Rec, clean-Dns, clean-Cvg (-metrics is fid prdc --resize_fn clean) of image folders saved in DSET1 and DSET2 through ``DistributedDataParallel`` using GPUs ``(0,...,N)``.
+```bash
+export MASTER_ADDR="localhost"
+export MASTER_PORT=2222
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --resize_fn clean --dset1 DSET1 --dset2 DSET2 -DDP
+```
 
 # Benchmark 
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
-We report the best IS, FID, and F_beta values of various GANs. B. S. means batch size for training.
+We report the best IS, FID, and F_beta values of various GANs. B.S. means batch size for training.
 
 To download all checkpoints reported in StudioGAN, Please [click here](https://drive.google.com/drive/folders/1CDM96Ic-99KdCDYTALkqvoAliprEnltC?usp=sharing).
 
@@ -515,9 +533,10 @@ PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-eva
 
 PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
 
+PyTorch clean-FID: https://github.com/GaParmar/clean-fid
 
 ## License
-PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN and StyleGAN-ADA are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), Synchronized batch normalization is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE), HDF5 generator is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/hdf5.py), and differentiable SimCLR-style augmentations is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/simclr_aug.py).
+PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN and StyleGAN-ADA are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), Synchronized batch normalization is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE), HDF5 generator is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/hdf5.py), differentiable SimCLR-style augmentations is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/simclr_aug.py), and clean-FID is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/resize.py).
 
 ## Citation
 StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
