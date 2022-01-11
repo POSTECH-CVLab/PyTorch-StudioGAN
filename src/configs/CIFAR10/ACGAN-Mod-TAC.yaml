@@ -9,5 +9,5 @@ MODEL:
 LOSS:
   adv_loss: "hinge"
   cond_lambda: 1.0
-  tac_gen_labmda: 1.0
-  tac_dis_labmda: 1.0
+  tac_gen_lambda: 1.0
+  tac_dis_lambda: 1.0
