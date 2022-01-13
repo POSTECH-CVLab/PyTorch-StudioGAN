@@ -12,7 +12,10 @@ import torch
 import numpy as np
 
 import utils.log as log
-import utils.misc as misc
+try:
+    import utils.misc as misc
+except AttributeError:
+    pass
 
 blacklist = ["CCMGAN2048-train-2021_06_22_06_11_37"]
 
@@ -88,7 +91,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
                   load_opt=False if prev_run_name in blacklist or is_freezeD or not is_train else True,
                   load_misc=True,
                   is_freezeD=is_freezeD)
-    
+
     if not is_train:
         prev_run_name = cfg_file[cfg_file.rindex("/")+1:cfg_file.index(".yaml")]+prev_run_name[prev_run_name.index("-train"):]
 

@@ -19,7 +19,10 @@ import numpy as np
 
 import utils.ops as ops
 import utils.losses as losses
-import utils.misc as misc
+try:
+    import utils.misc as misc
+except AttributeError:
+    pass
 
 
 def truncated_normal(size, threshold=1.):
