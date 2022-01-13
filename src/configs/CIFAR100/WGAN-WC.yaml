@@ -1,0 +1,10 @@
+DATA:
+  name: "CIFAR100"
+  img_size: 32
+  num_classes: 100
+LOSS:
+  adv_loss: "wasserstein"
+  apply_wc: True
+  wc_bound: 0.01
+OPTIMIZATION:
+  d_updates_per_step: 5
