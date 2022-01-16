@@ -22,7 +22,7 @@ LOSS:
   adv_loss: "hinge"
 OPTIMIZATION:
   batch_size: 8
-  acml_step: 4
+  acml_steps: 4
   g_lr: 0.00005
   d_lr: 0.0002
   beta1: 0.0
