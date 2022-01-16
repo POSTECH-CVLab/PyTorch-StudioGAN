@@ -106,6 +106,12 @@ class Configurations(object):
         self.MODEL.g_init = "ortho"
         # weight initialization method for the discriminator \in ["ortho", "N02", "glorot", "xavier"]
         self.MODEL.d_init = "ortho"
+        # number of discrete c to use in InfoGAN
+        self.MODEL.info_num_discrete_c = "N/A"
+        # number of continuous c to use in InfoGAN
+        self.MODEL.info_num_conti_c = "N/A"
+        # dimension of discrete c to use in InfoGAN
+        self.MODEL.info_dim_discrete_c = "N/A"
 
         # -----------------------------------------------------------------------------
         # loss settings
@@ -189,6 +195,9 @@ class Configurations(object):
         # hyperparameter for the supremum of the number of topk samples \in [0,1],
         # sup_batch_size = int(topk_nu*batch_size)
         self.LOSS.topk_nu = "N/A"
+        # whether to add InfoGAN's mutual information loss based on variational lower bound.
+        self.LOSS.apply_infoGAN_loss = False
+        self.LOSS.infoGAN_loss_lambda = "N/A"
 
         # -----------------------------------------------------------------------------
         # optimizer settings

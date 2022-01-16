@@ -318,6 +318,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                    is_train=True,
                                                                    LOSS=LOSS,
                                                                    RUN=RUN,
+                                                                   MODEL=MODEL,
                                                                    is_stylegan=MODEL.backbone=="stylegan2",
                                                                    generator_mapping=None,
                                                                    generator_synthesis=None,
@@ -465,7 +466,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=Tr
 
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_factor, z_dim, num_classes, LOSS, OPTIMIZATION, RUN, is_stylegan, generator_mapping,
+                    truncation_factor, z_dim, num_classes, LOSS, OPTIMIZATION, RUN, MODEL, is_stylegan, generator_mapping,
                     generator_synthesis, directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if RUN.distributed_data_parallel: num_batches = num_batches//OPTIMIZATION.world_size + 1
@@ -501,6 +502,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                                  is_train=False,
                                                                  LOSS=LOSS,
                                                                  RUN=RUN,
+                                                                 MODEL=MODEL,
                                                                  is_stylegan=is_stylegan,
                                                                  generator_mapping=generator_mapping,
                                                                  generator_synthesis=generator_synthesis,

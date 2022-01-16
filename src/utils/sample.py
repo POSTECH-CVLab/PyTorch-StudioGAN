@@ -87,7 +87,7 @@ def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_factor, y_samp
 
 
 def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, y_sampler, radius, generator, discriminator,
-                    is_train, LOSS, RUN, device, is_stylegan, generator_mapping, generator_synthesis, style_mixing_p,
+                    is_train, LOSS, RUN, MODEL, device, is_stylegan, generator_mapping, generator_synthesis, style_mixing_p,
                     cal_trsp_cost):
     if is_train:
         truncation_factor = -1.0
