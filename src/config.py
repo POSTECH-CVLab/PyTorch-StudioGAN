@@ -110,7 +110,7 @@ class Configurations(object):
         self.MODEL.info_num_discrete_c = "N/A"
         # number of continuous c to use in InfoGAN
         self.MODEL.info_num_conti_c = "N/A"
-        # dimension of discrete c to use in InfoGAN
+        # dimension of discrete c to use in InfoGAN (one-hot)
         self.MODEL.info_dim_discrete_c = "N/A"
 
         # -----------------------------------------------------------------------------
@@ -197,7 +197,11 @@ class Configurations(object):
         self.LOSS.topk_nu = "N/A"
         # whether to add InfoGAN's mutual information loss based on variational lower bound.
         self.LOSS.apply_infoGAN_loss = False
-        self.LOSS.infoGAN_loss_lambda = "N/A"
+        # strength lambda for infoGAN loss in case of discrete c (typically 0.1)
+        self.LOSS.infoGAN_loss_discrete_lambda = "N/A"
+        # strength lambda for infoGAN loss in case of continuous c (typically 1)
+        self.LOSS.infoGAN_loss_conti_lambda = "N/A"
+
 
         # -----------------------------------------------------------------------------
         # optimizer settings

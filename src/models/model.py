@@ -22,6 +22,12 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
     module = __import__("models.{backbone}".format(backbone=MODEL.backbone), fromlist=["something"])
     if device == 0:
         logger.info("Modules are located on './src/models.{backbone}'.".format(backbone=MODEL.backbone))
+    
+    infoGAN_c_dim = 0
+    if MODEL.info_num_discrete_c != "N/A":
+        infoGAN_c_dim += MODEL.info_num_discrete_c * MODEL.info_dim_discrete_c 
+    if MODEL.info_num_conti_c != "N/A":
+        infoGAN_c_dim += MODEL.info_num_conti_c
 
     if MODEL.backbone == "stylegan2":
         channel_base = 32768 if DATA.img_size >= 512 or DATA.name == "CIFAR10" else 16384
@@ -33,7 +39,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
         else:
             num_fp16_res = 0
             conv_clamp = None
-        Gen = module.Generator(z_dim=MODEL.z_dim,
+        Gen = module.Generator(z_dim=MODEL.z_dim + infoGAN_c_dim,
                                c_dim=gen_c_dim,
                                w_dim=MODEL.w_dim,
                                img_resolution=DATA.img_size,
@@ -62,7 +68,8 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                    mapping_kwargs={},
                                    epilogue_kwargs={
                                        "mbstd_group_size": STYLEGAN2.d_epilogue_mbstd_group_size
-                                   }).to(device)
+                                   },
+                                   MODEL=MODEL).to(device)
 
         if MODEL.apply_g_ema:
             if device == 0:
@@ -80,7 +87,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
             Gen_ema, Gen_ema_mapping, Gen_ema_synthesis, ema = None, None, None, None
 
     else:
-        Gen = module.Generator(z_dim=MODEL.z_dim,
+        Gen = module.Generator(z_dim=MODEL.z_dim + infoGAN_c_dim,
                                g_shared_dim=MODEL.g_shared_dim,
                                img_size=DATA.img_size,
                                g_conv_dim=MODEL.g_conv_dim,
@@ -108,7 +115,8 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                    d_init=MODEL.d_init,
                                    d_depth=MODEL.d_depth,
                                    mixed_precision=RUN.mixed_precision,
-                                   MODULES=MODULES).to(device)
+                                   MODULES=MODULES,
+                                   MODEL=MODEL).to(device)
         if MODEL.apply_g_ema:
             if device == 0:
                 logger.info("Prepare exponential moving average generator with decay rate of {decay}."\

@@ -738,6 +738,7 @@ class Discriminator(torch.nn.Module):
             block_kwargs={},  # Arguments for DiscriminatorBlock.
             mapping_kwargs={},  # Arguments for MappingNetwork.
             epilogue_kwargs={},  # Arguments for DiscriminatorEpilogue.
+            MODEL=None, # needed to check options for infoGAN
     ):
         super().__init__()
         self.c_dim = c_dim
@@ -750,6 +751,7 @@ class Discriminator(torch.nn.Module):
         self.normalize_d_embed = normalize_d_embed
         self.img_resolution_log2 = int(np.log2(img_resolution))
         self.block_resolutions = [2**i for i in range(self.img_resolution_log2, 2, -1)]
+        self.MODEL = MODEL
         channels_dict = {res: min(channel_base // res, channel_max) for res in self.block_resolutions + [4]}
         fp16_resolution = max(2**(self.img_resolution_log2 + 1 - num_fp16_res), 8)
 
@@ -815,9 +817,19 @@ class Discriminator(torch.nn.Module):
             else:
                 raise NotImplementedError
 
+        # Q head network for infoGAN
+        if self.MODEL.info_num_discrete_c != "N/A":
+            out_features = self.MODEL.info_num_discrete_c * self.MODEL.info_dim_discrete_c
+            self.info_discrete_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=True)
+        if self.MODEL.info_num_conti_c != "N/A":
+            out_features = self.MODEL.info_num_conti_c
+            self.info_conti_mu_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=True)
+            self.info_conti_var_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=True)
+
     def forward(self, img, label, eval=False, adc_fake=False, **block_kwargs):
         x, embed, proxy, cls_output = None, None, None, None
         mi_embed, mi_proxy, mi_cls_output = None, None, None
+        info_discrete_c_logits, info_conti_mu, info_conti_var = None, None, None
         for res in self.block_resolutions:
             block = getattr(self, f"b{res}")
             x, img = block(x, img, **block_kwargs)
@@ -834,6 +846,13 @@ class Discriminator(torch.nn.Module):
             else:
                 label = label*2
         oh_label = F.one_hot(label, self.num_classes * 2 if self.aux_cls_type=="ADC" else self.num_classes)
+
+        # forward pass through InfoGAN Q head
+        if self.MODEL.info_num_discrete_c != "N/A":
+            info_discrete_c_logits = self.info_discrete_linear(h)
+        if self.MODEL.info_num_conti_c != "N/A":
+            info_conti_mu = self.info_conti_mu_linear(h)
+            info_conti_var = self.info_conti_var_linear(h)
 
         # class conditioning
         if self.d_cond_mtd == "AC":
@@ -884,5 +903,8 @@ class Discriminator(torch.nn.Module):
             "label": label,
             "mi_embed": mi_embed,
             "mi_proxy": mi_proxy,
-            "mi_cls_output": mi_cls_output
+            "mi_cls_output": mi_cls_output,
+            "info_discrete_c_logits": info_discrete_c_logits,
+            "info_conti_mu": info_conti_mu,
+            "info_conti_var": info_conti_var
         }

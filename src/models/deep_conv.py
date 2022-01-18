@@ -118,7 +118,7 @@ class DiscBlock(nn.Module):
 
 class Discriminator(nn.Module):
     def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_cond_mtd, aux_cls_type, d_embed_dim, normalize_d_embed,
-                 num_classes, d_init, d_depth, mixed_precision, MODULES):
+                 num_classes, d_init, d_depth, mixed_precision, MODULES, MODEL):
         super(Discriminator, self).__init__()
         self.in_dims = [3] + [64, 128]
         self.out_dims = [64, 128, 256]
@@ -129,6 +129,7 @@ class Discriminator(nn.Module):
         self.normalize_d_embed = normalize_d_embed
         self.num_classes = num_classes
         self.mixed_precision = mixed_precision
+        self.MODEL= MODEL
 
         self.blocks = []
         for index in range(len(self.in_dims)):
@@ -180,6 +181,15 @@ class Discriminator(nn.Module):
             else:
                 raise NotImplementedError
 
+        # Q head network for infoGAN
+        if self.MODEL.info_num_discrete_c != "N/A":
+            out_features = self.MODEL.info_num_discrete_c * self.MODEL.info_dim_discrete_c
+            self.info_discrete_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=True)
+        if self.MODEL.info_num_conti_c != "N/A":
+            out_features = self.MODEL.info_num_conti_c
+            self.info_conti_mu_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=True)
+            self.info_conti_var_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=True)
+
         if d_init:
             ops.init_weights(self.modules, d_init)
 
@@ -187,6 +197,7 @@ class Discriminator(nn.Module):
         with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
             embed, proxy, cls_output = None, None, None
             mi_embed, mi_proxy, mi_cls_output = None, None, None
+            info_discrete_c_logits, info_conti_mu, info_conti_var = None, None, None
             h = x
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
@@ -206,6 +217,13 @@ class Discriminator(nn.Module):
                     label = label*2 + 1
                 else:
                     label = label*2
+
+            # forward pass through InfoGAN Q head
+            if self.MODEL.info_num_discrete_c != "N/A":
+                info_discrete_c_logits = self.info_discrete_linear(h)
+            if self.MODEL.info_num_conti_c != "N/A":
+                info_conti_mu = self.info_conti_mu_linear(h)
+                info_conti_var = self.info_conti_var_linear(h)
 
             # class conditioning
             if self.d_cond_mtd == "AC":
@@ -252,5 +270,8 @@ class Discriminator(nn.Module):
             "label": label,
             "mi_embed": mi_embed,
             "mi_proxy": mi_proxy,
-            "mi_cls_output": mi_cls_output
+            "mi_cls_output": mi_cls_output,
+            "info_discrete_c_logits": info_discrete_c_logits,
+            "info_conti_mu": info_conti_mu,
+            "info_conti_var": info_conti_var
         }

@@ -228,8 +228,8 @@ class WORKER(object):
         # make GAN be trainable before starting training
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
-        misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
-        misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, use_general_model=self.is_stylegan)
+        misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, use_general_model=self.is_stylegan)
         self.Gen.apply(misc.untrack_bn_statistics)
         # sample real images and labels from the true data distribution
         real_image_basket, real_label_basket = self.sample_data_basket()
@@ -241,7 +241,7 @@ class WORKER(object):
                     real_images = real_image_basket[batch_counter].to(self.local_rank, non_blocking=True)
                     real_labels = real_label_basket[batch_counter].to(self.local_rank, non_blocking=True)
                     # sample fake images and labels from p(G(z), y)
-                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws, _, _ = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
                         truncation_factor=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size,
@@ -452,15 +452,20 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     def train_generator(self, current_step):
         # toggle gradients of the generator and discriminator
-        misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
-        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, use_general_model=self.is_stylegan)
+        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, use_general_model=self.is_stylegan)
+        if self.MODEL.info_num_discrete_c != "N/A":
+            misc.toggle_grad(model=self.Dis.info_discrete_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
+        if self.MODEL.info_num_conti_c != "N/A":
+            misc.toggle_grad(model=self.Dis.info_conti_mu_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
+            misc.toggle_grad(model=self.Dis.info_conti_var_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
         self.Gen.apply(misc.track_bn_statistics)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
             for acml_step in range(self.OPTIMIZATION.acml_steps):
                 with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
                     # sample fake images and labels from p(G(z), y)
-                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws, info_conti_c, info_discrete_c = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
                         truncation_factor=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size,
@@ -538,6 +543,20 @@ class WORKER(object):
                     if self.LOSS.apply_zcr:
                         fake_zcr_loss = -1 * self.l2_loss(fake_images, fake_images_eps)
                         gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
+                    
+                    if self.LOSS.apply_infoGAN_loss:
+                        dim = self.MODEL.info_dim_discrete_c
+                        self.info_discrete_loss, self.info_conti_loss = 0, 0
+                        if self.MODEL.info_num_discrete_c != "N/A":
+                            for j in range(self.MODEL.info_num_discrete_c):
+                                self.info_discrete_loss += nn.CrossEntropyLoss()(
+                                                                            fake_dict["info_discrete_c_logits"][:,j*dim:j*dim+dim], 
+                                                                            info_discrete_c[:,j:j+1].squeeze())
+                            self.info_discrete_loss *= self.LOSS.infoGAN_loss_discrete_lambda
+                        if self.MODEL.info_num_conti_c != "N/A":
+                            self.info_conti_loss += losses.normal_nll_loss(info_conti_c, fake_dict["info_conti_mu"], fake_dict["info_conti_var"])
+                            self.info_conti_loss *= self.LOSS.infoGAN_loss_conti_lambda
+                        gen_acml_loss += (self.info_discrete_loss + self.info_conti_loss)
 
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
@@ -559,7 +578,7 @@ class WORKER(object):
             if self.STYLEGAN2.apply_pl_reg and (self.OPTIMIZATION.g_updates_per_step*current_step + step_index) % self.STYLEGAN2.g_reg_interval == 0:
                 self.OPTIMIZATION.g_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
-                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws = sample.generate_images(
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws, _, _ = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
                         truncation_factor=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size // 2,
@@ -640,6 +659,14 @@ class WORKER(object):
             wandb.log(dis_output_dict, step=self.wandb_step)
             wandb.log({"ada_p": self.ada_p.item()}, step=self.wandb_step)
 
+        if self.LOSS.apply_info_GAN_loss:
+            infoGAN_dict = {
+                "info_discrete_loss": (self.info_discrete_loss.item()),
+                "info_conti_loss": (self.info_conti_loss.item())
+            }
+            wandb.log(infoGAN_dict, step=self.wandb_step)
+
+
         if self.LOSS.apply_r1_reg:
             wandb.log({"r1_reg_loss": self.r1_penalty.item()}, step=self.wandb_step)
 
@@ -670,7 +697,7 @@ class WORKER(object):
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
             generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
-            fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+            fake_images, fake_labels, _, _, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                        truncation_factor=self.RUN.truncation_factor,
                                                                        batch_size=self.OPTIMIZATION.batch_size,
                                                                        z_dim=self.MODEL.z_dim,
@@ -971,7 +998,7 @@ class WORKER(object):
             resnet50_conv.eval()
 
             for c in tqdm(range(self.DATA.num_classes)):
-                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                fake_images, fake_labels, _, _, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                         truncation_factor=self.RUN.truncation_factor,
                                                                         batch_size=self.OPTIMIZATION.batch_size,
                                                                         z_dim=self.MODEL.z_dim,
@@ -1112,7 +1139,7 @@ class WORKER(object):
             num_batches = len(dataloader) // self.OPTIMIZATION.batch_size
             for i in range(num_batches):
                 real_images, real_labels = next(data_iter)
-                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                fake_images, fake_labels, _, _, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                           truncation_factor=self.RUN.truncation_factor,
                                                                           batch_size=self.OPTIMIZATION.batch_size,
                                                                           z_dim=self.MODEL.z_dim,
@@ -1209,7 +1236,7 @@ class WORKER(object):
 
                 save_output.clear()
 
-                fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                fake_images, fake_labels, _, _, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                            truncation_factor=self.RUN.truncation_factor,
                                                                            batch_size=self.OPTIMIZATION.batch_size,
                                                                            z_dim=self.MODEL.z_dim,
@@ -1457,7 +1484,7 @@ class WORKER(object):
             train_top1_acc, train_top5_acc, train_loss = misc.AverageMeter(), misc.AverageMeter(), misc.AverageMeter()
             for i, (images, labels) in enumerate(self.train_dataloader):
                 if GAN_train:
-                    images, labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                    images, labels, _, _, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                      truncation_factor=self.RUN.truncation_factor,
                                                                      batch_size=self.OPTIMIZATION.batch_size,
                                                                      z_dim=self.MODEL.z_dim,
@@ -1520,7 +1547,7 @@ class WORKER(object):
         valid_top1_acc, valid_top5_acc, valid_loss = misc.AverageMeter(), misc.AverageMeter(), misc.AverageMeter()
         for i, (images, labels) in enumerate(self.train_dataloader):
             if GAN_test:
-                images, labels, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
+                images, labels, _, _, _, _, _ = sample.generate_images(z_prior=self.MODEL.z_prior,
                                                                  truncation_factor=self.RUN.truncation_factor,
                                                                  batch_size=self.OPTIMIZATION.batch_size,
                                                                  z_dim=self.MODEL.z_dim,
