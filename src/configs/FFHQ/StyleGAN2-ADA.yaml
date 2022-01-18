@@ -15,7 +15,7 @@
 
 DATA:
   name: "FFHQ"
-  img_size: 512
+  img_size: 1024
   num_classes: 1
 MODEL:
   backbone: "stylegan2"
@@ -35,8 +35,8 @@ LOSS:
   r1_lambda: 2
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
-  batch_size: 8
-  acml_steps: 4
+  batch_size: 32
+  acml_steps: 1
   g_lr: 0.002
   d_lr: 0.002
   beta1: 0
