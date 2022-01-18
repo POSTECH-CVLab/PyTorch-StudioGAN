@@ -546,7 +546,7 @@ class WORKER(object):
                     
                     if self.LOSS.apply_infoGAN_loss:
                         dim = self.MODEL.info_dim_discrete_c
-                        self.info_discrete_loss, self.info_conti_loss = 0, 0
+                        self.info_discrete_loss, self.info_conti_loss = misc.enable_allreduce(fake_dict), misc.enable_allreduce(fake_dict)
                         if self.MODEL.info_num_discrete_c != "N/A":
                             for j in range(self.MODEL.info_num_discrete_c):
                                 self.info_discrete_loss += nn.CrossEntropyLoss()(
