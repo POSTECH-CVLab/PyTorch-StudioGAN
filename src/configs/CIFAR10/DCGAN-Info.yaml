@@ -1,0 +1,18 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  backbone: "deep_conv"
+  g_conv_dim: "N/A"
+  d_conv_dim: "N/A"
+  info_num_discrete_c: 1
+  info_num_conti_c: 4
+  info_dim_discrete_c: 10
+LOSS:
+  apply_infoGAN_loss: True
+  infoGAN_loss_discrete_lambda: 1
+  infoGAN_loss_conti_lambda: 0.1
+OPTIMIZATION:
+  d_updates_per_step: 2
+  total_steps: 200000

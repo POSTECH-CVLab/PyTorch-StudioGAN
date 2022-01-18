@@ -18,7 +18,7 @@ MODEL:
   apply_g_ema: True
   g_ema_decay: 0.9999
   g_ema_start: 1000
-  info_num_discrete_c: 2
+  info_num_discrete_c: 1
   info_num_conti_c: 4
   info_dim_discrete_c: 10
 LOSS:
