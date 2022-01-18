@@ -455,10 +455,10 @@ class WORKER(object):
         misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, use_general_model=self.is_stylegan)
         misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, use_general_model=self.is_stylegan)
         if self.MODEL.info_num_discrete_c != "N/A":
-            misc.toggle_grad(model=self.Dis.info_discrete_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
+            misc.toggle_grad(model=misc.peel_model(self.Dis).info_discrete_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
         if self.MODEL.info_num_conti_c != "N/A":
-            misc.toggle_grad(model=self.Dis.info_conti_mu_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
-            misc.toggle_grad(model=self.Dis.info_conti_var_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
+            misc.toggle_grad(model=misc.peel_model(self.Dis).info_conti_mu_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
+            misc.toggle_grad(model=misc.peel_model(self.Dis).info_conti_var_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
         self.Gen.apply(misc.track_bn_statistics)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
