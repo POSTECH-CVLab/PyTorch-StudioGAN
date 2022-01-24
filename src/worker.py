@@ -591,7 +591,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # log training statistics
     # -----------------------------------------------------------------------------
-    def log_train_statistics(self, current_step, real_cond_loss, gen_acml_loss, dis_acml_loss):
+    def log_train_statistics(self, current_step, real_cond_loss, gen_acml_loss, dis_acml_loss, total_emission):
         self.wandb_step = current_step + 1
         if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
             cls_loss = real_cond_loss.item()
@@ -626,6 +626,8 @@ class WORKER(object):
         misc.save_dict_npy(directory=join(self.RUN.save_dir, "statistics", self.run_name),
                            name="losses",
                            dictionary=save_dict)
+
+        wandb.log({"co2_emission(kg)": total_emission}, step=self.wandb_step)
 
         if self.AUG.apply_ada:
             dis_output_dict = {
@@ -829,7 +831,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # save the trained generator, generator_ema, and discriminator.
     # -----------------------------------------------------------------------------
-    def save(self, step, is_best):
+    def save(self, step, is_best, total_emission):
         when = "best" if is_best is True else "current"
         misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
         Gen, Gen_ema, Dis = misc.peel_models(self.Gen, self.Gen_ema, self.Dis)
@@ -847,7 +849,8 @@ class WORKER(object):
             "ada_p": self.ada_p,
             "best_step": self.best_step,
             "best_fid": self.best_fid,
-            "best_fid_ckpt": self.RUN.ckpt_dir
+            "best_fid_ckpt": self.RUN.ckpt_dir,
+            "total_emission": total_emission
         }
 
         if self.Gen_ema is not None:
