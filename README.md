@@ -11,6 +11,8 @@
 
 - StudioGAN provides clean-measures (IS, FID, Improved Precision & Recall, and Density & Coverage) using anti-aliasing PIL.BICUBIC resizer.
 
+- StudioGAN now supports CodeCarbon to track CO2 emissions from our compute.
+
 #  Release Notes (v.0.3.0)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN.
 - Add five types of differentiable augmentation: CR, DiffAugment, ADA, SimCLR, BYOL.
@@ -114,7 +116,7 @@ pip3 install torch==1.10.0+cu111 torchvision==0.11.1+cu111 torchaudio==0.10.0+cu
 
 Then, use the following command to install the rest of the libraries:
 ```bash
-pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg
+pip3 install codecarbon tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg
 ```
 
 With docker, you can use:
