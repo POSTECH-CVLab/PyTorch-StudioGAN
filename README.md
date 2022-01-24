@@ -11,7 +11,7 @@
 
 - StudioGAN provides clean-measures (IS, FID, Improved Precision & Recall, and Density & Coverage) using anti-aliasing PIL.BICUBIC resizer.
 
-- StudioGAN now supports CodeCarbon to track CO2 emissions from our compute.
+- StudioGAN supports CodeCarbon to track emissions from our compute and visualizes these using wandb logging system.
 
 #  Release Notes (v.0.3.0)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN.
