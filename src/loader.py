@@ -19,6 +19,7 @@ from torch.utils.data.distributed import DistributedSampler
 import torch
 import torch.distributed as dist
 
+from codecarbon import EmissionsTracker
 from data_util import Dataset_
 from utils.style_ops import grid_sample_gradfix
 from utils.style_ops import conv2d_gradfix
@@ -330,7 +331,11 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # train GAN until "total_steps" generator updates
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train:
-        if global_rank == 0: logger.info("Start training!")
+        if global_rank == 0:
+            logger.info("Start training!")
+            tracker = EmissionsTracker()
+            tracker.start()
+
         worker.training, worker.topk = True, topk
         worker.prepare_train_iter(epoch_counter=epoch)
         while step <= cfgs.OPTIMIZATION.total_steps:
@@ -372,7 +377,9 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                 if cfgs.RUN.distributed_data_parallel:
                     dist.barrier(worker.group)
 
-        if global_rank == 0: logger.info("End of training!")
+        if global_rank == 0:
+            logger.info("End of training!")
+            tracker.stop()
 
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
