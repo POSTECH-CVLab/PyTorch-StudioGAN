@@ -487,7 +487,7 @@ def adjust_k(current_k, topk_gamma, sup_k):
 
 def normal_nll_loss(x, mu, var):
     # https://github.com/Natsu6767/InfoGAN-PyTorch/blob/master/utils.py
-    # Calculate the negative log likelihood of normal distribution. 
+    # Calculate the negative log likelihood of normal distribution.
     # Needs to be minimized in InfoGAN. (Treats Q(c]x) as a factored Gaussian)
     logli = -0.5 * (var.mul(2 * np.pi) + 1e-6).log() - (x - mu).pow(2).div(var.mul(2.0) + 1e-6)
     nll = -(logli.sum(1).mean())

@@ -4,8 +4,8 @@ DATA:
   num_classes: 10
 MODEL:
   backbone: "big_resnet"
-  g_cond_mtd: "W/O"
-  d_cond_mtd: "W/O"
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "PD"
   apply_g_sn: True
   apply_d_sn: True
   apply_attn: True
@@ -19,6 +19,7 @@ MODEL:
   g_ema_decay: 0.9999
   g_ema_start: 1000
   info_type: "discrete"
+  g_info_injection: "cBN"
   info_num_discrete_c: 1
   info_dim_discrete_c: 10
 LOSS:

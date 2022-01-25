@@ -29,6 +29,7 @@ MODEL:
   g_conv_dim: "N/A"
   d_conv_dim: "N/A"
   apply_g_ema: True
+  info_type: "both"
   info_num_discrete_c: 1
   info_num_conti_c: 6
   info_dim_discrete_c: 10
@@ -36,7 +37,6 @@ LOSS:
   adv_loss: "logistic"
   apply_r1_reg: True
   r1_lambda: 0.01
-  apply_infoGAN_loss: True
   infoGAN_loss_discrete_lambda: 1
   infoGAN_loss_conti_lambda: 0.1
 OPTIMIZATION:

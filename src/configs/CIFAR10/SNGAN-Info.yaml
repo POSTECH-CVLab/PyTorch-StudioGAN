@@ -3,15 +3,13 @@ DATA:
   img_size: 32
   num_classes: 10
 MODEL:
-  backbone: "deep_conv"
-  g_conv_dim: "N/A"
-  d_conv_dim: "N/A"
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "PD"
+  apply_d_sn: True
   info_type: "discrete"
   g_info_injection: "cBN"
   info_num_discrete_c: 1
   info_dim_discrete_c: 10
 LOSS:
+  adv_loss: "hinge"
   infoGAN_loss_discrete_lambda: 1
-OPTIMIZATION:
-  d_updates_per_step: 2
-  total_steps: 200000

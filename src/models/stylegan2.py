@@ -516,6 +516,7 @@ class Generator(torch.nn.Module):
             w_dim,  # Intermediate latent (W) dimensionality.
             img_resolution,  # Output resolution.
             img_channels,  # Number of output color channels.
+            MODEL,
             mapping_kwargs={},  # Arguments for MappingNetwork.
             synthesis_kwargs={},  # Arguments for SynthesisNetwork.
     ):
@@ -523,8 +524,19 @@ class Generator(torch.nn.Module):
         self.z_dim = z_dim
         self.c_dim = c_dim
         self.w_dim = w_dim
+        self.MODEL = MODEL
         self.img_resolution = img_resolution
         self.img_channels = img_channels
+
+        z_extra_dim = 0
+        if self.MODEL.info_type in ["discrete", "both"]:
+            z_extra_dim += self.MODEL.info_num_discrete_c*self.MODEL.info_dim_discrete_c
+        if self.MODEL.info_type in ["continuous", "both"]:
+            z_extra_dim += self.MODEL.info_num_conti_c
+
+        if self.MODEL.info_type != "N/A":
+            self.z_dim += z_extra_dim
+
         self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
         self.num_ws = self.synthesis.num_ws
         self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
@@ -818,13 +830,13 @@ class Discriminator(torch.nn.Module):
                 raise NotImplementedError
 
         # Q head network for infoGAN
-        if self.MODEL.info_num_discrete_c != "N/A":
-            out_features = self.MODEL.info_num_discrete_c * self.MODEL.info_dim_discrete_c
-            self.info_discrete_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=True)
-        if self.MODEL.info_num_conti_c != "N/A":
+        if self.MODEL.info_type in ["discrete", "both"]:
+            out_features = self.MODEL.info_num_discrete_c*self.MODEL.info_dim_discrete_c
+            self.info_discrete_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=False)
+        if self.MODEL.info_type in ["continuous", "both"]:
             out_features = self.MODEL.info_num_conti_c
-            self.info_conti_mu_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=True)
-            self.info_conti_var_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=True)
+            self.info_conti_mu_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=False)
+            self.info_conti_var_linear = FullyConnectedLayer(in_features=channels_dict[4], out_features=out_features, bias=False)
 
     def forward(self, img, label, eval=False, adc_fake=False, **block_kwargs):
         x, embed, proxy, cls_output = None, None, None, None
@@ -848,11 +860,11 @@ class Discriminator(torch.nn.Module):
         oh_label = F.one_hot(label, self.num_classes * 2 if self.aux_cls_type=="ADC" else self.num_classes)
 
         # forward pass through InfoGAN Q head
-        if self.MODEL.info_num_discrete_c != "N/A":
+        if self.MODEL.info_type in ["discrete", "both"]:
             info_discrete_c_logits = self.info_discrete_linear(h)
-        if self.MODEL.info_num_conti_c != "N/A":
+        if self.MODEL.info_type in ["continuous", "both"]:
             info_conti_mu = self.info_conti_mu_linear(h)
-            info_conti_var = self.info_conti_var_linear(h)
+            info_conti_var = torch.exp(self.info_conti_var_linear(h))
 
         # class conditioning
         if self.d_cond_mtd == "AC":

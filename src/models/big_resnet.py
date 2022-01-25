@@ -13,42 +13,26 @@ import utils.misc as misc
 
 
 class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_cond_mtd, hier_z_dim, MODULES):
+    def __init__(self, in_channels, out_channels, g_cond_mtd, affine_input_dim, MODULES):
         super(GenBlock, self).__init__()
         self.g_cond_mtd = g_cond_mtd
 
-        if self.g_cond_mtd == "W/O":
-            self.bn1 = MODULES.g_bn(in_features=in_channels)
-            self.bn2 = MODULES.g_bn(in_features=out_channels)
-        elif self.g_cond_mtd == "cBN":
-            self.bn1 = MODULES.g_bn(hier_z_dim, in_channels, MODULES)
-            self.bn2 = MODULES.g_bn(hier_z_dim, out_channels, MODULES)
-        else:
-            raise NotImplementedError
+        self.bn1 = MODULES.g_bn(affine_input_dim, in_channels, MODULES)
+        self.bn2 = MODULES.g_bn(affine_input_dim, out_channels, MODULES)
 
         self.activation = MODULES.g_act_fn
         self.conv2d0 = MODULES.g_conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
         self.conv2d1 = MODULES.g_conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
         self.conv2d2 = MODULES.g_conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
 
-    def forward(self, x, label):
+    def forward(self, x, affine):
         x0 = x
-        if self.g_cond_mtd == "W/O":
-            x = self.bn1(x)
-        elif self.g_cond_mtd == "cBN":
-            x = self.bn1(x, label)
-        else:
-            raise NotImplementedError
+        x = self.bn1(x, affine)
         x = self.activation(x)
         x = F.interpolate(x, scale_factor=2, mode="nearest")
         x = self.conv2d1(x)
 
-        if self.g_cond_mtd == "W/O":
-            x = self.bn2(x)
-        elif self.g_cond_mtd == "cBN":
-            x = self.bn2(x, label)
-        else:
-            raise NotImplementedError
+        x = self.bn2(x, affine)
         x = self.activation(x)
         x = self.conv2d2(x)
 
@@ -60,7 +44,7 @@ class GenBlock(nn.Module):
 
 class Generator(nn.Module):
     def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_attn, attn_g_loc, g_cond_mtd, num_classes, g_init, g_depth,
-                 mixed_precision, MODULES):
+                 mixed_precision, MODULES, MODEL):
         super(Generator, self).__init__()
         g_in_dims_collection = {
             "32": [g_conv_dim * 4, g_conv_dim * 4, g_conv_dim * 4],
@@ -85,17 +69,32 @@ class Generator(nn.Module):
         self.g_cond_mtd = g_cond_mtd
         self.num_classes = num_classes
         self.mixed_precision = mixed_precision
+        self.MODEL = MODEL
         self.in_dims = g_in_dims_collection[str(img_size)]
         self.out_dims = g_out_dims_collection[str(img_size)]
         self.bottom = bottom_collection[str(img_size)]
         self.num_blocks = len(self.in_dims)
-        self.chunk_size = self.z_dim if self.g_cond_mtd == "W/O" else z_dim // (self.num_blocks + 1)
-        self.hier_z_dim = self.chunk_size + self.g_shared_dim
+        self.chunk_size = z_dim // (self.num_blocks + 1)
+        self.affine_input_dim = self.chunk_size
         assert self.z_dim % (self.num_blocks + 1) == 0, "z_dim should be divided by the number of blocks"
 
-        self.linear0 = MODULES.g_linear(in_features=self.chunk_size, out_features=self.in_dims[0] * self.bottom * self.bottom, bias=True)
+        info_dim = 0
+        if self.MODEL.info_type in ["discrete", "both"]:
+            info_dim += self.MODEL.info_num_discrete_c*self.MODEL.info_dim_discrete_c
+        if self.MODEL.info_type in ["continuous", "both"]:
+            info_dim += self.MODEL.info_num_conti_c
 
-        if not self.g_cond_mtd == "W/O":
+        if self.MODEL.info_type != "N/A":
+            if self.MODEL.g_info_injection == "concat":
+                self.info_mix_linear = MODULES.g_linear(in_features=self.z_dim + info_dim, out_features=self.z_dim, bias=True)
+            elif self.MODEL.g_info_injection == "cBN":
+                self.affine_input_dim += self.g_shared_dim
+                self.info_proj_linear = MODULES.g_linear(in_features=info_dim, out_features=self.g_shared_dim, bias=True)
+
+        self.linear0 = MODULES.g_linear(in_features=self.chunk_size, out_features=self.in_dims[0]*self.bottom*self.bottom, bias=True)
+
+        if self.g_cond_mtd != "W/O":
+            self.affine_input_dim += self.g_shared_dim
             self.shared = ops.embedding(num_embeddings=self.num_classes, embedding_dim=self.g_shared_dim)
 
         self.blocks = []
@@ -104,7 +103,7 @@ class Generator(nn.Module):
                 GenBlock(in_channels=self.in_dims[index],
                          out_channels=self.out_dims[index],
                          g_cond_mtd=self.g_cond_mtd,
-                         hier_z_dim=self.hier_z_dim,
+                         affine_input_dim=self.affine_input_dim,
                          MODULES=MODULES)
             ]]
 
@@ -121,17 +120,25 @@ class Generator(nn.Module):
         ops.init_weights(self.modules, g_init)
 
     def forward(self, z, label, shared_label=None, eval=False):
+        affine_list = []
         with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
+            if self.MODEL.info_type != "N/A":
+                if self.MODEL.g_info_injection == "concat":
+                    z = self.info_mix_linear(z)
+                elif self.MODEL.g_info_injection == "cBN":
+                    z, z_info = z[:, :self.z_dim], z[:, self.z_dim:]
+                    affine_list.append(self.info_proj_linear(z_info))
+
+            zs = torch.split(z, self.chunk_size, 1)
+            z = zs[0]
             if self.g_cond_mtd != "W/O":
-                zs = torch.split(z, self.chunk_size, 1)
-                z = zs[0]
                 if shared_label is None:
                     shared_label = self.shared(label)
-                else:
-                    pass
-                labels = [torch.cat([shared_label, item], 1) for item in zs[1:]]
+                affine_list.append(shared_label)
+            if len(affine_list) == 0:
+                affines = [item for item in zs[1:]]
             else:
-                labels = [None]*self.chunk_size
+                affines = [torch.cat(affine_list + [item], 1) for item in zs[1:]]
 
             act = self.linear0(z)
             act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
@@ -141,7 +148,7 @@ class Generator(nn.Module):
                     if isinstance(block, ops.SelfAttention):
                         act = block(act)
                     else:
-                        act = block(act, labels[counter])
+                        act = block(act, affines[counter])
                         counter += 1
 
             act = self.bn4(act)
@@ -328,13 +335,13 @@ class Discriminator(nn.Module):
                 raise NotImplementedError
 
         # Q head network for infoGAN
-        if self.MODEL.info_num_discrete_c != "N/A":
-            out_features = self.MODEL.info_num_discrete_c * self.MODEL.info_dim_discrete_c
-            self.info_discrete_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=True)
-        if self.MODEL.info_num_conti_c != "N/A":
+        if self.MODEL.info_type in ["discrete", "both"]:
+            out_features = self.MODEL.info_num_discrete_c*self.MODEL.info_dim_discrete_c
+            self.info_discrete_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=False)
+        if self.MODEL.info_type in ["continuous", "both"]:
             out_features = self.MODEL.info_num_conti_c
-            self.info_conti_mu_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=True)
-            self.info_conti_var_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=True)
+            self.info_conti_mu_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=False)
+            self.info_conti_var_linear = MODULES.d_linear(in_features=self.out_dims[-1], out_features=out_features, bias=False)
 
         if d_init:
             ops.init_weights(self.modules, d_init)
@@ -348,6 +355,7 @@ class Discriminator(nn.Module):
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
                     h = block(h)
+            bottom_h, bottom_w = h.shape[2], h.shape[3]
             h = self.activation(h)
             h = torch.sum(h, dim=[2, 3])
 
@@ -362,11 +370,11 @@ class Discriminator(nn.Module):
                     label = label*2
 
             # forward pass through InfoGAN Q head
-            if self.MODEL.info_num_discrete_c != "N/A":
-                info_discrete_c_logits = self.info_discrete_linear(h)
-            if self.MODEL.info_num_conti_c != "N/A":
-                info_conti_mu = self.info_conti_mu_linear(h)
-                info_conti_var = self.info_conti_var_linear(h)
+            if self.MODEL.info_type in ["discrete", "both"]:
+                info_discrete_c_logits = self.info_discrete_linear(h/(bottom_h*bottom_w))
+            if self.MODEL.info_type in ["continuous", "both"]:
+                info_conti_mu = self.info_conti_mu_linear(h/(bottom_h*bottom_w))
+                info_conti_var = torch.exp(self.info_conti_var_linear(h/(bottom_h*bottom_w)))
 
             # class conditioning
             if self.d_cond_mtd == "AC":

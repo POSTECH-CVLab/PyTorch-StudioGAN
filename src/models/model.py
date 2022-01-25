@@ -22,12 +22,6 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
     module = __import__("models.{backbone}".format(backbone=MODEL.backbone), fromlist=["something"])
     if device == 0:
         logger.info("Modules are located on './src/models.{backbone}'.".format(backbone=MODEL.backbone))
-    
-    infoGAN_c_dim = 0
-    if MODEL.info_num_discrete_c != "N/A":
-        infoGAN_c_dim += MODEL.info_num_discrete_c * MODEL.info_dim_discrete_c 
-    if MODEL.info_num_conti_c != "N/A":
-        infoGAN_c_dim += MODEL.info_num_conti_c
 
     if MODEL.backbone == "stylegan2":
         channel_base = 32768 if DATA.img_size >= 512 or DATA.name == "CIFAR10" else 16384
@@ -39,11 +33,12 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
         else:
             num_fp16_res = 0
             conv_clamp = None
-        Gen = module.Generator(z_dim=MODEL.z_dim + infoGAN_c_dim,
+        Gen = module.Generator(z_dim=MODEL.z_dim,
                                c_dim=gen_c_dim,
                                w_dim=MODEL.w_dim,
                                img_resolution=DATA.img_size,
                                img_channels=DATA.img_channels,
+                               MODEL=MODEL,
                                mapping_kwargs={"num_layers": STYLEGAN2.mapping_network},
                                synthesis_kwargs={"channel_base": channel_base, "channel_max": 512, \
                                "num_fp16_res": num_fp16_res, "conv_clamp": conv_clamp,}).to(device)
@@ -87,7 +82,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
             Gen_ema, Gen_ema_mapping, Gen_ema_synthesis, ema = None, None, None, None
 
     else:
-        Gen = module.Generator(z_dim=MODEL.z_dim + infoGAN_c_dim,
+        Gen = module.Generator(z_dim=MODEL.z_dim,
                                g_shared_dim=MODEL.g_shared_dim,
                                img_size=DATA.img_size,
                                g_conv_dim=MODEL.g_conv_dim,
@@ -98,7 +93,8 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                g_init=MODEL.g_init,
                                g_depth=MODEL.g_depth,
                                mixed_precision=RUN.mixed_precision,
-                               MODULES=MODULES).to(device)
+                               MODULES=MODULES,
+                               MODEL=MODEL).to(device)
 
         Gen_mapping, Gen_synthesis = None, None
 

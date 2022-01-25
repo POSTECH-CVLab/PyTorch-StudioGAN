@@ -228,8 +228,13 @@ class WORKER(object):
         # make GAN be trainable before starting training
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
-        misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, use_general_model=self.is_stylegan)
-        misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, use_general_model=self.is_stylegan)
+        misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, is_stylegan=self.is_stylegan)
+        if self.MODEL.info_type in ["discrete", "both"]:
+            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[0]), grad=False, num_freeze_layers=-1, is_stylegan=False)
+        if self.MODEL.info_type in ["continuous", "both"]:
+            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[1]), grad=False, num_freeze_layers=-1, is_stylegan=False)
+            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[2]), grad=False, num_freeze_layers=-1, is_stylegan=False)
         self.Gen.apply(misc.untrack_bn_statistics)
         # sample real images and labels from the true data distribution
         real_image_basket, real_label_basket = self.sample_data_basket()
@@ -391,6 +396,10 @@ class WORKER(object):
                                                             device=self.local_rank)
                         dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.r1_lambda * self.r1_penalty
 
+                    # meaningless loss to prevent allreduce errors from occuring when executing DDP training
+                    if self.MODEL.info_type in ["discrete", "continuous", "both"]:
+                        dis_acml_loss += misc.enable_allreduce(real_dict) + misc.enable_allreduce(fake_dict)
+
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
                     batch_counter += 1
@@ -451,21 +460,23 @@ class WORKER(object):
     # train Generator
     # -----------------------------------------------------------------------------
     def train_generator(self, current_step):
+        # make GAN be trainable before starting training
+        misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         # toggle gradients of the generator and discriminator
-        misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, use_general_model=self.is_stylegan)
-        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, use_general_model=self.is_stylegan)
-        if self.MODEL.info_num_discrete_c != "N/A":
-            misc.toggle_grad(model=misc.peel_model(self.Dis).info_discrete_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
-        if self.MODEL.info_num_conti_c != "N/A":
-            misc.toggle_grad(model=misc.peel_model(self.Dis).info_conti_mu_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
-            misc.toggle_grad(model=misc.peel_model(self.Dis).info_conti_var_linear, grad=True, num_freeze_layers=-1, use_general_model=True)
+        misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
+        if self.MODEL.info_type in ["discrete", "both"]:
+            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[0]), grad=True, num_freeze_layers=-1, is_stylegan=False)
+        if self.MODEL.info_type in ["continuous", "both"]:
+            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[1]), grad=True, num_freeze_layers=-1, is_stylegan=False)
+            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[2]), grad=True, num_freeze_layers=-1, is_stylegan=False)
         self.Gen.apply(misc.track_bn_statistics)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()
             for acml_step in range(self.OPTIMIZATION.acml_steps):
                 with torch.cuda.amp.autocast() if self.RUN.mixed_precision and not self.is_stylegan else misc.dummy_context_mgr() as mpc:
                     # sample fake images and labels from p(G(z), y)
-                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws, info_conti_c, info_discrete_c = sample.generate_images(
+                    fake_images, fake_labels, fake_images_eps, trsp_cost, ws, info_discrete_c, info_conti_c = sample.generate_images(
                         z_prior=self.MODEL.z_prior,
                         truncation_factor=-1.0,
                         batch_size=self.OPTIMIZATION.batch_size,
@@ -543,20 +554,18 @@ class WORKER(object):
                     if self.LOSS.apply_zcr:
                         fake_zcr_loss = -1 * self.l2_loss(fake_images, fake_images_eps)
                         gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
-                    
-                    if self.LOSS.apply_infoGAN_loss:
+
+                    if self.MODEL.info_type in ["discrete", "both"]:
                         dim = self.MODEL.info_dim_discrete_c
-                        self.info_discrete_loss, self.info_conti_loss = misc.enable_allreduce(fake_dict), misc.enable_allreduce(fake_dict)
-                        if self.MODEL.info_num_discrete_c != "N/A":
-                            for j in range(self.MODEL.info_num_discrete_c):
-                                self.info_discrete_loss += nn.CrossEntropyLoss()(
-                                                                            fake_dict["info_discrete_c_logits"][:,j*dim:j*dim+dim], 
-                                                                            info_discrete_c[:,j:j+1].squeeze())
-                            self.info_discrete_loss *= self.LOSS.infoGAN_loss_discrete_lambda
-                        if self.MODEL.info_num_conti_c != "N/A":
-                            self.info_conti_loss += losses.normal_nll_loss(info_conti_c, fake_dict["info_conti_mu"], fake_dict["info_conti_var"])
-                            self.info_conti_loss *= self.LOSS.infoGAN_loss_conti_lambda
-                        gen_acml_loss += (self.info_discrete_loss + self.info_conti_loss)
+                        self.info_discrete_loss = 0.0
+                        for info_c in range(self.MODEL.info_num_discrete_c):
+                            self.info_discrete_loss += self.ce_loss(
+                                fake_dict["info_discrete_c_logits"][:, info_c*dim: dim*(info_c+1)],
+                                info_discrete_c[:, info_c: info_c+1].squeeze())
+                        gen_acml_loss += self.LOSS.infoGAN_loss_discrete_lambda*self.info_discrete_loss + misc.enable_allreduce(fake_dict)
+                    if self.MODEL.info_type in ["continuous", "both"]:
+                        self.info_conti_loss = losses.normal_nll_loss(info_conti_c, fake_dict["info_conti_mu"], fake_dict["info_conti_var"])
+                        gen_acml_loss += self.LOSS.infoGAN_loss_conti_lambda*self.info_conti_loss + misc.enable_allreduce(fake_dict)
 
                     # adjust gradients for applying gradient accumluation trick
                     gen_acml_loss = gen_acml_loss / self.OPTIMIZATION.acml_steps
@@ -659,13 +668,12 @@ class WORKER(object):
             wandb.log(dis_output_dict, step=self.wandb_step)
             wandb.log({"ada_p": self.ada_p.item()}, step=self.wandb_step)
 
-        if self.LOSS.apply_info_GAN_loss:
-            infoGAN_dict = {
-                "info_discrete_loss": (self.info_discrete_loss.item()),
-                "info_conti_loss": (self.info_conti_loss.item())
-            }
+        infoGAN_dict = {}
+        if self.MODEL.info_type in ["discrete", "both"]:
+            infoGAN_dict["info_discrete_loss"] = self.info_discrete_loss.item()
+        if self.MODEL.info_type in ["continuous", "both"]:
+            infoGAN_dict["info_conti_loss"] = self.info_conti_loss.item()
             wandb.log(infoGAN_dict, step=self.wandb_step)
-
 
         if self.LOSS.apply_r1_reg:
             wandb.log({"r1_reg_loss": self.r1_penalty.item()}, step=self.wandb_step)

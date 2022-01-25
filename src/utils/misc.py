@@ -188,16 +188,19 @@ def count_parameters(module):
     return "Number of parameters: {num}".format(num=sum([p.data.nelement() for p in module.parameters()]))
 
 
-def toggle_grad(model, grad, num_freeze_layers=-1, use_general_model=False):
+def toggle_grad(model, grad, num_freeze_layers=-1, is_stylegan=False):
     model = peel_model(model)
-    if use_general_model:
+    if is_stylegan:
         for name, param in model.named_parameters():
             param.requires_grad = grad
     else:
-        num_blocks = len(model.in_dims)
-        assert num_freeze_layers < num_blocks,\
-            "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
-                                                                          nb=num_blocks)
+        try:
+            num_blocks = len(model.in_dims)
+            assert num_freeze_layers < num_blocks,\
+                "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
+                                                                            nb=num_blocks)
+        except:
+            pass
 
         if num_freeze_layers == -1:
             for name, param in model.named_parameters():
