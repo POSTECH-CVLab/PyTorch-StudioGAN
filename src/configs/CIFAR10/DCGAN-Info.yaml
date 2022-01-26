@@ -11,7 +11,7 @@ MODEL:
   info_num_discrete_c: 1
   info_dim_discrete_c: 10
 LOSS:
-  infoGAN_loss_discrete_lambda: 1
+  infoGAN_loss_discrete_lambda: 1.0
 OPTIMIZATION:
   d_updates_per_step: 2
   total_steps: 200000

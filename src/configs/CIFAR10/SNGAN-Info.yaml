@@ -12,4 +12,4 @@ MODEL:
   info_dim_discrete_c: 10
 LOSS:
   adv_loss: "hinge"
-  infoGAN_loss_discrete_lambda: 1
+  infoGAN_loss_discrete_lambda: 1.0
