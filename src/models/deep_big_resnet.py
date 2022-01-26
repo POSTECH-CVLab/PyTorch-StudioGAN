@@ -211,9 +211,7 @@ class DiscBlock(nn.Module):
     def forward(self, x):
         x0 = x
 
-        x = self.activation(x)
-        x = self.conv2d1(x)
-
+        x = self.conv2d1(self.activation(x))
         x = self.conv2d2(self.activation(x))
         x = self.conv2d3(self.activation(x))
         x = self.activation(x)
@@ -237,7 +235,7 @@ class Discriminator(nn.Module):
                  num_classes, d_init, d_depth, mixed_precision, MODULES, MODEL):
         super(Discriminator, self).__init__()
         d_in_dims_collection = {
-            "32": [3] + [d_conv_dim * 2, d_conv_dim * 2, d_conv_dim * 2],
+            "32": [3] + [d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4],
             "64": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8],
             "128": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
             "256": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16],
@@ -245,7 +243,7 @@ class Discriminator(nn.Module):
         }
 
         d_out_dims_collection = {
-            "32": [d_conv_dim * 2, d_conv_dim * 2, d_conv_dim * 2, d_conv_dim * 2],
+            "32": [d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4],
             "64": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
             "128": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
             "256": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
