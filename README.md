@@ -42,6 +42,7 @@
 | [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv'15 | CNN/ResNet<sup>[1](#footnote_1)</sup> | N/A | N/A | Vanilla | False |
 | [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV'17 | CNN/ResNet<sup>[1](#footnote_1)</sup> | N/A | N/A | Least Sqaure | False |
 | [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv'17 | CNN/ResNet<sup>[1](#footnote_1)</sup> | N/A | N/A | Hinge | False |
+| [**InfoGAN**](https://arxiv.org/abs/1606.03657) | NIPS'16 | All | N/A | N/A | Vanilla | False |
 | [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | ICLR'17 |  ResNet | N/A | N/A | Wasserstein | False |
 | [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS'17 |  ResNet | N/A | N/A | Wasserstein |  False |
 | [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv'17 |  ResNet | N/A | N/A | Wasserstein | False |
