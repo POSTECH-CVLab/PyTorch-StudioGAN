@@ -443,10 +443,8 @@ class Configurations(object):
             self.MODULES.d_linear = ops.linear
             self.MODULES.d_embedding = ops.embedding
 
-        if self.MODEL.g_cond_mtd == "cBN" or self.MODEL.g_info_injection == "cBN":
+        if self.MODEL.g_cond_mtd == "cBN" or self.MODEL.g_info_injection == "cBN" or "W/O":
             self.MODULES.g_bn = ops.ConditionalBatchNorm2d
-        elif self.MODEL.g_cond_mtd == "W/O":
-            self.MODULES.g_bn = ops.batchnorm_2d
         elif self.MODEL.g_cond_mtd == "cAdaIN":
             pass
         else:
