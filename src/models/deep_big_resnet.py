@@ -165,11 +165,11 @@ class Generator(nn.Module):
                     shared_label = self.shared(label)
                 affine_list.append(shared_label)
             if len(affine_list) == 0:
-                affine = z
+                z = z
             else:
                 affine = torch.cat(affine_list + [z], 1)
 
-            act = self.linear0(z)
+            act = self.linear0(affine)
             act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
