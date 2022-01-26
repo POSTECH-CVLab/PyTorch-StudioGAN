@@ -231,10 +231,10 @@ class WORKER(object):
         misc.toggle_grad(model=self.Gen, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
         misc.toggle_grad(model=self.Dis, grad=True, num_freeze_layers=self.RUN.freezeD, is_stylegan=self.is_stylegan)
         if self.MODEL.info_type in ["discrete", "both"]:
-            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[0]), grad=False, num_freeze_layers=-1, is_stylegan=False)
+            misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[0]), grad=False, num_freeze_layers=-1, is_stylegan=False)
         if self.MODEL.info_type in ["continuous", "both"]:
-            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[1]), grad=False, num_freeze_layers=-1, is_stylegan=False)
-            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[2]), grad=False, num_freeze_layers=-1, is_stylegan=False)
+            misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[1]), grad=False, num_freeze_layers=-1, is_stylegan=False)
+            misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[2]), grad=False, num_freeze_layers=-1, is_stylegan=False)
         self.Gen.apply(misc.untrack_bn_statistics)
         # sample real images and labels from the true data distribution
         real_image_basket, real_label_basket = self.sample_data_basket()
@@ -466,10 +466,10 @@ class WORKER(object):
         misc.toggle_grad(model=self.Dis, grad=False, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
         misc.toggle_grad(model=self.Gen, grad=True, num_freeze_layers=-1, is_stylegan=self.is_stylegan)
         if self.MODEL.info_type in ["discrete", "both"]:
-            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[0]), grad=True, num_freeze_layers=-1, is_stylegan=False)
+            misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[0]), grad=True, num_freeze_layers=-1, is_stylegan=False)
         if self.MODEL.info_type in ["continuous", "both"]:
-            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[1]), grad=True, num_freeze_layers=-1, is_stylegan=False)
-            misc.toggle_grad(getattr(self.Dis, self.MISC.info_params[2]), grad=True, num_freeze_layers=-1, is_stylegan=False)
+            misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[1]), grad=True, num_freeze_layers=-1, is_stylegan=False)
+            misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[2]), grad=True, num_freeze_layers=-1, is_stylegan=False)
         self.Gen.apply(misc.track_bn_statistics)
         for step_index in range(self.OPTIMIZATION.g_updates_per_step):
             self.OPTIMIZATION.g_optimizer.zero_grad()

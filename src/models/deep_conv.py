@@ -20,7 +20,7 @@ class GenBlock(nn.Module):
 
         self.deconv0 = MODULES.g_deconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=4, stride=2, padding=1)
 
-        if self.g_cond_mtd == "W/O" and self.g_info_injection == "N/A":
+        if self.g_cond_mtd == "W/O" and self.g_info_injection in ["N/A", "concat"]:
             self.bn0 = MODULES.g_bn(in_features=out_channels)
         elif self.g_cond_mtd == "cBN" or self.g_info_injection == "cBN":
             self.bn0 = MODULES.g_bn(affine_input_dim, out_channels, MODULES)
@@ -31,7 +31,7 @@ class GenBlock(nn.Module):
 
     def forward(self, x, affine):
         x = self.deconv0(x)
-        if self.g_cond_mtd == "W/O" and self.g_info_injection == "N/A":
+        if self.g_cond_mtd == "W/O" and self.g_info_injection in ["N/A", "concat"]:
             x = self.bn0(x)
         elif self.g_cond_mtd == "cBN" or self.g_info_injection == "cBN":
             x = self.bn0(x, affine)

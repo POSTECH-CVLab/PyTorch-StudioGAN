@@ -18,7 +18,7 @@ class GenBlock(nn.Module):
         self.g_cond_mtd = g_cond_mtd
         self.g_info_injection = g_info_injection
 
-        if self.g_cond_mtd == "W/O" and self.g_info_injection == "N/A":
+        if self.g_cond_mtd == "W/O" and self.g_info_injection in ["N/A", "concat"]:
             self.bn1 = MODULES.g_bn(in_features=in_channels)
             self.bn2 = MODULES.g_bn(in_features=out_channels)
         elif self.g_cond_mtd == "cBN" or self.g_info_injection == "cBN":
@@ -34,7 +34,7 @@ class GenBlock(nn.Module):
 
     def forward(self, x, affine):
         x0 = x
-        if self.g_cond_mtd == "W/O" and self.g_info_injection == "N/A":
+        if self.g_cond_mtd == "W/O" and self.g_info_injection in ["N/A", "concat"]:
             x = self.bn1(x)
         elif self.g_cond_mtd == "cBN" or self.g_info_injection == "cBN":
             x = self.bn1(x, affine)
@@ -44,7 +44,7 @@ class GenBlock(nn.Module):
         x = F.interpolate(x, scale_factor=2, mode="nearest")
         x = self.conv2d1(x)
 
-        if self.g_cond_mtd == "W/O" and self.g_info_injection == "N/A":
+        if self.g_cond_mtd == "W/O" and self.g_info_injection in ["N/A", "concat"]:
             x = self.bn2(x)
         elif self.g_cond_mtd == "cBN" or self.g_info_injection == "cBN":
             x = self.bn2(x, affine)
