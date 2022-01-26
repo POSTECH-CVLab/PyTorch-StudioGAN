@@ -19,8 +19,8 @@ DATA:
   num_classes: 10
 MODEL:
   backbone: "stylegan2"
-  g_cond_mtd: "W/O"
-  d_cond_mtd: "W/O"
+  g_cond_mtd: "cAdaIN"
+  d_cond_mtd: "SPD"
   g_act_fn: "Auto"
   d_act_fn: "Auto"
   z_prior: "gaussian"

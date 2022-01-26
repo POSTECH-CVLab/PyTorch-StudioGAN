@@ -808,6 +808,12 @@ class Configurations(object):
             assert self.MODEL.info_num_discrete_c > 0 and self.MODEL.info_dim_discrete_c > 0,\
                 "MODEL.info_num_discrete_c and MODEL.info_dim_discrete_c should be over 0."
 
+        if self.MODEL.info_type in ["continuous", "both"]:
+            assert self.MODEL.info_num_conti_c > 0, "MODEL.info_num_conti_c should be over 0."
+        
+        if self.MODEL.info_type in ["discrete", "continuous", "both"] and self.MODEL.backbone == "stylegan2":
+            assert self.MODEL.g_info_injection == "concat", "StyleGAN2 only allows concat as g_info_injection method"
+
         if self.MODEL.info_type in ["discrete", "continuous", "both"]:
             assert self.MODEL.g_info_injection in ["concat", "cBN"], "MODEL.g_info_injection should be 'concat' or 'cBN'."
 
