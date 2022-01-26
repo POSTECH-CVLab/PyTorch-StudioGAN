@@ -11,6 +11,8 @@
 
 - StudioGAN provides clean-measures (IS, FID, Improved Precision & Recall, and Density & Coverage) using anti-aliasing PIL.BICUBIC resizer.
 
+- StudioGAN supports CodeCarbon to track CO2 emission from our compute and visualizes this using wandb logging system.
+
 #  Release Notes (v.0.3.0)
 - Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN.
 - Add five types of differentiable augmentation: CR, DiffAugment, ADA, SimCLR, BYOL.
@@ -114,7 +116,7 @@ pip3 install torch==1.10.0+cu111 torchvision==0.11.1+cu111 torchaudio==0.10.0+cu
 
 Then, use the following command to install the rest of the libraries:
 ```bash
-pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg
+pip3 install codecarbon tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg
 ```
 
 With docker, you can use:
@@ -455,7 +457,7 @@ When training, we used the command below.
 With 8 TESLA V100 GPUs, training BigGAN2048 takes about a month.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -sync_bn -metrics is fid prdc --eval_type "valid" -cfg CONFIG_PATH -std_stat -std_max STD_MAX -std_step STD_STEP -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -hdf5 -l -sync_bn -metrics is fid prdc -ref "valid" -cfg CONFIG_PATH -std_stat -std_max STD_MAX -std_step STD_STEP -data DATA_PATH -save SAVE_PATH
 ```
 
 IS, FID, and F_beta values are computed using 50K validation and 50K generated Images.
