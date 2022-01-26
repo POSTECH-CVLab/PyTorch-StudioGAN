@@ -19,6 +19,7 @@ MODEL:
   g_ema_decay: 0.9999
   g_ema_start: 1000
   info_type: "discrete"
+  g_info_injection: "cBN"
   info_num_discrete_c: 1
   info_dim_discrete_c: 10
 LOSS:
