@@ -139,6 +139,8 @@ class Configurations(object):
         self.LOSS.fm_lambda = "N/A"
         # whether to apply r1 regularization used in multiple-discriminator (FUNIT)
         self.LOSS.apply_r1_reg = False
+        # a place to apply the R1 regularization \in ["N/A", "inside_loop", "outside_loop"]
+        self.LOSS.r1_place = "N/A"
         # strength of r1 regularization (it does not apply to r1_reg in StyleGAN2
         self.LOSS.r1_lambda = "N/A"
         # positive margin for D2DCE
@@ -741,6 +743,10 @@ class Configurations(object):
             assert self.MODEL.g_cond_mtd in ["W/O", "cAdaIN"], \
                 "stylegan2 only supports 'W/O' or 'cAdaIN' as g_cond_mtd."
 
+        if self.LOSS.apply_r1_reg and self.MODEL.backbone == "stylegan2":
+            assert self.LOSS.r1_place in ["inside_loop", "outside_loop"], \
+                "LOSS.r1_place should be one of ['inside_loop', 'outside_loop']"
+
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
             assert self.MODEL.backbone == "stylegan2", \
                 "StudioGAN does not support the act_fn auto selection options except for stylegan2."
@@ -810,7 +816,7 @@ class Configurations(object):
 
         if self.MODEL.info_type in ["continuous", "both"]:
             assert self.MODEL.info_num_conti_c > 0, "MODEL.info_num_conti_c should be over 0."
-        
+
         if self.MODEL.info_type in ["discrete", "continuous", "both"] and self.MODEL.backbone == "stylegan2":
             assert self.MODEL.g_info_injection == "concat", "StyleGAN2 only allows concat as g_info_injection method"
 

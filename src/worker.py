@@ -101,9 +101,9 @@ class WORKER(object):
         self.fm_loss = losses.feature_matching_loss
 
         if self.is_stylegan and self.LOSS.apply_r1_reg:
-            self.r1_lambda = self.LOSS.r1_lambda*self.STYLEGAN2.d_reg_interval/self.OPTIMIZATION.acml_steps
+            self.r1_lambda = self.LOSS.r1_lambda*self.STYLEGAN2.d_reg_interval
         if self.is_stylegan and self.STYLEGAN2.apply_pl_reg:
-            self.pl_lambda = self.STYLEGAN2.pl_weight*self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
+            self.pl_lambda = self.STYLEGAN2.pl_weight*self.STYLEGAN2.g_reg_interval
 
         if self.AUG.apply_ada:
             self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
@@ -395,6 +395,18 @@ class WORKER(object):
                                                             images=real_images,
                                                             device=self.local_rank)
                         dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.r1_lambda * self.r1_penalty
+                    elif self.LOSS.apply_r1_reg and self.LOSS.r1_place == "inside_loop" and \
+                        (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
+                        for acml_index in range(self.OPTIMIZATION.acml_steps):
+                            self.r1_penalty, output_dict = losses.stylegan_cal_r1_reg(real_images, real_labels, self.Dis, self.AUG)
+                            dis_acml_loss += self.r1_lambda*self.r1_penalty/self.OPTIMIZATION.acml_steps
+                            if self.AUG.apply_ada:
+                                self.dis_sign_real += torch.tensor((output_dict["adv_output"].sign().sum().item(),
+                                                                    self.OPTIMIZATION.batch_size),
+                                                                device=self.local_rank)
+                                self.dis_logit_real += torch.tensor((output_dict["adv_output"].sum().item(),
+                                                                    self.OPTIMIZATION.batch_size),
+                                                                    device=self.local_rank)
 
                     # meaningless loss to prevent allreduce errors from occuring when executing DDP training
                     if self.MODEL.info_type in ["discrete", "continuous", "both"]:
@@ -417,22 +429,20 @@ class WORKER(object):
             else:
                 self.OPTIMIZATION.d_optimizer.step()
 
-            if self.LOSS.apply_r1_reg and (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
+            if self.LOSS.apply_r1_reg and self.LOSS.r1_place == "outside_loop" and \
+             (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
                 self.OPTIMIZATION.d_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     real_images = real_image_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
                     real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
-                    real_images.requires_grad_(True)
-                    real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
-                    self.r1_penalty = misc.enable_allreduce(real_dict) + self.r1_lambda*losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                                                                                   images=real_images)
+                    self.r1_penalty, output_dict = losses.stylegan_cal_r1_reg(real_images, real_labels, self.Dis, self.AUG)
+                    self.r1_penalty *= self.r1_lambda/self.OPTIMIZATION.acml_steps
                     self.r1_penalty.backward()
-
                     if self.AUG.apply_ada:
-                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
+                        self.dis_sign_real += torch.tensor((output_dict["adv_output"].sign().sum().item(),
                                                             self.OPTIMIZATION.batch_size),
                                                         device=self.local_rank)
-                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
+                        self.dis_logit_real += torch.tensor((output_dict["adv_output"].sum().item(),
                                                             self.OPTIMIZATION.batch_size),
                                                             device=self.local_rank)
                 self.OPTIMIZATION.d_optimizer.step()

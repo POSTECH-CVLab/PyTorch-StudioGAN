@@ -313,6 +313,14 @@ class PathLengthRegularizer:
         return loss_Gpl
 
 
+def enable_allreduce(dict_):
+    loss = 0
+    for key, value in dict_.items():
+        if value is not None and key != "label":
+            loss += value.mean()*0
+    return loss
+
+
 def d_vanilla(d_logit_real, d_logit_fake, DDP):
     device = d_logit_real.get_device()
     ones = torch.ones_like(d_logit_real, device=device, requires_grad=False)
@@ -475,15 +483,11 @@ def cal_r1_reg(adv_output, images, device):
     r1_reg = 0.5 * grad_dout2.contiguous().view(batch_size, -1).sum(1).mean(0)
     return r1_reg
 
-def stylegan_cal_r1_reg(adv_output, images):
-    with conv2d_gradfix.no_weight_gradients():
-        r1_grads = torch.autograd.grad(outputs=[adv_output.sum()], inputs=[images], create_graph=True, only_inputs=True)[0]
-    r1_penalty = r1_grads.square().sum([1,2,3])/2
-    return r1_penalty.mean()
 
 def adjust_k(current_k, topk_gamma, sup_k):
     current_k = max(current_k * topk_gamma, sup_k)
     return current_k
+
 
 def normal_nll_loss(x, mu, var):
     # https://github.com/Natsu6767/InfoGAN-PyTorch/blob/master/utils.py
@@ -491,5 +495,17 @@ def normal_nll_loss(x, mu, var):
     # Needs to be minimized in InfoGAN. (Treats Q(c]x) as a factored Gaussian)
     logli = -0.5 * (var.mul(2 * np.pi) + 1e-6).log() - (x - mu).pow(2).div(var.mul(2.0) + 1e-6)
     nll = -(logli.sum(1).mean())
-
     return nll
+
+
+def stylegan_cal_r1_reg(images, labels, Dis, AUG):
+    images.requires_grad_(True)
+    output_dict = Dis(AUG.series_augment(images), labels)
+    with conv2d_gradfix.no_weight_gradients():
+        r1_grads = torch.autograd.grad(outputs=[output_dict["adv_output"].sum()],
+                                       inputs=[images],
+                                       create_graph=True,
+                                       only_inputs=True)[0]
+    r1_grads_sum = r1_grads.square().sum([1,2,3])/2
+    r1_penalty = enable_allreduce(output_dict) + r1_grads_sum.mean()
+    return r1_penalty, output_dict
