@@ -13,23 +13,6 @@ import numpy as np
 
 class ConditionalBatchNorm2d(nn.Module):
     # https://github.com/voletiv/self-attention-GAN-pytorch
-    def __init__(self, num_classes, num_features, MODULES):
-        super().__init__()
-        self.num_features = num_features
-        self.bn = batchnorm_2d(in_features=num_features, eps=1e-4, momentum=0.1, affine=False)
-
-        self.embed0 = MODULES.g_embedding(num_embeddings=num_classes, embedding_dim=num_features)
-        self.embed1 = MODULES.g_embedding(num_embeddings=num_classes, embedding_dim=num_features)
-
-    def forward(self, x, y):
-        gain = (1 + self.embed0(y)).view(-1, self.num_features, 1, 1)
-        bias = self.embed1(y).view(-1, self.num_features, 1, 1)
-        out = self.bn(x)
-        return out * gain + bias
-
-
-class BigGANConditionalBatchNorm2d(nn.Module):
-    # https://github.com/voletiv/self-attention-GAN-pytorch
     def __init__(self, in_features, out_features, MODULES):
         super().__init__()
         self.in_features = in_features

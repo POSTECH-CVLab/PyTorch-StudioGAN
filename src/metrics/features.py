@@ -14,7 +14,7 @@ import utils.losses as losses
 
 
 def generate_images_and_stack_features(generator, discriminator, eval_model, num_generate, y_sampler, batch_size, z_prior,
-                                       truncation_factor, z_dim, num_classes, LOSS, RUN, is_stylegan, generator_mapping,
+                                       truncation_factor, z_dim, num_classes, LOSS, RUN, MODEL, is_stylegan, generator_mapping,
                                        generator_synthesis, world_size, DDP, device, logger, disable_tqdm):
     eval_model.eval()
     feature_holder, prob_holder, fake_label_holder = [], [], []
@@ -24,7 +24,7 @@ def generate_images_and_stack_features(generator, discriminator, eval_model, num
     num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
     if DDP: num_batches = num_batches//world_size + 1
     for i in tqdm(range(num_batches), disable=disable_tqdm):
-        fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=z_prior,
+        fake_images, fake_labels, _, _, _, _, _ = sample.generate_images(z_prior=z_prior,
                                                                    truncation_factor=truncation_factor,
                                                                    batch_size=batch_size,
                                                                    z_dim=z_dim,
@@ -36,6 +36,7 @@ def generate_images_and_stack_features(generator, discriminator, eval_model, num
                                                                    is_train=False,
                                                                    LOSS=LOSS,
                                                                    RUN=RUN,
+                                                                   MODEL=MODEL,
                                                                    is_stylegan=is_stylegan,
                                                                    generator_mapping=generator_mapping,
                                                                    generator_synthesis=generator_synthesis,

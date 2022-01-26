@@ -38,6 +38,7 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                w_dim=MODEL.w_dim,
                                img_resolution=DATA.img_size,
                                img_channels=DATA.img_channels,
+                               MODEL=MODEL,
                                mapping_kwargs={"num_layers": STYLEGAN2.mapping_network},
                                synthesis_kwargs={"channel_base": channel_base, "channel_max": 512, \
                                "num_fp16_res": num_fp16_res, "conv_clamp": conv_clamp,}).to(device)
@@ -62,7 +63,8 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                    mapping_kwargs={},
                                    epilogue_kwargs={
                                        "mbstd_group_size": STYLEGAN2.d_epilogue_mbstd_group_size
-                                   }).to(device)
+                                   },
+                                   MODEL=MODEL).to(device)
 
         if MODEL.apply_g_ema:
             if device == 0:
@@ -91,7 +93,8 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                g_init=MODEL.g_init,
                                g_depth=MODEL.g_depth,
                                mixed_precision=RUN.mixed_precision,
-                               MODULES=MODULES).to(device)
+                               MODULES=MODULES,
+                               MODEL=MODEL).to(device)
 
         Gen_mapping, Gen_synthesis = None, None
 
@@ -108,7 +111,8 @@ def load_generator_discriminator(DATA, OPTIMIZATION, MODEL, STYLEGAN2, MODULES, 
                                    d_init=MODEL.d_init,
                                    d_depth=MODEL.d_depth,
                                    mixed_precision=RUN.mixed_precision,
-                                   MODULES=MODULES).to(device)
+                                   MODULES=MODULES,
+                                   MODEL=MODEL).to(device)
         if MODEL.apply_g_ema:
             if device == 0:
                 logger.info("Prepare exponential moving average generator with decay rate of {decay}."\

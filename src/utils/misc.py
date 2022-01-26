@@ -194,10 +194,13 @@ def toggle_grad(model, grad, num_freeze_layers=-1, is_stylegan=False):
         for name, param in model.named_parameters():
             param.requires_grad = grad
     else:
-        num_blocks = len(model.in_dims)
-        assert num_freeze_layers < num_blocks,\
-            "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
-                                                                          nb=num_blocks)
+        try:
+            num_blocks = len(model.in_dims)
+            assert num_freeze_layers < num_blocks,\
+                "cannot freeze the {nfl}th block > total {nb} blocks.".format(nfl=num_freeze_layers,
+                                                                            nb=num_blocks)
+        except:
+            pass
 
         if num_freeze_layers == -1:
             for name, param in model.named_parameters():
@@ -306,7 +309,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
             rand_batch_size = random.randint(1, batch_size_per_gpu)
         else:
             rand_batch_size = random.randint(1, batch_size_per_gpu) * OPTIMIZATION.world_size
-        fake_images, fake_labels, _, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
+        fake_images, fake_labels, _, _, _, _, _ = sample.generate_images(z_prior=MODEL.z_prior,
                                                                    truncation_factor=-1,
                                                                    batch_size=rand_batch_size,
                                                                    z_dim=MODEL.z_dim,
@@ -318,6 +321,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                    is_train=True,
                                                                    LOSS=LOSS,
                                                                    RUN=RUN,
+                                                                   MODEL=MODEL,
                                                                    is_stylegan=MODEL.backbone=="stylegan2",
                                                                    generator_mapping=None,
                                                                    generator_synthesis=None,
@@ -465,7 +469,7 @@ def plot_tsne_scatter_plot(df, tsne_results, flag, directory, logger, logging=Tr
 
 
 def save_images_png(data_loader, generator, discriminator, is_generate, num_images, y_sampler, batch_size, z_prior,
-                    truncation_factor, z_dim, num_classes, LOSS, OPTIMIZATION, RUN, is_stylegan, generator_mapping,
+                    truncation_factor, z_dim, num_classes, LOSS, OPTIMIZATION, RUN, MODEL, is_stylegan, generator_mapping,
                     generator_synthesis, directory, device):
     num_batches = math.ceil(float(num_images) / float(batch_size))
     if RUN.distributed_data_parallel: num_batches = num_batches//OPTIMIZATION.world_size + 1
@@ -489,7 +493,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
             start = i * batch_size
             end = start + batch_size
             if is_generate:
-                images, labels, _, _, _ = sample.generate_images(z_prior=z_prior,
+                images, labels, _, _, _, _, _= sample.generate_images(z_prior=z_prior,
                                                                  truncation_factor=truncation_factor,
                                                                  batch_size=batch_size,
                                                                  z_dim=z_dim,
@@ -501,6 +505,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                                  is_train=False,
                                                                  LOSS=LOSS,
                                                                  RUN=RUN,
+                                                                 MODEL=MODEL,
                                                                  is_stylegan=is_stylegan,
                                                                  generator_mapping=generator_mapping,
                                                                  generator_synthesis=generator_synthesis,

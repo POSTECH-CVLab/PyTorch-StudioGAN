@@ -87,7 +87,7 @@ def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_factor, y_samp
 
 
 def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, y_sampler, radius, generator, discriminator,
-                    is_train, LOSS, RUN, device, is_stylegan, generator_mapping, generator_synthesis, style_mixing_p,
+                    is_train, LOSS, RUN, MODEL, device, is_stylegan, generator_mapping, generator_synthesis, style_mixing_p,
                     cal_trsp_cost):
     if is_train:
         truncation_factor = -1.0
@@ -109,6 +109,14 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
                                         y_sampler=y_sampler,
                                         radius=radius,
                                         device=device)
+    info_discrete_c, info_conti_c = None, None
+    if MODEL.info_type in ["discrete", "both"]:
+        info_discrete_c = torch.randint(MODEL.info_dim_discrete_c,(batch_size, MODEL.info_num_discrete_c), device=device)
+        zs = torch.cat((zs, F.one_hot(info_discrete_c, MODEL.info_dim_discrete_c).view(batch_size, -1)), dim=1)
+    if MODEL.info_type in ["continuous", "both"]:
+        info_conti_c = torch.rand(batch_size, MODEL.info_num_conti_c, device=device) * 2 - 1
+        zs = torch.cat((zs, info_conti_c), dim=1)
+
     trsp_cost = None
     if LOSS.apply_lo:
         zs, trsp_cost = losses.latent_optimise(zs=zs,
@@ -163,7 +171,7 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
             _, fake_images_eps = generator(zs_eps, fake_labels, eval=not is_train)
     else:
         fake_images_eps = None
-    return fake_images, fake_labels, fake_images_eps, trsp_cost, ws
+    return fake_images, fake_labels, fake_images_eps, trsp_cost, ws, info_discrete_c, info_conti_c
 
 def stylegan_generate_images(zs, fake_labels, num_classes, style_mixing_p, generator_mapping, generator_synthesis, truncation_psi, truncation_cutoff):
     one_hot_fake_labels = F.one_hot(fake_labels, num_classes=num_classes)
