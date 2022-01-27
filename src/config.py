@@ -177,9 +177,9 @@ class Configurations(object):
         self.LOSS.apply_zcr = False
         # radius of ball to generate an fake image G(z + radius)
         self.LOSS.radius = "N/A"
-        # repulsion stength between fake images (G(z), G(z + radius))
+        # repulsion strength between fake images (G(z), G(z + radius))
         self.LOSS.g_lambda = "N/A"
-        # attaction stength between logits of fake images (G(z), G(z + radius))
+        # attaction strength between logits of fake images (G(z), G(z + radius))
         self.LOSS.d_lambda = "N/A"
         # whether to apply latent optimization for stable training
         self.LOSS.apply_lo = False
@@ -206,7 +206,14 @@ class Configurations(object):
         self.LOSS.infoGAN_loss_discrete_lambda = "N/A"
         # strength lambda for infoGAN loss in case of continuous c (typically 1)
         self.LOSS.infoGAN_loss_conti_lambda = "N/A"
-
+        # whether to apply LeCam regularization or not
+        self.LOSS.apply_lecam = False
+        # strength of the LeCam regularization
+        self.LOSS.lecam_lambda = "N/A"
+        # start iteration for EMALosses in src/utils/EMALosses
+        self.LOSS.lecam_ema_start_iter = "N/A"
+        # decay rate for the EMALosses
+        self.LOSS.lecam_ema_decay = "N/A"
 
         # -----------------------------------------------------------------------------
         # optimizer settings

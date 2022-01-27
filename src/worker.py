@@ -96,6 +96,7 @@ class WORKER(object):
         self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
         self.DDP = self.RUN.distributed_data_parallel
         self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
+        self.lecam_reg = losses.EMALosses(decay=self.LOSS.lecam_ema_decay, start_iter=self.LOSS.lecam_ema_start_iter)
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
@@ -133,7 +134,7 @@ class WORKER(object):
                                                                master_rank="cuda",
                                                                DDP=self.DDP)
             if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.MiConditionalContrastiveLoss(num_classes=self.DATA.num_classes,
+                self.cond_loss_mi = losses.MiConditionalContrastiveLoss(num_classes=num_classes,
                                                                         temperature=self.LOSS.temperature,
                                                                         master_rank="cuda",
                                                                         DDP=self.DDP)
@@ -390,11 +391,20 @@ class WORKER(object):
                                                                 device=self.local_rank)
                         dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.maxgp_lambda * maxgp_loss
 
+                    # apply LeCam reg. for data-efficient training if self.LOSS.apply_lecam is set to True
+                    if self.LOSS.apply_lecam:
+                        self.lecam_losses.update(torch.mean(real_dict["adv_output"]).item(), 'D_real', current_step)
+                        self.lecam_losses.update(torch.mean(fake_dict["adv_output"]).item(), 'D_fake', current_step)
+                        if current_step > self.LOSS.lecam_ema_start_iter:
+                            lecam_loss = losses.lecam_reg(real_dict["adv_output"], fake_dict["adv_output"], self.lecam_losses)
+                        else:
+                            lecam_loss = torch.tensor(0., device=self.local_rank)
+
+                        dis_acml_loss += self.LOSS.lecam_lambda*lecam_loss
+
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
-                        self.r1_penalty = losses.cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                            images=real_images,
-                                                            device=self.local_rank)
-                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.r1_lambda * self.r1_penalty
+                        self.r1_penalty = losses.cal_r1_reg(adv_output=real_dict["adv_output"], images=real_images, device=self.local_rank)
+                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.r1_lambda*self.r1_penalty
                     elif self.LOSS.apply_r1_reg and self.LOSS.r1_place == "inside_loop" and \
                         (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
                         for acml_index in range(self.OPTIMIZATION.acml_steps):

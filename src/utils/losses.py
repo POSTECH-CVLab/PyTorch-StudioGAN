@@ -313,6 +313,35 @@ class PathLengthRegularizer:
         return loss_Gpl
 
 
+class EMALosses(object):
+    # Simple wrapper that applies EMA to losses.
+    # https://github.com/google/lecam-gan/blob/master/third_party/utils.py
+    def __init__(self, init=7777, decay=0.9, start_iter=0):
+        self.G_loss = init
+        self.D_loss_real = init
+        self.D_loss_fake = init
+        self.D_real = init
+        self.D_fake = init
+        self.decay = decay
+        self.start_itr = start_iter
+
+    def update(self, cur, mode, itr):
+        if itr < self.start_itr:
+            decay = 0.0
+        else:
+            decay = self.decay
+        if mode == 'G_loss':
+          self.G_loss = self.G_loss*decay + cur*(1 - decay)
+        elif mode == 'D_loss_real':
+          self.D_loss_real = self.D_loss_real*decay + cur*(1 - decay)
+        elif mode == 'D_loss_fake':
+          self.D_loss_fake = self.D_loss_fake*decay + cur*(1 - decay)
+        elif mode == 'D_real':
+          self.D_real = self.D_real*decay + cur*(1 - decay)
+        elif mode == 'D_fake':
+          self.D_fake = self.D_fake*decay + cur*(1 - decay)
+
+
 def enable_allreduce(dict_):
     loss = 0
     for key, value in dict_.items():
@@ -386,6 +415,16 @@ def feature_matching_loss(real_embed, fake_embed):
     # feature matching criterion
     fm_loss = torch.mean(torch.abs(torch.mean(fake_embed, 0) - torch.mean(real_embed, 0)))
     return fm_loss
+
+
+def lecam_reg(d_logit_real, d_logit_fake, ema, DDP):
+    if DDP:
+        d_logit_real = torch.cat(GatherLayer.apply(d_logit_real), dim=0)
+        d_logit_fake = torch.cat(GatherLayer.apply(d_logit_fake), dim=0)
+
+    reg = torch.mean(F.relu(d_logit_real - ema.D_fake).pow(2)) + \
+          torch.mean(F.relu(ema.D_real - d_logit_fake).pow(2))
+    return reg
 
 
 def cal_deriv(inputs, outputs, device):
