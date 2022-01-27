@@ -96,10 +96,10 @@ class WORKER(object):
         self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
         self.DDP = self.RUN.distributed_data_parallel
         self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
-        self.lecam_reg = losses.EMALosses(decay=self.LOSS.lecam_ema_decay, start_iter=self.LOSS.lecam_ema_start_iter)
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
+        self.lecam_ema = ops.LeCamEMA(decay=self.LOSS.lecam_ema_decay, start_iter=self.LOSS.lecam_ema_start_iter)
 
         if self.is_stylegan and self.LOSS.apply_r1_reg:
             self.r1_lambda = self.LOSS.r1_lambda*self.STYLEGAN2.d_reg_interval
@@ -393,10 +393,10 @@ class WORKER(object):
 
                     # apply LeCam reg. for data-efficient training if self.LOSS.apply_lecam is set to True
                     if self.LOSS.apply_lecam:
-                        self.lecam_losses.update(torch.mean(real_dict["adv_output"]).item(), 'D_real', current_step)
-                        self.lecam_losses.update(torch.mean(fake_dict["adv_output"]).item(), 'D_fake', current_step)
+                        self.lecam_ema.update(torch.mean(real_dict["adv_output"]).item(), 'D_real', current_step)
+                        self.lecam_ema.update(torch.mean(fake_dict["adv_output"]).item(), 'D_fake', current_step)
                         if current_step > self.LOSS.lecam_ema_start_iter:
-                            lecam_loss = losses.lecam_reg(real_dict["adv_output"], fake_dict["adv_output"], self.lecam_losses)
+                            lecam_loss = losses.lecam_reg(real_dict["adv_output"], fake_dict["adv_output"], self.lecam_ema)
                         else:
                             lecam_loss = torch.tensor(0., device=self.local_rank)
 
