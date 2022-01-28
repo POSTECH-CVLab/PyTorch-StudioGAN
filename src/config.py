@@ -54,7 +54,8 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.MODEL = misc.make_empty_object()
 
-        # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet", "stylegan2"]
+        # type of backbone architectures of the generator and discriminator \in
+        # ["deep_conv", "resnet", "big_resnet", "big_resnet_deep_biggan_pytorch", "big_resnet_deep_compare_gan", "stylegan2"]
         self.MODEL.backbone = "resnet"
         # conditioning method of the generator \in ["W/O", "cBN", "cAdaIN"]
         self.MODEL.g_cond_mtd = "W/O"
@@ -93,9 +94,9 @@ class Configurations(object):
         self.MODEL.g_conv_dim = 64
         # base channel for the resnet style discriminator architecture
         self.MODEL.d_conv_dim = 64
-        # generator's depth for deep_big_resnet
+        # generator's depth for "models/big_resnet_deep.py"
         self.MODEL.g_depth = "N/A"
-        # discriminator's depth for deep_big_resnet
+        # discriminator's depth for "models/big_resnet_deep.py"
         self.MODEL.d_depth = "N/A"
         # whether to apply moving average update for the generator
         self.MODEL.apply_g_ema = False
@@ -632,8 +633,8 @@ class Configurations(object):
         if self.MODEL.backbone == "deep_conv":
             assert self.DATA.img_size == 32, "StudioGAN does not support the deep_conv backbone for the dataset whose spatial resolution is not 32."
 
-        if self.MODEL.backbone == "deep_big_resnet":
-            assert self.MODEL.g_cond_mtd and self.MODEL.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
+        if self.MODEL.backbone in ["big_resnet_deep_biggan_pytorch", "big_resnet_deep_compare_gan"]:
+            assert self.MODEL.g_cond_mtd and self.MODEL.d_cond_mtd, "StudioGAN does not support the big_resnet_deep backbones \
                 without applying spectral normalization to the generator and discriminator."
 
         if self.RUN.langevin_sampling or self.LOSS.apply_lo:
@@ -641,8 +642,8 @@ class Configurations(object):
                 cannot be used simultaneously."
 
         if isinstance(self.MODEL.g_depth, int) or isinstance(self.MODEL.d_depth, int):
-            assert self.MODEL.backbone == "deep_big_resnet", \
-                "MODEL.g_depth and MODEL.d_depth are hyperparameters for deep_big_resnet backbone."
+            assert self.MODEL.backbone in ["big_resnet_deep_biggan_pytorch", "big_resnet_deep_compare_gan"], \
+                "MODEL.g_depth and MODEL.d_depth are hyperparameters for big_resnet_deep backbones."
 
         if self.RUN.langevin_sampling:
             msg = "Langevin sampling cannot be used for training only."
@@ -721,8 +722,8 @@ class Configurations(object):
             assert self.RUN.ref_dataset in ["train", "test"], "There is no data for validation."
 
         if self.RUN.interpolation:
-            assert self.MODEL.backbone in ["big_resnet", "deep_big_resnet"], \
-                "StudioGAN does not support interpolation analysis except for biggan and deep_big_resnet."
+            assert self.MODEL.backbone in ["big_resnet", "big_resnet_deep_biggan_pytorch", "big_resnet_deep_compare_gan"], \
+                "StudioGAN does not support interpolation analysis except for biggan and big_resnet_deep backbones."
 
         if self.RUN.semantic_factorization:
             assert self.RUN.num_semantic_axis > 0, \
@@ -770,12 +771,12 @@ class Configurations(object):
                 "g_ema_kimg, g_ema_rampup hyperparameters are only valid for stylegan2 backbone."
 
         if isinstance(self.MODEL.g_shared_dim, int):
-            assert self.MODEL.backbone in ["big_resnet", "deep_big_resnet"], \
-            "hierarchical embedding is only applicable to big_resnet or deep_big_resnet."
+            assert self.MODEL.backbone in ["big_resnet", "big_resnet_deep_biggan_pytorch", "big_resnet_deep_compare_gan"], \
+            "hierarchical embedding is only applicable to big_resnet or big_resnet_deep backbones."
 
         if isinstance(self.MODEL.g_conv_dim, int) or isinstance(self.MODEL.d_conv_dim, int):
-            assert self.MODEL.backbone in ["resnet", "big_resnet", "deep_big_resnet"], \
-            "g_conv_dim and d_conv_dim are hyperparameters for controlling dimensions of resnet, big_resnet, and deep_big_resnet."
+            assert self.MODEL.backbone in ["resnet", "big_resnet", "big_resnet_deep_biggan_pytorch", "big_resnet_deep_compare_gan"], \
+            "g_conv_dim and d_conv_dim are hyperparameters for controlling dimensions of resnet, big_resnet, and big_resnet_deeps."
 
         if self.MODEL.backbone == "stylegan2":
             assert self.LOSS.apply_fm + \
