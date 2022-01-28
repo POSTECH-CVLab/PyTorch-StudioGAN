@@ -120,7 +120,7 @@ class Generator(nn.Module):
                 self.affine_input_dim += self.g_shared_dim
                 self.info_proj_linear = MODULES.g_linear(in_features=info_dim, out_features=self.g_shared_dim, bias=True)
 
-        if not self.g_cond_mtd == "W/O":
+        if self.g_cond_mtd != "W/O":
             self.affine_input_dim += self.g_shared_dim
             self.shared = ops.embedding(num_embeddings=self.num_classes, embedding_dim=self.g_shared_dim)
 
@@ -164,11 +164,10 @@ class Generator(nn.Module):
                 if shared_label is None:
                     shared_label = self.shared(label)
                 affine_list.append(shared_label)
-            if len(affine_list) == 0:
-                affine = z
-            else:
-                affine = torch.cat(affine_list + [z], 1)
+            if len(affine_list) > 0:
+                z = torch.cat(affine_list + [z], 1)
 
+            affine = z
             act = self.linear0(z)
             act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
             for index, blocklist in enumerate(self.blocks):
