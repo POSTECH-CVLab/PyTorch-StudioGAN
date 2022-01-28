@@ -393,10 +393,15 @@ class WORKER(object):
 
                     # apply LeCam reg. for data-efficient training if self.LOSS.apply_lecam is set to True
                     if self.LOSS.apply_lecam:
-                        self.lecam_ema.update(torch.mean(real_dict["adv_output"]).item(), 'D_real', current_step)
-                        self.lecam_ema.update(torch.mean(fake_dict["adv_output"]).item(), 'D_fake', current_step)
+                        if self.DDP:
+                            real_adv_output = torch.cat(losses.GatherLayer.apply(real_dict["adv_output"]), dim=0)
+                            fake_adv_output = torch.cat(losses.GatherLayer.apply(fake_dict["adv_output"]), dim=0)
+                        else:
+                            real_adv_output, fake_adv_output = real_dict["adv_output"], fake_dict["adv_output"]
+                        self.lecam_ema.update(torch.mean(real_adv_output).item(), "D_real", current_step)
+                        self.lecam_ema.update(torch.mean(fake_adv_output).item(), "D_fake", current_step)
                         if current_step > self.LOSS.lecam_ema_start_iter:
-                            lecam_loss = losses.lecam_reg(real_dict["adv_output"], fake_dict["adv_output"], self.lecam_ema)
+                            lecam_loss = losses.lecam_reg(real_adv_output, fake_adv_output, self.lecam_ema)
                         else:
                             lecam_loss = torch.tensor(0., device=self.local_rank)
 

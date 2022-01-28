@@ -386,11 +386,7 @@ def feature_matching_loss(real_embed, fake_embed):
     return fm_loss
 
 
-def lecam_reg(d_logit_real, d_logit_fake, ema, DDP):
-    if DDP:
-        d_logit_real = torch.cat(GatherLayer.apply(d_logit_real), dim=0)
-        d_logit_fake = torch.cat(GatherLayer.apply(d_logit_fake), dim=0)
-
+def lecam_reg(d_logit_real, d_logit_fake, ema):
     reg = torch.mean(F.relu(d_logit_real - ema.D_fake).pow(2)) + \
           torch.mean(F.relu(ema.D_real - d_logit_fake).pow(2))
     return reg
