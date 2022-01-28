@@ -506,14 +506,8 @@ def normal_nll_loss(x, mu, var):
     return nll
 
 
-def stylegan_cal_r1_reg(images, labels, Dis, AUG):
-    images.requires_grad_(True)
-    output_dict = Dis(AUG.series_augment(images), labels)
+def stylegan_cal_r1_reg(adv_output, images):
     with conv2d_gradfix.no_weight_gradients():
-        r1_grads = torch.autograd.grad(outputs=[output_dict["adv_output"].sum()],
-                                       inputs=[images],
-                                       create_graph=True,
-                                       only_inputs=True)[0]
-    r1_grads_sum = r1_grads.square().sum([1,2,3])/2
-    r1_penalty = enable_allreduce(output_dict) + r1_grads_sum.mean()
-    return r1_penalty, output_dict
+        r1_grads = torch.autograd.grad(outputs=[adv_output.sum()], inputs=[images], create_graph=True, only_inputs=True)[0]
+    r1_penalty = r1_grads.square().sum([1,2,3]) / 2
+    return r1_penalty.mean()

@@ -372,7 +372,7 @@ class WORKER(object):
                                                           fake_images=fake_images,
                                                           discriminator=self.Dis,
                                                           device=self.local_rank)
-                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.gp_lambda * gp_loss
+                        dis_acml_loss += self.LOSS.gp_lambda * gp_loss
 
                     # apply deep regret analysis regularization to train wasserstein GAN
                     if self.LOSS.apply_dra:
@@ -380,7 +380,7 @@ class WORKER(object):
                                                           real_labels=real_labels,
                                                           discriminator=self.Dis,
                                                           device=self.local_rank)
-                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.dra_lambda * dra_loss
+                        dis_acml_loss += self.LOSS.dra_lambda * dra_loss
 
                     # apply max gradient penalty regularization to train Lipschitz GAN
                     if self.LOSS.apply_maxgp:
@@ -389,7 +389,7 @@ class WORKER(object):
                                                                 fake_images=fake_images,
                                                                 discriminator=self.Dis,
                                                                 device=self.local_rank)
-                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.maxgp_lambda * maxgp_loss
+                        dis_acml_loss += self.LOSS.maxgp_lambda * maxgp_loss
 
                     # apply LeCam reg. for data-efficient training if self.LOSS.apply_lecam is set to True
                     if self.LOSS.apply_lecam:
@@ -404,23 +404,21 @@ class WORKER(object):
 
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
                         self.r1_penalty = losses.cal_r1_reg(adv_output=real_dict["adv_output"], images=real_images, device=self.local_rank)
-                        dis_acml_loss += real_dict["adv_output"].mean()*0 + self.LOSS.r1_lambda*self.r1_penalty
+                        dis_acml_loss += self.LOSS.r1_lambda*self.r1_penalty
                     elif self.LOSS.apply_r1_reg and self.LOSS.r1_place == "inside_loop" and \
                         (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
-                        for acml_index in range(self.OPTIMIZATION.acml_steps):
-                            self.r1_penalty, output_dict = losses.stylegan_cal_r1_reg(real_images, real_labels, self.Dis, self.AUG)
-                            dis_acml_loss += self.r1_lambda*self.r1_penalty/self.OPTIMIZATION.acml_steps
-                            if self.AUG.apply_ada:
-                                self.dis_sign_real += torch.tensor((output_dict["adv_output"].sign().sum().item(),
-                                                                    self.OPTIMIZATION.batch_size),
+                        real_images.requires_grad_(True)
+                        real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
+                        self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                                     images=real_images)
+                        dis_acml_loss += self.STYLEGAN2.d_reg_interval*self.LOSS.r1_lambda*self.r1_penalty
+                        if self.AUG.apply_ada:
+                            self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
+                                                                self.OPTIMIZATION.batch_size),
+                                                            device=self.local_rank)
+                            self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
+                                                                self.OPTIMIZATION.batch_size),
                                                                 device=self.local_rank)
-                                self.dis_logit_real += torch.tensor((output_dict["adv_output"].sum().item(),
-                                                                    self.OPTIMIZATION.batch_size),
-                                                                    device=self.local_rank)
-
-                    # meaningless loss to prevent allreduce errors from occuring when executing DDP training
-                    if self.MODEL.info_type in ["discrete", "continuous", "both"]:
-                        dis_acml_loss += misc.enable_allreduce(real_dict) + misc.enable_allreduce(fake_dict)
 
                     # adjust gradients for applying gradient accumluation trick
                     dis_acml_loss = dis_acml_loss / self.OPTIMIZATION.acml_steps
@@ -445,14 +443,18 @@ class WORKER(object):
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     real_images = real_image_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
                     real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
-                    self.r1_penalty, output_dict = losses.stylegan_cal_r1_reg(real_images, real_labels, self.Dis, self.AUG)
-                    self.r1_penalty *= self.r1_lambda/self.OPTIMIZATION.acml_steps
+                    real_images.requires_grad_(True)
+                    real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
+                    self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
+                                                                 images=real_images)
+                    self.r1_penalty *= self.STYLEGAN2.d_reg_interval*self.LOSS.r1_lambda/self.OPTIMIZATION.acml_steps
                     self.r1_penalty.backward()
+
                     if self.AUG.apply_ada:
-                        self.dis_sign_real += torch.tensor((output_dict["adv_output"].sign().sum().item(),
+                        self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
                                                             self.OPTIMIZATION.batch_size),
                                                         device=self.local_rank)
-                        self.dis_logit_real += torch.tensor((output_dict["adv_output"].sum().item(),
+                        self.dis_logit_real += torch.tensor((real_dict["adv_output"].sum().item(),
                                                             self.OPTIMIZATION.batch_size),
                                                             device=self.local_rank)
                 self.OPTIMIZATION.d_optimizer.step()
@@ -628,10 +630,9 @@ class WORKER(object):
                         style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
-                    self.pl_reg_loss = fake_images[:,0,0,0].mean()*0 + \
-                        self.pl_lambda*self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws)
+                    self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws) + fake_images[:,0,0,0].mean()*0
+                    self.pl_reg_loss *= self.STYLEGAN2.pl_weight*self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
                     self.pl_reg_loss.backward()
-
                 self.OPTIMIZATION.g_optimizer.step()
 
             # if ema is True: update parameters of the Gen_ema in adaptive way
