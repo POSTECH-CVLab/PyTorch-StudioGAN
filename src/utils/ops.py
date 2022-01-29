@@ -55,7 +55,7 @@ class SelfAttention(nn.Module):
 
         self.maxpool = nn.MaxPool2d(2, stride=2, padding=0)
         self.softmax = nn.Softmax(dim=-1)
-        self.sigma = nn.Parameter(torch.zeros(1))
+        self.sigma = nn.Parameter(torch.zeros(1), requires_grad=True)
 
     def forward(self, x):
         _, ch, h, w = x.size()
