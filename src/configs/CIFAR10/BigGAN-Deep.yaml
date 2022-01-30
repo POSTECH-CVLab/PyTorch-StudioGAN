@@ -3,7 +3,7 @@ DATA:
   img_size: 32
   num_classes: 10
 MODEL:
-  backbone: "big_resnet_deep_studiogan"
+  backbone: "big_resnet_deep_legacy"
   g_cond_mtd: "cBN"
   d_cond_mtd: "PD"
   apply_g_sn: True

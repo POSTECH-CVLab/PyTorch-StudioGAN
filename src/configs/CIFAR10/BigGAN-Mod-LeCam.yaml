@@ -24,3 +24,5 @@ LOSS:
   lecam_lambda: 0.3
   lecam_ema_start_iter: 1000
   lecam_ema_decay: 0.99
+OPTIMIZATION:
+  total_steps: 200000
