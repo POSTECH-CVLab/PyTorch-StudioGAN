@@ -270,18 +270,9 @@ class Configurations(object):
 
         # whether to apply differentiable augmentations for limited data training
         self.AUG.apply_diffaug = False
+
         # whether to apply adaptive discriminator augmentation (ADA)
         self.AUG.apply_ada = False
-        # type of differentiable augmentation for cr, bcr, or limited data training
-        # \in ["W/O", "cr", "bcr", "diffaug", "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"
-        # \ "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]
-        # "blit", "geon", ... "bgcfnc" augmentations details are available at <https://github.com/NVlabs/stylegan2-ada-pytorch>
-        # for ada default aug_type is bgc, ada_target is 0.6, ada_kimg is 500.
-        # cr (bcr, diffaugment, ada, simclr, byol) indicates differentiable augmenations used in the original paper
-        self.AUG.cr_aug_type = "W/O"
-        self.AUG.bcr_aug_type = "W/O"
-        self.AUG.diffaug_type = "W/O"
-        self.AUG.ada_aug_type = "W/O"
         # initial value of augmentation probability.
         self.AUG.ada_initial_augment_p = "N/A"
         # target probability for adaptive differentiable augmentations, None = fixed p (keep ada_initial_augment_p)
@@ -290,6 +281,24 @@ class Configurations(object):
         self.AUG.ada_kimg = "N/A"
         # how often to perform ada adjustment
         self.AUG.ada_interval = "N/A"
+        # whether to apply adaptive pseudo augmentation (APA)
+        self.AUG.apply_apa = False
+        # initial value of augmentation probability.
+        self.AUG.apa_initial_augment_p = "N/A"
+        # target probability for adaptive pseudo augmentations, None = fixed p (keep ada_initial_augment_p)
+        self.AUG.apa_target = "N/A"
+        # APA adjustment speed, measured in how many kimg it takes for p to increase/decrease by one unit.
+        self.AUG.apa_kimg = "N/A"
+        # how often to perform apa adjustment
+        self.AUG.apa_interval = "N/A"
+        # type of differentiable augmentation for cr, bcr, or limited data training
+        # \in ["W/O", "cr", "bcr", "diffaug", "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol",
+        # "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]
+        # cr (bcr, diffaugment, ada, simclr, byol) indicates differentiable augmenations used in the original paper
+        self.AUG.cr_aug_type = "W/O"
+        self.AUG.bcr_aug_type = "W/O"
+        self.AUG.diffaug_type = "W/O"
+        self.AUG.ada_aug_type = "W/O"
 
         # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings regarding regularization and style mixing
@@ -587,6 +596,7 @@ class Configurations(object):
                 self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device).requires_grad_(False)
             elif self.AUG.diffaug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
                 self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.diffaug_type]).train().to(device).requires_grad_(False)
+                self.AUG.series_augment.p = 1.0
             else:
                 raise NotImplementedError
 
@@ -605,6 +615,7 @@ class Configurations(object):
                 self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device).requires_grad_(False)
             elif self.AUG.cr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
                 self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.cr_aug_type]).train().to(device).requires_grad_(False)
+                self.AUG.parallel_augment.p = 1.0
             else:
                 raise NotImplementedError
 
@@ -619,6 +630,7 @@ class Configurations(object):
             elif self.AUG.bcr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
                 self.AUG.parallel_augment = ada_aug.AdaAugment(
                     **ada_augpipe[self.AUG.bcr_aug_type]).train().to(device).requires_grad_(False)
+                self.AUG.parallel_augment.p = 1.0
             else:
                 raise NotImplementedError
 
@@ -830,6 +842,13 @@ class Configurations(object):
 
         if self.MODEL.info_type in ["discrete", "continuous", "both"]:
             assert self.MODEL.g_info_injection in ["concat", "cBN"], "MODEL.g_info_injection should be 'concat' or 'cBN'."
+
+        if self.AUG.apply_ada and self.AUG.apply_apa:
+            assert self.AUG.ada_initial_augment_p == self.AUG.apa_initial_augment_p and \
+                self.AUG.ada_target == self.AUG.apa_target and \
+                self.AUG.ada_kimg == self.AUG.apa_kimg and \
+                self.AUG.ada_interval == self.AUG.apa_interval, \
+                "ADA and APA specifications should be the completely same."
 
         assert self.RUN.resize_fn in ["legacy", "clean"], "resizing flag should be logacy or clean!"
 

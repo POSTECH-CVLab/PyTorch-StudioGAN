@@ -37,6 +37,7 @@ import utils.losses as losses
 import utils.sefa as sefa
 import utils.ops as ops
 import utils.resize as resize
+import utils.apa_aug as apa_aug
 import wandb
 
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
@@ -48,12 +49,12 @@ LOG_FORMAT = ("Step: {step:>6} "
               "Dis_loss: {dis_loss:<.4} "
               "Cls_loss: {cls_loss:<.4} "
               "Topk: {topk:>4} "
-              "ada_p: {ada_p:<.4} ")
+              "aa_p: {aa_p:<.4} ")
 
 
 class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis,
-                 ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, logger, ada_p,
+                 ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, logger, aa_p,
                  best_step, best_fid, best_ckpt_path, loss_list_dict, metric_dict_during_train):
         self.cfgs = cfgs
         self.run_name = run_name
@@ -73,7 +74,7 @@ class WORKER(object):
         self.mu = mu
         self.sigma = sigma
         self.logger = logger
-        self.ada_p = ada_p
+        self.aa_p = aa_p
         self.best_step = best_step
         self.best_fid = best_fid
         self.best_ckpt_path = best_ckpt_path
@@ -92,22 +93,20 @@ class WORKER(object):
         self.AUG = cfgs.AUG
         self.RUN = cfgs.RUN
         self.MISC = cfgs.MISC
-
         self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
         self.DDP = self.RUN.distributed_data_parallel
+
         self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
         self.lecam_ema = ops.LeCamEMA(decay=self.LOSS.lecam_ema_decay, start_iter=self.LOSS.lecam_ema_start_iter)
 
-        if self.is_stylegan and self.LOSS.apply_r1_reg:
-            self.r1_lambda = self.LOSS.r1_lambda*self.STYLEGAN2.d_reg_interval
-        if self.is_stylegan and self.STYLEGAN2.apply_pl_reg:
-            self.pl_lambda = self.STYLEGAN2.pl_weight*self.STYLEGAN2.g_reg_interval
-
-        if self.AUG.apply_ada:
-            self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
+        if self.AUG.apply_ada or self.AUG.apply_apa:
+            if self.AUG.apply_ada: self.AUG.series_augment.p.copy_(torch.as_tensor(self.aa_p))
+            self.aa_interval = self.AUG.ada_interval if self.AUG.ada_interval != "N/A" else self.AUG.apa_interval
+            self.aa_target = self.AUG.ada_target if self.AUG.ada_target != "N/A" else self.AUG.apa_target
+            self.aa_kimg = self.AUG.ada_kimg if self.AUG.ada_kimg != "N/A" else self.AUG.apa_kimg
             self.dis_sign_real, self.dis_sign_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
             self.dis_logit_real, self.dis_logit_fake = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
             self.dis_sign_real_log, self.dis_sign_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
@@ -162,14 +161,10 @@ class WORKER(object):
         elif self.DATA.name == "ImageNet":
             self.num_eval = {"train": 50000, "valid": 50000}
         else:
-            try:
-                self.num_eval = {"train": len(self.train_dataloader.dataset),
-                                 "valid": len(self.eval_dataloader.dataset),
-                                 "test": len(self.eval_dataloader.dataset)
-                                 }
-            except AttributeError:
-                self.num_eval = {"train": 10000, "valid": 10000, "test": 10000}
-
+            self.num_eval = {"train": len(self.train_dataloader.dataset),
+                             "valid": len(self.eval_dataloader.dataset),
+                             "test": len(self.eval_dataloader.dataset)
+                             }
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  generator_mapping=self.Gen_ema_mapping,
@@ -273,6 +268,9 @@ class WORKER(object):
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
                         real_images.requires_grad_(True)
 
+                    if self.AUG.apply_apa:
+                        real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
+
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
@@ -282,7 +280,7 @@ class WORKER(object):
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
 
                     # accumulate discriminator output informations for logging
-                    if self.AUG.apply_ada:
+                    if self.AUG.apply_ada or self.AUG.apply_apa:
                         self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
                                                             self.OPTIMIZATION.batch_size),
                                                         device=self.local_rank)
@@ -404,7 +402,6 @@ class WORKER(object):
                             lecam_loss = losses.lecam_reg(real_adv_output, fake_adv_output, self.lecam_ema)
                         else:
                             lecam_loss = torch.tensor(0., device=self.local_rank)
-
                         dis_acml_loss += self.LOSS.lecam_lambda*lecam_loss
 
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
@@ -417,7 +414,7 @@ class WORKER(object):
                         self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
                                                                      images=real_images)
                         dis_acml_loss += self.STYLEGAN2.d_reg_interval*self.LOSS.r1_lambda*self.r1_penalty
-                        if self.AUG.apply_ada:
+                        if self.AUG.apply_ada or self.AUG.apply_apa:
                             self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
                                                                 self.OPTIMIZATION.batch_size),
                                                             device=self.local_rank)
@@ -448,6 +445,8 @@ class WORKER(object):
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     real_images = real_image_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
                     real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
+                    if self.AUG.apply_apa:
+                        real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
                     real_images.requires_grad_(True)
                     real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
                     self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
@@ -455,7 +454,7 @@ class WORKER(object):
                     self.r1_penalty *= self.STYLEGAN2.d_reg_interval*self.LOSS.r1_lambda/self.OPTIMIZATION.acml_steps
                     self.r1_penalty.backward()
 
-                    if self.AUG.apply_ada:
+                    if self.AUG.apply_ada or self.AUG.apply_apa:
                         self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
                                                             self.OPTIMIZATION.batch_size),
                                                         device=self.local_rank)
@@ -465,13 +464,12 @@ class WORKER(object):
                 self.OPTIMIZATION.d_optimizer.step()
 
             # apply ada heuristics
-            if self.AUG.apply_ada and self.AUG.ada_target is not None and current_step % self.AUG.ada_interval == 0:
-                if self.DDP:
-                    dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
-                ada_heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
-                adjust = np.sign(ada_heuristic - self.AUG.ada_target) * (self.dis_sign_real[1].item()) / (self.AUG.ada_kimg * 1000)
-                self.ada_p = min(torch.as_tensor(1.), max(self.ada_p + adjust, torch.as_tensor(0.)))
-                self.AUG.series_augment.p.copy_(torch.as_tensor(self.ada_p))
+            if (self.AUG.apply_ada or self.AUG.apply_apa) and self.aa_target is not None and current_step % self.aa_interval == 0:
+                if self.DDP: dist.all_reduce(self.dis_sign_real, op=dist.ReduceOp.SUM, group=self.group)
+                heuristic = (self.dis_sign_real[0] / self.dis_sign_real[1]).item()
+                adjust = np.sign(heuristic - self.aa_target) * (self.dis_sign_real[1].item()) / (self.aa_kimg * 1000)
+                self.aa_p = min(torch.as_tensor(1.), max(self.aa_p + adjust, torch.as_tensor(0.)))
+                if self.AUG.apply_ada: self.AUG.series_augment.p.copy_(torch.as_tensor(self.aa_p))
                 self.dis_sign_real_log.copy_(self.dis_sign_real), self.dis_sign_fake_log.copy_(self.dis_sign_fake)
                 self.dis_logit_real_log.copy_(self.dis_logit_real), self.dis_logit_fake_log.copy_(self.dis_logit_fake)
                 self.dis_sign_real.mul_(0), self.dis_sign_fake.mul_(0)
@@ -530,7 +528,7 @@ class WORKER(object):
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     fake_dict = self.Dis(fake_images_, fake_labels)
 
-                    if self.AUG.apply_ada:
+                    if self.AUG.apply_ada or self.AUG.apply_apa:
                         # accumulate discriminator output informations for logging
                         self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
                                                             self.OPTIMIZATION.batch_size),
@@ -663,7 +661,7 @@ class WORKER(object):
             dis_loss=dis_acml_loss.item(),
             cls_loss=cls_loss,
             topk=int(self.topk) if self.LOSS.apply_topk else "N/A",
-            ada_p=self.ada_p if self.AUG.apply_ada else "N/A",
+            aa_p=self.aa_p if self.AUG.apply_ada or self.AUG.apply_apa else "N/A",
         )
         self.logger.info(log_message)
 
@@ -686,7 +684,7 @@ class WORKER(object):
 
         wandb.log({"co2_emission(kg)": total_emission}, step=self.wandb_step)
 
-        if self.AUG.apply_ada:
+        if self.AUG.apply_ada or self.AUG.apply_apa:
             dis_output_dict = {
                         "dis_sign_real": (self.dis_sign_real_log[0]/self.dis_sign_real_log[1]).item(),
                         "dis_sign_fake": (self.dis_sign_fake_log[0]/self.dis_sign_fake_log[1]).item(),
@@ -694,7 +692,7 @@ class WORKER(object):
                         "dis_logit_fake": (self.dis_logit_fake_log[0]/self.dis_logit_fake_log[1]).item(),
                     }
             wandb.log(dis_output_dict, step=self.wandb_step)
-            wandb.log({"ada_p": self.ada_p.item()}, step=self.wandb_step)
+            wandb.log({"aa_p": self.aa_p.item()}, step=self.wandb_step)
 
         infoGAN_dict = {}
         if self.MODEL.info_type in ["discrete", "both"]:
@@ -912,7 +910,7 @@ class WORKER(object):
             "step": step,
             "epoch": self.epoch_counter,
             "topk": self.topk,
-            "ada_p": self.ada_p,
+            "aa_p": self.aa_p,
             "best_step": self.best_step,
             "best_fid": self.best_fid,
             "best_fid_ckpt": self.RUN.ckpt_dir,
