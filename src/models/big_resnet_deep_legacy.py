@@ -185,9 +185,8 @@ class Generator(nn.Module):
 
 
 class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, MODULES, pre_activation, downsample=True, channel_ratio=4):
+    def __init__(self, in_channels, out_channels, MODULES, downsample=True, channel_ratio=4):
         super(DiscBlock, self).__init__()
-        self.pre_activation = pre_activation
         self.downsample = downsample
         hidden_channels = out_channels // channel_ratio
 
@@ -211,9 +210,7 @@ class DiscBlock(nn.Module):
     def forward(self, x):
         x0 = x
 
-        if self.pre_activation:
-            x = self.activation(x)
-        x = self.conv2d1(x)
+        x = self.conv2d1(self.activation(x))
         x = self.conv2d2(self.activation(x))
         x = self.conv2d3(self.activation(x))
         x = self.activation(x)
@@ -279,7 +276,6 @@ class Discriminator(nn.Module):
                 DiscBlock(in_channels=self.in_dims[index] if d_index == 0 else self.out_dims[index],
                           out_channels=self.out_dims[index],
                           MODULES=MODULES,
-                          pre_activation= index > 0 or d_index > 0,
                           downsample=True if down[index] and d_index == 0 else False)
             ] for d_index in range(d_depth)]
 

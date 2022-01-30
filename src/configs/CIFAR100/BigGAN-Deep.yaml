@@ -3,7 +3,7 @@ DATA:
   img_size: 32
   num_classes: 100
 MODEL:
-  backbone: "big_resnet_deep_biggan_pytorch"
+  backbone: "big_resnet_deep_legacy"
   g_cond_mtd: "cBN"
   d_cond_mtd: "PD"
   apply_g_sn: True
@@ -26,7 +26,7 @@ OPTIMIZATION:
   batch_size: 64
   g_lr: 0.0002
   d_lr: 0.0002
-  beta1: 0.0
+  beta1: 0.5
   beta2: 0.999
   d_updates_per_step: 5
   total_steps: 100000

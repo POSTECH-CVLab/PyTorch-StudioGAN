@@ -3,7 +3,7 @@ DATA:
   img_size: 128
   num_classes: 1000
 MODEL:
-  backbone: "big_resnet_deep_biggan_pytorch"
+  backbone: "big_resnet_deep_legacy"
   g_cond_mtd: "cBN"
   d_cond_mtd: "D2DCE"
   normalize_d_embed: True
