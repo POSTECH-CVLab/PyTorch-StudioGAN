@@ -55,7 +55,7 @@ class SelfAttention(nn.Module):
 
         self.maxpool = nn.MaxPool2d(2, stride=2, padding=0)
         self.softmax = nn.Softmax(dim=-1)
-        self.sigma = nn.Parameter(torch.zeros(1))
+        self.sigma = nn.Parameter(torch.zeros(1), requires_grad=True)
 
     def forward(self, x):
         _, ch, h, w = x.size()
@@ -78,6 +78,35 @@ class SelfAttention(nn.Module):
         attn_g = attn_g.view(-1, ch // 2, h, w)
         attn_g = self.conv1x1_attn(attn_g)
         return x + self.sigma * attn_g
+
+
+class LeCamEMA(object):
+    # Simple wrapper that applies EMA to losses.
+    # https://github.com/google/lecam-gan/blob/master/third_party/utils.py
+    def __init__(self, init=7777, decay=0.9, start_iter=0):
+        self.G_loss = init
+        self.D_loss_real = init
+        self.D_loss_fake = init
+        self.D_real = init
+        self.D_fake = init
+        self.decay = decay
+        self.start_itr = start_iter
+
+    def update(self, cur, mode, itr):
+        if itr < self.start_itr:
+            decay = 0.0
+        else:
+            decay = self.decay
+        if mode == "G_loss":
+          self.G_loss = self.G_loss*decay + cur*(1 - decay)
+        elif mode == "D_loss_real":
+          self.D_loss_real = self.D_loss_real*decay + cur*(1 - decay)
+        elif mode == "D_loss_fake":
+          self.D_loss_fake = self.D_loss_fake*decay + cur*(1 - decay)
+        elif mode == "D_real":
+          self.D_real = self.D_real*decay + cur*(1 - decay)
+        elif mode == "D_fake":
+          self.D_fake = self.D_fake*decay + cur*(1 - decay)
 
 
 def init_weights(modules, initialize):

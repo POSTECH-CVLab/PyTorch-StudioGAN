@@ -151,7 +151,9 @@ def prepare_parallel_training(Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen
             Gen_synthesis = DDP(Gen.synthesis, device_ids=[device], broadcast_buffers=False)
         else:
             Gen = DDP(Gen, device_ids=[device], broadcast_buffers=synchronized_bn)
-        Dis = DDP(Dis, device_ids=[device], broadcast_buffers=False if MODEL.backbone=="stylegan2" else synchronized_bn)
+        Dis = DDP(Dis, device_ids=[device],
+                  broadcast_buffers=False if MODEL.backbone=="stylegan2" else synchronized_bn,
+                  find_unused_parameters=True if MODEL.info_type in ["discrete", "continuous", "both"] else False)
         if apply_g_ema:
             if MODEL.backbone == "stylegan2":
                 Gen_ema_mapping = DDP(Gen_ema.mapping, device_ids=[device], broadcast_buffers=False)

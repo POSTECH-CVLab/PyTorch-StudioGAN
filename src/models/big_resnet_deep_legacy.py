@@ -120,7 +120,7 @@ class Generator(nn.Module):
                 self.affine_input_dim += self.g_shared_dim
                 self.info_proj_linear = MODULES.g_linear(in_features=info_dim, out_features=self.g_shared_dim, bias=True)
 
-        if not self.g_cond_mtd == "W/O":
+        if self.g_cond_mtd != "W/O":
             self.affine_input_dim += self.g_shared_dim
             self.shared = ops.embedding(num_embeddings=self.num_classes, embedding_dim=self.g_shared_dim)
 
@@ -164,12 +164,11 @@ class Generator(nn.Module):
                 if shared_label is None:
                     shared_label = self.shared(label)
                 affine_list.append(shared_label)
-            if len(affine_list) == 0:
-                z = z
-            else:
-                affine = torch.cat(affine_list + [z], 1)
+            if len(affine_list) > 0:
+                z = torch.cat(affine_list + [z], 1)
 
-            act = self.linear0(affine)
+            affine = z
+            act = self.linear0(z)
             act = act.view(-1, self.in_dims[0], self.bottom, self.bottom)
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
@@ -235,28 +234,28 @@ class Discriminator(nn.Module):
                  num_classes, d_init, d_depth, mixed_precision, MODULES, MODEL):
         super(Discriminator, self).__init__()
         d_in_dims_collection = {
-            "32": [3] + [d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4],
-            "64": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8],
-            "128": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
-            "256": [3] + [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16],
-            "512": [3] + [d_conv_dim, d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16]
+            "32": [d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4],
+            "64": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8],
+            "128": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
+            "256": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16],
+            "512": [d_conv_dim, d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16]
         }
 
         d_out_dims_collection = {
-            "32": [d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4],
-            "64": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
-            "128": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
-            "256": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
+            "32": [d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4],
+            "64": [d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
+            "128": [d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
+            "256": [d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16],
             "512":
-            [d_conv_dim, d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16]
+            [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16, d_conv_dim * 16]
         }
 
         d_down = {
-            "32": [False, True, True, True, True],
-            "64": [False, True, True, True, True, True],
-            "128": [False, True, True, True, True, True],
-            "256": [False, True, True, True, True, True, True],
-            "512": [False, True, True, True, True, True, True, True]
+            "32": [True, True, False, False],
+            "64": [True, True, True, True, False],
+            "128": [True, True, True, True, True, False],
+            "256": [True, True, True, True, True, True, False],
+            "512": [True, True, True, True, True, True, True, False]
         }
 
         self.d_cond_mtd = d_cond_mtd
@@ -269,21 +268,18 @@ class Discriminator(nn.Module):
         self.MODEL = MODEL
         down = d_down[str(img_size)]
 
-        self.input_conv = MODULES.d_conv2d(in_channels=self.in_dims[0], out_channels=self.out_dims[0], kernel_size=3, stride=1, padding=1)
+        self.input_conv = MODULES.d_conv2d(in_channels=3, out_channels=self.in_dims[0], kernel_size=3, stride=1, padding=1)
 
         self.blocks = []
         for index in range(len(self.in_dims)):
-            if index == 0:
-                self.blocks += [[self.input_conv]]
-            else:
-                self.blocks += [[
-                    DiscBlock(in_channels=self.in_dims[index] if d_index == 0 else self.out_dims[index],
-                              out_channels=self.out_dims[index],
-                              MODULES=MODULES,
-                              downsample=True if down[index] and d_index == 0 else False)
-                ] for d_index in range(d_depth)]
+            self.blocks += [[
+                DiscBlock(in_channels=self.in_dims[index] if d_index == 0 else self.out_dims[index],
+                          out_channels=self.out_dims[index],
+                          MODULES=MODULES,
+                          downsample=True if down[index] and d_index == 0 else False)
+            ] for d_index in range(d_depth)]
 
-            if index in attn_d_loc and apply_attn:
+            if (index+1) in attn_d_loc and apply_attn:
                 self.blocks += [[ops.SelfAttention(self.out_dims[index], is_generator=False, MODULES=MODULES)]]
 
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
@@ -340,7 +336,7 @@ class Discriminator(nn.Module):
             embed, proxy, cls_output = None, None, None
             mi_embed, mi_proxy, mi_cls_output = None, None, None
             info_discrete_c_logits, info_conti_mu, info_conti_var = None, None, None
-            h = x
+            h = self.input_conv(x)
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
                     h = block(h)
