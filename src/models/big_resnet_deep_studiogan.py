@@ -28,8 +28,16 @@ class GenBlock(nn.Module):
         self.bn4 = MODULES.g_bn(affine_input_dim, self.hidden_channels, MODULES)
 
         self.activation = MODULES.g_act_fn
-
-        self.conv2d1 = MODULES.g_conv2d(in_channels=self.in_channels, out_channels=self.hidden_channels, kernel_size=1, stride=1, padding=0)
+        self.conv2d0 = MODULES.g_conv2d(in_channels=self.in_channels,
+                                        out_channels=self.out_channels,
+                                        kernel_size=1,
+                                        stride=1,
+                                        padding=0)
+        self.conv2d1 = MODULES.g_conv2d(in_channels=self.in_channels,
+                                        out_channels=self.hidden_channels,
+                                        kernel_size=1,
+                                        stride=1,
+                                        padding=0)
         self.conv2d2 = MODULES.g_conv2d(in_channels=self.hidden_channels,
                                         out_channels=self.hidden_channels,
                                         kernel_size=3,
@@ -47,11 +55,7 @@ class GenBlock(nn.Module):
                                         padding=0)
 
     def forward(self, x, affine):
-        if self.in_channels != self.out_channels:
-            x0 = x[:, :self.out_channels]
-        else:
-            x0 = x
-
+        x0 = x
         x = self.bn1(x, affine)
         x = self.conv2d1(self.activation(x))
 
@@ -69,6 +73,7 @@ class GenBlock(nn.Module):
 
         if self.upsample:
             x0 = F.interpolate(x0, scale_factor=2, mode="nearest")  # upsample
+        x0 = self.conv2d0(x0)
         out = x + x0
         return out
 
@@ -185,21 +190,39 @@ class Generator(nn.Module):
 
 
 class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, MODULES, downsample=True, channel_ratio=4):
+    def __init__(self, in_channels, out_channels, MODULES, optblock, downsample=True, channel_ratio=4):
         super(DiscBlock, self).__init__()
+        self.optblock = optblock
         self.downsample = downsample
         hidden_channels = out_channels // channel_ratio
+        self.ch_mismatch = True if (in_channels != out_channels) else False
+        if self.optblock: assert self.downsample and self.ch_mismatch, "downsample and ch_mismatch should be True."
 
         self.activation = MODULES.d_act_fn
-        self.conv2d1 = MODULES.d_conv2d(in_channels=in_channels, out_channels=hidden_channels, kernel_size=1, stride=1, padding=0)
-        self.conv2d2 = MODULES.d_conv2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1)
-        self.conv2d3 = MODULES.d_conv2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=3, stride=1, padding=1)
-        self.conv2d4 = MODULES.d_conv2d(in_channels=hidden_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
+        self.conv2d1 = MODULES.d_conv2d(in_channels=in_channels,
+                                        out_channels=hidden_channels,
+                                        kernel_size=1,
+                                        stride=1,
+                                        padding=0)
+        self.conv2d2 = MODULES.d_conv2d(in_channels=hidden_channels,
+                                        out_channels=hidden_channels,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1)
+        self.conv2d3 = MODULES.d_conv2d(in_channels=hidden_channels,
+                                        out_channels=hidden_channels,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1)
+        self.conv2d4 = MODULES.d_conv2d(in_channels=hidden_channels,
+                                        out_channels=out_channels,
+                                        kernel_size=1,
+                                        stride=1,
+                                        padding=0)
 
-        self.learnable_sc = True if (in_channels != out_channels) else False
-        if self.learnable_sc:
+        if self.ch_mismatch or self.downsample:
             self.conv2d0 = MODULES.d_conv2d(in_channels=in_channels,
-                                            out_channels=out_channels - in_channels,
+                                            out_channels=out_channels,
                                             kernel_size=1,
                                             stride=1,
                                             padding=0)
@@ -216,10 +239,15 @@ class DiscBlock(nn.Module):
         if self.downsample:
             x = self.average_pooling(x)
 
-        if self.downsample:
+        if self.optblock:
             x0 = self.average_pooling(x0)
-        if self.learnable_sc:
-            x0 = torch.cat([x0, self.conv2d0(x0)], 1)
+            x0 = self.conv2d0(x0)
+        else:
+            if self.downsample or self.ch_mismatch:
+                x0 = self.conv2d0(x0)
+                if self.downsample:
+                    x0 = self.average_pooling(x0)
+
         out = x + x0
         return out
 
@@ -229,7 +257,7 @@ class Discriminator(nn.Module):
                  num_classes, d_init, d_depth, mixed_precision, MODULES, MODEL):
         super(Discriminator, self).__init__()
         d_in_dims_collection = {
-            "32": [d_conv_dim * 4, d_conv_dim * 4, d_conv_dim * 4],
+            "32": [d_conv_dim, d_conv_dim * 4, d_conv_dim * 4],
             "64": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8],
             "128": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 16],
             "256": [d_conv_dim, d_conv_dim * 2, d_conv_dim * 4, d_conv_dim * 8, d_conv_dim * 8, d_conv_dim * 16],
@@ -271,6 +299,7 @@ class Discriminator(nn.Module):
                 DiscBlock(in_channels=self.in_dims[index] if d_index == 0 else self.out_dims[index],
                           out_channels=self.out_dims[index],
                           MODULES=MODULES,
+                          optblock=index == 0 and d_index == 0,
                           downsample=True if down[index] and d_index == 0 else False)
             ] for d_index in range(d_depth)]
 
