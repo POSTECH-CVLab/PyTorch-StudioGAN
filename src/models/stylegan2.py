@@ -516,7 +516,7 @@ class Generator(torch.nn.Module):
             w_dim,  # Intermediate latent (W) dimensionality.
             img_resolution,  # Output resolution.
             img_channels,  # Number of output color channels.
-            MODEL,
+            MODEL,  # MODEL config required for applying infoGAN
             mapping_kwargs={},  # Arguments for MappingNetwork.
             synthesis_kwargs={},  # Arguments for SynthesisNetwork.
     ):
