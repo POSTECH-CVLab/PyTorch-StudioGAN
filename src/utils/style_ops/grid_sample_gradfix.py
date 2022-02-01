@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # NVIDIA CORPORATION and its licensors retain all intellectual property
 # and proprietary rights in and to this software, related documentation
@@ -11,7 +11,6 @@ supports arbitrarily high order gradients between the input and output.
 Only works on 2D images and assumes
 `mode='bilinear'`, `padding_mode='zeros'`, `align_corners=False`."""
 
-import warnings
 import torch
 
 # pylint: disable=redefined-builtin
@@ -32,12 +31,7 @@ def grid_sample(input, grid):
 #----------------------------------------------------------------------------
 
 def _should_use_custom_op():
-    if not enabled:
-        return False
-    if any(torch.__version__.startswith(x) for x in ['1.7.', '1.8.', '1.9', '1.10']):
-        return True
-    warnings.warn(f'grid_sample_gradfix not supported on PyTorch {torch.__version__}. Falling back to torch.nn.functional.grid_sample().')
-    return False
+    return enabled
 
 #----------------------------------------------------------------------------
 

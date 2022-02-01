@@ -1,4 +1,4 @@
-// Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+// Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 //
 // NVIDIA CORPORATION and its licensors retain all intellectual property
 // and proprietary rights in and to this software, related documentation
@@ -21,8 +21,11 @@ static torch::Tensor upfirdn2d(torch::Tensor x, torch::Tensor f, int upx, int up
     TORCH_CHECK(f.dtype() == torch::kFloat, "f must be float32");
     TORCH_CHECK(x.numel() <= INT_MAX, "x is too large");
     TORCH_CHECK(f.numel() <= INT_MAX, "f is too large");
+    TORCH_CHECK(x.numel() > 0, "x has zero size");
+    TORCH_CHECK(f.numel() > 0, "f has zero size");
     TORCH_CHECK(x.dim() == 4, "x must be rank 4");
     TORCH_CHECK(f.dim() == 2, "f must be rank 2");
+    TORCH_CHECK((x.size(0)-1)*x.stride(0) + (x.size(1)-1)*x.stride(1) + (x.size(2)-1)*x.stride(2) + (x.size(3)-1)*x.stride(3) <= INT_MAX, "x memory footprint is too large");
     TORCH_CHECK(f.size(0) >= 1 && f.size(1) >= 1, "f must be at least 1x1");
     TORCH_CHECK(upx >= 1 && upy >= 1, "upsampling factor must be at least 1");
     TORCH_CHECK(downx >= 1 && downy >= 1, "downsampling factor must be at least 1");
@@ -34,6 +37,7 @@ static torch::Tensor upfirdn2d(torch::Tensor x, torch::Tensor f, int upx, int up
     TORCH_CHECK(outW >= 1 && outH >= 1, "output must be at least 1x1");
     torch::Tensor y = torch::empty({x.size(0), x.size(1), outH, outW}, x.options(), x.suggest_memory_format());
     TORCH_CHECK(y.numel() <= INT_MAX, "output is too large");
+    TORCH_CHECK((y.size(0)-1)*y.stride(0) + (y.size(1)-1)*y.stride(1) + (y.size(2)-1)*y.stride(2) + (y.size(3)-1)*y.stride(3) <= INT_MAX, "output memory footprint is too large");
 
     // Initialize CUDA kernel parameters.
     upfirdn2d_kernel_params p;

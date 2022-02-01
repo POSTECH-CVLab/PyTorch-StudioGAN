@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # NVIDIA CORPORATION and its licensors retain all intellectual property
 # and proprietary rights in and to this software, related documentation
@@ -9,10 +9,8 @@
 """Custom PyTorch ops for efficient resampling of 2D images."""
 
 import os
-import warnings
 import numpy as np
 import torch
-import traceback
 
 from .. import custom_ops
 from .. import style_misc as misc
@@ -20,19 +18,19 @@ from . import conv2d_gradfix
 
 #----------------------------------------------------------------------------
 
-_inited = False
 _plugin = None
 
 def _init():
-    global _inited, _plugin
-    if not _inited:
-        sources = ['upfirdn2d.cpp', 'upfirdn2d.cu']
-        sources = [os.path.join(os.path.dirname(__file__), s) for s in sources]
-        try:
-            _plugin = custom_ops.get_plugin('upfirdn2d_plugin', sources=sources, extra_cuda_cflags=['--use_fast_math'])
-        except:
-            warnings.warn('Failed to build CUDA kernels for upfirdn2d. Falling back to slow reference implementation. Details:\n\n' + traceback.format_exc())
-    return _plugin is not None
+    global _plugin
+    if _plugin is None:
+        _plugin = custom_ops.get_plugin(
+            module_name='upfirdn2d_plugin',
+            sources=['upfirdn2d.cpp', 'upfirdn2d.cu'],
+            headers=['upfirdn2d.h'],
+            source_dir=os.path.dirname(__file__),
+            extra_cuda_cflags=['--use_fast_math'],
+        )
+    return True
 
 def _parse_scaling(scaling):
     if isinstance(scaling, int):
@@ -179,6 +177,11 @@ def _upfirdn2d_ref(x, f, up=1, down=1, padding=0, flip_filter=False, gain=1):
     downx, downy = _parse_scaling(down)
     padx0, padx1, pady0, pady1 = _parse_padding(padding)
 
+    # Check that upsampled buffer is not smaller than the filter.
+    upW = in_width * upx + padx0 + padx1
+    upH = in_height * upy + pady0 + pady1
+    assert upW >= f.shape[-1] and upH >= f.shape[0]
+
     # Upsample by inserting zeros.
     x = x.reshape([batch_size, num_channels, in_height, 1, in_width, 1])
     x = torch.nn.functional.pad(x, [0, upx - 1, 0, 0, 0, upy - 1])
@@ -230,13 +233,15 @@ def _upfirdn2d_cuda(up=1, down=1, padding=0, flip_filter=False, gain=1):
             assert isinstance(x, torch.Tensor) and x.ndim == 4
             if f is None:
                 f = torch.ones([1, 1], dtype=torch.float32, device=x.device)
+            if f.ndim == 1 and f.shape[0] == 1:
+                f = f.square().unsqueeze(0) # Convert separable-1 into full-1x1.
             assert isinstance(f, torch.Tensor) and f.ndim in [1, 2]
             y = x
             if f.ndim == 2:
                 y = _plugin.upfirdn2d(y, f, upx, upy, downx, downy, padx0, padx1, pady0, pady1, flip_filter, gain)
             else:
-                y = _plugin.upfirdn2d(y, f.unsqueeze(0), upx, 1, downx, 1, padx0, padx1, 0, 0, flip_filter, np.sqrt(gain))
-                y = _plugin.upfirdn2d(y, f.unsqueeze(1), 1, upy, 1, downy, 0, 0, pady0, pady1, flip_filter, np.sqrt(gain))
+                y = _plugin.upfirdn2d(y, f.unsqueeze(0), upx, 1, downx, 1, padx0, padx1, 0, 0, flip_filter, 1.0)
+                y = _plugin.upfirdn2d(y, f.unsqueeze(1), 1, upy, 1, downy, 0, 0, pady0, pady1, flip_filter, gain)
             ctx.save_for_backward(f)
             ctx.x_shape = x.shape
             return y
