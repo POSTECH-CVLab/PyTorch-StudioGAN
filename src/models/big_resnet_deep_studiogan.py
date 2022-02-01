@@ -235,9 +235,9 @@ class DiscBlock(nn.Module):
         x = self.conv2d1(self.activation(x))
         x = self.conv2d2(self.activation(x))
         x = self.conv2d3(self.activation(x))
-        x = self.conv2d4(self.activation(x))
         if self.downsample:
             x = self.average_pooling(x)
+        x = self.conv2d4(self.activation(x))
 
         if self.optblock:
             x0 = self.average_pooling(x0)
@@ -247,7 +247,6 @@ class DiscBlock(nn.Module):
                 x0 = self.conv2d0(x0)
                 if self.downsample:
                     x0 = self.average_pooling(x0)
-
         out = x + x0
         return out
 
