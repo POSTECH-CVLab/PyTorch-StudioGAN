@@ -766,6 +766,9 @@ class Configurations(object):
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
             assert self.MODEL.backbone in ["stylegan2", "stylegan3"], \
                 "StudioGAN does not support the act_fn auto selection options except for stylegan2, stylegan3."
+        
+        if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r":
+            assert self.STYLEGAN.blur_init_sigma != "N/A", "With stylegan3-r, you need to specify blur_init_sigma."
 
         if self.MODEL.backbone in ["stylegan2", "stylegan3"] and self.MODEL.apply_g_ema:
             assert self.MODEL.g_ema_decay == "N/A" and self.MODEL.g_ema_start == "N/A",\
