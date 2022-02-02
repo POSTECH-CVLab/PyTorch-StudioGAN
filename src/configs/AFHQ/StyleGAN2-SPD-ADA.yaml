@@ -31,6 +31,7 @@ LOSS:
   adv_loss: "logistic"
   apply_r1_reg: True
   r1_lambda: 0.5
+  r1_place: "outside_loop"
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
   batch_size: 64

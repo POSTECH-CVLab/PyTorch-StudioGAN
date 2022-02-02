@@ -37,6 +37,7 @@ LOSS:
   adv_loss: "logistic"
   apply_r1_reg: True
   r1_lambda: 0.01
+  r1_place: "outside_loop"
   infoGAN_loss_discrete_lambda: 1.0
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.

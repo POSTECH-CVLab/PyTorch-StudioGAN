@@ -1,7 +1,7 @@
-# Guidelines for StyleGAN2-DiffAug config
+# Guidelines for StyleGAN2-APA config
 # Don't change cfgs except for the explained below as comment.
 # Changing other cfgs will cause it to deviate from original StyleGAN paper settings.
-# g_cond_mtd can be changed btw ["N/A", "cAdaIN"]
+# g_cond_mtd can be changed btw ["W/O", "cAdaIN"]
 # d_cond_mtd can be changed btw ["W/O", "AC", "PD", "MH", "MD", "2C", "D2DCE", "SPD"]
 # z_dim, w_dim should be fixed to 512 regardless of image size.
 # apply_g_ema should be true for stable results.
@@ -14,9 +14,9 @@
 # g_ema_rampup, mapping_network, check StyleGAN2 section in src/config.py
 
 DATA:
-  name: "CIFAR100"
+  name: "CIFAR10"
   img_size: 32
-  num_classes: 100
+  num_classes: 10
 MODEL:
   backbone: "stylegan2"
   g_cond_mtd: "cAdaIN"
@@ -33,7 +33,7 @@ LOSS:
   adv_loss: "logistic"
   apply_r1_reg: True
   r1_lambda: 0.01
-  r1_place: "inside_loop"
+  r1_place: "outside_loop"
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
   g_lr: 0.0025
@@ -45,8 +45,11 @@ OPTIMIZATION:
   d_updates_per_step: 1
   total_steps: 1000000
 AUG:
-  apply_diffaug: True
-  diffaug_type: "diffaug"
+  apply_apa: True
+  apa_initial_augment_p: 0
+  apa_target: 0.6
+  apa_kimg: 500
+  apa_interval: 4
 STYLEGAN2:
   g_reg_interval: 4
   d_reg_interval: 16

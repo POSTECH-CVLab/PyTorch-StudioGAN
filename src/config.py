@@ -54,7 +54,8 @@ class Configurations(object):
         # -----------------------------------------------------------------------------
         self.MODEL = misc.make_empty_object()
 
-        # type of backbone architectures of the generator and discriminator \in ["deep_conv", "resnet", "big_resnet", "deep_big_resnet", "stylegan2"]
+        # type of backbone architectures of the generator and discriminator \in
+        # ["deep_conv", "resnet", "big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan", "stylegan2"]
         self.MODEL.backbone = "resnet"
         # conditioning method of the generator \in ["W/O", "cBN", "cAdaIN"]
         self.MODEL.g_cond_mtd = "W/O"
@@ -93,9 +94,9 @@ class Configurations(object):
         self.MODEL.g_conv_dim = 64
         # base channel for the resnet style discriminator architecture
         self.MODEL.d_conv_dim = 64
-        # generator's depth for deep_big_resnet
+        # generator's depth for "models/big_resnet_deep_*.py"
         self.MODEL.g_depth = "N/A"
-        # discriminator's depth for deep_big_resnet
+        # discriminator's depth for "models/big_resnet_deep_*.py"
         self.MODEL.d_depth = "N/A"
         # whether to apply moving average update for the generator
         self.MODEL.apply_g_ema = False
@@ -139,6 +140,8 @@ class Configurations(object):
         self.LOSS.fm_lambda = "N/A"
         # whether to apply r1 regularization used in multiple-discriminator (FUNIT)
         self.LOSS.apply_r1_reg = False
+        # a place to apply the R1 regularization \in ["N/A", "inside_loop", "outside_loop"]
+        self.LOSS.r1_place = "N/A"
         # strength of r1 regularization (it does not apply to r1_reg in StyleGAN2
         self.LOSS.r1_lambda = "N/A"
         # positive margin for D2DCE
@@ -175,9 +178,9 @@ class Configurations(object):
         self.LOSS.apply_zcr = False
         # radius of ball to generate an fake image G(z + radius)
         self.LOSS.radius = "N/A"
-        # repulsion stength between fake images (G(z), G(z + radius))
+        # repulsion strength between fake images (G(z), G(z + radius))
         self.LOSS.g_lambda = "N/A"
-        # attaction stength between logits of fake images (G(z), G(z + radius))
+        # attaction strength between logits of fake images (G(z), G(z + radius))
         self.LOSS.d_lambda = "N/A"
         # whether to apply latent optimization for stable training
         self.LOSS.apply_lo = False
@@ -204,7 +207,14 @@ class Configurations(object):
         self.LOSS.infoGAN_loss_discrete_lambda = "N/A"
         # strength lambda for infoGAN loss in case of continuous c (typically 1)
         self.LOSS.infoGAN_loss_conti_lambda = "N/A"
-
+        # whether to apply LeCam regularization or not
+        self.LOSS.apply_lecam = False
+        # strength of the LeCam regularization
+        self.LOSS.lecam_lambda = "N/A"
+        # start iteration for EMALosses in src/utils/EMALosses
+        self.LOSS.lecam_ema_start_iter = "N/A"
+        # decay rate for the EMALosses
+        self.LOSS.lecam_ema_decay = "N/A"
 
         # -----------------------------------------------------------------------------
         # optimizer settings
@@ -260,18 +270,9 @@ class Configurations(object):
 
         # whether to apply differentiable augmentations for limited data training
         self.AUG.apply_diffaug = False
+
         # whether to apply adaptive discriminator augmentation (ADA)
         self.AUG.apply_ada = False
-        # type of differentiable augmentation for cr, bcr, or limited data training
-        # \in ["W/O", "cr", "bcr", "diffaug", "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol"
-        # \ "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]
-        # "blit", "geon", ... "bgcfnc" augmentations details are available at <https://github.com/NVlabs/stylegan2-ada-pytorch>
-        # for ada default aug_type is bgc, ada_target is 0.6, ada_kimg is 500.
-        # cr (bcr, diffaugment, ada, simclr, byol) indicates differentiable augmenations used in the original paper
-        self.AUG.cr_aug_type = "W/O"
-        self.AUG.bcr_aug_type = "W/O"
-        self.AUG.diffaug_type = "W/O"
-        self.AUG.ada_aug_type = "W/O"
         # initial value of augmentation probability.
         self.AUG.ada_initial_augment_p = "N/A"
         # target probability for adaptive differentiable augmentations, None = fixed p (keep ada_initial_augment_p)
@@ -280,6 +281,24 @@ class Configurations(object):
         self.AUG.ada_kimg = "N/A"
         # how often to perform ada adjustment
         self.AUG.ada_interval = "N/A"
+        # whether to apply adaptive pseudo augmentation (APA)
+        self.AUG.apply_apa = False
+        # initial value of augmentation probability.
+        self.AUG.apa_initial_augment_p = "N/A"
+        # target probability for adaptive pseudo augmentations, None = fixed p (keep ada_initial_augment_p)
+        self.AUG.apa_target = "N/A"
+        # APA adjustment speed, measured in how many kimg it takes for p to increase/decrease by one unit.
+        self.AUG.apa_kimg = "N/A"
+        # how often to perform apa adjustment
+        self.AUG.apa_interval = "N/A"
+        # type of differentiable augmentation for cr, bcr, or limited data training
+        # \in ["W/O", "cr", "bcr", "diffaug", "simclr_basic", "simclr_hq", "simclr_hq_cutout", "byol",
+        # "blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]
+        # cr (bcr, diffaugment, ada, simclr, byol) indicates differentiable augmenations used in the original paper
+        self.AUG.cr_aug_type = "W/O"
+        self.AUG.bcr_aug_type = "W/O"
+        self.AUG.diffaug_type = "W/O"
+        self.AUG.ada_aug_type = "W/O"
 
         # -----------------------------------------------------------------------------
         # StyleGAN_v2 settings regarding regularization and style mixing
@@ -577,6 +596,7 @@ class Configurations(object):
                 self.AUG.series_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device).requires_grad_(False)
             elif self.AUG.diffaug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
                 self.AUG.series_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.diffaug_type]).train().to(device).requires_grad_(False)
+                self.AUG.series_augment.p = 1.0
             else:
                 raise NotImplementedError
 
@@ -595,6 +615,7 @@ class Configurations(object):
                 self.AUG.parallel_augment = simclr_aug.SimclrAugment(aug_type=self.AUG.diffaug).train().to(device).requires_grad_(False)
             elif self.AUG.cr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
                 self.AUG.parallel_augment = ada_aug.AdaAugment(**ada_augpipe[self.AUG.cr_aug_type]).train().to(device).requires_grad_(False)
+                self.AUG.parallel_augment.p = 1.0
             else:
                 raise NotImplementedError
 
@@ -609,6 +630,7 @@ class Configurations(object):
             elif self.AUG.bcr_aug_type in ["blit", "geom", "color", "filter", "noise", "cutout", "bg", "bgc", "bgcf", "bgcfn", "bgcfnc"]:
                 self.AUG.parallel_augment = ada_aug.AdaAugment(
                     **ada_augpipe[self.AUG.bcr_aug_type]).train().to(device).requires_grad_(False)
+                self.AUG.parallel_augment.p = 1.0
             else:
                 raise NotImplementedError
 
@@ -623,8 +645,8 @@ class Configurations(object):
         if self.MODEL.backbone == "deep_conv":
             assert self.DATA.img_size == 32, "StudioGAN does not support the deep_conv backbone for the dataset whose spatial resolution is not 32."
 
-        if self.MODEL.backbone == "deep_big_resnet":
-            assert self.MODEL.g_cond_mtd and self.MODEL.d_cond_mtd, "StudioGAN does not support the deep_big_resnet backbone \
+        if self.MODEL.backbone in ["big_resnet_deep_legacy", "big_resnet_deep_studiogan"]:
+            assert self.MODEL.g_cond_mtd and self.MODEL.d_cond_mtd, "StudioGAN does not support the big_resnet_deep backbones \
                 without applying spectral normalization to the generator and discriminator."
 
         if self.RUN.langevin_sampling or self.LOSS.apply_lo:
@@ -632,8 +654,8 @@ class Configurations(object):
                 cannot be used simultaneously."
 
         if isinstance(self.MODEL.g_depth, int) or isinstance(self.MODEL.d_depth, int):
-            assert self.MODEL.backbone == "deep_big_resnet", \
-                "MODEL.g_depth and MODEL.d_depth are hyperparameters for deep_big_resnet backbone."
+            assert self.MODEL.backbone in ["big_resnet_deep_legacy", "big_resnet_deep_studiogan"], \
+                "MODEL.g_depth and MODEL.d_depth are hyperparameters for big_resnet_deep backbones."
 
         if self.RUN.langevin_sampling:
             msg = "Langevin sampling cannot be used for training only."
@@ -712,8 +734,8 @@ class Configurations(object):
             assert self.RUN.ref_dataset in ["train", "test"], "There is no data for validation."
 
         if self.RUN.interpolation:
-            assert self.MODEL.backbone in ["big_resnet", "deep_big_resnet"], \
-                "StudioGAN does not support interpolation analysis except for biggan and deep_big_resnet."
+            assert self.MODEL.backbone in ["big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan"], \
+                "StudioGAN does not support interpolation analysis except for biggan and big_resnet_deep backbones."
 
         if self.RUN.semantic_factorization:
             assert self.RUN.num_semantic_axis > 0, \
@@ -741,6 +763,10 @@ class Configurations(object):
             assert self.MODEL.g_cond_mtd in ["W/O", "cAdaIN"], \
                 "stylegan2 only supports 'W/O' or 'cAdaIN' as g_cond_mtd."
 
+        if self.LOSS.apply_r1_reg and self.MODEL.backbone == "stylegan2":
+            assert self.LOSS.r1_place in ["inside_loop", "outside_loop"], \
+                "LOSS.r1_place should be one of ['inside_loop', 'outside_loop']"
+
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
             assert self.MODEL.backbone == "stylegan2", \
                 "StudioGAN does not support the act_fn auto selection options except for stylegan2."
@@ -757,12 +783,12 @@ class Configurations(object):
                 "g_ema_kimg, g_ema_rampup hyperparameters are only valid for stylegan2 backbone."
 
         if isinstance(self.MODEL.g_shared_dim, int):
-            assert self.MODEL.backbone in ["big_resnet", "deep_big_resnet"], \
-            "hierarchical embedding is only applicable to big_resnet or deep_big_resnet."
+            assert self.MODEL.backbone in ["big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan"], \
+            "hierarchical embedding is only applicable to big_resnet or big_resnet_deep backbones."
 
         if isinstance(self.MODEL.g_conv_dim, int) or isinstance(self.MODEL.d_conv_dim, int):
-            assert self.MODEL.backbone in ["resnet", "big_resnet", "deep_big_resnet"], \
-            "g_conv_dim and d_conv_dim are hyperparameters for controlling dimensions of resnet, big_resnet, and deep_big_resnet."
+            assert self.MODEL.backbone in ["resnet", "big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan"], \
+            "g_conv_dim and d_conv_dim are hyperparameters for controlling dimensions of resnet, big_resnet, and big_resnet_deeps."
 
         if self.MODEL.backbone == "stylegan2":
             assert self.LOSS.apply_fm + \
@@ -810,12 +836,19 @@ class Configurations(object):
 
         if self.MODEL.info_type in ["continuous", "both"]:
             assert self.MODEL.info_num_conti_c > 0, "MODEL.info_num_conti_c should be over 0."
-        
+
         if self.MODEL.info_type in ["discrete", "continuous", "both"] and self.MODEL.backbone == "stylegan2":
             assert self.MODEL.g_info_injection == "concat", "StyleGAN2 only allows concat as g_info_injection method"
 
         if self.MODEL.info_type in ["discrete", "continuous", "both"]:
             assert self.MODEL.g_info_injection in ["concat", "cBN"], "MODEL.g_info_injection should be 'concat' or 'cBN'."
+
+        if self.AUG.apply_ada and self.AUG.apply_apa:
+            assert self.AUG.ada_initial_augment_p == self.AUG.apa_initial_augment_p and \
+                self.AUG.ada_target == self.AUG.apa_target and \
+                self.AUG.ada_kimg == self.AUG.apa_kimg and \
+                self.AUG.ada_interval == self.AUG.apa_interval, \
+                "ADA and APA specifications should be the completely same."
 
         assert self.RUN.resize_fn in ["legacy", "clean"], "resizing flag should be logacy or clean!"
 

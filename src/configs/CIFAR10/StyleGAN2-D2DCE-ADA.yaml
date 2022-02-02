@@ -36,6 +36,7 @@ LOSS:
   temperature: 0.25
   apply_r1_reg: True
   r1_lambda: 0.01
+  r1_place: "outside_loop"
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
   g_lr: 0.0025
