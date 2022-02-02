@@ -53,8 +53,8 @@
 | [**TACGAN**](https://arxiv.org/abs/1907.02690) | Neurips'19 |  Big ResNet | cBN | TAC | Hinge | True |
 | [**LGAN**](https://arxiv.org/abs/1902.05687) | ICML'19 |  ResNet | N/A | N/A | Vanilla | False |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet | cBN | PD | Hinge | True |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet Deep Legacy | cBN | PD | Hinge | True |
-| [**BigGAN-Deep-StudioGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) | - |  Big ResNet Deep StudioGAN | cBN | PD | Hinge | True |
+| [**BigGAN-Deep-CompareGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/models/big_resnet_deep_legacy.py) | ICLR'19 |  Big ResNet Deep CompareGAN | cBN | PD | Hinge | True |
+| [**BigGAN-Deep-StudioGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/models/big_resnet_deep_studiogan.py) | - |  Big ResNet Deep StudioGAN | cBN | PD | Hinge | True |
 | **BigGAN-Mod**<sup>[3](#footnote_3)</sup> | - |  Big ResNet | cBN | PD | Hinge | True |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv'19 |  Big ResNet | cBN | PD | Hinge | True |
 | [**StyleGAN2**](https://arxiv.org/abs/1912.04958) | CVPR' 20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
