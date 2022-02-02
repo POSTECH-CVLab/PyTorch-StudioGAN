@@ -326,6 +326,7 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                    generator_mapping=None,
                                                                    generator_synthesis=None,
                                                                    style_mixing_p=0.0,
+                                                                   stylegan_update_emas=False,
                                                                    device=device,
                                                                    cal_trsp_cost=False)
     generator.eval()
@@ -510,6 +511,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                                  generator_mapping=generator_mapping,
                                                                  generator_synthesis=generator_synthesis,
                                                                  style_mixing_p=0.0,
+                                                                 stylegan_update_emas=False,
                                                                  device=device,
                                                                  cal_trsp_cost=False)
             else:

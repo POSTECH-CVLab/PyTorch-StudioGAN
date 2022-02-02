@@ -266,6 +266,7 @@ class WORKER(object):
                         generator_synthesis=self.Gen_synthesis,
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN.style_mixing_p,
+                        stylegan_update_emas=True,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
                     # if LOSS.apply_r1_reg is True,
@@ -534,6 +535,7 @@ class WORKER(object):
                         generator_synthesis=self.Gen_synthesis,
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN.style_mixing_p,
+                        stylegan_update_emas=False,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
                     # blur images for stylegan3-r
@@ -653,6 +655,7 @@ class WORKER(object):
                         generator_synthesis=self.Gen_synthesis,
                         is_stylegan=self.is_stylegan,
                         style_mixing_p=self.cfgs.STYLEGAN.style_mixing_p,
+                        stylegan_update_emas=False,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
                     self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws) + fake_images[:,0,0,0].mean()*0
@@ -771,6 +774,7 @@ class WORKER(object):
                                                                        generator_mapping=generator_mapping,
                                                                        generator_synthesis=generator_synthesis,
                                                                        style_mixing_p=0.0,
+                                                                       stylegan_update_emas=False,
                                                                        cal_trsp_cost=False)
 
         misc.plot_img_canvas(images=fake_images.detach().cpu(),
@@ -1073,6 +1077,7 @@ class WORKER(object):
                                                                         generator_mapping=generator_mapping,
                                                                         generator_synthesis=generator_synthesis,
                                                                         style_mixing_p=0.0,
+                                                                        stylegan_update_emas=False,
                                                                         cal_trsp_cost=False)
                 fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor = ops.quantize_images(fake_anchor)
@@ -1214,6 +1219,7 @@ class WORKER(object):
                                                                           generator_mapping=generator_mapping,
                                                                           generator_synthesis=generator_synthesis,
                                                                           style_mixing_p=0.0,
+                                                                          stylegan_update_emas=False,
                                                                           cal_trsp_cost=False)
                 fake_images = fake_images.detach().cpu().numpy()
 
@@ -1311,6 +1317,7 @@ class WORKER(object):
                                                                            generator_mapping=generator_mapping,
                                                                            generator_synthesis=generator_synthesis,
                                                                            style_mixing_p=0.0,
+                                                                           stylegan_update_emas=False,
                                                                            cal_trsp_cost=False)
 
                 fake_dict = self.Dis(fake_images, fake_labels)
@@ -1559,6 +1566,7 @@ class WORKER(object):
                                                                      generator_mapping=generator_mapping,
                                                                      generator_synthesis=generator_synthesis,
                                                                      style_mixing_p=0.0,
+                                                                     stylegan_update_emas=False,
                                                                      cal_trsp_cost=False)
                 else:
                     images, labels = images.to(self.local_rank), labels.to(self.local_rank)
@@ -1622,6 +1630,7 @@ class WORKER(object):
                                                                  generator_mapping=generator_mapping,
                                                                  generator_synthesis=generator_synthesis,
                                                                  style_mixing_p=0.0,
+                                                                 stylegan_update_emas=False,
                                                                  cal_trsp_cost=False)
             else:
                 images, labels = images.to(self.local_rank), labels.to(self.local_rank)

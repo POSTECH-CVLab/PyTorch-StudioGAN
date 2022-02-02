@@ -88,7 +88,7 @@ def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_factor, y_samp
 
 def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, y_sampler, radius, generator, discriminator,
                     is_train, LOSS, RUN, MODEL, device, is_stylegan, generator_mapping, generator_synthesis, style_mixing_p,
-                    cal_trsp_cost):
+                    stylegan_update_emas, cal_trsp_cost):
     if is_train:
         truncation_factor = -1.0
         lo_steps = LOSS.lo_steps4train
@@ -149,6 +149,7 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
                                                    fake_labels=fake_labels,
                                                    num_classes=num_classes,
                                                    style_mixing_p=style_mixing_p,
+                                                   update_emas=stylegan_update_emas,
                                                    generator_mapping=generator_mapping,
                                                    generator_synthesis=generator_synthesis,
                                                    truncation_psi=truncation_factor,
@@ -163,6 +164,7 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
                                                                fake_labels=fake_labels,
                                                                num_classes=num_classes,
                                                                style_mixing_p=style_mixing_p,
+                                                               update_emas=stylegan_update_emas,
                                                                generator_mapping=generator_mapping,
                                                                generator_synthesis=generator_synthesis,
                                                                truncation_psi=truncation_factor,
@@ -173,17 +175,18 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
         fake_images_eps = None
     return fake_images, fake_labels, fake_images_eps, trsp_cost, ws, info_discrete_c, info_conti_c
 
-def stylegan_generate_images(zs, fake_labels, num_classes, style_mixing_p, generator_mapping, generator_synthesis, truncation_psi, truncation_cutoff):
+def stylegan_generate_images(zs, fake_labels, num_classes, style_mixing_p, update_emas, 
+                             generator_mapping, generator_synthesis, truncation_psi, truncation_cutoff):
     one_hot_fake_labels = F.one_hot(fake_labels, num_classes=num_classes)
     if truncation_psi == -1:
-        ws = generator_mapping(zs, one_hot_fake_labels, truncation_psi=1)
+        ws = generator_mapping(zs, one_hot_fake_labels, truncation_psi=1, update_emas=update_emas)
     else:
-        ws = generator_mapping(zs, one_hot_fake_labels, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
+        ws = generator_mapping(zs, one_hot_fake_labels, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff, update_emas=update_emas)
     if style_mixing_p > 0:
         cutoff = torch.empty([], dtype=torch.int64, device=ws.device).random_(1, ws.shape[1])
         cutoff = torch.where(torch.rand([], device=ws.device) < style_mixing_p, cutoff, torch.full_like(cutoff, ws.shape[1]))
-        ws[:, cutoff:] = generator_mapping(torch.randn_like(zs), one_hot_fake_labels, skip_w_avg_update=True)[:, cutoff:]
-    fake_images = generator_synthesis(ws)
+        ws[:, cutoff:] = generator_mapping(torch.randn_like(zs), one_hot_fake_labels, update_emas=False)[:, cutoff:]
+    fake_images = generator_synthesis(ws, update_emas=update_emas)
     return ws, fake_images
 
 
