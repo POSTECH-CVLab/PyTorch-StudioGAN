@@ -273,9 +273,6 @@ class WORKER(object):
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
                         real_images.requires_grad_(True)
 
-                    if self.AUG.apply_apa:
-                        real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
-
                     # blur images for stylegan3-r
                     if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
                         blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
@@ -284,6 +281,9 @@ class WORKER(object):
                             f = torch.arange(-blur_size, blur_size + 1, device=real_images.device).div(blur_sigma).square().neg().exp2()
                             real_images = upfirdn2d.filter2d(real_images, f / f.sum())
                             fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
+
+                    if self.AUG.apply_apa:
+                        real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
 
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
