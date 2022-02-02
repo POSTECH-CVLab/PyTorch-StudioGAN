@@ -62,7 +62,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         cudnn.benchmark, cudnn.deterministic = True, False
 
-    if cfgs.MODEL.backbone == "stylegan2":
+    if cfgs.MODEL.backbone in ["stylegan2", "stylegan3"]:
         # Improves training speed
         conv2d_gradfix.enabled = True
         # Avoids errors with the augmentation pipe
@@ -201,7 +201,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         model.load_generator_discriminator(DATA=cfgs.DATA,
                                            OPTIMIZATION=cfgs.OPTIMIZATION,
                                            MODEL=cfgs.MODEL,
-                                           STYLEGAN2=cfgs.STYLEGAN2,
+                                           STYLEGAN=cfgs.STYLEGAN,
                                            MODULES=cfgs.MODULES,
                                            RUN=cfgs.RUN,
                                            device=local_rank,
@@ -241,8 +241,11 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
 
         if topk == "initialize":
             topk == cfgs.OPTIMIZATION.batch_size
-        if cfgs.MODEL.backbone == "stylegan2":
+        if cfgs.MODEL.backbone in ["stylegan2", "stylegan3"]:
             ema.ema_rampup = "N/A" # disable EMA rampup
+            if cfgs.MODEL.backbone == "stylegan3" and cfgs.STYLEGAN.stylegan3_cfg == "stylegan3-r":
+                cfgs.STYLEGAN.blur_init_sigma = "N/A" # disable blur rampup
+        if cfgs.AUG.apply_ada:
             cfgs.AUG.ada_kimg = 100 # make ADA react faster at the beginning
 
     if cfgs.RUN.ckpt_dir is None or cfgs.RUN.freezeD != -1:

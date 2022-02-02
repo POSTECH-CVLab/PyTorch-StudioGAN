@@ -90,7 +90,7 @@ class GeneratorController(object):
                                           LOSS=self.cfgs.LOSS,
                                           OPTIMIZATION=self.cfgs.OPTIMIZATION,
                                           RUN=self.cfgs.RUN,
-                                          STYLEGAN2=self.cfgs.STYLEGAN2,
+                                          STYLEGAN=self.cfgs.STYLEGAN,
                                           device=self.device,
                                           global_rank=self.global_rank,
                                           logger=self.logger)
@@ -297,7 +297,7 @@ def calculate_all_sn(model, prefix):
     return sigmas
 
 
-def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN, STYLEGAN2,
+def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN, STYLEGAN,
                               device, global_rank, logger):
     generator.train()
     generator.apply(reset_bn_statistics)

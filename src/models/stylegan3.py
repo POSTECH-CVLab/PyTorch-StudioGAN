@@ -489,7 +489,7 @@ class Generator(torch.nn.Module):
         img_channels,               # Number of output color channels.
         MODEL,                      # MODEL config required for infoGAN
         mapping_kwargs      = {},   # Arguments for MappingNetwork.
-        **synthesis_kwargs,         # Arguments for SynthesisNetwork.
+        synthesis_kwargs = {},         # Arguments for SynthesisNetwork.
     ):
         super().__init__()
         self.z_dim = z_dim
