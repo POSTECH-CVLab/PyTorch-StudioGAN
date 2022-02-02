@@ -459,7 +459,14 @@ class WORKER(object):
                 self.OPTIMIZATION.d_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     real_images = real_image_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
-                    real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
+                    real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)       
+                    # blur images for stylegan3-r
+                    if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
+                        blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
+                        blur_size = np.floor(blur_sigma * 3)
+                        if blur_size > 0:
+                            f = torch.arange(-blur_size, blur_size + 1, device=real_images.device).div(blur_sigma).square().neg().exp2()
+                            real_images = upfirdn2d.filter2d(real_images, f / f.sum())
                     if self.AUG.apply_apa:
                         real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
                     real_images.requires_grad_(True)
@@ -657,7 +664,13 @@ class WORKER(object):
                         style_mixing_p=self.cfgs.STYLEGAN.style_mixing_p,
                         stylegan_update_emas=False,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
-
+                    # blur images for stylegan3-r
+                    if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
+                        blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
+                        blur_size = np.floor(blur_sigma * 3)
+                        if blur_size > 0:
+                            f = torch.arange(-blur_size, blur_size + 1, device=fake_images.device).div(blur_sigma).square().neg().exp2()
+                            fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
                     self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws) + fake_images[:,0,0,0].mean()*0
                     self.pl_reg_loss *= self.STYLEGAN.pl_weight*self.STYLEGAN.g_reg_interval/self.OPTIMIZATION.acml_steps
                     self.pl_reg_loss.backward()
