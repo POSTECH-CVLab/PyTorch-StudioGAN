@@ -173,20 +173,20 @@ def prepare_parallel_training(Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen
                   broadcast_buffers=False if MODEL.backbone=="stylegan2" else synchronized_bn,
                   find_unused_parameters=True if MODEL.info_type in ["discrete", "continuous", "both"] else False)
         if apply_g_ema:
-            if MODEL.backbone["stylegan2", "stylegan3"]:
+            if MODEL.backbone in ["stylegan2", "stylegan3"]:
                 Gen_ema_mapping = DDP(Gen_ema.mapping, device_ids=[device], broadcast_buffers=False)
                 Gen_ema_synthesis = DDP(Gen_ema.synthesis, device_ids=[device], broadcast_buffers=False)
             else:
                 Gen_ema = DDP(Gen_ema, device_ids=[device], broadcast_buffers=synchronized_bn)
     else:
-        if MODEL.backbone ["stylegan2", "stylegan3"]:
+        if MODEL.backbone in ["stylegan2", "stylegan3"]:
             Gen_mapping = DataParallel(Gen.mapping, output_device=device)
             Gen_synthesis = DataParallel(Gen.synthesis, output_device=device)
         else:
             Gen = DataParallel(Gen, output_device=device)
         Dis = DataParallel(Dis, output_device=device)
         if apply_g_ema:
-            if MODEL.backbone ["stylegan2", "stylegan3"]:
+            if MODEL.backbone in ["stylegan2", "stylegan3"]:
                 Gen_ema_mapping = DataParallel(Gen_ema.mapping, output_device=device)
                 Gen_ema_synthesis = DataParallel(Gen_ema.synthesis, output_device=device)
             else:
