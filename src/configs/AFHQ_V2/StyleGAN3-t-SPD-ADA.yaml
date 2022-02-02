@@ -1,12 +1,11 @@
-# Requires AFHQ dataset folder to be combined into 1 class
 DATA:
-  name: "AFHQ"
+  name: "AFHQ_V2"
   img_size: 512
-  num_classes: 1
+  num_classes: 3
 MODEL:
   backbone: "stylegan3"
-  g_cond_mtd: "W/O"
-  d_cond_mtd: "W/O"
+  g_cond_mtd: "cAdaIN"
+  d_cond_mtd: "SPD"
   g_act_fn: "Auto"
   d_act_fn: "Auto"
   z_prior: "gaussian"

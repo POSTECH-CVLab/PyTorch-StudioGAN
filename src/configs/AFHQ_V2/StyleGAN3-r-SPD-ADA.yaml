@@ -1,5 +1,5 @@
 DATA:
-  name: "AFHQ"
+  name: "AFHQ_V2"
   img_size: 512
   num_classes: 3
 MODEL:
@@ -17,7 +17,7 @@ MODEL:
 LOSS:
   adv_loss: "logistic"
   apply_r1_reg: True
-  r1_lambda: 8.2
+  r1_lambda: 16.4
   r1_place: "outside_loop"
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
@@ -39,7 +39,8 @@ AUG:
   ada_kimg: 500
   ada_interval: 4
 STYLEGAN:
-  stylegan3_cfg: "stylegan3-t"
+  stylegan3_cfg: "stylegan3-r"
+  blur_init_sigma: 10
   g_reg_interval: 1
   d_reg_interval: 16
   mapping_network: 2

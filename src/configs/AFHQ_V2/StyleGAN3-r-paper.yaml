@@ -1,6 +1,6 @@
 # Requires AFHQ dataset folders to be combined into 1 class
 DATA:
-  name: "AFHQ"
+  name: "AFHQ_V2_uncond"
   img_size: 512
   num_classes: 1
 MODEL:
