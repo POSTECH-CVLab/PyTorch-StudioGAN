@@ -23,7 +23,6 @@ LOSS:
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
   batch_size: 32
-  acml_steps: 1
   g_lr: 0.002
   d_lr: 0.002
   beta1: 0
@@ -47,7 +46,7 @@ STYLEGAN:
   mapping_network: 2
   style_mixing_p: 0
   g_ema_kimg: 10
-  g_ema_rampup: "N/A"
+  g_ema_rampup: 0.05
   apply_pl_reg: False
   pl_weight: 0
   d_architecture: "resnet"
