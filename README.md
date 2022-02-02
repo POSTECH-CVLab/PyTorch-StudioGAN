@@ -53,7 +53,8 @@
 | [**TACGAN**](https://arxiv.org/abs/1907.02690) | Neurips'19 |  Big ResNet | cBN | TAC | Hinge | True |
 | [**LGAN**](https://arxiv.org/abs/1902.05687) | ICML'19 |  ResNet | N/A | N/A | Vanilla | False |
 | [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet | cBN | PD | Hinge | True |
-| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet Deep | cBN | PD | Hinge | True |
+| [**BigGAN-Deep**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet Deep Legacy | cBN | PD | Hinge | True |
+| [**BigGAN-Deep-StudioGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) | - |  Big ResNet Deep StudioGAN | cBN | PD | Hinge | True |
 | **BigGAN-Mod**<sup>[3](#footnote_3)</sup> | - |  Big ResNet | cBN | PD | Hinge | True |
 | [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv'19 |  Big ResNet | cBN | PD | Hinge | True |
 | [**StyleGAN2**](https://arxiv.org/abs/1912.04958) | CVPR' 20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
@@ -88,12 +89,14 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 | [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'2020 | - |
 | [**BYOL**](https://arxiv.org/abs/2006.07733) | Neurips'2020 | - |
 | [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'2020 | Logistic |
+| [**APA**](https://arxiv.org/abs/2111.06849) | Neurips'2021 | Logistic |
 
 #  Training Techniques and Misc
 | Method | Venue | Target Architecture |
 |:-----------|:-------------:|:-------------:|
 | [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | Except for StyleGAN2 |
 | [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'2020 | - |
+| [**LeCam**](https://arxiv.org/abs/2104.03310) | CVPR'2021 | - |
 | [**SeFa**](https://arxiv.org/abs/2007.06600) | CVPR'2021 | BigGAN |
 
 #  Evaluation Metrics
