@@ -284,7 +284,7 @@ class WORKER(object):
                             f = torch.arange(-blur_size, blur_size + 1, device=real_images.device).div(blur_sigma).square().neg().exp2()
                             real_images = upfirdn2d.filter2d(real_images, f / f.sum())
                             fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
-                            
+
                     # apply differentiable augmentations if "apply_diffaug" or "apply_ada" is True
                     real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
@@ -463,8 +463,8 @@ class WORKER(object):
                         real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
                     real_images.requires_grad_(True)
                     real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
-                    self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                                 images=real_images)
+                    self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"], images=real_images) + \
+                        misc.enable_allreduce(real_dict)
                     self.r1_penalty *= self.STYLEGAN.d_reg_interval*self.LOSS.r1_lambda/self.OPTIMIZATION.acml_steps
                     self.r1_penalty.backward()
 
