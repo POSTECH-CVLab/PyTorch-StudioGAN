@@ -540,8 +540,8 @@ class Configurations(object):
                                                                 alpha=self.OPTIMIZATION.alpha)
         elif self.OPTIMIZATION.type_ == "Adam":
             if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
-                g_ratio = (self.STYLEGAN.g_reg_interval / (self.STYLEGAN.g_reg_interval + 1))
-                d_ratio = (self.STYLEGAN.d_reg_interval / (self.STYLEGAN.d_reg_interval + 1))
+                g_ratio = (self.STYLEGAN.g_reg_interval / (self.STYLEGAN.g_reg_interval + 1)) if self.STYLEGAN.g_reg_interval != 1 else 1
+                d_ratio = (self.STYLEGAN.d_reg_interval / (self.STYLEGAN.d_reg_interval + 1)) if self.STYLEGAN.d_reg_interval != 1 else 1
                 self.OPTIMIZATION.g_lr *= g_ratio
                 self.OPTIMIZATION.d_lr *= d_ratio
                 betas_g = [self.OPTIMIZATION.beta1**g_ratio, self.OPTIMIZATION.beta2**g_ratio]
