@@ -35,8 +35,8 @@ Highly detailed configurations can be found at https://github.com/NVlabs/stylega
 - d_architecture is 'resnet' for all settings.
 - g_reg_interval is fixed to 1 since there's no regularization for generator.
 - set blur_init_sigma for stylegan3-r only with value 10.
-- '128': total_steps= 781250, batch_size=32, d_epilogue_mbstd_group_size=4, g/d_lr=0.002, r1_lambda=0.5, g_ema_kimg=10, g_ema_rampup="N/A", mapping_network=2
-- '256': total_steps= 781250, batch_size=32, d_epilogue_mbstd_group_size=4, g/d_lr=0.002, r1_lambda=2, g_ema_kimg=10, g_ema_rampup="N/A", mapping_network=2
-- '512': total_steps= 781250, batch_size=32, d_epilogue_mbstd_group_size=4, g/d_lr=0.002, r1_lambda=8, g_ema_kimg=10, g_ema_rampup="N/A", mapping_network=2
-- '1024': total_steps= 781250, batch_size=32, d_epilogue_mbstd_group_size=4, g/d_lr=0.002, r1_lambda=32, g_ema_kimg=10, g_ema_rampup="N/A", mapping_network=2
+- '128': total_steps= 781250, batch_size=32, d_epilogue_mbstd_group_size=4, g/d_lr=0.0025/0.002, r1_lambda=0.5, g_ema_kimg=10, g_ema_rampup="N/A", mapping_network=2
+- '256': total_steps= 781250, batch_size=32, d_epilogue_mbstd_group_size=4, g/d_lr=0.0025/0.002, r1_lambda=2, g_ema_kimg=10, g_ema_rampup="N/A", mapping_network=2
+- '512': total_steps= 781250, batch_size=32, d_epilogue_mbstd_group_size=4, g/d_lr=0.0025/0.002, r1_lambda=8, g_ema_kimg=10, g_ema_rampup="N/A", mapping_network=2
+- '1024': total_steps= 781250, batch_size=32, d_epilogue_mbstd_group_size=4, g/d_lr=0.0025/0.002, r1_lambda=32, g_ema_kimg=10, g_ema_rampup="N/A", mapping_network=2
 
