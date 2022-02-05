@@ -775,6 +775,10 @@ class Configurations(object):
                 "Please specify g_ema parameters to STYLEGAN.g_ema_kimg and STYLEGAN.g_ema_rampup \
                 instead of MODEL.g_ema_decay and MODEL.g_ema_start."
 
+        if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
+            assert self.STYLEGAN.d_epilogue_mbstd_group_size < (self.OPTIMIZATION.batch_size / self.OPTIMIZATION.world_size),\
+                "Number of imgs that goes to each GPU must be bigger than d_epilogue_mbstd_group_size"
+
         if self.MODEL.backbone not in ["stylegan2", "stylegan3"] and self.MODEL.apply_g_ema:
             assert isinstance(self.MODEL.g_ema_decay, float) and isinstance(self.MODEL.g_ema_start, int), \
                 "Please specify g_ema parameters to MODEL.g_ema_decay and MODEL.g_ema_start."
