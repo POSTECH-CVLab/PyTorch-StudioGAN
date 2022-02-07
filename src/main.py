@@ -95,6 +95,8 @@ def load_configs_initialize_training():
     parser.add_argument("-sefa_axis", "--num_semantic_axis", type=int, default=-1, help="number of semantic axis for sefa")
     parser.add_argument("-sefa_max", "--maximum_variations", type=float, default=-1,
                         help="iterpolate between z and z + maximum_variations*eigen-vector")
+    parser.add_argument("-empty_cache", "--empty_cache", action="store_true", help="empty cuda caches after training step of generator and discriminator, \
+                        slightly reduces memory usage but slows training speed. (not recommended for normal use)")
 
     parser.add_argument("--print_every", type=int, default=100, help="logging interval")
     parser.add_argument("-every", "--save_every", type=int, default=2000, help="save interval")

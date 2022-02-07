@@ -501,6 +501,8 @@ class WORKER(object):
             if self.LOSS.apply_wc:
                 for p in self.Dis.parameters():
                     p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
+        if self.RUN.empty_cache:
+            torch.cuda.empty_cache()
         return real_cond_loss, dis_acml_loss
 
     # -----------------------------------------------------------------------------
@@ -679,6 +681,8 @@ class WORKER(object):
             # if ema is True: update parameters of the Gen_ema in adaptive way
             if self.MODEL.apply_g_ema:
                 self.ema.update(current_step)
+        if self.RUN.empty_cache:
+            torch.cuda.empty_cache()
         return gen_acml_loss
 
     # -----------------------------------------------------------------------------

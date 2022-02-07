@@ -16,6 +16,7 @@
 - For most cases keep ada_initial_augment_p as 0, ada_kimg as 500, ada_interval as 4, and ada_target as 0.6 but you may need to adjust ada_target based on model backbone and other settings. 
 - Reference StyleGAN_v2, StyleGAN_v3 settings is given below. Choose appropriate total_step, batch_size, d_epilogue_mbstd_group_size, g/d_lr, r1_lambda, g_ema_kimg, g_ema_rampup, mapping_network from below.
 - Just in case... the batch_size below corresponds to (OPTIMIZATION.batch_size * OPTIMIZATION.acml_steps) in StudioGAN
+- StyleGAN_v3 reproducibility checked using configs on AFHQ_V2. (AFHQ_V2-StyleGAN2 follows setup from StyleGAN3 paper whereas other StyleGAN2 configs come from StyleGAN2-ada)
 
 ## StyleGAN_v2 official implementation settings.
 Slightly more detailed configurations can be found at https://github.com/NVlabs/stylegan2-ada-pytorch.
