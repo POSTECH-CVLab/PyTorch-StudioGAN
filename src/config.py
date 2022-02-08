@@ -55,7 +55,7 @@ class Configurations(object):
         self.MODEL = misc.make_empty_object()
 
         # type of backbone architectures of the generator and discriminator \in
-        # ["deep_conv", "resnet", "big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan", "stylegan2"]
+        # ["deep_conv", "resnet", "big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan", "stylegan2", "stylegan3"]
         self.MODEL.backbone = "resnet"
         # conditioning method of the generator \in ["W/O", "cBN", "cAdaIN"]
         self.MODEL.g_cond_mtd = "W/O"
@@ -300,42 +300,35 @@ class Configurations(object):
         self.AUG.diffaug_type = "W/O"
         self.AUG.ada_aug_type = "W/O"
 
-        # -----------------------------------------------------------------------------
-        # StyleGAN_v2 settings regarding regularization and style mixing
-        # selected configurations by official implementation is given below.
-        # 'paper256':  dict(gpus=8,  total_steps=390,625,   batch_size=64, d_epilogue_mbstd_group_size=8,  g/d_lr=0.0025,
-        #                   r1_lambda=1,    g_ema_kimg=20,  g_ema_rampup=None, mapping_network=8),
-        # 'paper512':  dict(gpus=8,  total_steps=390,625,   batch_size=64, d_epilogue_mbstd_group_size=8,  g/d_lr=0.0025,
-        #                   r1_lambda=0.5,  g_ema_kimg=20,  g_ema_rampup=None, mapping_network=8),
-        # 'paper1024': dict(gpus=8,  total_steps=781,250,   batch_size=32, d_epilogue_mbstd_group_size=4,  g/d_lr=0.002,
-        #                   r1_lambda=2,    g_ema_kimg=10,  g_ema_rampup=None, mapping_network=8),
-        # 'cifar':     dict(gpus=2,  total_steps=1,562,500, batch_size=64, d_epilogue_mbstd_group_size=32, g/d_lr=0.0025,
-        #                   r1_lambda=0.01, g_ema_kimg=500, g_ema_rampup=0.05, mapping_network=2),
-        # -----------------------------------------------------------------------------
-        self.STYLEGAN2 = misc.make_empty_object()
+        self.STYLEGAN = misc.make_empty_object()
 
-        # conditioning types that utilize embedding proxies for conditional stylegan2
-        self.STYLEGAN2.cond_type = ["PD", "SPD", "2C", "D2DCE"]
+        # type of generator used in stylegan3, stylegan3-t : translatino equiv., stylegan3-r : translation & rotation equiv.
+        # \ in ["stylegan3-t", "stylegan3-r"]
+        self.STYLEGAN.stylegan3_cfg = "N/A"
+        # conditioning types that utilize embedding proxies for conditional stylegan2, stylegan3
+        self.STYLEGAN.cond_type = ["PD", "SPD", "2C", "D2DCE"]
         # lazy regularization interval for generator, default 4
-        self.STYLEGAN2.g_reg_interval = "N/A"
+        self.STYLEGAN.g_reg_interval = "N/A"
         # lazy regularization interval for discriminator, default 16
-        self.STYLEGAN2.d_reg_interval = "N/A"
+        self.STYLEGAN.d_reg_interval = "N/A"
         # number of layers for the mapping network, default 8 except for cifar (2)
-        self.STYLEGAN2.mapping_network = "N/A"
+        self.STYLEGAN.mapping_network = "N/A"
         # style_mixing_p in stylegan generator, default 0.9 except for cifar (0)
-        self.STYLEGAN2.style_mixing_p = "N/A"
+        self.STYLEGAN.style_mixing_p = "N/A"
         # half-life of the exponential moving average (EMA) of generator weights default 500
-        self.STYLEGAN2.g_ema_kimg = "N/A"
+        self.STYLEGAN.g_ema_kimg = "N/A"
         # EMA ramp-up coefficient, defalt "N/A" except for cifar 0.05
-        self.STYLEGAN2.g_ema_rampup = "N/A"
+        self.STYLEGAN.g_ema_rampup = "N/A"
         # whether to apply path length regularization, default is True except cifar
-        self.STYLEGAN2.apply_pl_reg = False
+        self.STYLEGAN.apply_pl_reg = False
         # pl regularization strength, default 2
-        self.STYLEGAN2.pl_weight = "N/A"
-        # discriminator architecture for STYLEGAN2. 'resnet' except for cifar10 ('orig')
-        self.STYLEGAN2.d_architecture = "N/A"
+        self.STYLEGAN.pl_weight = "N/A"
+        # discriminator architecture for STYLEGAN. 'resnet' except for cifar10 ('orig')
+        self.STYLEGAN.d_architecture = "N/A"
         # group size for the minibatch standard deviation layer, None = entire minibatch.
-        self.STYLEGAN2.d_epilogue_mbstd_group_size = "N/A"
+        self.STYLEGAN.d_epilogue_mbstd_group_size = "N/A"
+        # Whether to blur the images seen by the discriminator. Only used for stylegan3-r with value 10
+        self.STYLEGAN.blur_init_sigma = "N/A"
 
         # -----------------------------------------------------------------------------
         # run settings
@@ -397,7 +390,7 @@ class Configurations(object):
             "PRE": self.PRE,
             "AUG": self.AUG,
             "RUN": self.RUN,
-            "STYLEGAN2": self.STYLEGAN2
+            "STYLEGAN": self.STYLEGAN
         }
 
     def update_cfgs(self, cfgs, super="RUN"):
@@ -546,9 +539,9 @@ class Configurations(object):
                                                                 momentum=self.OPTIMIZATION.momentum,
                                                                 alpha=self.OPTIMIZATION.alpha)
         elif self.OPTIMIZATION.type_ == "Adam":
-            if self.MODEL.backbone == "stylegan2":
-                g_ratio = (self.STYLEGAN2.g_reg_interval / (self.STYLEGAN2.g_reg_interval + 1))
-                d_ratio = (self.STYLEGAN2.d_reg_interval / (self.STYLEGAN2.d_reg_interval + 1))
+            if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
+                g_ratio = (self.STYLEGAN.g_reg_interval / (self.STYLEGAN.g_reg_interval + 1)) if self.STYLEGAN.g_reg_interval != 1 else 1
+                d_ratio = (self.STYLEGAN.d_reg_interval / (self.STYLEGAN.d_reg_interval + 1)) if self.STYLEGAN.d_reg_interval != 1 else 1
                 self.OPTIMIZATION.g_lr *= g_ratio
                 self.OPTIMIZATION.d_lr *= d_ratio
                 betas_g = [self.OPTIMIZATION.beta1**g_ratio, self.OPTIMIZATION.beta2**g_ratio]
@@ -744,42 +737,52 @@ class Configurations(object):
         if self.OPTIMIZATION.world_size == 1:
             assert not self.RUN.distributed_data_parallel, "Cannot perform distributed training with a single gpu."
 
+        if self.MODEL.backbone == "stylegan3":
+            assert self.STYLEGAN.stylegan3_cfg in ["stylegan3-t", "stylegan3-r"], "You must choose which type of stylegan3 generator (-r or -t)"
+
         if self.MODEL.g_cond_mtd == "cAdaIN":
-            assert self.MODEL.backbone == "stylegan2", "cAdaIN is only applicable to stylegan2."
+            assert self.MODEL.backbone in ["stylegan2", "stylegan3"], "cAdaIN is only applicable to stylegan2, stylegan3."
 
         if self.MODEL.d_cond_mtd == "SPD":
-            assert self.MODEL.backbone == "stylegan2", \
-                "SytleGAN Projection Discriminator (SPD) is only applicable to stylegan2."
+            assert self.MODEL.backbone in ["stylegan2", "stylegan3"], \
+                "SytleGAN Projection Discriminator (SPD) is only applicable to stylegan2, stylegan3."
 
-        if self.MODEL.backbone == "stylegan2":
+        if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert self.MODEL.g_act_fn == "Auto" and self.MODEL.d_act_fn == "Auto", \
-                "g_act_fn and d_act_fn should be 'Auto' to build StyleGAN2 generator and discriminator."
+                "g_act_fn and d_act_fn should be 'Auto' to build StyleGAN2, StyleGAN3 generator and discriminator."
 
-        if self.MODEL.backbone == "stylegan2":
+        if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert not self.MODEL.apply_g_sn and not self.MODEL.apply_d_sn, \
-                "StudioGAN does not support spectral normalization on stylegan2."
+                "StudioGAN does not support spectral normalization on stylegan2, stylegan3."
 
-        if self.MODEL.backbone == "stylegan2":
+        if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert self.MODEL.g_cond_mtd in ["W/O", "cAdaIN"], \
-                "stylegan2 only supports 'W/O' or 'cAdaIN' as g_cond_mtd."
+                "stylegan2, stylegan3 only supports 'W/O' or 'cAdaIN' as g_cond_mtd."
 
-        if self.LOSS.apply_r1_reg and self.MODEL.backbone == "stylegan2":
+        if self.LOSS.apply_r1_reg and self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert self.LOSS.r1_place in ["inside_loop", "outside_loop"], \
                 "LOSS.r1_place should be one of ['inside_loop', 'outside_loop']"
 
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
-            assert self.MODEL.backbone == "stylegan2", \
-                "StudioGAN does not support the act_fn auto selection options except for stylegan2."
+            assert self.MODEL.backbone in ["stylegan2", "stylegan3"], \
+                "StudioGAN does not support the act_fn auto selection options except for stylegan2, stylegan3."
+        
+        if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r":
+            assert self.STYLEGAN.blur_init_sigma != "N/A", "With stylegan3-r, you need to specify blur_init_sigma."
 
-        if self.MODEL.backbone == "stylegan2" and self.MODEL.apply_g_ema:
+        if self.MODEL.backbone in ["stylegan2", "stylegan3"] and self.MODEL.apply_g_ema:
             assert self.MODEL.g_ema_decay == "N/A" and self.MODEL.g_ema_start == "N/A",\
-                "Please specify g_ema parameters to STYLEGAN2.g_ema_kimg and STYLEGAN2.g_ema_rampup \
+                "Please specify g_ema parameters to STYLEGAN.g_ema_kimg and STYLEGAN.g_ema_rampup \
                 instead of MODEL.g_ema_decay and MODEL.g_ema_start."
 
-        if self.MODEL.backbone != "stylegan2" and self.MODEL.apply_g_ema:
+        if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
+            assert self.STYLEGAN.d_epilogue_mbstd_group_size <= (self.OPTIMIZATION.batch_size / self.OPTIMIZATION.world_size),\
+                "Number of imgs that goes to each GPU must be bigger than d_epilogue_mbstd_group_size"
+
+        if self.MODEL.backbone not in ["stylegan2", "stylegan3"] and self.MODEL.apply_g_ema:
             assert isinstance(self.MODEL.g_ema_decay, float) and isinstance(self.MODEL.g_ema_start, int), \
                 "Please specify g_ema parameters to MODEL.g_ema_decay and MODEL.g_ema_start."
-            assert self.STYLEGAN2.g_ema_kimg == "N/A" and self.STYLEGAN2.g_ema_rampup == "N/A", \
+            assert self.STYLEGAN.g_ema_kimg == "N/A" and self.STYLEGAN.g_ema_rampup == "N/A", \
                 "g_ema_kimg, g_ema_rampup hyperparameters are only valid for stylegan2 backbone."
 
         if isinstance(self.MODEL.g_shared_dim, int):
@@ -790,7 +793,7 @@ class Configurations(object):
             assert self.MODEL.backbone in ["resnet", "big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan"], \
             "g_conv_dim and d_conv_dim are hyperparameters for controlling dimensions of resnet, big_resnet, and big_resnet_deeps."
 
-        if self.MODEL.backbone == "stylegan2":
+        if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert self.LOSS.apply_fm + \
                 self.LOSS.apply_gp + \
                 self.LOSS.apply_dra + \
@@ -804,9 +807,9 @@ class Configurations(object):
                 self.RUN.langevin_sampling + \
                 self.RUN.interpolation + \
                 self.RUN.semantic_factorization == -1, \
-                "StudioGAN does not support some options for stylegan2. Please refer to config.py for more details."
+                "StudioGAN does not support some options for stylegan2, stylegan3. Please refer to config.py for more details."
 
-        if self.MODEL.backbone == "stylegan2":
+        if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert not self.MODEL.apply_attn, "cannot apply attention layers to the stylegan2 generator."
 
         if self.RUN.GAN_train or self.RUN.GAN_test:
@@ -837,8 +840,8 @@ class Configurations(object):
         if self.MODEL.info_type in ["continuous", "both"]:
             assert self.MODEL.info_num_conti_c > 0, "MODEL.info_num_conti_c should be over 0."
 
-        if self.MODEL.info_type in ["discrete", "continuous", "both"] and self.MODEL.backbone == "stylegan2":
-            assert self.MODEL.g_info_injection == "concat", "StyleGAN2 only allows concat as g_info_injection method"
+        if self.MODEL.info_type in ["discrete", "continuous", "both"] and self.MODEL.backbone in ["stylegan2", "stylegan3"]:
+            assert self.MODEL.g_info_injection == "concat", "StyleGAN2, StyleGAN3 only allows concat as g_info_injection method"
 
         if self.MODEL.info_type in ["discrete", "continuous", "both"]:
             assert self.MODEL.g_info_injection in ["concat", "cBN"], "MODEL.g_info_injection should be 'concat' or 'cBN'."

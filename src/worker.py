@@ -16,6 +16,8 @@ from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
 from scipy import ndimage
+from utils.style_ops import conv2d_gradfix
+from utils.style_ops import upfirdn2d
 from sklearn.manifold import TSNE
 from datetime import datetime
 import torch
@@ -87,16 +89,19 @@ class WORKER(object):
         self.DATA = cfgs.DATA
         self.MODEL = cfgs.MODEL
         self.LOSS = cfgs.LOSS
-        self.STYLEGAN2 = cfgs.STYLEGAN2
+        self.STYLEGAN = cfgs.STYLEGAN
         self.OPTIMIZATION = cfgs.OPTIMIZATION
         self.PRE = cfgs.PRE
         self.AUG = cfgs.AUG
         self.RUN = cfgs.RUN
         self.MISC = cfgs.MISC
-        self.is_stylegan = cfgs.MODEL.backbone == "stylegan2"
+        self.is_stylegan = cfgs.MODEL.backbone in ["stylegan2", "stylegan3"]
+        self.effective_batch_size = self.OPTIMIZATION.batch_size * self.OPTIMIZATION.acml_steps
+        self.blur_init_sigma = self.STYLEGAN.blur_init_sigma
+        self.blur_fade_kimg = self.effective_batch_size * 200 / 32
         self.DDP = self.RUN.distributed_data_parallel
 
-        self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN2.pl_weight)
+        self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
@@ -260,13 +265,23 @@ class WORKER(object):
                         generator_mapping=self.Gen_mapping,
                         generator_synthesis=self.Gen_synthesis,
                         is_stylegan=self.is_stylegan,
-                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                        style_mixing_p=self.cfgs.STYLEGAN.style_mixing_p,
+                        stylegan_update_emas=True,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
 
                     # if LOSS.apply_r1_reg is True,
                     # let real images require gradient calculation to compute \derv_{x}Dis(x)
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
                         real_images.requires_grad_(True)
+
+                    # blur images for stylegan3-r
+                    if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
+                        blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
+                        blur_size = np.floor(blur_sigma * 3)
+                        if blur_size > 0:
+                            f = torch.arange(-blur_size, blur_size + 1, device=real_images.device).div(blur_sigma).square().neg().exp2()
+                            real_images = upfirdn2d.filter2d(real_images, f / f.sum())
+                            fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
 
                     if self.AUG.apply_apa:
                         real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
@@ -408,12 +423,12 @@ class WORKER(object):
                         self.r1_penalty = losses.cal_r1_reg(adv_output=real_dict["adv_output"], images=real_images, device=self.local_rank)
                         dis_acml_loss += self.LOSS.r1_lambda*self.r1_penalty
                     elif self.LOSS.apply_r1_reg and self.LOSS.r1_place == "inside_loop" and \
-                        (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
+                        (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN.d_reg_interval == 0:
                         real_images.requires_grad_(True)
                         real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
                         self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
                                                                      images=real_images)
-                        dis_acml_loss += self.STYLEGAN2.d_reg_interval*self.LOSS.r1_lambda*self.r1_penalty
+                        dis_acml_loss += self.STYLEGAN.d_reg_interval*self.LOSS.r1_lambda*self.r1_penalty
                         if self.AUG.apply_ada or self.AUG.apply_apa:
                             self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
                                                                 self.OPTIMIZATION.batch_size),
@@ -440,18 +455,25 @@ class WORKER(object):
                 self.OPTIMIZATION.d_optimizer.step()
 
             if self.LOSS.apply_r1_reg and self.LOSS.r1_place == "outside_loop" and \
-             (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN2.d_reg_interval == 0:
+             (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN.d_reg_interval == 0:
                 self.OPTIMIZATION.d_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     real_images = real_image_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
-                    real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
+                    real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)       
+                    # blur images for stylegan3-r
+                    if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
+                        blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
+                        blur_size = np.floor(blur_sigma * 3)
+                        if blur_size > 0:
+                            f = torch.arange(-blur_size, blur_size + 1, device=real_images.device).div(blur_sigma).square().neg().exp2()
+                            real_images = upfirdn2d.filter2d(real_images, f / f.sum())
                     if self.AUG.apply_apa:
                         real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
                     real_images.requires_grad_(True)
                     real_dict = self.Dis(self.AUG.series_augment(real_images), real_labels)
-                    self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"],
-                                                                 images=real_images)
-                    self.r1_penalty *= self.STYLEGAN2.d_reg_interval*self.LOSS.r1_lambda/self.OPTIMIZATION.acml_steps
+                    self.r1_penalty = losses.stylegan_cal_r1_reg(adv_output=real_dict["adv_output"], images=real_images) + \
+                        misc.enable_allreduce(real_dict)
+                    self.r1_penalty *= self.STYLEGAN.d_reg_interval*self.LOSS.r1_lambda/self.OPTIMIZATION.acml_steps
                     self.r1_penalty.backward()
 
                     if self.AUG.apply_ada or self.AUG.apply_apa:
@@ -479,6 +501,8 @@ class WORKER(object):
             if self.LOSS.apply_wc:
                 for p in self.Dis.parameters():
                     p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
+        if self.RUN.empty_cache:
+            torch.cuda.empty_cache()
         return real_cond_loss, dis_acml_loss
 
     # -----------------------------------------------------------------------------
@@ -519,8 +543,17 @@ class WORKER(object):
                         generator_mapping=self.Gen_mapping,
                         generator_synthesis=self.Gen_synthesis,
                         is_stylegan=self.is_stylegan,
-                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                        style_mixing_p=self.cfgs.STYLEGAN.style_mixing_p,
+                        stylegan_update_emas=False,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
+
+                    # blur images for stylegan3-r
+                    if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
+                        blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
+                        blur_size = np.floor(blur_sigma * 3)
+                        if blur_size > 0:
+                            f = torch.arange(-blur_size, blur_size + 1, device=fake_images.device).div(blur_sigma).square().neg().exp2()
+                            fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
 
                     # apply differentiable augmentations if "apply_diffaug" is True
                     fake_images_ = self.AUG.series_augment(fake_images)
@@ -609,7 +642,7 @@ class WORKER(object):
                 self.OPTIMIZATION.g_optimizer.step()
 
             # apply path length regularization
-            if self.STYLEGAN2.apply_pl_reg and (self.OPTIMIZATION.g_updates_per_step*current_step + step_index) % self.STYLEGAN2.g_reg_interval == 0:
+            if self.STYLEGAN.apply_pl_reg and (self.OPTIMIZATION.g_updates_per_step*current_step + step_index) % self.STYLEGAN.g_reg_interval == 0:
                 self.OPTIMIZATION.g_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     fake_images, fake_labels, fake_images_eps, trsp_cost, ws, _, _ = sample.generate_images(
@@ -630,17 +663,26 @@ class WORKER(object):
                         generator_mapping=self.Gen_mapping,
                         generator_synthesis=self.Gen_synthesis,
                         is_stylegan=self.is_stylegan,
-                        style_mixing_p=self.cfgs.STYLEGAN2.style_mixing_p,
+                        style_mixing_p=self.cfgs.STYLEGAN.style_mixing_p,
+                        stylegan_update_emas=False,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
-
+                    # blur images for stylegan3-r
+                    if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
+                        blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
+                        blur_size = np.floor(blur_sigma * 3)
+                        if blur_size > 0:
+                            f = torch.arange(-blur_size, blur_size + 1, device=fake_images.device).div(blur_sigma).square().neg().exp2()
+                            fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
                     self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws) + fake_images[:,0,0,0].mean()*0
-                    self.pl_reg_loss *= self.STYLEGAN2.pl_weight*self.STYLEGAN2.g_reg_interval/self.OPTIMIZATION.acml_steps
+                    self.pl_reg_loss *= self.STYLEGAN.pl_weight*self.STYLEGAN.g_reg_interval/self.OPTIMIZATION.acml_steps
                     self.pl_reg_loss.backward()
                 self.OPTIMIZATION.g_optimizer.step()
 
             # if ema is True: update parameters of the Gen_ema in adaptive way
             if self.MODEL.apply_g_ema:
                 self.ema.update(current_step)
+        if self.RUN.empty_cache:
+            torch.cuda.empty_cache()
         return gen_acml_loss
 
     # -----------------------------------------------------------------------------
@@ -704,7 +746,7 @@ class WORKER(object):
         if self.LOSS.apply_r1_reg:
             wandb.log({"r1_reg_loss": self.r1_penalty.item()}, step=self.wandb_step)
 
-        if self.STYLEGAN2.apply_pl_reg:
+        if self.STYLEGAN.apply_pl_reg:
             wandb.log({"pl_reg_loss": self.pl_reg_loss.item()}, step=self.wandb_step)
 
         # calculate the spectral norms of all weights in the generator for monitoring purpose
@@ -749,6 +791,7 @@ class WORKER(object):
                                                                        generator_mapping=generator_mapping,
                                                                        generator_synthesis=generator_synthesis,
                                                                        style_mixing_p=0.0,
+                                                                       stylegan_update_emas=False,
                                                                        cal_trsp_cost=False)
 
         misc.plot_img_canvas(images=fake_images.detach().cpu(),
@@ -1051,6 +1094,7 @@ class WORKER(object):
                                                                         generator_mapping=generator_mapping,
                                                                         generator_synthesis=generator_synthesis,
                                                                         style_mixing_p=0.0,
+                                                                        stylegan_update_emas=False,
                                                                         cal_trsp_cost=False)
                 fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor = ops.quantize_images(fake_anchor)
@@ -1192,6 +1236,7 @@ class WORKER(object):
                                                                           generator_mapping=generator_mapping,
                                                                           generator_synthesis=generator_synthesis,
                                                                           style_mixing_p=0.0,
+                                                                          stylegan_update_emas=False,
                                                                           cal_trsp_cost=False)
                 fake_images = fake_images.detach().cpu().numpy()
 
@@ -1289,6 +1334,7 @@ class WORKER(object):
                                                                            generator_mapping=generator_mapping,
                                                                            generator_synthesis=generator_synthesis,
                                                                            style_mixing_p=0.0,
+                                                                           stylegan_update_emas=False,
                                                                            cal_trsp_cost=False)
 
                 fake_dict = self.Dis(fake_images, fake_labels)
@@ -1537,6 +1583,7 @@ class WORKER(object):
                                                                      generator_mapping=generator_mapping,
                                                                      generator_synthesis=generator_synthesis,
                                                                      style_mixing_p=0.0,
+                                                                     stylegan_update_emas=False,
                                                                      cal_trsp_cost=False)
                 else:
                     images, labels = images.to(self.local_rank), labels.to(self.local_rank)
@@ -1600,6 +1647,7 @@ class WORKER(object):
                                                                  generator_mapping=generator_mapping,
                                                                  generator_synthesis=generator_synthesis,
                                                                  style_mixing_p=0.0,
+                                                                 stylegan_update_emas=False,
                                                                  cal_trsp_cost=False)
             else:
                 images, labels = images.to(self.local_rank), labels.to(self.local_rank)

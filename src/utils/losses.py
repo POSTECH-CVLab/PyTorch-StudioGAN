@@ -295,8 +295,8 @@ class MiData2DataCrossEntropyLoss(torch.nn.Module):
 
 class PathLengthRegularizer:
     def __init__(self, device, pl_decay=0.01, pl_weight=2):
-        self.pl_decay = 0.01
-        self.pl_weight = 2
+        self.pl_decay = pl_decay
+        self.pl_weight = pl_weight
         self.pl_mean = torch.zeros([], device=device)
 
     def cal_pl_reg(self, fake_images, ws):
@@ -439,7 +439,7 @@ def cal_grad_penalty(real_images, real_labels, fake_images, discriminator, devic
     grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
     grads = grads.view(grads.size(0), -1)
 
-    grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
+    grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean() + interpolates[:,0,0,0].mean()*0
     return grad_penalty
 
 
@@ -457,7 +457,7 @@ def cal_dra_penalty(real_images, real_labels, discriminator, device):
     grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
     grads = grads.view(grads.size(0), -1)
 
-    grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean()
+    grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean() + interpolates[:,0,0,0].mean()*0
     return grad_penalty
 
 
@@ -475,7 +475,7 @@ def cal_maxgrad_penalty(real_images, real_labels, fake_images, discriminator, de
     grads = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device)
     grads = grads.view(grads.size(0), -1)
 
-    maxgrad_penalty = torch.max(grads.norm(2, dim=1)**2)
+    maxgrad_penalty = torch.max(grads.norm(2, dim=1)**2) + interpolates[:,0,0,0].mean()*0
     return maxgrad_penalty
 
 
@@ -484,7 +484,7 @@ def cal_r1_reg(adv_output, images, device):
     grad_dout = cal_deriv(inputs=images, outputs=adv_output.sum(), device=device)
     grad_dout2 = grad_dout.pow(2)
     assert (grad_dout2.size() == images.size())
-    r1_reg = 0.5 * grad_dout2.contiguous().view(batch_size, -1).sum(1).mean(0)
+    r1_reg = 0.5 * grad_dout2.contiguous().view(batch_size, -1).sum(1).mean(0) + images[:,0,0,0].mean()*0
     return r1_reg
 
 

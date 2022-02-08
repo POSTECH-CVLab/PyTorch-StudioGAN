@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # NVIDIA CORPORATION and its licensors retain all intellectual property
 # and proprietary rights in and to this software, related documentation
@@ -29,27 +29,14 @@ def _get_weight_shape(w):
 def _conv2d_wrapper(x, w, stride=1, padding=0, groups=1, transpose=False, flip_weight=True):
     """Wrapper for the underlying `conv2d()` and `conv_transpose2d()` implementations.
     """
-    out_channels, in_channels_per_group, kh, kw = _get_weight_shape(w)
+    _out_channels, _in_channels_per_group, kh, kw = _get_weight_shape(w)
 
     # Flip weight if requested.
-    if not flip_weight: # conv2d() actually performs correlation (flip_weight=True) not convolution (flip_weight=False).
+    # Note: conv2d() actually performs correlation (flip_weight=True) not convolution (flip_weight=False).
+    if not flip_weight and (kw > 1 or kh > 1):
         w = w.flip([2, 3])
 
-    # Workaround performance pitfall in cuDNN 8.0.5, triggered when using
-    # 1x1 kernel + memory_format=channels_last + less than 64 channels.
-    if kw == 1 and kh == 1 and stride == 1 and padding in [0, [0, 0], (0, 0)] and not transpose:
-        if x.stride()[1] == 1 and min(out_channels, in_channels_per_group) < 64:
-            if out_channels <= 4 and groups == 1:
-                in_shape = x.shape
-                x = w.squeeze(3).squeeze(2) @ x.reshape([in_shape[0], in_channels_per_group, -1])
-                x = x.reshape([in_shape[0], out_channels, in_shape[2], in_shape[3]])
-            else:
-                x = x.to(memory_format=torch.contiguous_format)
-                w = w.to(memory_format=torch.contiguous_format)
-                x = conv2d_gradfix.conv2d(x, w, groups=groups)
-            return x.to(memory_format=torch.channels_last)
-
-    # Otherwise => execute using conv2d_gradfix.
+    # Execute using conv2d_gradfix.
     op = conv2d_gradfix.conv_transpose2d if transpose else conv2d_gradfix.conv2d
     return op(x, w, stride=stride, padding=padding, groups=groups)
 

@@ -1,13 +1,11 @@
 DATA:
-  name: "CIFAR100"
+  name: "CIFAR10"
   img_size: 32
-  num_classes: 100
+  num_classes: 10
 MODEL:
-  backbone: "stylegan2"
+  backbone: "stylegan3"
   g_cond_mtd: "cAdaIN"
-  d_cond_mtd: "D2DCE"
-  normalize_d_embed: True
-  d_embed_dim: 512
+  d_cond_mtd: "SPD"
   g_act_fn: "Auto"
   d_act_fn: "Auto"
   z_prior: "gaussian"
@@ -18,27 +16,32 @@ MODEL:
   apply_g_ema: True
 LOSS:
   adv_loss: "logistic"
-  cond_lambda: 0.25
-  m_p: 0.98
-  temperature: 0.25
   apply_r1_reg: True
   r1_lambda: 0.01
   r1_place: "outside_loop"
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
+  batch_size: 64
+  acml_steps: 1
   g_lr: 0.0025
   d_lr: 0.0025
   beta1: 0
   beta2: 0.99
   d_first: False
   g_updates_per_step: 1
-  d_updates_per_step: 2
+  d_updates_per_step: 1
   total_steps: 1000000
 AUG:
-  apply_diffaug: True
-  diffaug_type: "diffaug"
+  apply_ada: True
+  ada_aug_type: "bgc"
+  ada_initial_augment_p: 0
+  ada_target: 0.6
+  ada_kimg: 500
+  ada_interval: 4
 STYLEGAN:
-  g_reg_interval: 4
+  stylegan3_cfg: "stylegan3-r"
+  blur_init_sigma: 10
+  g_reg_interval: 1
   d_reg_interval: 16
   mapping_network: 2
   style_mixing_p: 0

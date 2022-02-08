@@ -90,7 +90,7 @@ class GeneratorController(object):
                                           LOSS=self.cfgs.LOSS,
                                           OPTIMIZATION=self.cfgs.OPTIMIZATION,
                                           RUN=self.cfgs.RUN,
-                                          STYLEGAN2=self.cfgs.STYLEGAN2,
+                                          STYLEGAN=self.cfgs.STYLEGAN,
                                           device=self.device,
                                           global_rank=self.global_rank,
                                           logger=self.logger)
@@ -297,7 +297,7 @@ def calculate_all_sn(model, prefix):
     return sigmas
 
 
-def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN, STYLEGAN2,
+def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA, MODEL, LOSS, OPTIMIZATION, RUN, STYLEGAN,
                               device, global_rank, logger):
     generator.train()
     generator.apply(reset_bn_statistics)
@@ -322,10 +322,11 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                    LOSS=LOSS,
                                                                    RUN=RUN,
                                                                    MODEL=MODEL,
-                                                                   is_stylegan=MODEL.backbone=="stylegan2",
+                                                                   is_stylegan=MODEL.backbone in ["stylegan2", "stylegan3"],
                                                                    generator_mapping=None,
                                                                    generator_synthesis=None,
                                                                    style_mixing_p=0.0,
+                                                                   stylegan_update_emas=False,
                                                                    device=device,
                                                                    cal_trsp_cost=False)
     generator.eval()
@@ -510,6 +511,7 @@ def save_images_png(data_loader, generator, discriminator, is_generate, num_imag
                                                                  generator_mapping=generator_mapping,
                                                                  generator_synthesis=generator_synthesis,
                                                                  style_mixing_p=0.0,
+                                                                 stylegan_update_emas=False,
                                                                  device=device,
                                                                  cal_trsp_cost=False)
             else:

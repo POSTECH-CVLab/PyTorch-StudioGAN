@@ -1,13 +1,11 @@
 DATA:
-  name: "CIFAR10"
-  img_size: 32
-  num_classes: 10
+  name: "AFHQ_V2_uncond"
+  img_size: 512
+  num_classes: 1
 MODEL:
   backbone: "stylegan2"
-  g_cond_mtd: "cAdaIN"
-  d_cond_mtd: "D2DCE"
-  normalize_d_embed: True
-  d_embed_dim: 512
+  g_cond_mtd: "W/O"
+  d_cond_mtd: "W/O"
   g_act_fn: "Auto"
   d_act_fn: "Auto"
   z_prior: "gaussian"
@@ -18,37 +16,36 @@ MODEL:
   apply_g_ema: True
 LOSS:
   adv_loss: "logistic"
-  cond_lambda: 0.25
-  m_p: 0.98
-  temperature: 0.25
   apply_r1_reg: True
-  r1_lambda: 0.01
+  r1_lambda: 5
   r1_place: "outside_loop"
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
-  g_lr: 0.0025
-  d_lr: 0.0025
+  batch_size: 32
+  acml_steps: 1
+  g_lr: 0.002
+  d_lr: 0.002
   beta1: 0
   beta2: 0.99
   d_first: False
   g_updates_per_step: 1
-  d_updates_per_step: 2
-  total_steps: 1000000
+  d_updates_per_step: 1
+  total_steps: 781250
 AUG:
   apply_ada: True
   ada_aug_type: "bgc"
   ada_initial_augment_p: 0
-  ada_target: 0.8
+  ada_target: 0.6
   ada_kimg: 500
   ada_interval: 4
 STYLEGAN:
   g_reg_interval: 4
   d_reg_interval: 16
-  mapping_network: 2
-  style_mixing_p: 0
-  g_ema_kimg: 500
-  g_ema_rampup: 0.05
-  apply_pl_reg: False
-  pl_weight: 0
-  d_architecture: "orig"
-  d_epilogue_mbstd_group_size: 32
+  mapping_network: 8
+  style_mixing_p: 0.9
+  g_ema_kimg: 10
+  g_ema_rampup: "N/A"
+  apply_pl_reg: True
+  pl_weight: 2
+  d_architecture: "resnet"
+  d_epilogue_mbstd_group_size: 4
