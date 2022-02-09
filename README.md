@@ -127,13 +127,13 @@ pip3 install codecarbon tqdm ninja h5py kornia matplotlib pandas sklearn scipy s
 
 With docker, you can use:
 ```bash
-docker pull mgkang/studio_gan:latest
+docker pull mgkang/studiogan:latest
 ```
 
 This is my command to make a container named "StudioGAN".
 
 ```bash
-docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studio_gan:latest /bin/bash
+docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
 ```
 
 # Dataset
