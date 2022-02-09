@@ -49,7 +49,7 @@ dict_name_to_filter = {
 
 def build_resizer(mode, size):
     if mode == "clean":
-        return make_resizer("PIL", "bicubic", (size, size))
+        return make_resizer("PIL", "bilinear", (size, size))
     elif mode == "legacy":
         return make_resizer("PyTorch", "bilinear", (size, size))
     else:

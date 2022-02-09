@@ -72,9 +72,8 @@ class Dataset_(Dataset):
         if self.hdf5_path is None:
             if crop_long_edge:
                 self.trsf_list += [CenterCropLongEdge()]
-                # self.trsf_list += [RandomCropLongEdge() if self.train else CenterCropLongEdge()]
             if resize_size is not None:
-                self.trsf_list += [transforms.Resize(resize_size, Image.BICUBIC, antialias=True)]
+                self.trsf_list += [transforms.Resize(resize_size, Image.LANCZOS)]
         else:
             self.trsf_list += [transforms.ToPILImage()]
 
