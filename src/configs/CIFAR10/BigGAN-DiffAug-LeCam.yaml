@@ -19,13 +19,13 @@ MODEL:
   g_ema_decay: 0.9999
   g_ema_start: 1000
 LOSS:
-  adv_loss: "logistic"
+  adv_loss: "hinge"
+  apply_lecam: True
+  lecam_lambda: 0.3
+  lecam_ema_start_iter: 1000
+  lecam_ema_decay: 0.99
 OPTIMIZATION:
   total_steps: 200000
 AUG:
-  apply_ada: True
-  ada_aug_type: "bgc"
-  ada_initial_augment_p: 0
-  ada_target: 0.6
-  ada_kimg: 500
-  ada_interval: 4
+  apply_diffaug: True
+  diffaug_type: "diffaug"

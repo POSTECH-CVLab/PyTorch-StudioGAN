@@ -1,0 +1,19 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  g_cond_mtd: "cBN"
+  d_cond_mtd: "PD"
+  apply_d_sn: True
+LOSS:
+  adv_loss: "hinge"
+  apply_lecam: True
+  lecam_lambda: 0.3
+  lecam_ema_start_iter: 1000
+  lecam_ema_decay: 0.99
+AUG:
+  apply_diffaug: True
+  diffaug_type: "diffaug"
+OPTIMIZATION:
+  total_steps: 200000
