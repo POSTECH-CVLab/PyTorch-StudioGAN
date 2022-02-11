@@ -33,7 +33,10 @@ from data_util import Dataset_
 
 
 def make_hdf5(name, img_size, crop_long_edge, resize_size, data_dir, DATA, RUN):
-    file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=name, size=img_size)
+    if resize_size is not None:
+        file_name = "{dataset_name}_{size}_LANCZOS_train.hdf5".format(dataset_name=name, size=img_size)
+    else:
+        file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=name, size=img_size)
     file_path = join(data_dir, file_name)
     hdf5_dir = dirname(file_path)
     if not exists(hdf5_dir):
