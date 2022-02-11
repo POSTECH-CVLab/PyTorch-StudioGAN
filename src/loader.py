@@ -279,7 +279,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if len(cfgs.RUN.eval_metrics) or cfgs.RUN.intra_class_fid:
         eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
-                                      resize_fn=cfgs.RUN.resize_fn,
+                                      post_resizer=cfgs.RUN.post_resizer,
                                       world_size=cfgs.OPTIMIZATION.world_size,
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                       device=local_rank)

@@ -50,9 +50,11 @@ def prepare_evaluation():
     parser = ArgumentParser(add_help=True)
     parser.add_argument("-metrics", "--eval_metrics", nargs='+', default=['fid'],
                         help="evaluation metrics to use during training, a subset list of ['fid', 'is', 'prdc'] or none")
-    parser.add_argument("--resize_fn", type=str, default="legacy", help="which mode to use PIL.bicubic resizing for calculating clean metrics\
-                        in ['legacy', 'clean']")
-    parser.add_argument('--eval_backbone', type=str, default='Inception_V3', help="[SwAV, Inception_V3]")
+    parser.add_argument("--post_resizer", type=str, default="legacy", help="which resizer will you use to evaluate GANs\
+                        in ['legacy', 'clean', 'tailored']")
+    parser.add_argument('--eval_backbone', type=str, default='InceptionV3_tf',\
+                        help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch]")
+    parser.add_argument("--is_ImageNet", action="store_true")
     parser.add_argument("--dset1", type=str, default="none", help="specify the directory of the folder that contains real images.")
     parser.add_argument("--dset2", type=str, default="none", help="specify the directory of the folder that contains generated images.")
     parser.add_argument("--batch_size", default=256, type=int, help="batch_size for evaluation")
@@ -142,7 +144,7 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # load a pre-trained network (InceptionV3 or ResNet50 trained using SwAV).
     # -----------------------------------------------------------------------------
     eval_model = pp.LoadEvalModel(eval_backbone=args.eval_backbone,
-                                  resize_fn=args.resize_fn,
+                                  post_resizer=args.post_resizer,
                                   world_size=world_size,
                                   distributed_data_parallel=args.distributed_data_parallel,
                                   device=local_rank)
@@ -173,21 +175,28 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     if "is" in args.eval_metrics:
         num_splits = 1
-        dset1_kl_score, dset1_kl_std, _, _ = ins.eval_features(probs=dset1_probs,
+        dset1_kl_score, dset1_kl_std, dset1_top1, dset1_top5 = ins.eval_features(probs=dset1_probs,
                                                                labels=dset1_labels,
                                                                data_loader=dset1_dataloader,
                                                                num_features=len(dset1),
                                                                split=num_splits,
-                                                               is_acc=False)
-        dset2_kl_score, dset2_kl_std, _, _ = ins.eval_features(probs=dset2_probs,
+                                                               is_acc=args.is_ImageNet,
+                                                               is_torch_backbone=True if "torch" in args.eval_backbone else False)
+        dset2_kl_score, dset2_kl_std, dset2_top1, dset2_top5 = ins.eval_features(probs=dset2_probs,
                                                                labels=dset2_labels,
                                                                data_loader=dset2_dataloader,
                                                                num_features=len(dset2),
                                                                split=num_splits,
-                                                               is_acc=False)
+                                                               is_acc=args.is_ImageNet,
+                                                               is_torch_backbone=True if "torch" in args.eval_backbone else False)
         if local_rank == 0:
             print("Inception score of dset1 ({num} images): {IS}".format(num=str(len(dset1)), IS=dset1_kl_score))
             print("Inception score of dset2 ({num} images): {IS}".format(num=str(len(dset2)), IS=dset2_kl_score))
+            if args.is_ImageNet:
+                print("{eval_model} Top1 acc (dset1): {Top1}".format(eval_model=args.eval_backbone, Top1=dset1_top1))
+                print("{eval_model} Top5 acc (dset1): {Top5}".format(eval_model=args.eval_backbone, Top5=dset1_top5))
+                print("{eval_model} Top1 acc (dset2): {Top1}".format(eval_model=args.eval_backbone, Top1=dset2_top1))
+                print("{eval_model} Top5 acc (dset2): {Top5}".format(eval_model=args.eval_backbone, Top5=dset2_top5))
 
     if "fid" in args.eval_metrics:
         mu1 = np.mean(dset1_feats.detach().cpu().numpy().astype(np.float64)[:len(dset1)], axis=0)

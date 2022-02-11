@@ -10,6 +10,7 @@ import random
 from torch.utils.data import Dataset
 from torchvision.datasets import CIFAR10, CIFAR100
 from torchvision.datasets import ImageFolder
+from torchvision.transforms import InterpolationMode
 from scipy import io
 from PIL import ImageOps, Image
 import torch
@@ -73,7 +74,7 @@ class Dataset_(Dataset):
             if crop_long_edge:
                 self.trsf_list += [CenterCropLongEdge()]
             if resize_size is not None:
-                self.trsf_list += [transforms.Resize(resize_size, Image.LANCZOS)]
+                self.trsf_list += [transforms.Resize(resize_size, interpolation=InterpolationMode.LANCZOS)]
         else:
             self.trsf_list += [transforms.ToPILImage()]
 

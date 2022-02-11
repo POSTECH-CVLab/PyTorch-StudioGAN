@@ -24,17 +24,30 @@ import utils.ops as ops
 import utils.resize as resize
 
 
+model_versions = {"InceptionV3_torch": "pytorch/vision:v0.10.0", "ResNet_torch": "pytorch/vision:v0.10.0"}
+model_names = {"InceptionV3_torch": "inception_v3", "ResNet50_torch": "resnet50"}
+
 class LoadEvalModel(object):
-    def __init__(self, eval_backbone, resize_fn, world_size, distributed_data_parallel, device):
+    def __init__(self, eval_backbone, post_resizer, world_size, distributed_data_parallel, device):
         super(LoadEvalModel, self).__init__()
         self.eval_backbone = eval_backbone
-        self.resize_fn = resize_fn
+        self.post_resizer = post_resizer
         self.save_output = misc.SaveOutput()
 
-        if self.eval_backbone == "Inception_V3":
+        if self.eval_backbone == "InceptionV3_tf":
             self.res, mean, std = 299, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]
             self.model = InceptionV3(resize_input=False, normalize_input=False).to(device)
-        elif self.eval_backbone == "SwAV":
+        elif self.eval_backbone in ["InceptionV3_torch", "ResNet50_torch"]:
+            self.res, mean, std = 299, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+            self.model = torch.hub.load(model_versions[self.eval_backbone],
+                                        model_names[self.eval_backbone],
+                                        pretrained=True).to(device)
+            hook_handles = []
+            for name, layer in self.model.named_children():
+                if name == "fc":
+                    handle = layer.register_forward_pre_hook(self.save_output)
+                    hook_handles.append(handle)
+        elif self.eval_backbone == "SwAV_torch":
             self.res, mean, std = 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
             self.model = torch.hub.load("facebookresearch/swav", "resnet50").to(device)
             hook_handles = []
@@ -45,8 +58,10 @@ class LoadEvalModel(object):
         else:
             raise NotImplementedError
 
-        self.resizer = resize.build_resizer(mode=resize_fn, size=self.res)
-        self.trsf = transforms.Compose([transforms.ToTensor()])
+        self.resizer = resize.build_resizer(resizer=self.post_resizer,
+                                            backbone=self.eval_backbone,
+                                            size=self.res)
+        self.totensor = transforms.ToTensor()
         self.mean = torch.Tensor(mean).view(1, 3, 1, 1).to("cuda")
         self.std = torch.Tensor(std).view(1, 3, 1, 1).to("cuda")
 
@@ -66,11 +81,11 @@ class LoadEvalModel(object):
             x = ops.quantize_images(x)
         else:
             x = x.detach().cpu().numpy().astype(np.uint8)
-        x = ops.resize_images(x, self.resizer, self.trsf, self.mean, self.std)
+        x = ops.resize_images(x, self.resizer, self.totensor, self.mean, self.std)
 
-        if self.eval_backbone == "Inception_V3":
+        if self.eval_backbone == "InceptionV3_tf":
             repres, logits = self.model(x)
-        elif self.eval_backbone == "SwAV":
+        elif self.eval_backbone in ["InceptionV3_torch", "ResNet50_torch", "SwAV_torch"]:
             logits = self.model(x)
             repres = self.save_output.outputs[0][0]
             self.save_output.clear()
@@ -84,7 +99,7 @@ def prepare_moments(data_loader, eval_model, quantize, cfgs, logger, device):
     if not exists(moment_dir):
         os.makedirs(moment_dir)
     moment_path = join(moment_dir, cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
-                       cfgs.RUN.resize_fn + "_" + cfgs.RUN.eval_backbone + "_moments.npz")
+                       cfgs.RUN.post_resizer + "_" + cfgs.RUN.eval_backbone + "_moments.npz")
     is_file = os.path.isfile(moment_path)
     if is_file:
         mu = np.load(moment_path)["mu"]
@@ -111,16 +126,24 @@ def prepare_moments(data_loader, eval_model, quantize, cfgs, logger, device):
 
 def calculate_ins(data_loader, eval_model, quantize, splits, cfgs, logger, device):
     disable_tqdm = device != 0
+    is_acc = True if "ImageNet" in cfgs.DATA.name and "Tiny" not in cfgs.DATA.name else False,
     if device == 0:
         logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
                     format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
-    is_score, is_std = ins.eval_dataset(data_loader=data_loader,
-                                        eval_model=eval_model,
-                                        quantize=quantize,
-                                        splits=splits,
-                                        batch_size=cfgs.OPTIMIZATION.batch_size,
-                                        world_size=cfgs.OPTIMIZATION.world_size,
-                                        DDP=cfgs.RUN.distributed_data_parallel,
-                                        disable_tqdm=disable_tqdm)
+    is_score, is_std, top1, top5 = ins.eval_dataset(data_loader=data_loader,
+                                                    eval_model=eval_model,
+                                                    quantize=quantize,
+                                                    splits=splits,
+                                                    batch_size=cfgs.OPTIMIZATION.batch_size,
+                                                    world_size=cfgs.OPTIMIZATION.world_size,
+                                                    DDP=cfgs.RUN.distributed_data_parallel,
+                                                    is_acc=is_acc,
+                                                    is_torch_backbone=True if "torch" in cfgs.RUN.eval_backbone else False,
+                                                    disable_tqdm=disable_tqdm)
     if device == 0:
         logger.info("Inception score={is_score}-Inception_std={is_std}".format(is_score=is_score, is_std=is_std))
+        if is_acc:
+            logger.info("{eval_model} Top1 acc: ({num} images): {Top1}".format(
+                eval_model=cfgs.RUN.eval_backbone, num=str(len(data_loader.dataset)), Top1=top1))
+            logger.info("{eval_model} Top5 acc: ({num} images): {Top5}".format(
+                eval_model=cfgs.RUN.eval_backbone, num=str(len(data_loader.dataset)), Top5=top5))

@@ -1,10 +1,11 @@
 DATA:
-  name: "Tiny_ImageNet"
+  name: "Baby_ImageNet"
   img_size: 64
-  num_classes: 200
+  num_classes: 100
 MODEL:
   g_cond_mtd: "cBN"
   d_cond_mtd: "PD"
+  apply_d_sn: True
 LOSS:
   adv_loss: "hinge"
 OPTIMIZATION:

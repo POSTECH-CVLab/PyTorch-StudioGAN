@@ -766,7 +766,7 @@ class Configurations(object):
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
             assert self.MODEL.backbone in ["stylegan2", "stylegan3"], \
                 "StudioGAN does not support the act_fn auto selection options except for stylegan2, stylegan3."
-        
+
         if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r":
             assert self.STYLEGAN.blur_init_sigma != "N/A", "With stylegan3-r, you need to specify blur_init_sigma."
 
@@ -853,7 +853,10 @@ class Configurations(object):
                 self.AUG.ada_interval == self.AUG.apa_interval, \
                 "ADA and APA specifications should be the completely same."
 
-        assert self.RUN.resize_fn in ["legacy", "clean"], "resizing flag should be logacy or clean!"
+        assert self.RUN.eval_backbone in ["InceptionV3_tf", "InceptionV3_torch", "ResNet50_torch", "SwAV_torch"], \
+            "resizing flag should be in [InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch]"
+
+        assert self.RUN.post_resizer in ["legacy", "clean", "tailored"], "resizing flag should be in [logacy, clean, tailored]"
 
         assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
             \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \
