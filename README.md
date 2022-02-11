@@ -417,6 +417,7 @@ IS, FID, Dns, and Cvg values are computed using 50K train and 50K generated Imag
 | **StyleGAN2 + D2D-CE** | StudioGAN | 10.320 | 3.385 | 0.974 | 0.899 | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-D2DCE-train-2021_10_16_13_21_26.log) | [Link](https://drive.google.com/drive/folders/1oOMN_w-Ij3Bx_vQP5z5_PCfbdf1Xd8Dz?usp=sharing) |
 | **StyleGAN2 + ADA** | StudioGAN | 10.477 | 2.316 | 1.049 | 0.929 | [Cfg](./src/configs/CIFAR10/StyleGAN2-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-ADA-train-2021_10_16_13_21_43.log) | [Link](https://drive.google.com/drive/folders/1A9eEM_iYlaMQQ0ga_ulVXVEyMmGLr8pP?usp=sharing) |
 | **StyleGAN2 + ADA + D2D-CE** | StudioGAN | 10.548 | 2.325 | 1.052 | 0.929 | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE-ADA.yaml) | [Log](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/logs/CIFAR10/StyleGAN2-D2DCE-ADA-08-train-2021_10_18_14_12_03.log) | [Link](https://drive.google.com/drive/folders/1TVlpUt9XYwxbAjGV4D7OGkLE3mR8jjkE?usp=sharing) |
+| **StyleGAN2 + DiffAug + D2D-CE** | StudioGAN | 10.510 | 2.236 | - | - | [Cfg](./src/configs/CIFAR10/StyleGAN2-D2DCE-DiffAug-Rev.yaml) | [Log]() | [Link]() |
 
 ### Tiny ImageNet (3x64x64)
 
