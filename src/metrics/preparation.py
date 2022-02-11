@@ -7,6 +7,10 @@
 from os.path import exists, join
 import os
 
+try:
+    from torchvision.models.utils import load_state_dict_from_url
+except ImportError:
+    from torch.utils.model_zoo import load_url as load_state_dict_from_url
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel as DDP
 from PIL import Image
@@ -23,9 +27,10 @@ import utils.misc as misc
 import utils.ops as ops
 import utils.resize as resize
 
+model_versions = {"InceptionV3_torch": "pytorch/vision:v0.10.0", "ResNet_torch": "pytorch/vision:v0.10.0", "SwAV_torch": "facebookresearch/swav"}
+model_names = {"InceptionV3_torch": "inception_v3", "ResNet50_torch": "resnet50", "SwAV_torch": "resnet50"}
+SWAV_CLASSIFIER_URL = "https://dl.fbaipublicfiles.com/deepcluster/swav_800ep_eval_linear.pth.tar"
 
-model_versions = {"InceptionV3_torch": "pytorch/vision:v0.10.0", "ResNet_torch": "pytorch/vision:v0.10.0"}
-model_names = {"InceptionV3_torch": "inception_v3", "ResNet50_torch": "resnet50"}
 
 class LoadEvalModel(object):
     def __init__(self, eval_backbone, post_resizer, world_size, distributed_data_parallel, device):
@@ -37,19 +42,18 @@ class LoadEvalModel(object):
         if self.eval_backbone == "InceptionV3_tf":
             self.res, mean, std = 299, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]
             self.model = InceptionV3(resize_input=False, normalize_input=False).to(device)
-        elif self.eval_backbone in ["InceptionV3_torch", "ResNet50_torch"]:
-            self.res, mean, std = 299, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+        elif self.eval_backbone in ["InceptionV3_torch", "ResNet50_torch", "SwAV_torch"]:
+            self.res = 299 if "InceptionV3" in self.eval_backbone else 224
+            mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
             self.model = torch.hub.load(model_versions[self.eval_backbone],
                                         model_names[self.eval_backbone],
-                                        pretrained=True).to(device)
-            hook_handles = []
-            for name, layer in self.model.named_children():
-                if name == "fc":
-                    handle = layer.register_forward_pre_hook(self.save_output)
-                    hook_handles.append(handle)
-        elif self.eval_backbone == "SwAV_torch":
-            self.res, mean, std = 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
-            self.model = torch.hub.load("facebookresearch/swav", "resnet50").to(device)
+                                        pretrained=True)
+            if self.eval_backbone == "SwAV_torch":
+                linear_state_dict = load_state_dict_from_url(SWAV_CLASSIFIER_URL, progress=True)["state_dict"]
+                linear_state_dict = {k.replace("module.linear.", ""): v for k, v in linear_state_dict.items()}
+                self.model.fc.load_state_dict(linear_state_dict, strict=True)
+            self.model = self.model.to(device)
+
             hook_handles = []
             for name, layer in self.model.named_children():
                 if name == "fc":
