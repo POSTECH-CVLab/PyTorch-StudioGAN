@@ -5,7 +5,6 @@
 # src/metrics/ins.py
 
 import math
-import json
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
@@ -76,11 +75,8 @@ def eval_dataset(data_loader, eval_model, quantize, splits, batch_size, world_si
     dataset_iter = iter(data_loader)
 
     if is_acc:
-        if data_loader.dataset.data_name in ["Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"]:
-            with open("./src/utils/pytorch_imagenet_folder_label_pairs.json", "r") as f:
-                ImageNet_folder_label_dict = json.load(f)
-        else:
-            ImageNet_folder_label_dict = misc.load_ImageNet_label_dict()
+        ImageNet_folder_label_dict = misc.load_ImageNet_label_dict(data_name=data_loader.dataset.data_name,
+                                                                   is_torch_backbone=is_torch_backbone)
         loader_label_folder_dict = {v: k for k, v, in data_loader.dataset.data.class_to_idx.items()}
     else:
         top1, top5 = "N/A", "N/A"

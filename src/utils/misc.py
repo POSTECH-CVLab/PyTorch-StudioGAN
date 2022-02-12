@@ -12,6 +12,7 @@ import math
 import os
 import sys
 import glob
+import json
 import warnings
 
 from torch.nn import DataParallel
@@ -569,16 +570,20 @@ def save_dict_npy(directory, name, dictionary):
     np.save(save_path, dictionary)
 
 
-def load_ImageNet_label_dict():
-    label_table = open("./src/utils/ImageNet_label.txt", 'r')
-    label_dict, label = {}, 0
-    while True:
-        line = label_table.readline()
-        if not line: break
-        folder = line.split(' ')[0]
-        label_dict[folder] = label
-        label += 1
-    return label_dict
+def load_ImageNet_label_dict(data_name, is_torch_backbone):
+    if data_name in ["Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"] and is_torch_backbone:
+        with open("./src/utils/pytorch_imagenet_folder_label_pairs.json", "r") as f:
+            ImageNet_folder_label_dict = json.load(f)
+    else:
+        label_table = open("./src/utils/tf_imagenet_folder_label_pairs.txt", 'r')
+        ImageNet_folder_label_dict, label = {}, 0
+        while True:
+            line = label_table.readline()
+            if not line: break
+            folder = line.split(' ')[0]
+            ImageNet_folder_label_dict[folder] = label
+            label += 1
+    return ImageNet_folder_label_dict
 
 
 def compute_gradient(fx, logits, label, num_classes):
