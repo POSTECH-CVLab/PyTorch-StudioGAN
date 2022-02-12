@@ -5,6 +5,7 @@
 # src/metrics/ins.py
 
 import math
+import json
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
@@ -59,7 +60,6 @@ def eval_features(probs, labels, data_loader, num_features, split, is_acc, is_to
         converted_labels = []
         for loader_label in loader_label_holder:
             converted_labels.append(ImageNet_folder_label_dict[loader_label_folder_dict[loader_label]])
-        pred = torch.argmax(probs, 1).detach().cpu().numpy() - 1
         top1 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 1:1001].detach().cpu().numpy(), k=1)
         top5 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 1:1001].detach().cpu().numpy(), k=5)
     else:
@@ -76,7 +76,11 @@ def eval_dataset(data_loader, eval_model, quantize, splits, batch_size, world_si
     dataset_iter = iter(data_loader)
 
     if is_acc:
-        ImageNet_folder_label_dict = misc.load_ImageNet_label_dict()
+        if data_loader.dataset.data_name in ["Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"]:
+            with open("./src/utils/pytorch_imagenet_folder_label_pairs.json", "r") as f:
+                ImageNet_folder_label_dict = json.load(f)
+        else:
+            ImageNet_folder_label_dict = misc.load_ImageNet_label_dict()
         loader_label_folder_dict = {v: k for k, v, in data_loader.dataset.data.class_to_idx.items()}
     else:
         top1, top5 = "N/A", "N/A"
@@ -100,15 +104,25 @@ def eval_dataset(data_loader, eval_model, quantize, splits, batch_size, world_si
     m_scores, m_std = calculate_kl_div(ps_holder[:len(data_loader.dataset)], splits=splits)
 
     if is_acc and is_torch_backbone:
-        top1 = top_k_accuracy_score(labels_holder, ps_holder.detach().cpu().numpy(), k=1)
-        top5 = top_k_accuracy_score(labels_holder, ps_holder.detach().cpu().numpy(), k=5)
+        if data_loader.dataset.data_name in ["Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"]:
+            converted_labels = []
+            for loader_label in labels_holder:
+                converted_labels.append(ImageNet_folder_label_dict[loader_label_folder_dict[loader_label]])
+            top1 = top_k_accuracy_score(converted_labels, ps_holder.detach().cpu().numpy(), k=1, labels=range(1000))
+            top5 = top_k_accuracy_score(converted_labels, ps_holder.detach().cpu().numpy(), k=5, labels=range(1000))
+        else:
+            top1 = top_k_accuracy_score(labels_holder, ps_holder.detach().cpu().numpy(), k=1)
+            top5 = top_k_accuracy_score(labels_holder, ps_holder.detach().cpu().numpy(), k=5)
     elif is_acc and not is_torch_backbone:
         converted_labels = []
         for loader_label in labels_holder:
             converted_labels.append(ImageNet_folder_label_dict[loader_label_folder_dict[loader_label]])
-        pred = torch.argmax(ps_holder, 1).detach().cpu().numpy() - 1
-        top1 = top_k_accuracy_score([i + 1 for i in converted_labels], ps_holder[:, 1:1001].detach().cpu().numpy(), k=1)
-        top5 = top_k_accuracy_score([i + 1 for i in converted_labels], ps_holder[:, 1:1001].detach().cpu().numpy(), k=5)
+        if data_loader.dataset.data_name in ["Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"]:
+            top1 = top_k_accuracy_score([i + 1 for i in converted_labels], ps_holder[:, 0:1001].detach().cpu().numpy(), k=1, labels=range(1001))
+            top5 = top_k_accuracy_score([i + 1 for i in converted_labels], ps_holder[:, 0:1001].detach().cpu().numpy(), k=5, labels=range(1001))
+        else:
+            top1 = top_k_accuracy_score([i + 1 for i in converted_labels], ps_holder[:, 1:1001].detach().cpu().numpy(), k=1)
+            top5 = top_k_accuracy_score([i + 1 for i in converted_labels], ps_holder[:, 1:1001].detach().cpu().numpy(), k=5)
     else:
         pass
     return m_scores, m_std, top1, top5

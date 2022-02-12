@@ -37,11 +37,12 @@ class LoadEvalModel(object):
         super(LoadEvalModel, self).__init__()
         self.eval_backbone = eval_backbone
         self.post_resizer = post_resizer
+        self.device = device
         self.save_output = misc.SaveOutput()
 
         if self.eval_backbone == "InceptionV3_tf":
             self.res, mean, std = 299, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]
-            self.model = InceptionV3(resize_input=False, normalize_input=False).to(device)
+            self.model = InceptionV3(resize_input=False, normalize_input=False).to(self.device)
         elif self.eval_backbone in ["InceptionV3_torch", "ResNet50_torch", "SwAV_torch"]:
             self.res = 299 if "InceptionV3" in self.eval_backbone else 224
             mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
@@ -52,7 +53,7 @@ class LoadEvalModel(object):
                 linear_state_dict = load_state_dict_from_url(SWAV_CLASSIFIER_URL, progress=True)["state_dict"]
                 linear_state_dict = {k.replace("module.linear.", ""): v for k, v in linear_state_dict.items()}
                 self.model.fc.load_state_dict(linear_state_dict, strict=True)
-            self.model = self.model.to(device)
+            self.model = self.model.to(self.device)
 
             hook_handles = []
             for name, layer in self.model.named_children():
@@ -66,14 +67,14 @@ class LoadEvalModel(object):
                                             backbone=self.eval_backbone,
                                             size=self.res)
         self.totensor = transforms.ToTensor()
-        self.mean = torch.Tensor(mean).view(1, 3, 1, 1).to("cuda")
-        self.std = torch.Tensor(std).view(1, 3, 1, 1).to("cuda")
+        self.mean = torch.Tensor(mean).view(1, 3, 1, 1).to(self.device)
+        self.std = torch.Tensor(std).view(1, 3, 1, 1).to(self.device)
 
         if world_size > 1 and distributed_data_parallel:
             misc.make_model_require_grad(self.model)
-            self.model = DDP(self.model, device_ids=[device], broadcast_buffers=True)
+            self.model = DDP(self.model, device_ids=[self.device], broadcast_buffers=True)
         elif world_size > 1 and distributed_data_parallel is False:
-            self.model = DataParallel(self.model, output_device=device)
+            self.model = DataParallel(self.model, output_device=self.device)
         else:
             pass
 
@@ -85,13 +86,13 @@ class LoadEvalModel(object):
             x = ops.quantize_images(x)
         else:
             x = x.detach().cpu().numpy().astype(np.uint8)
-        x = ops.resize_images(x, self.resizer, self.totensor, self.mean, self.std)
+        x = ops.resize_images(x, self.resizer, self.totensor, self.mean, self.std, device=self.device)
 
         if self.eval_backbone == "InceptionV3_tf":
             repres, logits = self.model(x)
         elif self.eval_backbone in ["InceptionV3_torch", "ResNet50_torch", "SwAV_torch"]:
             logits = self.model(x)
-            repres = self.save_output.outputs[0][0]
+            repres = self.save_output.outputs[0][0].to(self.device)
             self.save_output.clear()
         return repres, logits
 
@@ -130,7 +131,7 @@ def prepare_moments(data_loader, eval_model, quantize, cfgs, logger, device):
 
 def calculate_ins(data_loader, eval_model, quantize, splits, cfgs, logger, device):
     disable_tqdm = device != 0
-    is_acc = True if "ImageNet" in cfgs.DATA.name and "Tiny" not in cfgs.DATA.name else False,
+    is_acc = True if "ImageNet" in cfgs.DATA.name and "Tiny" not in cfgs.DATA.name else False
     if device == 0:
         logger.info("Calculate inception score of the {ref} dataset uisng pre-trained {eval_backbone} model.".\
                     format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
