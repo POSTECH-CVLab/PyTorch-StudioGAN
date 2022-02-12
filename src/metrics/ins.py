@@ -44,23 +44,36 @@ def calculate_kl_div(ps, splits):
 
 def eval_features(probs, labels, data_loader, num_features, split, is_acc, is_torch_backbone=False):
     if is_acc:
-        ImageNet_folder_label_dict = misc.load_ImageNet_label_dict()
+        ImageNet_folder_label_dict = misc.load_ImageNet_label_dict(data_name=data_loader.dataset.data_name,
+                                                                   is_torch_backbone=is_torch_backbone)
         loader_label_folder_dict = {v: k for k, v, in data_loader.dataset.data.class_to_idx.items()}
         loader_label_holder = labels
     else:
         top1, top5 = "N/A", "N/A"
 
-    m_scores, m_std = calculate_kl_div(probs[:num_features], splits=split)
+    probs, labels = probs[:num_features], labels[:num_features]
+    m_scores, m_std = calculate_kl_div(probs, splits=split)
 
     if is_acc and is_torch_backbone:
-        top1 = top_k_accuracy_score(labels[:num_features], probs[:num_features].detach().cpu().numpy(), k=1)
-        top1 = top_k_accuracy_score(labels[:num_features], probs[:num_features].detach().cpu().numpy(), k=5)
+        if data_loader.dataset.data_name in ["Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"]:
+            converted_labels = []
+            for loader_label in labels:
+                converted_labels.append(ImageNet_folder_label_dict[loader_label_folder_dict[loader_label]])
+            top1 = top_k_accuracy_score(converted_labels, probs.detach().cpu().numpy(), k=1, labels=range(1000))
+            top5 = top_k_accuracy_score(converted_labels, probs.detach().cpu().numpy(), k=5, labels=range(1000))
+        else:
+            top1 = top_k_accuracy_score(labels, probs.detach().cpu().numpy(), k=1)
+            top5 = top_k_accuracy_score(labels, probs.detach().cpu().numpy(), k=5)
     elif is_acc and not is_torch_backbone:
         converted_labels = []
-        for loader_label in loader_label_holder:
+        for loader_label in labels:
             converted_labels.append(ImageNet_folder_label_dict[loader_label_folder_dict[loader_label]])
-        top1 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 1:1001].detach().cpu().numpy(), k=1)
-        top5 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 1:1001].detach().cpu().numpy(), k=5)
+        if data_loader.dataset.data_name in ["Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"]:
+            top1 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 0:1001].detach().cpu().numpy(), k=1, labels=range(1001))
+            top5 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 0:1001].detach().cpu().numpy(), k=5, labels=range(1001))
+        else:
+            top1 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 1:1001].detach().cpu().numpy(), k=1)
+            top5 = top_k_accuracy_score([i + 1 for i in converted_labels], probs[:, 1:1001].detach().cpu().numpy(), k=5)
     else:
         pass
     return m_scores, m_std, top1, top5
