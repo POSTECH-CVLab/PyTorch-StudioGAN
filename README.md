@@ -11,8 +11,6 @@
 
 - StudioGAN provides clean-measures (IS, FID, Improved Precision & Recall, and Density & Coverage) using anti-aliasing PIL.BICUBIC resizer.
 
-- StudioGAN supports CodeCarbon to track CO2 emission from our compute and visualizes this using wandb logging system.
-
 - StudioGAN contains StyleGAN2 and StyleGAN3 implementations. We will upload pre-trained models (StyleGAN2, StyleGAN3-t, and StyleGAN3-r) on AFHQ-v2 datasets.
 
 #  Release Notes (v.0.3.0)
@@ -122,7 +120,7 @@ pip3 install torch==1.10.0+cu111 torchvision==0.11.1+cu111 torchaudio==0.10.0+cu
 
 Then, use the following command to install the rest of the libraries:
 ```bash
-pip3 install codecarbon tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg
+pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg
 ```
 
 With docker, you can use:
