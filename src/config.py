@@ -712,9 +712,8 @@ class Configurations(object):
             "StudioGAN does not support Topk training for MHGAN."
 
         if self.RUN.train * self.RUN.standing_statistics:
-            print("StudioGAN does not support standing_statistics during training. \
-                  \nAfter training is done, StudioGAN will accumulate batchnorm statistics and evaluate the trained \
-                  model using the accumulated satistics.")
+            print("StudioGAN does not support standing_statistics during training")
+            print("After training is done, StudioGAN will accumulate batchnorm statistics to evaluate GAN.")
 
         if self.RUN.distributed_data_parallel:
             print("Turning on DDP might cause inexact evaluation results. \
