@@ -67,11 +67,7 @@ def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, loa
             best_ckpt_path = ckpt["best_fid_checkpoint_path"]
         except:
             best_ckpt_path = ckpt["best_fid_ckpt"]
-        try:
-            total_emission = ckpt["total_emission"]
-        except:
-            total_emission = 0.0
-        return seed, run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path, total_emission
+        return seed, run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path
 
 
 def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer, run_name, apply_g_ema, Gen_ema, ema,
@@ -90,7 +86,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
               load_misc=False,
               is_freezeD=is_freezeD)
 
-    seed, prev_run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path, total_emission =\
+    seed, prev_run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path =\
         load_ckpt(model=Dis,
                   optimizer=d_optimizer,
                   ckpt_path=Dis_ckpt_path,
@@ -128,9 +124,9 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
         logger.info("Discriminator checkpoint is {}".format(Dis_ckpt_path))
 
     if is_freezeD:
-        prev_run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path, total_emission =\
-            run_name, 0, 0, "initialize", None, 0, None, None, 0.0
-    return prev_run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path, logger, total_emission
+        prev_run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path =\
+            run_name, 0, 0, "initialize", None, 0, None, None
+    return prev_run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path, logger
 
 
 def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
@@ -146,7 +142,7 @@ def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
               load_misc=False,
               is_freezeD=False)
 
-    _, _, _, _, _, _, best_step, _, _, _ = load_ckpt(model=Dis,
+    _, _, _, _, _, _, best_step, _, _ = load_ckpt(model=Dis,
                                                   optimizer=None,
                                                   ckpt_path=Dis_ckpt_path,
                                                   load_model=True,

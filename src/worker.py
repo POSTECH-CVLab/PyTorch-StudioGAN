@@ -459,7 +459,7 @@ class WORKER(object):
                 self.OPTIMIZATION.d_optimizer.zero_grad()
                 for acml_index in range(self.OPTIMIZATION.acml_steps):
                     real_images = real_image_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
-                    real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)       
+                    real_labels = real_label_basket[batch_counter - acml_index - 1].to(self.local_rank, non_blocking=True)
                     # blur images for stylegan3-r
                     if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
                         blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
@@ -688,7 +688,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # log training statistics
     # -----------------------------------------------------------------------------
-    def log_train_statistics(self, current_step, real_cond_loss, gen_acml_loss, dis_acml_loss, total_emission):
+    def log_train_statistics(self, current_step, real_cond_loss, gen_acml_loss, dis_acml_loss):
         self.wandb_step = current_step + 1
         if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
             cls_loss = real_cond_loss.item()
@@ -723,8 +723,6 @@ class WORKER(object):
         misc.save_dict_npy(directory=join(self.RUN.save_dir, "statistics", self.run_name),
                            name="losses",
                            dictionary=save_dict)
-
-        wandb.log({"co2_emission(kg)": total_emission}, step=self.wandb_step)
 
         if self.AUG.apply_ada or self.AUG.apply_apa:
             dis_output_dict = {
@@ -938,7 +936,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # save the trained generator, generator_ema, and discriminator.
     # -----------------------------------------------------------------------------
-    def save(self, step, is_best, total_emission):
+    def save(self, step, is_best):
         when = "best" if is_best is True else "current"
         misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
         Gen, Gen_ema, Dis = misc.peel_models(self.Gen, self.Gen_ema, self.Dis)
@@ -956,8 +954,7 @@ class WORKER(object):
             "aa_p": self.aa_p,
             "best_step": self.best_step,
             "best_fid": self.best_fid,
-            "best_fid_ckpt": self.RUN.ckpt_dir,
-            "total_emission": total_emission
+            "best_fid_ckpt": self.RUN.ckpt_dir
         }
 
         if self.Gen_ema is not None:
