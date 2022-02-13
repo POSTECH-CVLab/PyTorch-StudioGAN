@@ -1,5 +1,5 @@
 DATA:
-  name: "Tiny_ImageNet"
+  name: "Baby_ImageNet"
   img_size: 64
   num_classes: 100
 MODEL:
