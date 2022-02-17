@@ -84,7 +84,7 @@ def prepare_moments(data_loader, eval_model, quantize, cfgs, logger, device):
     if not exists(moment_dir):
         os.makedirs(moment_dir)
     moment_path = join(moment_dir, cfgs.DATA.name + "_" + cfgs.RUN.ref_dataset + "_" + \
-                       cfgs.RUN.resize_fn + "_" + cfgs.RUN.eval_backbone + "_moments.npz")
+                       cfgs.RUN.resize_fn + "_" + str(cfgs.DATA.img_size) + "_" + cfgs.RUN.eval_backbone + "_moments.npz")
     is_file = os.path.isfile(moment_path)
     if is_file:
         mu = np.load(moment_path)["mu"]
