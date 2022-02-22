@@ -855,7 +855,7 @@ class Configurations(object):
 
         assert self.RUN.resize_fn in ["legacy", "clean"], "resizing flag should be logacy or clean!"
 
-        assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
+        assert self.RUN.data_dir is not None or self.RUN.save_fake_images, "Please specify data_dir if dataset is prepared. \
             \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \
             dataset to be downloaded."
 

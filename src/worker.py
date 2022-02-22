@@ -166,10 +166,12 @@ class WORKER(object):
         elif self.DATA.name == "ImageNet":
             self.num_eval = {"train": 50000, "valid": 50000}
         else:
-            self.num_eval = {"train": len(self.train_dataloader.dataset),
-                             "valid": len(self.eval_dataloader.dataset),
-                             "test": len(self.eval_dataloader.dataset)
-                             }
+            self.num_eval = {}
+            if self.train_dataloader is not None:
+                self.num_eval["train"] = len(self.train_dataloader.dataset)
+            elif self.eval_dataloader is not None:
+                self.num_eval["test"] = len(self.eval_dataloader.dataset)
+                self.num_eval["valid"] = len(self.eval_dataloader.dataset)
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  generator_mapping=self.Gen_ema_mapping,
@@ -1012,10 +1014,10 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # save fake images to measure metrics for evaluation.
     # -----------------------------------------------------------------------------
-    def save_fake_images(self):
+    def save_fake_images(self, num_images):
         if self.global_rank == 0:
             self.logger.info("save {num_images} generated images in png format.".format(
-                num_images=self.num_eval[self.RUN.ref_dataset]))
+                num_images=num_images))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
@@ -1028,7 +1030,7 @@ class WORKER(object):
                                  generator=generator,
                                  discriminator=self.Dis,
                                  is_generate=True,
-                                 num_images=self.num_eval[self.RUN.ref_dataset],
+                                 num_images=num_images,
                                  y_sampler="totally_random",
                                  batch_size=self.OPTIMIZATION.batch_size,
                                  z_prior=self.MODEL.z_prior,
