@@ -639,12 +639,11 @@ class Configurations(object):
             assert self.DATA.img_size == 32, "StudioGAN does not support the deep_conv backbone for the dataset whose spatial resolution is not 32."
 
         if self.MODEL.backbone in ["big_resnet_deep_legacy", "big_resnet_deep_studiogan"]:
-            assert self.MODEL.g_cond_mtd and self.MODEL.d_cond_mtd, "StudioGAN does not support the big_resnet_deep backbones \
-                without applying spectral normalization to the generator and discriminator."
+            msg = "StudioGAN does not support the big_resnet_deep backbones without applying spectral normalization to the generator and discriminator."
+            assert self.MODEL.g_cond_mtd and self.MODEL.d_cond_mtd, msg
 
         if self.RUN.langevin_sampling or self.LOSS.apply_lo:
-            assert self.RUN.langevin_sampling * self.LOSS.apply_lo == 0, "Langevin sampling and latent optmization \
-                cannot be used simultaneously."
+            assert self.RUN.langevin_sampling * self.LOSS.apply_lo == 0, "Langevin sampling and latent optmization cannot be used simultaneously."
 
         if isinstance(self.MODEL.g_depth, int) or isinstance(self.MODEL.d_depth, int):
             assert self.MODEL.backbone in ["big_resnet_deep_legacy", "big_resnet_deep_studiogan"], \
@@ -667,19 +666,19 @@ class Configurations(object):
             assert self.MODEL.z_prior == "gaussian", "Langevin sampling is defined only if z_prior is gaussian."
 
         if self.RUN.freezeD > -1:
-            assert self.RUN.ckpt_dir is not None, "Freezing discriminator needs a pre-trained model.\
-                Please specify the checkpoint directory (using -ckpt) for loading a pre-trained discriminator."
+            msg = "Freezing discriminator needs a pre-trained model. Please specify the checkpoint directory (using -ckpt) for loading a pre-trained discriminator."
+            assert self.RUN.ckpt_dir is not None, msg
 
         if not self.RUN.train and self.RUN.eval_metrics != "none":
             assert self.RUN.ckpt_dir is not None, "Specify -ckpt CHECKPOINT_FOLDER to evaluate GAN without training."
 
         if self.RUN.GAN_train + self.RUN.GAN_test > 1:
-            assert not self.RUN.distributed_data_parallel, "Please turn off -DDP option to calculate CAS. \
-                It is possible to train a GAN using the DDP option and then compute CAS using DP."
+            msg = "Please turn off -DDP option to calculate CAS. It is possible to train a GAN using the DDP option and then compute CAS using DP."
+            assert not self.RUN.distributed_data_parallel, msg
 
         if self.RUN.distributed_data_parallel:
-            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, tsne analysis, DDLS, SeFa, and CAS with DDP. \
-                Please change DDP with a single GPU training or DataParallel instead."
+            msg = "StudioGAN does not support image visualization, k_nearest_neighbor, interpolation, frequency, tsne analysis, DDLS, SeFa, and CAS with DDP. " + \
+                "Please change DDP with a single GPU training or DataParallel instead."
             assert self.RUN.vis_fake_images + \
                 self.RUN.k_nearest_neighbor + \
                 self.RUN.interpolation + \
@@ -708,16 +707,15 @@ class Configurations(object):
             "To train a GAN with Multi-Hinge loss, both d_cond_mtd and adv_loss must be 'MH'."
 
         if self.MODEL.d_cond_mtd == "MH" or self.LOSS.adv_loss == "MH":
-            assert not self.LOSS.apply_topk, \
-            "StudioGAN does not support Topk training for MHGAN."
+            assert not self.LOSS.apply_topk, "StudioGAN does not support Topk training for MHGAN."
 
         if self.RUN.train * self.RUN.standing_statistics:
             print("StudioGAN does not support standing_statistics during training")
             print("After training is done, StudioGAN will accumulate batchnorm statistics to evaluate GAN.")
 
         if self.RUN.distributed_data_parallel:
-            print("Turning on DDP might cause inexact evaluation results. \
-                \nPlease use a single GPU or DataParallel for the exact evluation.")
+            print("Turning on DDP might cause inexact evaluation results.")
+            print("Please use a single GPU or DataParallel for the exact evluation.")
 
         if self.OPTIMIZATION.world_size > 1 and self.RUN.synchronized_bn:
             assert not self.RUN.batch_statistics, "batch_statistics cannot be used with synchronized_bn."
@@ -730,8 +728,7 @@ class Configurations(object):
                 "StudioGAN does not support interpolation analysis except for biggan and big_resnet_deep backbones."
 
         if self.RUN.semantic_factorization:
-            assert self.RUN.num_semantic_axis > 0, \
-            "To apply sefa, please set num_semantic_axis to a natual number greater than 0."
+            assert self.RUN.num_semantic_axis > 0, "To apply sefa, please set num_semantic_axis to a natual number greater than 0."
 
         if self.OPTIMIZATION.world_size == 1:
             assert not self.RUN.distributed_data_parallel, "Cannot perform distributed training with a single gpu."
@@ -743,8 +740,7 @@ class Configurations(object):
             assert self.MODEL.backbone in ["stylegan2", "stylegan3"], "cAdaIN is only applicable to stylegan2, stylegan3."
 
         if self.MODEL.d_cond_mtd == "SPD":
-            assert self.MODEL.backbone in ["stylegan2", "stylegan3"], \
-                "SytleGAN Projection Discriminator (SPD) is only applicable to stylegan2, stylegan3."
+            assert self.MODEL.backbone in ["stylegan2", "stylegan3"], "SytleGAN Projection Discriminator (SPD) is only applicable to stylegan2, stylegan3."
 
         if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert self.MODEL.g_act_fn == "Auto" and self.MODEL.d_act_fn == "Auto", \
@@ -756,11 +752,10 @@ class Configurations(object):
 
         if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert self.MODEL.g_cond_mtd in ["W/O", "cAdaIN"], \
-                "stylegan2, stylegan3 only supports 'W/O' or 'cAdaIN' as g_cond_mtd."
+                "stylegan2 and stylegan3 only supports 'W/O' or 'cAdaIN' as g_cond_mtd."
 
         if self.LOSS.apply_r1_reg and self.MODEL.backbone in ["stylegan2", "stylegan3"]:
-            assert self.LOSS.r1_place in ["inside_loop", "outside_loop"], \
-                "LOSS.r1_place should be one of ['inside_loop', 'outside_loop']"
+            assert self.LOSS.r1_place in ["inside_loop", "outside_loop"], "LOSS.r1_place should be one of ['inside_loop', 'outside_loop']"
 
         if self.MODEL.g_act_fn == "Auto" or self.MODEL.d_act_fn == "Auto":
             assert self.MODEL.backbone in ["stylegan2", "stylegan3"], \
@@ -770,9 +765,8 @@ class Configurations(object):
             assert self.STYLEGAN.blur_init_sigma != "N/A", "With stylegan3-r, you need to specify blur_init_sigma."
 
         if self.MODEL.backbone in ["stylegan2", "stylegan3"] and self.MODEL.apply_g_ema:
-            assert self.MODEL.g_ema_decay == "N/A" and self.MODEL.g_ema_start == "N/A",\
-                "Please specify g_ema parameters to STYLEGAN.g_ema_kimg and STYLEGAN.g_ema_rampup \
-                instead of MODEL.g_ema_decay and MODEL.g_ema_start."
+            assert self.MODEL.g_ema_decay == "N/A" and self.MODEL.g_ema_start == "N/A", \
+                "Please specify g_ema parameters to STYLEGAN.g_ema_kimg and STYLEGAN.g_ema_rampup instead of MODEL.g_ema_decay and MODEL.g_ema_start."
 
         if self.MODEL.backbone in ["stylegan2", "stylegan3"]:
             assert self.STYLEGAN.d_epilogue_mbstd_group_size <= (self.OPTIMIZATION.batch_size / self.OPTIMIZATION.world_size),\
@@ -856,10 +850,6 @@ class Configurations(object):
             "resizing flag should be in [InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch]"
 
         assert self.RUN.post_resizer in ["legacy", "clean", "tailored"], "resizing flag should be in [logacy, clean, tailored]"
-
-        assert self.RUN.data_dir is not None, "Please specify data_dir if dataset is prepared. \
-            \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \
-            dataset to be downloaded."
 
         assert self.RUN.batch_statistics*self.RUN.standing_statistics == 0, \
             "You can't turn on batch_statistics and standing_statistics simultaneously."

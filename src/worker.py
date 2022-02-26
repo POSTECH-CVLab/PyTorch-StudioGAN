@@ -168,10 +168,12 @@ class WORKER(object):
         elif self.DATA.name == "Baby_ImageNet":
             self.num_eval = {"train": 50000, "valid": 10000}
         else:
-            self.num_eval = {"train": len(self.train_dataloader.dataset),
-                             "valid": len(self.eval_dataloader.dataset),
-                             "test": len(self.eval_dataloader.dataset)
-                             }
+            try:
+                self.num_eval = {"train": len(self.train_dataloader.dataset),
+                                "valid": len(self.eval_dataloader.dataset),
+                                "test": len(self.eval_dataloader.dataset)}
+            except:
+                self.num_eval = {"train": 10000, "valid": 10000, "test": 10000}
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  generator_mapping=self.Gen_ema_mapping,
