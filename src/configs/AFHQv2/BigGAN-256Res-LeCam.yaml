@@ -21,7 +21,7 @@ LOSS:
   lecam_ema_start_iter: 1000
   lecam_ema_decay: 0.99
 OPTIMIZATION:
-  batch_size: 256
+  batch_size: 64
   g_lr: 0.00005
   d_lr: 0.0002
   beta1: 0.0
