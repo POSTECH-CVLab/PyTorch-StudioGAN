@@ -846,8 +846,10 @@ class Configurations(object):
                 self.AUG.ada_interval == self.AUG.apa_interval, \
                 "ADA and APA specifications should be the completely same."
 
-        assert self.RUN.eval_backbone in ["InceptionV3_tf", "InceptionV3_torch", "ResNet50_torch", "SwAV_torch"], \
-            "resizing flag should be in [InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch]"
+        assert self.OPTIMIZATION.total_steps % self.RUN.save_every == 0, "total_steps should be divided by save_every."
+
+        assert self.RUN.eval_backbone in ["InceptionV3_tf", "InceptionV3_torch", "ResNet50_torch", "SwAV_torch", "DINO_torch"], \
+            "resizing flag should be in [InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch]"
 
         assert self.RUN.post_resizer in ["legacy", "clean", "tailored"], "resizing flag should be in [logacy, clean, tailored]"
 

@@ -101,7 +101,7 @@ def load_configs_initialize_training():
     parser.add_argument("--print_every", type=int, default=100, help="logging interval")
     parser.add_argument("-every", "--save_every", type=int, default=2000, help="save interval")
     parser.add_argument('--eval_backbone', type=str, default='InceptionV3_tf',\
-                        help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch]")
+                        help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch]")
     parser.add_argument("-ref", "--ref_dataset", type=str, default="train", help="reference dataset for evaluation[train/valid/test]")
     parser.add_argument("--is_ref_dataset", action="store_true", help="whether to calculate a inception score of the ref dataset.")
     args = parser.parse_args()
