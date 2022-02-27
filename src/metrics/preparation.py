@@ -13,7 +13,6 @@ except ImportError:
     from torch.utils.model_zoo import load_url as load_state_dict_from_url
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torchvision import models as torchvision_models
 from PIL import Image
 import torch
 import torch.nn as nn
@@ -74,9 +73,7 @@ class LoadEvalModel(object):
         else:
             raise NotImplementedError
 
-        self.resizer = resize.build_resizer(resizer=self.post_resizer,
-                                            backbone=self.eval_backbone,
-                                            size=self.res)
+        self.resizer = resize.build_resizer(resizer=self.post_resizer, backbone=self.eval_backbone, size=self.res)
         self.totensor = transforms.ToTensor()
         self.mean = torch.Tensor(mean).view(1, 3, 1, 1).to(self.device)
         self.std = torch.Tensor(std).view(1, 3, 1, 1).to(self.device)

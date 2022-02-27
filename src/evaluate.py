@@ -53,7 +53,7 @@ def prepare_evaluation():
     parser.add_argument("--post_resizer", type=str, default="legacy", help="which resizer will you use to evaluate GANs\
                         in ['legacy', 'clean', 'tailored']")
     parser.add_argument('--eval_backbone', type=str, default='InceptionV3_tf',\
-                        help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch]")
+                        help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch]")
     parser.add_argument("--is_ImageNet", action="store_true")
     parser.add_argument("--dset1", type=str, default="none", help="specify the directory of the folder that contains real images.")
     parser.add_argument("--dset2", type=str, default="none", help="specify the directory of the folder that contains generated images.")
