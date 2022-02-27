@@ -846,7 +846,7 @@ class Configurations(object):
                 self.AUG.ada_interval == self.AUG.apa_interval, \
                 "ADA and APA specifications should be the completely same."
 
-        assert self.OPTIMIZATION.total_steps % self.RUN.save_every == 0, "total_steps should be divided by save_every."
+        assert self.OPTIMIZATION.total_steps % self.RUN.save_freq == 0, "total_steps should be divided by save_freq."
 
         assert self.RUN.eval_backbone in ["InceptionV3_tf", "InceptionV3_torch", "ResNet50_torch", "SwAV_torch", "DINO_torch"], \
             "resizing flag should be in [InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch]"
@@ -866,5 +866,5 @@ class Configurations(object):
         assert int(self.LOSS.apply_gp)*int(self.LOSS.apply_dra)*(self.LOSS.apply_maxgp) == 0, \
             "You can't simultaneously apply gradient penalty regularization, deep regret analysis, and max gradient penalty."
 
-        assert self.RUN.save_every % self.RUN.print_every == 0, \
-            "RUN.save_every should be divided by RUN.print_every for wandb logging."
+        assert self.RUN.save_freq % self.RUN.print_freq == 0, \
+            "RUN.save_freq should be divided by RUN.print_freq for wandb logging."

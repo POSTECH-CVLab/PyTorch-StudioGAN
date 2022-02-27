@@ -723,7 +723,7 @@ class WORKER(object):
         save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
                                                   value_dict=loss_dict,
                                                   step=current_step + 1,
-                                                  interval=self.RUN.print_every)
+                                                  interval=self.RUN.print_freq)
         misc.save_dict_npy(directory=join(self.RUN.save_dir, "statistics", self.run_name),
                            name="losses",
                            dictionary=save_dict)
@@ -924,7 +924,7 @@ class WORKER(object):
                     save_dict = misc.accm_values_convert_dict(list_dict=self.metric_dict_during_train,
                                                               value_dict=metric_dict,
                                                               step=step,
-                                                              interval=self.RUN.save_every)
+                                                              interval=self.RUN.save_freq)
                 else:
                     save_dict = misc.accm_values_convert_dict(list_dict=self.metric_dict_during_final_eval,
                                                               value_dict=metric_dict,

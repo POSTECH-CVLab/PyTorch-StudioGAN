@@ -291,7 +291,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                        logger=logger,
                                        device=local_rank)
 
-    if cfgs.RUN.is_ref_dataset:
+    if cfgs.RUN.calc_is_ref_dataset:
         pp.calculate_ins(data_loader=eval_dataloader,
                          eval_model=eval_model,
                          quantize=True,
@@ -347,7 +347,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                 gen_acml_loss = worker.train_generator(current_step=step)
                 real_cond_loss, dis_acml_loss = worker.train_discriminator(current_step=step)
 
-            if global_rank == 0 and (step + 1) % cfgs.RUN.print_every == 0:
+            if global_rank == 0 and (step + 1) % cfgs.RUN.print_freq == 0:
 
                 worker.log_train_statistics(current_step=step,
                                             real_cond_loss=real_cond_loss,
@@ -362,7 +362,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                                   topk_gamma=cfgs.LOSS.topk_gamma,
                                                   sup_k=int(cfgs.OPTIMIZATION.batch_size * cfgs.LOSS.topk_nu))
 
-            if step % cfgs.RUN.save_every == 0:
+            if step % cfgs.RUN.save_freq == 0:
                 # visuailize fake images
                 if global_rank == 0:
                    worker.visualize_fake_images(num_cols=num_cols, current_step=step)
@@ -461,3 +461,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         if global_rank == 0:
             print(""), logger.info("-" * 80)
         worker.compute_GAN_train_or_test_classifier_accuracy_score(GAN_train=False, GAN_test=True)
+
+    if cfgs.RUN.distributed_data_parallel:
+        misc.cleanup()
