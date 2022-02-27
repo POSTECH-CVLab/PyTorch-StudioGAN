@@ -5,6 +5,7 @@
 # src/loader.py
 
 from os.path import dirname, abspath, exists, join
+import sys
 import glob
 import json
 import os
@@ -385,7 +386,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # re-evaluate the best GAN and conduct ordered analyses
     # -----------------------------------------------------------------------------
-    print("")
     worker.training, worker.epoch_counter = False, epoch
     worker.gen_ctlr.standing_statistics = cfgs.RUN.standing_statistics
     worker.gen_ctlr.standing_max_batch = cfgs.RUN.standing_max_batch
@@ -461,6 +461,3 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         if global_rank == 0:
             print(""), logger.info("-" * 80)
         worker.compute_GAN_train_or_test_classifier_accuracy_score(GAN_train=False, GAN_test=True)
-
-    if cfgs.RUN.distributed_data_parallel:
-        misc.cleanup()

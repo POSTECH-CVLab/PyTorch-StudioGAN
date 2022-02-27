@@ -169,15 +169,16 @@ if __name__ == "__main__":
     if cfgs.RUN.distributed_data_parallel and cfgs.OPTIMIZATION.world_size > 1:
         mp.set_start_method("spawn", force=True)
         print("Train the models through DistributedDataParallel (DDP) mode.")
-        try:
-            torch.multiprocessing.spawn(fn=loader.load_worker,
-                                        args=(cfgs,
-                                              gpus_per_node,
-                                              run_name,
-                                              hdf5_path),
-                                        nprocs=gpus_per_node)
-        except KeyboardInterrupt:
-            misc.cleanup()
+        ctx = torch.multiprocessing.spawn(fn=loader.load_worker,
+                                          args=(cfgs,
+                                                gpus_per_node,
+                                                run_name,
+                                                hdf5_path),
+                                          nprocs=gpus_per_node,
+                                          join=False)
+        ctx.join()
+        for process in ctx.processes:
+            process.kill()
     else:
         loader.load_worker(local_rank=rank,
                            cfgs=cfgs,
