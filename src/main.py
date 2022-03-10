@@ -139,6 +139,7 @@ def load_configs_initialize_training():
 
     crop_long_edge = False if cfgs.DATA.name in cfgs.MISC.no_proc_data else True
     resize_size = None if cfgs.DATA.name in cfgs.MISC.no_proc_data else cfgs.DATA.img_size
+    cfgs.RUN.pre_resizer = "wo_resize" if cfgs.RUN.DATA.name in cfgs.MISC.no_proc_data else cfgs.RUN.pre_resizer
     if cfgs.RUN.load_train_hdf5:
         hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(
                                             name=cfgs.DATA.name,
