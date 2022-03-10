@@ -868,3 +868,6 @@ class Configurations(object):
 
         assert self.RUN.save_freq % self.RUN.print_freq == 0, \
             "RUN.save_freq should be divided by RUN.print_freq for wandb logging."
+
+        assert self.RUN.pre_resizer in ["wo_resize", "nearest", "bilinear", "bicubic", "lanczos"], \
+            "The interpolation filter for pre-precessing should be \in ['wo_resize', 'nearest', 'bilinear', 'bicubic', 'lanczos']"

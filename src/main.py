@@ -77,8 +77,8 @@ def load_configs_initialize_training():
     parser.add_argument("-l", "--load_data_in_memory", action="store_true", help="put the whole train dataset on the main memory for fast I/O")
     parser.add_argument("-metrics", "--eval_metrics", nargs='+', default=['fid'],
                         help="evaluation metrics to use during training, a subset list of ['fid', 'is', 'prdc'] or none")
-    parser.add_argument("--pre_resizer", type=str, default="bilinear", help="which resizer will you use to pre-process images\
-                        in ['nearest', 'bilinear', 'bicubic', 'lanczos']")
+    parser.add_argument("--pre_resizer", type=str, default="wo_resize", help="which resizer will you use to pre-process images\
+                        in ['wo_resize', 'nearest', 'bilinear', 'bicubic', 'lanczos']")
     parser.add_argument("--post_resizer", type=str, default="legacy", help="which resizer will you use to evaluate GANs\
                         in ['legacy', 'clean', 'tailored']")
     parser.add_argument("--num_eval", type=int, default=1, help="number of runs for final evaluation.")
