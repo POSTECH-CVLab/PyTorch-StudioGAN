@@ -19,6 +19,13 @@ import h5py as h5
 import numpy as np
 
 
+resizer_collection = {"nearest": InterpolationMode.NEAREST,
+                      "box": InterpolationMode.BOX,
+                      "bilinear": InterpolationMode.BILINEAR,
+                      "hamming": InterpolationMode.HAMMING,
+                      "bicubic": InterpolationMode.BICUBIC,
+                      "lanczos": InterpolationMode.LANCZOS}
+
 class RandomCropLongEdge(object):
     """
     this code is borrowed from https://github.com/ajbrock/BigGAN-PyTorch
@@ -56,6 +63,7 @@ class Dataset_(Dataset):
                  train,
                  crop_long_edge=False,
                  resize_size=None,
+                 resizer="lanczos",
                  random_flip=False,
                  normalize=True,
                  hdf5_path=None,
@@ -74,7 +82,7 @@ class Dataset_(Dataset):
             if crop_long_edge:
                 self.trsf_list += [CenterCropLongEdge()]
             if resize_size is not None:
-                self.trsf_list += [transforms.Resize(resize_size, interpolation=InterpolationMode.LANCZOS)]
+                self.trsf_list += [transforms.Resize(resize_size, interpolation=resizer_collection[resizer])]
         else:
             self.trsf_list += [transforms.ToPILImage()]
 

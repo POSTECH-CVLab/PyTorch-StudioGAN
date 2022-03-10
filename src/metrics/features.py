@@ -15,7 +15,7 @@ import utils.losses as losses
 
 def generate_images_and_stack_features(generator, discriminator, eval_model, num_generate, y_sampler, batch_size, z_prior,
                                        truncation_factor, z_dim, num_classes, LOSS, RUN, MODEL, is_stylegan, generator_mapping,
-                                       generator_synthesis, world_size, DDP, device, logger, disable_tqdm):
+                                       generator_synthesis, quantize, world_size, DDP, device, logger, disable_tqdm):
     eval_model.eval()
     feature_holder, prob_holder, fake_label_holder = [], [], []
 
@@ -45,7 +45,7 @@ def generate_images_and_stack_features(generator, discriminator, eval_model, num
                                                                    stylegan_update_emas=False,
                                                                    cal_trsp_cost=False)
         with torch.no_grad():
-            features, logits = eval_model.get_outputs(fake_images, quantize=True)
+            features, logits = eval_model.get_outputs(fake_images, quantize=quantize)
             probs = torch.nn.functional.softmax(logits, dim=1)
 
         feature_holder.append(features)
@@ -63,8 +63,8 @@ def generate_images_and_stack_features(generator, discriminator, eval_model, num
     return feature_holder, prob_holder, list(fake_label_holder.detach().cpu().numpy())
 
 
-def sample_images_from_loader_and_stack_features(dataloader, eval_model, batch_size, world_size,
-                                                 DDP, device, disable_tqdm):
+def sample_images_from_loader_and_stack_features(dataloader, eval_model, batch_size, quantize,
+                                                 world_size, DDP, device, disable_tqdm):
     eval_model.eval()
     total_instance = len(dataloader.dataset)
     num_batches = math.ceil(float(total_instance) / float(batch_size))
@@ -82,7 +82,7 @@ def sample_images_from_loader_and_stack_features(dataloader, eval_model, batch_s
             break
 
         with torch.no_grad():
-            features, logits = eval_model.get_outputs(images, quantize=False)
+            features, logits = eval_model.get_outputs(images, quantize=quantize)
             probs = torch.nn.functional.softmax(logits, dim=1)
 
         feature_holder.append(features)

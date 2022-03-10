@@ -77,6 +77,8 @@ def load_configs_initialize_training():
     parser.add_argument("-l", "--load_data_in_memory", action="store_true", help="put the whole train dataset on the main memory for fast I/O")
     parser.add_argument("-metrics", "--eval_metrics", nargs='+', default=['fid'],
                         help="evaluation metrics to use during training, a subset list of ['fid', 'is', 'prdc'] or none")
+    parser.add_argument("--pre_resizer", type=str, default="bilinear", help="which resizer will you use to pre-process images\
+                        in ['nearest', 'bilinear', 'bicubic', 'lanczos']")
     parser.add_argument("--post_resizer", type=str, default="legacy", help="which resizer will you use to evaluate GANs\
                         in ['legacy', 'clean', 'tailored']")
     parser.add_argument("--num_eval", type=int, default=1, help="number of runs for final evaluation.")
@@ -138,13 +140,15 @@ def load_configs_initialize_training():
     crop_long_edge = False if cfgs.DATA.name in cfgs.MISC.no_proc_data else True
     resize_size = None if cfgs.DATA.name in cfgs.MISC.no_proc_data else cfgs.DATA.img_size
     if cfgs.RUN.load_train_hdf5:
-        hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(name=cfgs.DATA.name,
-                                                                img_size=cfgs.DATA.img_size,
-                                                                crop_long_edge=crop_long_edge,
-                                                                resize_size=resize_size,
-                                                                data_dir=cfgs.RUN.data_dir,
-                                                                DATA=cfgs.DATA,
-                                                                RUN=cfgs.RUN)
+        hdf5_path, crop_long_edge, resize_size = hdf5.make_hdf5(
+                                            name=cfgs.DATA.name,
+                                            img_size=cfgs.DATA.img_size,
+                                            crop_long_edge=crop_long_edge,
+                                            resize_size=resize_size,
+                                            resizer=cfgs.RUN.pre_resizer,
+                                            data_dir=cfgs.RUN.data_dir,
+                                            DATA=cfgs.DATA,
+                                            RUN=cfgs.RUN)
     else:
         hdf5_path = None
     cfgs.PRE.crop_long_edge, cfgs.PRE.resize_size = crop_long_edge, resize_size
