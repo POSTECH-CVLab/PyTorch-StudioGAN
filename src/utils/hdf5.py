@@ -32,9 +32,9 @@ import h5py as h5
 from data_util import Dataset_
 
 
-def make_hdf5(name, img_size, crop_long_edge, resize_size, data_dir, pre_resizer, DATA, RUN):
+def make_hdf5(name, img_size, crop_long_edge, resize_size, data_dir, resizer, DATA, RUN):
     if resize_size is not None:
-        file_name = "{dataset_name}_{size}_{resizer}_train.hdf5".format(dataset_name=name, size=img_size, resizer=pre_resizer)
+        file_name = "{dataset_name}_{size}_{resizer}_train.hdf5".format(dataset_name=name, size=img_size, resizer=resizer)
     else:
         file_name = "{dataset_name}_{size}_train.hdf5".format(dataset_name=name, size=img_size)
     file_path = join(data_dir, file_name)
@@ -51,7 +51,7 @@ def make_hdf5(name, img_size, crop_long_edge, resize_size, data_dir, pre_resizer
                            train=True,
                            crop_long_edge=crop_long_edge,
                            resize_size=resize_size,
-                           resizer=pre_resizer,
+                           resizer=resizer,
                            random_flip=False,
                            normalize=False,
                            hdf5_path=None,
