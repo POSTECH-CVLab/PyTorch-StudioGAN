@@ -676,7 +676,7 @@ class WORKER(object):
                             f = torch.arange(-blur_size, blur_size + 1, device=fake_images.device).div(blur_sigma).square().neg().exp2()
                             fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
                     self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws) + fake_images[:,0,0,0].mean()*0
-                    self.pl_reg_loss *= self.STYLEGAN.pl_weight*self.STYLEGAN.g_reg_interval/self.OPTIMIZATION.acml_steps
+                    self.pl_reg_loss *= self.STYLEGAN.g_reg_interval/self.OPTIMIZATION.acml_steps
                     self.pl_reg_loss.backward()
                 self.OPTIMIZATION.g_optimizer.step()
 
