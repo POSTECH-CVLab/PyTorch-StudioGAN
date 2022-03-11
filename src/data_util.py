@@ -81,7 +81,7 @@ class Dataset_(Dataset):
         if self.hdf5_path is None:
             if crop_long_edge:
                 self.trsf_list += [CenterCropLongEdge()]
-            if resize_size is not None:
+            if resize_size is not None and resizer != "wo_resize":
                 self.trsf_list += [transforms.Resize(resize_size, interpolation=resizer_collection[resizer])]
         else:
             self.trsf_list += [transforms.ToPILImage()]
