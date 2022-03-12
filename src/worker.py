@@ -101,7 +101,7 @@ class WORKER(object):
         self.blur_fade_kimg = self.effective_batch_size * 200 / 32
         self.DDP = self.RUN.distributed_data_parallel
 
-        self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN.pl_weight)
+        self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN.pl_weight, pl_no_weight_grad=(cfgs.MODEL.backbone == "stylegan2"))
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
@@ -166,10 +166,12 @@ class WORKER(object):
         elif self.DATA.name == "ImageNet":
             self.num_eval = {"train": 50000, "valid": 50000}
         else:
-            self.num_eval = {"train": len(self.train_dataloader.dataset),
-                             "valid": len(self.eval_dataloader.dataset),
-                             "test": len(self.eval_dataloader.dataset)
-                             }
+            self.num_eval = {}
+            if self.train_dataloader is not None:
+                self.num_eval["train"] = len(self.train_dataloader.dataset)
+            elif self.eval_dataloader is not None:
+                self.num_eval["test"] = len(self.eval_dataloader.dataset)
+                self.num_eval["valid"] = len(self.eval_dataloader.dataset)
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  generator_mapping=self.Gen_ema_mapping,
@@ -674,7 +676,7 @@ class WORKER(object):
                             f = torch.arange(-blur_size, blur_size + 1, device=fake_images.device).div(blur_sigma).square().neg().exp2()
                             fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
                     self.pl_reg_loss = self.pl_reg.cal_pl_reg(fake_images=fake_images, ws=ws) + fake_images[:,0,0,0].mean()*0
-                    self.pl_reg_loss *= self.STYLEGAN.pl_weight*self.STYLEGAN.g_reg_interval/self.OPTIMIZATION.acml_steps
+                    self.pl_reg_loss *= self.STYLEGAN.g_reg_interval/self.OPTIMIZATION.acml_steps
                     self.pl_reg_loss.backward()
                 self.OPTIMIZATION.g_optimizer.step()
 
@@ -1012,10 +1014,10 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # save fake images to measure metrics for evaluation.
     # -----------------------------------------------------------------------------
-    def save_fake_images(self):
+    def save_fake_images(self, num_images):
         if self.global_rank == 0:
             self.logger.info("save {num_images} generated images in png format.".format(
-                num_images=self.num_eval[self.RUN.ref_dataset]))
+                num_images=num_images))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
@@ -1028,7 +1030,7 @@ class WORKER(object):
                                  generator=generator,
                                  discriminator=self.Dis,
                                  is_generate=True,
-                                 num_images=self.num_eval[self.RUN.ref_dataset],
+                                 num_images=num_images,
                                  y_sampler="totally_random",
                                  batch_size=self.OPTIMIZATION.batch_size,
                                  z_prior=self.MODEL.z_prior,

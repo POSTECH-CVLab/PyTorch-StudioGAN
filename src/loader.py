@@ -70,7 +70,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
             # Allow PyTorch to internally use tf32 for matmul
             torch.backends.cuda.matmul.allow_tf32 = False
             # Allow PyTorch to internally use tf32 for convolutions
-            torch.backends.cudnn.alllow_tf32 = False
+            torch.backends.cudnn.allow_tf32 = False
 
     # -----------------------------------------------------------------------------
     # initialize all processes and fix seed of each process
@@ -413,7 +413,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.save_fake_images:
         if global_rank == 0:
             print(""), logger.info("-" * 80)
-        worker.save_fake_images()
+        worker.save_fake_images(num_images=cfgs.RUN.save_fake_images_num)
 
     if cfgs.RUN.vis_fake_images:
         if global_rank == 0:
