@@ -21,6 +21,7 @@ import torchvision.transforms as transforms
 import numpy as np
 
 from metrics.inception_net import InceptionV3
+from metrics.swin_transformer import SwinTransformer
 import metrics.vit as vits
 import metrics.fid as fid
 import metrics.ins as ins
@@ -35,6 +36,7 @@ model_names = {"InceptionV3_torch": "inception_v3",
                "ResNet50_torch": "resnet50",
                "SwAV_torch": "resnet50"}
 SWAV_CLASSIFIER_URL = "https://dl.fbaipublicfiles.com/deepcluster/swav_800ep_eval_linear.pth.tar"
+SWIN_URL = "https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224_22kto1k.pth"
 
 
 class LoadEvalModel(object):
@@ -70,6 +72,12 @@ class LoadEvalModel(object):
             misc.load_pretrained_weights(self.model, "", "teacher", "vit_small", 8)
             misc.load_pretrained_linear_weights(self.model.linear, "vit_small", 8)
             self.model = self.model.to(self.device)
+        elif self.eval_backbone == "Swin-T_torch":
+            self.res, mean, std = 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+            self.model = SwinTransformer()
+            model_state_dict = load_state_dict_from_url(SWIN_URL, progress=True)["model"]
+            self.model.load_state_dict(model_state_dict, strict=True)
+            self.model = self.model.to(self.device)
         else:
             raise NotImplementedError
 
@@ -80,7 +88,9 @@ class LoadEvalModel(object):
 
         if world_size > 1 and distributed_data_parallel:
             misc.make_model_require_grad(self.model)
-            self.model = DDP(self.model, device_ids=[self.device], broadcast_buffers=True)
+            self.model = DDP(self.model,
+                             device_ids=[self.device],
+                             broadcast_buffers=False if self.eval_backbone=="Swin-T_torch" else True)
         elif world_size > 1 and distributed_data_parallel is False:
             self.model = DataParallel(self.model, output_device=self.device)
         else:
@@ -96,7 +106,7 @@ class LoadEvalModel(object):
             x = x.detach().cpu().numpy().astype(np.uint8)
         x = ops.resize_images(x, self.resizer, self.totensor, self.mean, self.std, device=self.device)
 
-        if self.eval_backbone in ["InceptionV3_tf", "DINO_torch"]:
+        if self.eval_backbone in ["InceptionV3_tf", "DINO_torch", "Swin-T_torch"]:
             repres, logits = self.model(x)
         elif self.eval_backbone in ["InceptionV3_torch", "ResNet50_torch", "SwAV_torch"]:
             logits = self.model(x)

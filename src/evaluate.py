@@ -28,9 +28,10 @@ import metrics.prdc as prdc
 
 
 class Dataset_(Dataset):
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, data_name):
         super(Dataset_, self).__init__()
         self.data_dir = data_dir
+        self.data_name = data_name
         self.trsf = transforms.PILToTensor()
         self.load_dataset()
 
@@ -53,8 +54,9 @@ def prepare_evaluation():
     parser.add_argument("--post_resizer", type=str, default="legacy", help="which resizer will you use to evaluate GANs\
                         in ['legacy', 'clean', 'tailored']")
     parser.add_argument('--eval_backbone', type=str, default='InceptionV3_tf',\
-                        help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch]")
+                        help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch, Swin-T_torch]")
     parser.add_argument("--is_ImageNet", action="store_true")
+    parser.add_argument("--ImageNet_name", type=str, default="none", help="specify the type of ImageNet \in [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
     parser.add_argument("--dset1", type=str, default="none", help="specify the directory of the folder that contains real images.")
     parser.add_argument("--dset2", type=str, default="none", help="specify the directory of the folder that contains generated images.")
     parser.add_argument("--batch_size", default=256, type=int, help="batch_size for evaluation")
@@ -67,6 +69,9 @@ def prepare_evaluation():
     parser.add_argument("--num_workers", type=int, default=8)
     args = parser.parse_args()
 
+    if args.is_ImageNet:
+        assert args.ImageNet_name in ["ImageNet", "Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"],\
+            "Please specify the type of ImageNet dataset exactly."
     gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
     world_size = gpus_per_node * args.total_nodes
 
@@ -97,8 +102,8 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     # load dset1 and dset1.
     # -----------------------------------------------------------------------------
-    dset1 = Dataset_(data_dir=args.dset1)
-    dset2 = Dataset_(data_dir=args.dset2)
+    dset1 = Dataset_(data_dir=args.dset1, data_name=args.ImageNet_name)
+    dset2 = Dataset_(data_dir=args.dset2, data_name=args.ImageNet_name)
     if local_rank == 0:
         print("Size of dset1: {dataset_size}".format(dataset_size=len(dset1)))
         print("Size of dset2: {dataset_size}".format(dataset_size=len(dset2)))

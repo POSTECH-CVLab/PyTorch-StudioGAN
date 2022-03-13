@@ -59,6 +59,8 @@ def build_resizer(resizer, backbone, size):
             return make_resizer("PIL", "bilinear", (size, size))
         elif backbone == "DINO_torch":
             return make_resizer("PIL", "bilinear", (size, size))
+        elif backbone == "Swin-T_torch":
+            return make_resizer("PIL", "bicubic", (size, size))
         else:
             raise ValueError(f"Invalid resizer {resizer} specified")
     elif resizer == "clean":
