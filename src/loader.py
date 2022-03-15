@@ -10,6 +10,7 @@ import json
 import os
 import random
 import warnings
+import wandb
 
 from torch.backends import cudnn
 from torch.utils.data import DataLoader
@@ -461,3 +462,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         if global_rank == 0:
             print(""), logger.info("-" * 80)
         worker.compute_GAN_train_or_test_classifier_accuracy_score(GAN_train=False, GAN_test=True)
+
+    if global_rank == 0:
+        wandb.finish()
