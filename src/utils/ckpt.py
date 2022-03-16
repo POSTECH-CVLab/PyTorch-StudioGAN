@@ -27,7 +27,7 @@ def make_ckpt_dir(ckpt_dir):
 
 
 def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, load_misc=False, is_freezeD=False):
-    ckpt = torch.load(ckpt_path)
+    ckpt = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
     if load_model:
         if is_freezeD:
             mismatch_names = misc.load_parameters(src=ckpt["state_dict"],
@@ -75,7 +75,7 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
     when = "best" if load_best is True else "current"
     Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-{when}-weights-step*.pth".format(when=when)))[0]
     Dis_ckpt_path = glob.glob(join(ckpt_dir, "model=D-{when}-weights-step*.pth".format(when=when)))[0]
-    prev_run_name = torch.load(Dis_ckpt_path)["run_name"]
+    prev_run_name = torch.load(Dis_ckpt_path, map_location=lambda storage, loc: storage)["run_name"]
     is_freezeD = True if RUN.freezeD > -1 else False
 
     load_ckpt(model=Gen,
@@ -185,7 +185,7 @@ def check_is_pre_trained_model(ckpt_dir, GAN_train, GAN_test):
 
 def load_GAN_train_test_model(model, mode, optimizer, RUN):
     ckpt_path = join(RUN.ckpt_dir, "model=C-{mode}-best-weights.pth".format(mode=mode))
-    ckpt = torch.load(ckpt_path)
+    ckpt = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
 
     model.load_state_dict(ckpt["state_dict"])
     optimizer.load_state_dict(ckpt["optimizer"])

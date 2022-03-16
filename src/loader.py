@@ -18,6 +18,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 import torch
 import torch.distributed as dist
+import wandb
 
 from data_util import Dataset_
 from utils.style_ops import grid_sample_gradfix
@@ -461,3 +462,6 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         if global_rank == 0:
             print(""), logger.info("-" * 80)
         worker.compute_GAN_train_or_test_classifier_accuracy_score(GAN_train=False, GAN_test=True)
+    
+    if global_rank == 0:
+        wandb.finish()
