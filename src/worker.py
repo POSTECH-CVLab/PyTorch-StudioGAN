@@ -240,7 +240,7 @@ class WORKER(object):
         if self.MODEL.info_type in ["continuous", "both"]:
             misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[1]), grad=False, num_freeze_layers=-1, is_stylegan=False)
             misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[2]), grad=False, num_freeze_layers=-1, is_stylegan=False)
-        if self.DDP*self.mixed_precision*self.synchronized_bn == 0: self.Gen.apply(misc.untrack_bn_statistics)
+        if self.DDP*self.RUN.mixed_precision*self.RUN.synchronized_bn == 0: self.Gen.apply(misc.untrack_bn_statistics)
         # sample real images and labels from the true data distribution
         real_image_basket, real_label_basket = self.sample_data_basket()
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
