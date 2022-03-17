@@ -445,7 +445,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.intra_class_fid:
         if global_rank == 0:
             print(""), logger.info("-" * 80)
-        worker.calulate_intra_class_fid(dataset=train_dataset)
+        worker.calculate_intra_class_fid(dataset=train_dataset)
 
     if cfgs.RUN.semantic_factorization:
         if global_rank == 0:
