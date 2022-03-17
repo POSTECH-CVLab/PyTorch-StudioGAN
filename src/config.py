@@ -629,10 +629,10 @@ class Configurations(object):
 
     def check_compatability(self):
         if self.RUN.distributed_data_parallel and self.RUN.mixed_precision:
-            print("-"*80)
+            print("-"*120)
             print("WARNING: DDP Training with mixed_precision and synchronized_bn can lead significant difference in evaluation.")
             print("Please using standing statistics (-std_stat) with -std_max and -std_step options for reliable evaluation!")
-            print("-"*80)
+            print("-"*120)
 
         if len(self.RUN.eval_metrics):
             for item in self.RUN.eval_metrics:
