@@ -628,6 +628,10 @@ class Configurations(object):
                 raise NotImplementedError
 
     def check_compatability(self):
+        if self.RUN.distributed_data_parallel and self.RUN.mixed_precision:
+            print("WARNING: DDP Training with mixed_precision and synchronized_bn can lead significant difference in evaluation.")
+            print("Please using standing statistics (-std_stat) with -std_max and -std_step options for reliable evaluation!")
+
         if len(self.RUN.eval_metrics):
             for item in self.RUN.eval_metrics:
                 assert item in ["is", "fid", "prdc", "none"], "-metrics option can only contain is, fid, prdc or none for skipping evaluation."
