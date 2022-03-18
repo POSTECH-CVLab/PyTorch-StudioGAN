@@ -242,8 +242,10 @@ def make_target_cls_sampler(dataset, target_class):
         targets = dataset.data.targets
     except:
         targets = dataset.labels
-    weights = [True if target == target_class else False for target in targets]
-    num_samples = sum(weights)
-    weights = torch.DoubleTensor(weights)
-    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=False)
+    label_indices = []
+    for i in range(len(dataset)):
+        if targets[i] == target_class:
+            label_indices.append(i)
+    num_samples = len(label_indices)
+    sampler = torch.utils.data.sampler.SubsetRandomSampler(label_indices)    
     return num_samples, sampler

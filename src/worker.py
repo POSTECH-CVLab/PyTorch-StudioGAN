@@ -1382,10 +1382,10 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     # calculate intra-class FID (iFID) to identify intra-class diversity
     # -----------------------------------------------------------------------------
-    def calulate_intra_class_fid(self, dataset):
+    def calculate_intra_class_fid(self, dataset):
         if self.global_rank == 0:
-            self.logger.info("Start calculating iFID (use {num} fake images per class and train images as the reference).".\
-                             format(num=self.num_eval[self.RUN.ref_dataset]))
+            self.logger.info("Start calculating iFID (use approx. {num} fake images per class and train images as the reference).".\
+                             format(num=int(len(dataset)/self.DATA.num_classes)))
 
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
@@ -1405,7 +1405,7 @@ class WORKER(object):
                                                          sampler=target_sampler,
                                                          num_workers=self.RUN.num_workers,
                                                          pin_memory=True,
-                                                         drop_last=True)
+                                                         drop_last=False)
 
                 mu, sigma = fid.calculate_moments(data_loader=dataloader,
                                                   eval_model=self.eval_model,
@@ -1421,7 +1421,7 @@ class WORKER(object):
                                                     generator=generator,
                                                     discriminator=self.Dis,
                                                     eval_model=self.eval_model,
-                                                    num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                    num_generate=num_samples,
                                                     y_sampler=c,
                                                     batch_size=self.OPTIMIZATION.batch_size,
                                                     z_prior=self.MODEL.z_prior,
@@ -1443,7 +1443,7 @@ class WORKER(object):
 
                 ifid_score, _, _ = fid.calculate_fid(data_loader="N/A",
                                                      eval_model=self.eval_model,
-                                                     num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                     num_generate=num_samples,
                                                      cfgs=self.cfgs,
                                                      pre_cal_mean=mu,
                                                      pre_cal_std=sigma,
