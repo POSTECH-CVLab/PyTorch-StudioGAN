@@ -107,7 +107,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # load train and evaluation datasets.
     # -----------------------------------------------------------------------------
-    if cfgs.RUN.train or cfgs.RUN.intra_class_fid or cfgs.RUN.GAN_train or cfgs.RUN.GAN_test:
+    if cfgs.RUN.train or cfgs.RUN.GAN_train or cfgs.RUN.GAN_test:
         if local_rank == 0:
             logger.info("Load {name} train dataset.".format(name=cfgs.DATA.name))
         train_dataset = Dataset_(data_name=cfgs.DATA.name,
@@ -126,7 +126,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         train_dataset = None
 
     if len(cfgs.RUN.eval_metrics) + cfgs.RUN.save_real_images + cfgs.RUN.k_nearest_neighbor + \
-            cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
+            cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis + cfgs.RUN.intra_class_fid:
         if local_rank == 0:
             logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
@@ -162,7 +162,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         train_sampler = None
     cfgs.OPTIMIZATION.basket_size = cfgs.OPTIMIZATION.batch_size * cfgs.OPTIMIZATION.acml_steps * cfgs.OPTIMIZATION.d_updates_per_step
 
-    if cfgs.RUN.train or cfgs.RUN.intra_class_fid or cfgs.RUN.GAN_train or cfgs.RUN.GAN_test:
+    if cfgs.RUN.train  or cfgs.RUN.GAN_train or cfgs.RUN.GAN_test:
         train_dataloader = DataLoader(dataset=train_dataset,
                                       batch_size=cfgs.OPTIMIZATION.basket_size,
                                       shuffle=(train_sampler is None),
@@ -174,7 +174,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         train_dataloader = None
 
-    if len(cfgs.RUN.eval_metrics) + +cfgs.RUN.save_real_images + cfgs.RUN.k_nearest_neighbor + \
+    if len(cfgs.RUN.eval_metrics) + cfgs.RUN.intra_class_fid + cfgs.RUN.save_real_images + cfgs.RUN.k_nearest_neighbor + \
             cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis:
         if cfgs.RUN.distributed_data_parallel:
             eval_sampler = DistributedSampler(eval_dataset,
@@ -446,7 +446,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.intra_class_fid:
         if global_rank == 0:
             print(""), logger.info("-" * 80)
-        worker.calculate_intra_class_fid(dataset=train_dataset)
+        worker.calculate_intra_class_fid(dataset=eval_dataset)
 
     if cfgs.RUN.semantic_factorization:
         if global_rank == 0:

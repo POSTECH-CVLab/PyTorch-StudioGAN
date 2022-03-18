@@ -1447,7 +1447,7 @@ class WORKER(object):
                                                      cfgs=self.cfgs,
                                                      pre_cal_mean=mu,
                                                      pre_cal_std=sigma,
-                                                     quantize=True,
+                                                     quantize=False,
                                                      fake_feats=c_fake_feats,
                                                      disable_tqdm=True)
 
