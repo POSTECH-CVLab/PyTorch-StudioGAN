@@ -1436,7 +1436,7 @@ class WORKER(object):
 
                 ifid_score, _, _ = fid.calculate_fid(data_loader="N/A",
                                                      eval_model=self.eval_model,
-                                                     num_generate=self.num_eval[self.RUN.ref_dataset],
+                                                     num_generate=num_samples,
                                                      cfgs=self.cfgs,
                                                      pre_cal_mean=mu,
                                                      pre_cal_std=sigma,
