@@ -22,6 +22,7 @@ import numpy as np
 
 from metrics.inception_net import InceptionV3
 from metrics.swin_transformer import SwinTransformer
+import metrics.features as features
 import metrics.vit as vits
 import metrics.fid as fid
 import metrics.ins as ins
@@ -146,6 +147,37 @@ def prepare_moments(data_loader, eval_model, quantize, cfgs, logger, device):
             logger.info("Save calculated means and covariances to disk.")
         np.savez(moment_path, **{"mu": mu, "sigma": sigma})
     return mu, sigma
+
+
+def prepare_real_feats(data_loader, eval_model, num_feats, quantize, cfgs, logger, device):
+    disable_tqdm = device != 0
+    eval_model.eval()
+    feat_dir = join(cfgs.RUN.save_dir, "feats")
+    if not exists(feat_dir):
+        os.makedirs(feat_dir)
+    feat_path = join(feat_dir, cfgs.DATA.name + "_"  + str(cfgs.DATA.img_size) + "_"+ cfgs.RUN.pre_resizer + "_" + \
+                     cfgs.RUN.ref_dataset + "_" + cfgs.RUN.post_resizer + "_" + cfgs.RUN.eval_backbone + "_feats.npz")
+
+    is_file = os.path.isfile(feat_path)
+    if is_file:
+        real_feats = np.load(feat_path)["real_feats"]
+    else:
+        if device == 0:
+            logger.info("Calculate features of {ref} dataset using {eval_backbone} model.".\
+                        format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
+        real_feats = features.stack_features(data_loader=data_loader,
+                                             eval_model=eval_model,
+                                             num_feats=num_feats,
+                                             batch_size=cfgs.OPTIMIZATION.batch_size,
+                                             quantize=quantize,
+                                             world_size=cfgs.OPTIMIZATION.world_size,
+                                             DDP=cfgs.RUN.distributed_data_parallel,
+                                             disable_tqdm=disable_tqdm)
+
+        if device == 0:
+            logger.info("Save real_features to disk.")
+        np.savez(feat_path, **{"real_feats": real_feats})
+    return real_feats
 
 
 def calculate_ins(data_loader, eval_model, quantize, splits, cfgs, logger, device):

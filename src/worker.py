@@ -56,8 +56,8 @@ LOG_FORMAT = ("Step: {step:>6} "
 
 class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis,
-                 ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, logger, aa_p,
-                 best_step, best_fid, best_ckpt_path, loss_list_dict, metric_dict_during_train):
+                 ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, real_feats, logger,
+                 aa_p, best_step, best_fid, best_ckpt_path, num_eval, loss_list_dict, metric_dict_during_train):
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
@@ -75,11 +75,13 @@ class WORKER(object):
         self.local_rank = local_rank
         self.mu = mu
         self.sigma = sigma
+        self.real_feats = real_feats
         self.logger = logger
         self.aa_p = aa_p
         self.best_step = best_step
         self.best_fid = best_fid
         self.best_ckpt_path = best_ckpt_path
+        self.num_eval = num_eval
         self.loss_list_dict = loss_list_dict
         self.metric_dict_during_train = metric_dict_during_train
         self.metric_dict_during_final_eval = {}
@@ -154,26 +156,7 @@ class WORKER(object):
                                                                        m_p=self.LOSS.m_p,
                                                                        master_rank="cuda",
                                                                        DDP=self.DDP)
-        else:
-            pass
-
-        if self.DATA.name == "CIFAR10":
-            self.num_eval = {"train": 50000, "test": 10000}
-        elif self.DATA.name == "CIFAR100":
-            self.num_eval = {"train": 50000, "test": 10000}
-        elif self.DATA.name == "Tiny_ImageNet":
-            self.num_eval = {"train": 50000, "valid": 10000}
-        elif self.DATA.name == "ImageNet":
-            self.num_eval = {"train": 50000, "valid": 50000}
-        elif self.DATA.name == "Baby_ImageNet":
-            self.num_eval = {"train": 50000, "valid": 10000}
-        else:
-            try:
-                self.num_eval = {"train": len(self.train_dataloader.dataset),
-                                "valid": len(self.eval_dataloader.dataset),
-                                "test": len(self.eval_dataloader.dataset)}
-            except:
-                self.num_eval = {"train": 10000, "valid": 10000, "test": 10000}
+        else: pass
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  generator_mapping=self.Gen_ema_mapping,
@@ -894,7 +877,8 @@ class WORKER(object):
                             step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
             if "prdc" in metrics:
-                prc, rec, dns, cvg = prdc.calculate_pr_dc(fake_feats=fake_feats,
+                prc, rec, dns, cvg = prdc.calculate_pr_dc(real_feats=self.real_feats,
+                                                          fake_feats=fake_feats,
                                                           data_loader=self.eval_dataloader,
                                                           eval_model=self.eval_model,
                                                           num_generate=self.num_eval[self.RUN.ref_dataset],
@@ -1020,8 +1004,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     def save_fake_images(self):
         if self.global_rank == 0:
-            self.logger.info("save {num_images} generated images in png format.".format(
-                num_images=self.num_eval[self.RUN.ref_dataset]))
+            self.logger.info("save {num_images} generated images in png format.".format(num_images=self.num_eval[self.RUN.ref_dataset]))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 

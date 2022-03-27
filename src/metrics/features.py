@@ -8,6 +8,7 @@ import math
 
 from tqdm import tqdm
 import torch
+import numpy as np
 
 import utils.sample as sample
 import utils.losses as losses
@@ -98,3 +99,31 @@ def sample_images_from_loader_and_stack_features(dataloader, eval_model, batch_s
         prob_holder = torch.cat(losses.GatherLayer.apply(prob_holder), dim=0)
         label_holder = torch.cat(losses.GatherLayer.apply(label_holder), dim=0)
     return feature_holder, prob_holder, list(label_holder.detach().cpu().numpy())
+
+
+def stack_features(data_loader, eval_model, num_feats, batch_size, quantize, world_size, DDP, disable_tqdm):
+    eval_model.eval()
+    total_instance = len(data_loader.dataset)
+    data_iter = iter(data_loader)
+    num_batches = math.ceil(float(total_instance) / float(batch_size))
+    if DDP: num_batches = num_batches//world_size + 1
+
+    real_feats = []
+    for i in tqdm(range(0, num_batches), disable=disable_tqdm):
+        start = i * batch_size
+        end = start + batch_size
+        try:
+            images, labels = next(data_iter)
+        except StopIteration:
+            break
+
+        with torch.no_grad():
+            embeddings, logits = eval_model.get_outputs(images, quantize=quantize)
+            real_feats.append(embeddings)
+
+    real_feats = torch.cat(real_feats, dim=0)
+    if DDP: real_feats = torch.cat(losses.GatherLayer.apply(real_feats), dim=0)
+
+    real_feat_indices = np.random.permutation(total_instance)[:num_feats]
+    real_feats = real_feats.detach().cpu().numpy()[real_feat_indices].astype(np.float64)
+    return real_feats

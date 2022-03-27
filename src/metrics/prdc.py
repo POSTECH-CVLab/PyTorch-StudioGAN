@@ -38,10 +38,9 @@ import utils.losses as losses
 __all__ = ["compute_prdc"]
 
 
-def compute_real_fake_embeddings(fake_feats, data_loader, num_generate, batch_size, eval_model,
-                                 quantize, world_size, DDP, disable_tqdm):
+def compute_real_embeddings(data_loader, batch_size, eval_model, quantize, world_size, DDP, disable_tqdm):
     data_iter = iter(data_loader)
-    num_batches = int(math.ceil(float(num_generate) / float(batch_size)))
+    num_batches = int(math.ceil(float(len(data_loader.dataset))/float(batch_size)))
     if DDP: num_batches = num_batches//world_size + 1
 
     real_embeds = []
@@ -57,25 +56,25 @@ def compute_real_fake_embeddings(fake_feats, data_loader, num_generate, batch_si
 
     real_embeds = torch.cat(real_embeds, dim=0)
     if DDP: real_embeds = torch.cat(losses.GatherLayer.apply(real_embeds), dim=0)
-
-    real_embeds = np.array(real_embeds.detach().cpu().numpy(), dtype=np.float64)[:num_generate]
-    fake_embeds = np.array(fake_feats.detach().cpu().numpy(), dtype=np.float64)[:num_generate]
-    return real_embeds, fake_embeds
+    real_embeds = np.array(real_embeds.detach().cpu().numpy(), dtype=np.float64)
+    return real_embeds[:len(data_loader.dataset)]
 
 
-def calculate_pr_dc(fake_feats, data_loader, eval_model, num_generate, cfgs, quantize, nearest_k,
+def calculate_pr_dc(real_feats, fake_feats, data_loader, eval_model, num_generate, cfgs, quantize, nearest_k,
                     world_size, DDP, disable_tqdm):
     eval_model.eval()
 
-    real_embeds, fake_embeds = compute_real_fake_embeddings(fake_feats=fake_feats,
-                                                            data_loader=data_loader,
-                                                            num_generate=num_generate,
-                                                            batch_size=cfgs.OPTIMIZATION.batch_size,
-                                                            eval_model=eval_model,
-                                                            quantize=quantize,
-                                                            world_size=world_size,
-                                                            DDP=DDP,
-                                                            disable_tqdm=disable_tqdm)
+    if real_feats is None:
+        real_embeds = compute_real_embeddings(data_loader=data_loader,
+                                              batch_size=cfgs.OPTIMIZATION.batch_size,
+                                              eval_model=eval_model,
+                                              quantize=quantize,
+                                              world_size=world_size,
+                                              DDP=DDP,
+                                              disable_tqdm=disable_tqdm)
+
+    real_embeds = real_feats
+    fake_embeds = np.array(fake_feats.detach().cpu().numpy(), dtype=np.float64)[:num_generate]
 
     metrics = compute_prdc(real_features=real_embeds, fake_features=fake_embeds, nearest_k=nearest_k)
 
