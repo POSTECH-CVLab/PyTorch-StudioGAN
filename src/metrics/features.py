@@ -108,7 +108,7 @@ def stack_features(data_loader, eval_model, num_feats, batch_size, quantize, wor
     num_batches = math.ceil(float(total_instance) / float(batch_size))
     if DDP: num_batches = num_batches//world_size + 1
 
-    real_feats = []
+    real_feats, real_labels = [], []
     for i in tqdm(range(0, num_batches), disable=disable_tqdm):
         start = i * batch_size
         end = start + batch_size
@@ -120,10 +120,15 @@ def stack_features(data_loader, eval_model, num_feats, batch_size, quantize, wor
         with torch.no_grad():
             embeddings, logits = eval_model.get_outputs(images, quantize=quantize)
             real_feats.append(embeddings)
+            real_labels.append(labels)
 
     real_feats = torch.cat(real_feats, dim=0)
-    if DDP: real_feats = torch.cat(losses.GatherLayer.apply(real_feats), dim=0)
+    real_labels = torch.cat(real_labels, dim=0)
+    if DDP:
+        real_feats = torch.cat(losses.GatherLayer.apply(real_feats), dim=0)
+        real_labels = torch.cat(losses.GatherLayer.apply(real_labels), dim=0)
 
     real_feat_indices = np.random.permutation(total_instance)[:num_feats]
     real_feats = real_feats.detach().cpu().numpy()[real_feat_indices].astype(np.float64)
-    return real_feats
+    real_labels = real_labels.detach().cpu().numpy()[real_feat_indices]
+    return real_feats, real_feat_indices, real_labels
