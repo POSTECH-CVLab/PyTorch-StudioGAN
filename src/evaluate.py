@@ -89,7 +89,7 @@ def prepare_evaluation():
     parser.add_argument("--is_ImageNet", action="store_true")
     parser.add_argument("--ImageNet_name", type=str, default=None, help="specify the type of ImageNet \in [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
     parser.add_argument("--ImageNet_resolution", type=int, default=0, help="specify the resolution of [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
-    parser.add_argument("--ImageNet_resizer", type=str, default="wo_resize", help="which resizer will you use to pre-process ImageNet\
+    parser.add_argument("--ImageNet_pre_resizer", type=str, default="wo_resize", help="which resizer will you use to pre-process ImageNet\
                         in ['wo_resize', 'nearest', 'bilinear', 'bicubic', 'lanczos']")
     parser.add_argument("--dset1", type=str, default=None, help="specify the directory of the folder that contains dset1 images (real).")
     parser.add_argument("--dset1_feats", type=str, default=None, help="specify the path of *.npy that contains features of dset1 (real). \
@@ -111,7 +111,7 @@ def prepare_evaluation():
         assert args.ImageNet_name in ["ImageNet", "Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"],\
             "Please specify the type of ImageNet dataset exactly."
         assert args.ImageNet_resolution > 0, "Resolution should be larger than 0"
-        assert args.ImageNet_resizer in ["wo_resize", "nearest", "bilinear", "bicubic", "lanczos"], \
+        assert args.ImageNet_pre_resizer in ["wo_resize", "nearest", "bilinear", "bicubic", "lanczos"], \
             "You shold choose a resizer for pre-precessing ImageNet."
     gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
     world_size = gpus_per_node * args.total_nodes
@@ -146,7 +146,7 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     dset1 = Dataset_(data_dir=args.dset1,
                      imagenet_name=args.ImageNet_name,
                      imagenet_resize=args.ImageNet_resolution,
-                     imagenet_resizer=args.ImageNet_resizer)
+                     imagenet_resizer=args.ImageNet_pre_resizer)
     dset2 = Dataset_(data_dir=args.dset2)
     if local_rank == 0:
         print("Size of dset1: {dataset_size}".format(dataset_size=len(dset1)))
@@ -206,7 +206,7 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
                                       eval_model=eval_model,
                                       batch_size=batch_size,
                                       quantize=True if args.is_ImageNet and args.ImageNet_resolution > 0 and \
-        args.ImageNet_resizer in ["nearest", "bilinear", "bicubic", "lanczos"] else False,
+        args.ImageNet_pre_resizer in ["nearest", "bilinear", "bicubic", "lanczos"] else False,
                                       world_size=world_size,
                                       DDP=args.distributed_data_parallel,
                                       device=local_rank,
