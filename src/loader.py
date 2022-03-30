@@ -110,7 +110,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     if cfgs.RUN.train or cfgs.RUN.GAN_train or cfgs.RUN.GAN_test:
         if local_rank == 0:
-            logger.info("Load {name} train dataset.".format(name=cfgs.DATA.name))
+            logger.info("Load {name} train dataset for training.".format(name=cfgs.DATA.name))
         train_dataset = Dataset_(data_name=cfgs.DATA.name,
                                  data_dir=cfgs.RUN.data_dir,
                                  train=True,
@@ -129,7 +129,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if len(cfgs.RUN.eval_metrics) + cfgs.RUN.save_real_images + cfgs.RUN.k_nearest_neighbor + \
             cfgs.RUN.frequency_analysis + cfgs.RUN.tsne_analysis + cfgs.RUN.intra_class_fid:
         if local_rank == 0:
-            logger.info("Load {name} {ref} dataset.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
+            logger.info("Load {name} {ref} dataset for evaluation.".format(name=cfgs.DATA.name, ref=cfgs.RUN.ref_dataset))
         eval_dataset = Dataset_(data_name=cfgs.DATA.name,
                                 data_dir=cfgs.RUN.data_dir,
                                 train=True if cfgs.RUN.ref_dataset == "train" else False,

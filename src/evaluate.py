@@ -11,8 +11,10 @@ import random
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
+from torchvision.transforms import InterpolationMode
 from torchvision.datasets import ImageFolder
 from torch.backends import cudnn
+from PIL import Image
 import torch
 import torch.multiprocessing as mp
 import torchvision.transforms as transforms
@@ -26,13 +28,42 @@ import metrics.fid as fid
 import metrics.prdc as prdc
 
 
+resizer_collection = {"nearest": InterpolationMode.NEAREST,
+                      "box": InterpolationMode.BOX,
+                      "bilinear": InterpolationMode.BILINEAR,
+                      "hamming": InterpolationMode.HAMMING,
+                      "bicubic": InterpolationMode.BICUBIC,
+                      "lanczos": InterpolationMode.LANCZOS}
+
+
+class CenterCropLongEdge(object):
+    """
+    this code is borrowed from https://github.com/ajbrock/BigGAN-PyTorch
+    MIT License
+    Copyright (c) 2019 Andy Brock
+    """
+    def __call__(self, img):
+        return transforms.functional.center_crop(img, min(img.size))
+
+    def __repr__(self):
+        return self.__class__.__name__
+
 
 class Dataset_(Dataset):
-    def __init__(self, data_dir, data_name):
+    def __init__(self, data_dir, imagenet_name=None, imagenet_resize=None, imagenet_resizer=None):
         super(Dataset_, self).__init__()
         self.data_dir = data_dir
-        self.data_name = data_name
-        self.trsf = transforms.PILToTensor()
+        if imagenet_name in ["ImageNet", "Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"] \
+                and imagenet_resize > 0 and imagenet_resizer in ["nearest", "bilinear", "bicubic", "lanczos"]:
+            self.trsf_list = [CenterCropLongEdge(),
+                              transforms.Resize(imagenet_resize,
+                                                resizer_collection[imagenet_resizer]),
+                              transforms.ToTensor(),
+                              transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+        else:
+            self.trsf_list = [transforms.PILToTensor()]
+        self.trsf = transforms.Compose(self.trsf_list)
+
         self.load_dataset()
 
     def load_dataset(self):
@@ -57,12 +88,15 @@ def prepare_evaluation():
                         help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch, Swin-T_torch]")
     parser.add_argument("--is_ImageNet", action="store_true")
     parser.add_argument("--ImageNet_name", type=str, default=None, help="specify the type of ImageNet \in [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
-    parser.add_argument("--dset1", type=str, default=None, help="specify the directory of the folder that contains dset1 images.")
-    parser.add_argument("--dset1_feats", type=str, default=None, help="specify the path of *.npy that contains features of dset1. \
+    parser.add_argument("--ImageNet_resolution", type=int, default=0, help="specify the resolution of [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
+    parser.add_argument("--ImageNet_resizer", type=str, default="wo_resize", help="which resizer will you use to pre-process ImageNet\
+                        in ['wo_resize', 'nearest', 'bilinear', 'bicubic', 'lanczos']")
+    parser.add_argument("--dset1", type=str, default=None, help="specify the directory of the folder that contains dset1 images (real).")
+    parser.add_argument("--dset1_feats", type=str, default=None, help="specify the path of *.npy that contains features of dset1 (real). \
                         If not specified, StudioGAN will automatically extract feat1 using the whole dset1.")
-    parser.add_argument("--dset1_moments", type=str, default=None, help="specify the path of *.npy that contains moments (mu, sigma) of dset1. \
+    parser.add_argument("--dset1_moments", type=str, default=None, help="specify the path of *.npy that contains moments (mu, sigma) of dset1 (real). \
                         If not specified, StudioGAN will automatically extract moments using the whole dset1.")
-    parser.add_argument("--dset2", type=str, default=None, help="specify the directory of the folder that contains dset2 images.")
+    parser.add_argument("--dset2", type=str, default=None, help="specify the directory of the folder that contains dset2 images (fake).")
     parser.add_argument("--batch_size", default=256, type=int, help="batch_size for evaluation")
 
     parser.add_argument("--seed", type=int, default=-1, help="seed for generating random numbers")
@@ -76,6 +110,9 @@ def prepare_evaluation():
     if args.is_ImageNet:
         assert args.ImageNet_name in ["ImageNet", "Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"],\
             "Please specify the type of ImageNet dataset exactly."
+        assert args.ImageNet_resolution > 0, "Resolution should be larger than 0"
+        assert args.ImageNet_resizer in ["wo_resize", "nearest", "bilinear", "bicubic", "lanczos"], \
+            "You shold choose a resizer for pre-precessing ImageNet."
     gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
     world_size = gpus_per_node * args.total_nodes
 
@@ -106,8 +143,11 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     # load dset1 and dset1.
     # -----------------------------------------------------------------------------
-    dset1 = Dataset_(data_dir=args.dset1, data_name=args.ImageNet_name)
-    dset2 = Dataset_(data_dir=args.dset2, data_name=args.ImageNet_name)
+    dset1 = Dataset_(data_dir=args.dset1,
+                     imagenet_name=args.ImageNet_name,
+                     imagenet_resize=args.ImageNet_resolution,
+                     imagenet_resizer=args.ImageNet_resizer)
+    dset2 = Dataset_(data_dir=args.dset2)
     if local_rank == 0:
         print("Size of dset1: {dataset_size}".format(dataset_size=len(dset1)))
         print("Size of dset2: {dataset_size}".format(dataset_size=len(dset2)))
@@ -165,7 +205,8 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
                                       dataloader=dset1_dataloader,
                                       eval_model=eval_model,
                                       batch_size=batch_size,
-                                      quantize=False,
+                                      quantize=True if args.is_ImageNet and args.ImageNet_resolution > 0 and \
+        args.ImageNet_resizer in ["nearest", "bilinear", "bicubic", "lanczos"] else False,
                                       world_size=world_size,
                                       DDP=args.distributed_data_parallel,
                                       device=local_rank,
