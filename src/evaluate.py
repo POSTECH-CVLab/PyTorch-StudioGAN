@@ -53,8 +53,10 @@ class Dataset_(Dataset):
     def __init__(self, data_dir, imagenet_name=None, imagenet_resize=None, imagenet_resizer=None):
         super(Dataset_, self).__init__()
         self.data_dir = data_dir
+        self.data_name = imagenet_name
         if imagenet_name in ["ImageNet", "Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"] \
-                and imagenet_resize > 0 and imagenet_resizer in ["nearest", "bilinear", "bicubic", "lanczos"]:
+                and isinstance(imagenet_resize, int) and imagenet_resize > 0 \
+                and imagenet_resizer in ["nearest", "bilinear", "bicubic", "lanczos"]:
             self.trsf_list = [CenterCropLongEdge(),
                               transforms.Resize(imagenet_resize,
                                                 resizer_collection[imagenet_resizer]),
@@ -147,7 +149,8 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
                      imagenet_name=args.ImageNet_name,
                      imagenet_resize=args.ImageNet_resolution,
                      imagenet_resizer=args.ImageNet_pre_resizer)
-    dset2 = Dataset_(data_dir=args.dset2)
+    dset2 = Dataset_(data_dir=args.dset2,
+                     imagenet_name=args.ImageNet_name)
     if local_rank == 0:
         print("Size of dset1: {dataset_size}".format(dataset_size=len(dset1)))
         print("Size of dset2: {dataset_size}".format(dataset_size=len(dset2)))
@@ -239,7 +242,7 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
                                                                data_loader=dset2_dataloader,
                                                                num_features=len(dset2),
                                                                split=num_splits,
-                                                               is_acc=args.is_ImageNet,
+                                                               is_acc=False,
                                                                is_torch_backbone=True if "torch" in args.eval_backbone else False)
         if local_rank == 0:
             print("Inception score of dset1 ({num} images): {IS}".format(num=str(len(dset1)), IS=dset1_kl_score))
@@ -247,8 +250,6 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
             if args.is_ImageNet:
                 print("{eval_model} Top1 acc (dset1): {Top1}".format(eval_model=args.eval_backbone, Top1=dset1_top1))
                 print("{eval_model} Top5 acc (dset1): {Top5}".format(eval_model=args.eval_backbone, Top5=dset1_top5))
-                print("{eval_model} Top1 acc (dset2): {Top1}".format(eval_model=args.eval_backbone, Top1=dset2_top1))
-                print("{eval_model} Top5 acc (dset2): {Top5}".format(eval_model=args.eval_backbone, Top5=dset2_top5))
 
     if "fid" in args.eval_metrics:
         if args.dset1_moments is None:
