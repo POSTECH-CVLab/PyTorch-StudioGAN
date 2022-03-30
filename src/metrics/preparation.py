@@ -165,20 +165,19 @@ def prepare_real_feats(data_loader, eval_model, num_feats, quantize, cfgs, logge
         if device == 0:
             logger.info("Calculate features of {ref} dataset using {eval_backbone} model.".\
                         format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
-        real_feats, real_probs, real_feat_indices, real_labels = features.stack_features(data_loader=data_loader,
-                                                                 eval_model=eval_model,
-                                                                 num_feats=num_feats,
-                                                                 batch_size=cfgs.OPTIMIZATION.batch_size,
-                                                                 quantize=quantize,
-                                                                 world_size=cfgs.OPTIMIZATION.world_size,
-                                                                 DDP=cfgs.RUN.distributed_data_parallel,
-                                                                 disable_tqdm=disable_tqdm)
+        real_feats, real_probs, real_labels = features.stack_features(data_loader=data_loader,
+                                                eval_model=eval_model,
+                                                num_feats=num_feats,
+                                                batch_size=cfgs.OPTIMIZATION.batch_size,
+                                                quantize=quantize,
+                                                world_size=cfgs.OPTIMIZATION.world_size,
+                                                DDP=cfgs.RUN.distributed_data_parallel,
+                                                disable_tqdm=disable_tqdm)
 
         if device == 0:
             logger.info("Save real_features to disk.")
             np.savez(feat_path, **{"real_feats": real_feats,
                                    "real_probs": real_probs,
-                                   "real_feat_indices": real_feat_indices,
                                    "real_labels": real_labels})
     return real_feats
 
