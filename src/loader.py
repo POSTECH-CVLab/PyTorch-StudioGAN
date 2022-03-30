@@ -302,7 +302,24 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                        device=local_rank)
 
     if "prdc" in cfgs.RUN.eval_metrics:
-        real_feats = pp.prepare_real_feats(data_loader=eval_dataloader,
+        if cfgs.RUN.distributed_data_parallel:
+            prdc_sampler = DistributedSampler(eval_dataset,
+                                              num_replicas=cfgs.OPTIMIZATION.world_size,
+                                              rank=local_rank,
+                                              shuffle=True,
+                                              drop_last=False)
+        else:
+            prdc_sampler = None
+
+        prdc_dataloader = DataLoader(dataset=eval_dataset,
+                                     batch_size=cfgs.OPTIMIZATION.batch_size,
+                                     shuffle=(prdc_sampler is None),
+                                     pin_memory=True,
+                                     num_workers=cfgs.RUN.num_workers,
+                                     sampler=prdc_sampler,
+                                     drop_last=False)
+
+        real_feats = pp.prepare_real_feats(data_loader=prdc_dataloader,
                                            eval_model=eval_model,
                                            num_feats=num_eval[cfgs.RUN.ref_dataset],
                                            quantize=True,

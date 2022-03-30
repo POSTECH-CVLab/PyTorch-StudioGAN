@@ -56,9 +56,13 @@ def prepare_evaluation():
     parser.add_argument('--eval_backbone', type=str, default='InceptionV3_tf',\
                         help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch, Swin-T_torch]")
     parser.add_argument("--is_ImageNet", action="store_true")
-    parser.add_argument("--ImageNet_name", type=str, default="none", help="specify the type of ImageNet \in [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
-    parser.add_argument("--dset1", type=str, default="none", help="specify the directory of the folder that contains real images.")
-    parser.add_argument("--dset2", type=str, default="none", help="specify the directory of the folder that contains generated images.")
+    parser.add_argument("--ImageNet_name", type=str, default=None, help="specify the type of ImageNet \in [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
+    parser.add_argument("--dset1", type=str, default=None, help="specify the directory of the folder that contains dset1 images.")
+    parser.add_argument("--dset1_feats", type=str, default=None, help="specify the path of *.npy that contains features of dset1. \
+                        If not specified, StudioGAN will automatically extract feat1 using the whole dset1.")
+    parser.add_argument("--dset1_moments", type=str, default=None, help="specify the path of *.npy that contains moments (mu, sigma) of dset1. \
+                        If not specified, StudioGAN will automatically extract moments using the whole dset1.")
+    parser.add_argument("--dset2", type=str, default=None, help="specify the directory of the folder that contains dset2 images.")
     parser.add_argument("--batch_size", default=256, type=int, help="batch_size for evaluation")
 
     parser.add_argument("--seed", type=int, default=-1, help="seed for generating random numbers")
@@ -206,32 +210,44 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
                 print("{eval_model} Top5 acc (dset2): {Top5}".format(eval_model=args.eval_backbone, Top5=dset2_top5))
 
     if "fid" in args.eval_metrics:
-        mu1 = np.mean(dset1_feats.detach().cpu().numpy().astype(np.float64)[:len(dset1)], axis=0)
-        sigma1 = np.cov(dset1_feats.detach().cpu().numpy().astype(np.float64)[:len(dset1)], rowvar=False)
+        if args.dset1_moments is None:
+            mu1 = np.mean(dset1_feats.detach().cpu().numpy().astype(np.float64)[:len(dset1)], axis=0)
+            sigma1 = np.cov(dset1_feats.detach().cpu().numpy().astype(np.float64)[:len(dset1)], rowvar=False)
+        else:
+            mu1, sigma1 = np.load(args.dset1_moments)["mu"], np.load(args.dset1_moments)["sigma"]
 
         mu2 = np.mean(dset2_feats.detach().cpu().numpy().astype(np.float64)[:len(dset2)], axis=0)
         sigma2 = np.cov(dset2_feats.detach().cpu().numpy().astype(np.float64)[:len(dset2)], rowvar=False)
 
         fid_score = fid.frechet_inception_distance(mu1, sigma1, mu2, sigma2)
         if local_rank == 0:
-            print("FID between dset1 and dset2 (dset1: {num1} images, dset2: {num2} images): {fid}".\
-                format(num1=str(len(dset1)), num2=str(len(dset2)), fid=fid_score))
+            if args.dset1_moments is None:
+                print("FID between dset1 and dset2 (dset1: {num1} images, dset2: {num2} images): {fid}".\
+                      format(num1=str(len(dset1)), num2=str(len(dset2)), fid=fid_score))
+            else:
+                print("FID between pre-calculated dset1 moments and dset2 (dset2: {num2} images): {fid}".\
+                      format(num2=str(len(dset2)), fid=fid_score))
 
     if "prdc" in args.eval_metrics:
         nearest_k = 5
-        dset1_feats_np = np.array(dset1_feats.detach().cpu().numpy(), dtype=np.float64)[:len(dset1)]
+        if args.dset1_feats is None:
+            dset1_feats_np = np.array(dset1_feats.detach().cpu().numpy(), dtype=np.float64)[:len(dset1)]
+            dset1_mode = "dset1"
+        else:
+            dset1_feats_np = np.load(args.dset1_feats, mmap_mode='r')["real_feats"]
+            dset1_mode = "pre-calculated dset1_feats"
         dset2_feats_np = np.array(dset2_feats.detach().cpu().numpy(), dtype=np.float64)[:len(dset2)]
         metrics = prdc.compute_prdc(real_features=dset1_feats_np, fake_features=dset2_feats_np, nearest_k=nearest_k)
         prc, rec, dns, cvg = metrics["precision"], metrics["recall"], metrics["density"], metrics["coverage"]
         if local_rank == 0:
-            print("Improved Precision between dset1 (ref) and dset2 (target) (dset1: {num1} images, dset2: {num2} images): {prc}".\
-                format(num1=str(len(dset1)), num2=str(len(dset2)), prc=prc))
-            print("Improved Recall between dset1 (ref) and dset2 (target) (dset1: {num1} images, dset2: {num2} images): {rec}".\
-                format(num1=str(len(dset1)), num2=str(len(dset2)), rec=rec))
-            print("Density between dset1 (ref) and dset2 (target) (dset1: {num1} images, dset2: {num2} images): {dns}".\
-                format(num1=str(len(dset1)), num2=str(len(dset2)), dns=dns))
-            print("Coverage between dset1 (ref) and dset2 (target) (dset1: {num1} images, dset2: {num2} images): {cvg}".\
-                format(num1=str(len(dset1)), num2=str(len(dset2)), cvg=cvg))
+            print("Improved Precision between {dset1_mode} (ref) and dset2 (target) ({dset1_mode}: {num1} images, dset2: {num2} images): {prc}".\
+                format(dset1_mode=str(dset1_mode), num1=str(len(dset1_feats_np)), num2=str(len(dset2_feats_np)), prc=prc))
+            print("Improved Recall between {dset1_mode} (ref) and dset2 (target) ({dset1_mode}: {num1} images, dset2: {num2} images): {rec}".\
+                format(dset1_mode=str(dset1_mode), num1=str(len(dset1_feats_np)), num2=str(len(dset2_feats_np)), rec=rec))
+            print("Density between {dset1_mode} (ref) and dset2 (target) ({dset1_mode}: {num1} images, dset2: {num2} images): {dns}".\
+                format(dset1_mode=str(dset1_mode), num1=str(len(dset1_feats_np)), num2=str(len(dset2_feats_np)), dns=dns))
+            print("Coverage between {dset1_mode} (ref) and dset2 (target) ({dset1_mode}: {num1} images, dset2: {num2} images): {cvg}".\
+                format(dset1_mode=str(dset1_mode), num1=str(len(dset1_feats_np)), num2=str(len(dset2_feats_np)), cvg=cvg))
 
 
 if __name__ == "__main__":
