@@ -131,7 +131,6 @@ def stack_features(data_loader, eval_model, num_feats, batch_size, quantize, wor
         real_probs = torch.cat(losses.GatherLayer.apply(real_probs), dim=0)
         real_labels = torch.cat(losses.GatherLayer.apply(real_labels), dim=0)
 
-    import pdb;pdb.set_trace()
     real_feats = real_feats.detach().cpu().numpy().astype(np.float64)
     real_probs = real_probs.detach().cpu().numpy().astype(np.float64)
     real_labels = real_labels.detach().cpu().numpy()
