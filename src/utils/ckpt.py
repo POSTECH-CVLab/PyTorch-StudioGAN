@@ -95,9 +95,6 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
                   load_misc=True,
                   is_freezeD=is_freezeD)
 
-    if not is_train:
-        prev_run_name = cfg_file[cfg_file.rindex("/")+1:cfg_file.index(".yaml")]+prev_run_name[prev_run_name.index("-train"):]
-
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
         load_ckpt(model=Gen_ema,

@@ -9,6 +9,7 @@ import sys
 import glob
 import random
 import string
+import pickle
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
@@ -848,9 +849,9 @@ class WORKER(object):
                             eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top1=top1))
                         self.logger.info("{eval_model} Top5 acc: (Step: {step}, {num} generated images): {Top5}".format(
                             eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top5=top5))
+                    metric_dict.update({"IS": kl_score, "Top1_acc": top1, "Top5_acc": top5})
                     if writing:
                         wandb.log({"IS score": kl_score}, step=self.wandb_step)
-                        metric_dict.update({"IS": kl_score, "Top1_acc": top1, "Top5_acc": top5})
                         if is_acc:
                             wandb.log({"{eval_model} Top1 acc".format(eval_model=self.RUN.eval_backbone): top1}, step=self.wandb_step)
                             wandb.log({"{eval_model} Top5 acc".format(eval_model=self.RUN.eval_backbone): top5}, step=self.wandb_step)
@@ -869,9 +870,9 @@ class WORKER(object):
                         step=step, type=self.RUN.ref_dataset, FID=fid_score))
                     if self.best_fid is None or fid_score <= self.best_fid:
                         self.best_fid, self.best_step, is_best = fid_score, step, True
+                    metric_dict.update({"FID": fid_score})
                     if writing:
                         wandb.log({"FID score": fid_score}, step=self.wandb_step)
-                        metric_dict.update({"FID": fid_score})
                     if training:
                         self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
                             step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
@@ -897,12 +898,12 @@ class WORKER(object):
                         step=step, type=self.RUN.ref_dataset, dns=dns))
                     self.logger.info("Coverage (Step: {step}, Using {type} images): {cvg}".format(
                         step=step, type=self.RUN.ref_dataset, cvg=cvg))
+                    metric_dict.update({"Improved_Precision": prc, "Improved_Recall": rec, "Density": dns, "Coverage": cvg})
                     if writing:
                         wandb.log({"Improved Precision": prc}, step=self.wandb_step)
                         wandb.log({"Improved Recall": rec}, step=self.wandb_step)
                         wandb.log({"Density": dns}, step=self.wandb_step)
                         wandb.log({"Coverage": cvg}, step=self.wandb_step)
-                        metric_dict.update({"Improved_Precision": prc, "Improved_Recall": rec, "Density": dns, "Coverage": cvg})
 
             if self.global_rank == 0:
                 if training:
@@ -919,6 +920,8 @@ class WORKER(object):
                     misc.save_dict_npy(directory=join(self.RUN.save_dir, "statistics", self.run_name, "train" if training else "eval"),
                                        name="metrics",
                                        dictionary=save_dict)
+                    with open("./eval_pickles/"+self.run_name + "-" + self.RUN.eval_backbone + "-" +self.RUN.ref_dataset +".pickle", "wb") as f:
+                        pickle.dump(metric_dict, f)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         return is_best

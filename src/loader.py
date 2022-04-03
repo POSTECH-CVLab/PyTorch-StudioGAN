@@ -292,7 +292,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                       world_size=cfgs.OPTIMIZATION.world_size,
                                       distributed_data_parallel=cfgs.RUN.distributed_data_parallel,
                                       device=local_rank)
-
+    """
     if "fid" in cfgs.RUN.eval_metrics:
         mu, sigma = pp.prepare_moments(data_loader=eval_dataloader,
                                        eval_model=eval_model,
@@ -300,6 +300,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
                                        cfgs=cfgs,
                                        logger=logger,
                                        device=local_rank)
+    """
 
     if "prdc" in cfgs.RUN.eval_metrics:
         if cfgs.RUN.distributed_data_parallel:
