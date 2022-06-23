@@ -331,6 +331,15 @@ def apply_standing_statistics(generator, standing_max_batch, standing_step, DATA
                                                                    cal_trsp_cost=False)
     generator.eval()
 
+def define_sampler(dataset_name, dis_cond_mtd, batch_size, num_classes):
+    if dis_cond_mtd != "W/O":
+        if dataset_name == "CIFAR10" or batch_size >= num_classes*8:
+            sampler = "acending_all"
+        else:
+            sampler = "acending_some"
+    else:
+        sampler = "totally_random"
+    return sampler
 
 def make_GAN_trainable(Gen, Gen_ema, Dis):
     Gen.train()

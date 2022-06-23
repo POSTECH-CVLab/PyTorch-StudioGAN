@@ -101,6 +101,9 @@ class WORKER(object):
         self.blur_fade_kimg = self.effective_batch_size * 200 / 32
         self.DDP = self.RUN.distributed_data_parallel
 
+        self.sampler = misc.define_sampler(self.DATA.name, self.MODEL.d_cond_mtd, 
+                                            self.OPTIMIZATION.batch_size, self.DATA.num_classes)
+
         self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN.pl_weight, pl_no_weight_grad=(cfgs.MODEL.backbone == "stylegan2"))
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
@@ -781,7 +784,7 @@ class WORKER(object):
                                                                        batch_size=self.OPTIMIZATION.batch_size,
                                                                        z_dim=self.MODEL.z_dim,
                                                                        num_classes=self.DATA.num_classes,
-                                                                       y_sampler="totally_random",
+                                                                       y_sampler=self.sampler,
                                                                        radius="N/A",
                                                                        generator=generator,
                                                                        discriminator=self.Dis,
