@@ -39,7 +39,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     # -----------------------------------------------------------------------------
     # define default variables for loading ckpt or evaluating the trained GAN model.
     # -----------------------------------------------------------------------------
-    step, epoch, topk, best_step, best_fid, best_ckpt_path, is_best = \
+    step, epoch, topk, best_step, best_fid, best_ckpt_path, lecam_emas, is_best = \
         0, 0, cfgs.OPTIMIZATION.batch_size, 0, None, None, False
     aa_p = cfgs.AUG.ada_initial_augment_p if cfgs.AUG.ada_initial_augment_p != "N/A" else cfgs.AUG.apa_initial_augment_p
     mu, sigma, eval_model, num_rows, num_cols = None, None, None, 10, 8
@@ -221,7 +221,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     if cfgs.RUN.ckpt_dir is not None:
         if local_rank == 0:
             os.remove(join(cfgs.RUN.save_dir, "logs", run_name + ".log"))
-        run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path, logger =\
+        run_name, step, epoch, topk, aa_p, best_step, best_fid, best_ckpt_path, lecam_emas, logger =\
             ckpt.load_StudioGAN_ckpts(ckpt_dir=cfgs.RUN.ckpt_dir,
                                       load_best=cfgs.RUN.load_best,
                                       Gen=Gen,
@@ -327,6 +327,7 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
         best_step=best_step,
         best_fid=best_fid,
         best_ckpt_path=best_ckpt_path,
+        lecam_emas=lecam_emas,
         loss_list_dict=loss_list_dict,
         metric_dict_during_train=metric_dict_during_train,
     )

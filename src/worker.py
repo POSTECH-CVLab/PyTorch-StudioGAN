@@ -57,7 +57,7 @@ LOG_FORMAT = ("Step: {step:>6} "
 class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis,
                  ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, logger, aa_p,
-                 best_step, best_fid, best_ckpt_path, loss_list_dict, metric_dict_during_train):
+                 best_step, best_fid, best_ckpt_path, lecam_emas_dict, loss_list_dict, metric_dict_during_train):
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
@@ -105,7 +105,10 @@ class WORKER(object):
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
-        self.lecam_ema = ops.LeCamEMA(decay=self.LOSS.lecam_ema_decay, start_iter=self.LOSS.lecam_ema_start_iter)
+        self.lecam_ema = ops.LeCamEMA()
+        if lecam_emas_dict is not None:
+            self.lecam_ema.__dict__ = lecam_emas_dict
+        self.lecam_ema.decay, self.lecam_ema.start_itr = self.LOSS.lecam_ema_decay, self.LOSS.lecam_ema_start_iter
 
         if self.AUG.apply_ada or self.AUG.apply_apa:
             if self.AUG.apply_ada: self.AUG.series_augment.p.copy_(torch.as_tensor(self.aa_p))
@@ -956,7 +959,8 @@ class WORKER(object):
             "aa_p": self.aa_p,
             "best_step": self.best_step,
             "best_fid": self.best_fid,
-            "best_fid_ckpt": self.RUN.ckpt_dir
+            "best_fid_ckpt": self.RUN.ckpt_dir,
+            "lecam_emas": self.lecam_ema.__dict__
         }
 
         if self.Gen_ema is not None:
