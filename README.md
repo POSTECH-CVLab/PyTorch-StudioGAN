@@ -104,7 +104,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 * CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
   <p align="left">
-    <img width="50%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility.png" />
+    <img width="60%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility.png" />
   </p>
 
 # Requirements
