@@ -68,6 +68,7 @@ def sample_y(y_sampler, batch_size, num_classes, device):
 
 def sample_zy(z_prior, batch_size, z_dim, num_classes, truncation_factor, y_sampler, radius, device):
     fake_labels = sample_y(y_sampler=y_sampler, batch_size=batch_size, num_classes=num_classes, device=device)
+    batch_size = fake_labels.shape[0]
 
     if z_prior == "gaussian":
         zs = sample_normal(batch_size=batch_size, z_dim=z_dim, truncation_factor=truncation_factor, device=device)
@@ -109,6 +110,7 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
                                         y_sampler=y_sampler,
                                         radius=radius,
                                         device=device)
+    batch_size = fake_labels.shape[0]
     info_discrete_c, info_conti_c = None, None
     if MODEL.info_type in ["discrete", "both"]:
         info_discrete_c = torch.randint(MODEL.info_dim_discrete_c,(batch_size, MODEL.info_num_discrete_c), device=device)
