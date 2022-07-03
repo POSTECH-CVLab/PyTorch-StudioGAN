@@ -332,7 +332,7 @@ Density and coverage metrics can estimate the fidelity and diversity of generate
 CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1 DSET1 --dset2 DSET2
 ```
 
-* Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folder saved in DSET2 using pre-computed features, moments of dset1, and GPUs ``(0,...,N)``.
+* Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folder saved in DSET2 using pre-computed features (``--dset1_feats DSET1_FEATS``), moments of dset1 (``--dset1_moments DSET1_MOMENTS``), and GPUs ``(0,...,N)``.
 ```bash
 CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1_feats DSET1_FEATS --dset1_moments DSET1_MOMENTS --dset2 DSET2
 ```
