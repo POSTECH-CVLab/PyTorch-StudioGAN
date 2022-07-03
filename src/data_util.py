@@ -10,6 +10,7 @@ import random
 from torch.utils.data import Dataset
 from torchvision.datasets import CIFAR10, CIFAR100
 from torchvision.datasets import ImageFolder
+from torchvision.transforms import InterpolationMode
 from scipy import io
 from PIL import ImageOps, Image
 import torch
@@ -17,6 +18,13 @@ import torchvision.transforms as transforms
 import h5py as h5
 import numpy as np
 
+
+resizer_collection = {"nearest": InterpolationMode.NEAREST,
+                      "box": InterpolationMode.BOX,
+                      "bilinear": InterpolationMode.BILINEAR,
+                      "hamming": InterpolationMode.HAMMING,
+                      "bicubic": InterpolationMode.BICUBIC,
+                      "lanczos": InterpolationMode.LANCZOS}
 
 class RandomCropLongEdge(object):
     """
@@ -55,6 +63,7 @@ class Dataset_(Dataset):
                  train,
                  crop_long_edge=False,
                  resize_size=None,
+                 resizer="lanczos",
                  random_flip=False,
                  normalize=True,
                  hdf5_path=None,
@@ -72,8 +81,8 @@ class Dataset_(Dataset):
         if self.hdf5_path is None:
             if crop_long_edge:
                 self.trsf_list += [CenterCropLongEdge()]
-            if resize_size is not None:
-                self.trsf_list += [transforms.Resize(resize_size, Image.LANCZOS)]
+            if resize_size is not None and resizer != "wo_resize":
+                self.trsf_list += [transforms.Resize(resize_size, interpolation=resizer_collection[resizer])]
         else:
             self.trsf_list += [transforms.ToPILImage()]
 

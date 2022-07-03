@@ -108,9 +108,8 @@ class Generator(nn.Module):
 
         self.linear0 = MODULES.g_linear(in_features=self.z_dim, out_features=self.in_dims[0] * self.bottom * self.bottom, bias=True)
 
-        if self.g_cond_mtd != "W/O":
-            self.affine_input_dim += self.z_dim
-            self.shared = ops.embedding(num_embeddings=self.num_classes, embedding_dim=self.z_dim)
+        if self.g_cond_mtd != "W/O" and self.g_cond_mtd == "cBN":
+            self.affine_input_dim += self.num_classes
 
         self.blocks = []
         for index in range(self.num_blocks):
@@ -137,6 +136,8 @@ class Generator(nn.Module):
 
     def forward(self, z, label, shared_label=None, eval=False):
         affine_list = []
+        if self.g_cond_mtd != "W/O":
+            label = F.one_hot(label, num_classes=self.num_classes).to(torch.float32)
         with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
             if self.MODEL.info_type != "N/A":
                 if self.g_info_injection == "concat":
@@ -146,9 +147,7 @@ class Generator(nn.Module):
                     affine_list.append(self.info_proj_linear(z_info))
 
             if self.g_cond_mtd != "W/O":
-                if shared_label is None:
-                    shared_label = self.shared(label)
-                affine_list.append(shared_label)
+                affine_list.append(label)
             if len(affine_list) > 0:
                 affines = torch.cat(affine_list, 1)
             else:

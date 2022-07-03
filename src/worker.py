@@ -9,6 +9,8 @@ import sys
 import glob
 import random
 import string
+import pickle
+import copy
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
@@ -57,7 +59,7 @@ LOG_FORMAT = ("Step: {step:>6} "
 class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis,
                  ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, logger, aa_p,
-                 best_step, best_fid, best_ckpt_path, lecam_emas_dict, loss_list_dict, metric_dict_during_train):
+                 best_step, best_fid, best_ckpt_path, lecam_emas, loss_list_dict, metric_dict_during_train):
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
@@ -75,11 +77,14 @@ class WORKER(object):
         self.local_rank = local_rank
         self.mu = mu
         self.sigma = sigma
+        self.real_feats = real_feats
         self.logger = logger
         self.aa_p = aa_p
         self.best_step = best_step
         self.best_fid = best_fid
         self.best_ckpt_path = best_ckpt_path
+        self.lecam_emas = lecam_emas
+        self.num_eval = num_eval
         self.loss_list_dict = loss_list_dict
         self.metric_dict_during_train = metric_dict_during_train
         self.metric_dict_during_final_eval = {}
@@ -100,6 +105,9 @@ class WORKER(object):
         self.blur_init_sigma = self.STYLEGAN.blur_init_sigma
         self.blur_fade_kimg = self.effective_batch_size * 200 / 32
         self.DDP = self.RUN.distributed_data_parallel
+        self.adc_fake = False
+
+        num_classes = self.DATA.num_classes
 
         self.sampler = misc.define_sampler(self.DATA.name, self.MODEL.d_cond_mtd, 
                                             self.OPTIMIZATION.batch_size, self.DATA.num_classes)
@@ -109,11 +117,14 @@ class WORKER(object):
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
         self.lecam_ema = ops.LeCamEMA()
-        if lecam_emas_dict is not None:
-            self.lecam_ema.__dict__ = lecam_emas_dict
+        if self.lecam_emas is not None:
+            self.lecam_ema.__dict__ = self.lecam_emas
         self.lecam_ema.decay, self.lecam_ema.start_itr = self.LOSS.lecam_ema_decay, self.LOSS.lecam_ema_start_iter
+        if self.LOSS.adv_loss == "MH":
+            self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
+            self.lossy.data.fill_(self.DATA.num_classes)
 
-        if self.AUG.apply_ada or self.AUG.apply_apa:
+        if self.AUG.apply_ada + self.AUG.apply_apa:
             if self.AUG.apply_ada: self.AUG.series_augment.p.copy_(torch.as_tensor(self.aa_p))
             self.aa_interval = self.AUG.ada_interval if self.AUG.ada_interval != "N/A" else self.AUG.apa_interval
             self.aa_target = self.AUG.ada_target if self.AUG.ada_target != "N/A" else self.AUG.apa_target
@@ -123,61 +134,27 @@ class WORKER(object):
             self.dis_sign_real_log, self.dis_sign_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
             self.dis_logit_real_log, self.dis_logit_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
 
-        if self.LOSS.adv_loss == "MH":
-            self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
-            self.lossy.data.fill_(self.DATA.num_classes)
-
         if self.MODEL.aux_cls_type == "ADC":
-            num_classes = self.DATA.num_classes * 2
+            num_classes = num_classes*2
             self.adc_fake = True
-        else:
-            num_classes = self.DATA.num_classes
-            self.adc_fake = False
 
         if self.MODEL.d_cond_mtd == "AC":
-            self.cond_loss = losses.CrossEntropyLoss()
-            if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.MiCrossEntropyLoss()
+            self.cond_loss = self.ce_loss
         elif self.MODEL.d_cond_mtd == "2C":
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
                                                                temperature=self.LOSS.temperature,
                                                                master_rank="cuda",
                                                                DDP=self.DDP)
-            if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.MiConditionalContrastiveLoss(num_classes=num_classes,
-                                                                        temperature=self.LOSS.temperature,
-                                                                        master_rank="cuda",
-                                                                        DDP=self.DDP)
         elif self.MODEL.d_cond_mtd == "D2DCE":
             self.cond_loss = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
                                                               temperature=self.LOSS.temperature,
                                                               m_p=self.LOSS.m_p,
                                                               master_rank="cuda",
                                                               DDP=self.DDP)
-            if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.MiData2DataCrossEntropyLoss(num_classes=num_classes,
-                                                                       temperature=self.LOSS.temperature,
-                                                                       m_p=self.LOSS.m_p,
-                                                                       master_rank="cuda",
-                                                                       DDP=self.DDP)
-        else:
-            pass
+        else: pass
 
-        if self.DATA.name == "CIFAR10":
-            self.num_eval = {"train": 50000, "test": 10000}
-        elif self.DATA.name == "CIFAR100":
-            self.num_eval = {"train": 50000, "test": 10000}
-        elif self.DATA.name == "Tiny_ImageNet":
-            self.num_eval = {"train": 50000, "valid": 10000}
-        elif self.DATA.name == "ImageNet":
-            self.num_eval = {"train": 50000, "valid": 50000}
-        else:
-            self.num_eval = {}
-            if self.train_dataloader is not None:
-                self.num_eval["train"] = len(self.train_dataloader.dataset)
-            elif self.eval_dataloader is not None:
-                self.num_eval["test"] = len(self.eval_dataloader.dataset)
-                self.num_eval["valid"] = len(self.eval_dataloader.dataset)
+        if self.MODEL.aux_cls_type == "TAC":
+            self.cond_loss_mi = copy.deepcopy(self.cond_loss)
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  generator_mapping=self.Gen_ema_mapping,
@@ -225,6 +202,7 @@ class WORKER(object):
                 pass
             self.train_iter = iter(self.train_dataloader)
             real_image_basket, real_label_basket = next(self.train_iter)
+
         real_image_basket = torch.split(real_image_basket, self.OPTIMIZATION.batch_size)
         real_label_basket = torch.split(real_label_basket, self.OPTIMIZATION.batch_size)
         return real_image_basket, real_label_basket
@@ -244,7 +222,7 @@ class WORKER(object):
         if self.MODEL.info_type in ["continuous", "both"]:
             misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[1]), grad=False, num_freeze_layers=-1, is_stylegan=False)
             misc.toggle_grad(getattr(misc.peel_model(self.Dis), self.MISC.info_params[2]), grad=False, num_freeze_layers=-1, is_stylegan=False)
-        self.Gen.apply(misc.untrack_bn_statistics)
+        if self.DDP*self.RUN.mixed_precision*self.RUN.synchronized_bn == 0: self.Gen.apply(misc.untrack_bn_statistics)
         # sample real images and labels from the true data distribution
         real_image_basket, real_label_basket = self.sample_data_basket()
         for step_index in range(self.OPTIMIZATION.d_updates_per_step):
@@ -727,7 +705,7 @@ class WORKER(object):
         save_dict = misc.accm_values_convert_dict(list_dict=self.loss_list_dict,
                                                   value_dict=loss_dict,
                                                   step=current_step + 1,
-                                                  interval=self.RUN.print_every)
+                                                  interval=self.RUN.print_freq)
         misc.save_dict_npy(directory=join(self.RUN.save_dir, "statistics", self.run_name),
                            name="losses",
                            dictionary=save_dict)
@@ -822,7 +800,7 @@ class WORKER(object):
             self.gen_ctlr.std_stat_counter += 1
 
         is_best, num_splits, nearest_k = False, 1, 5
-        is_acc = True if self.DATA.name == "ImageNet" else False
+        is_acc = True if "ImageNet" in self.DATA.name and "Tiny" not in self.DATA.name else False
         requires_grad = self.LOSS.apply_lo or self.RUN.langevin_sampling
         with torch.no_grad() if not requires_grad else misc.dummy_context_mgr() as ctx:
             misc.make_GAN_untrainable(self.Gen, self.Gen_ema, self.Dis)
@@ -846,11 +824,15 @@ class WORKER(object):
                                                                    is_stylegan=self.is_stylegan,
                                                                    generator_mapping=generator_mapping,
                                                                    generator_synthesis=generator_synthesis,
+                                                                   quantize=True,
                                                                    world_size=self.OPTIMIZATION.world_size,
                                                                    DDP=self.DDP,
                                                                    device=self.local_rank,
                                                                    logger=self.logger,
                                                                    disable_tqdm=self.global_rank != 0)
+
+            if ("fid" in metrics or "prdc" in metrics) and self.global_rank == 0:
+                self.logger.info("{num_images} real images is used for evaluation.".format(num_images=len(self.eval_dataloader.dataset)))
 
             if "is" in metrics:
                 kl_score, kl_std, top1, top5 = ins.eval_features(probs=fake_probs,
@@ -858,7 +840,8 @@ class WORKER(object):
                                                                  data_loader=self.eval_dataloader,
                                                                  num_features=self.num_eval[self.RUN.ref_dataset],
                                                                  split=num_splits,
-                                                                 is_acc=is_acc)
+                                                                 is_acc=is_acc,
+                                                                 is_torch_backbone=True if "torch" in self.RUN.eval_backbone else False)
                 if self.global_rank == 0:
                     self.logger.info("Inception score (Step: {step}, {num} generated images): {IS}".format(
                         step=step, num=str(self.num_eval[self.RUN.ref_dataset]), IS=kl_score))
@@ -867,9 +850,9 @@ class WORKER(object):
                             eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top1=top1))
                         self.logger.info("{eval_model} Top5 acc: (Step: {step}, {num} generated images): {Top5}".format(
                             eval_model=self.RUN.eval_backbone, step=step, num=str(self.num_eval[self.RUN.ref_dataset]), Top5=top5))
+                    metric_dict.update({"IS": kl_score, "Top1_acc": top1, "Top5_acc": top5})
                     if writing:
                         wandb.log({"IS score": kl_score}, step=self.wandb_step)
-                        metric_dict.update({"IS": kl_score, "Top1_acc": top1, "Top5_acc": top5})
                         if is_acc:
                             wandb.log({"{eval_model} Top1 acc".format(eval_model=self.RUN.eval_backbone): top1}, step=self.wandb_step)
                             wandb.log({"{eval_model} Top5 acc".format(eval_model=self.RUN.eval_backbone): top5}, step=self.wandb_step)
@@ -888,15 +871,16 @@ class WORKER(object):
                         step=step, type=self.RUN.ref_dataset, FID=fid_score))
                     if self.best_fid is None or fid_score <= self.best_fid:
                         self.best_fid, self.best_step, is_best = fid_score, step, True
+                    metric_dict.update({"FID": fid_score})
                     if writing:
                         wandb.log({"FID score": fid_score}, step=self.wandb_step)
-                        metric_dict.update({"FID": fid_score})
                     if training:
                         self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
                             step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
 
             if "prdc" in metrics:
-                prc, rec, dns, cvg = prdc.calculate_pr_dc(fake_feats=fake_feats,
+                prc, rec, dns, cvg = prdc.calculate_pr_dc(real_feats=self.real_feats,
+                                                          fake_feats=fake_feats,
                                                           data_loader=self.eval_dataloader,
                                                           eval_model=self.eval_model,
                                                           num_generate=self.num_eval[self.RUN.ref_dataset],
@@ -915,19 +899,19 @@ class WORKER(object):
                         step=step, type=self.RUN.ref_dataset, dns=dns))
                     self.logger.info("Coverage (Step: {step}, Using {type} images): {cvg}".format(
                         step=step, type=self.RUN.ref_dataset, cvg=cvg))
+                    metric_dict.update({"Improved_Precision": prc, "Improved_Recall": rec, "Density": dns, "Coverage": cvg})
                     if writing:
                         wandb.log({"Improved Precision": prc}, step=self.wandb_step)
                         wandb.log({"Improved Recall": rec}, step=self.wandb_step)
                         wandb.log({"Density": dns}, step=self.wandb_step)
                         wandb.log({"Coverage": cvg}, step=self.wandb_step)
-                        metric_dict.update({"Improved_Precision": prc, "Improved_Recall": rec, "Density": dns, "Coverage": cvg})
 
             if self.global_rank == 0:
                 if training:
                     save_dict = misc.accm_values_convert_dict(list_dict=self.metric_dict_during_train,
                                                               value_dict=metric_dict,
                                                               step=step,
-                                                              interval=self.RUN.save_every)
+                                                              interval=self.RUN.save_freq)
                 else:
                     save_dict = misc.accm_values_convert_dict(list_dict=self.metric_dict_during_final_eval,
                                                               value_dict=metric_dict,
@@ -937,6 +921,8 @@ class WORKER(object):
                     misc.save_dict_npy(directory=join(self.RUN.save_dir, "statistics", self.run_name, "train" if training else "eval"),
                                        name="metrics",
                                        dictionary=save_dict)
+                    with open("./eval_pickles/"+self.run_name + "-" + self.RUN.eval_backbone + "-" +self.RUN.ref_dataset +".pickle", "wb") as f:
+                        pickle.dump(metric_dict, f)
 
         misc.make_GAN_trainable(self.Gen, self.Gen_ema, self.Dis)
         return is_best
@@ -963,7 +949,7 @@ class WORKER(object):
             "best_step": self.best_step,
             "best_fid": self.best_fid,
             "best_fid_ckpt": self.RUN.ckpt_dir,
-            "lecam_emas": self.lecam_ema.__dict__
+            "lecam_emas": self.lecam_ema.__dict__,
         }
 
         if self.Gen_ema is not None:
@@ -1023,8 +1009,7 @@ class WORKER(object):
     # -----------------------------------------------------------------------------
     def save_fake_images(self, num_images):
         if self.global_rank == 0:
-            self.logger.info("save {num_images} generated images in png format.".format(
-                num_images=num_images))
+            self.logger.info("save {num_images} generated images in png format.".format(num_images=self.num_eval[self.RUN.ref_dataset]))
         if self.gen_ctlr.standing_statistics:
             self.gen_ctlr.std_stat_counter += 1
 
@@ -1070,8 +1055,10 @@ class WORKER(object):
             generator, generator_mapping, generator_synthesis = self.gen_ctlr.prepare_generator()
 
             res, mean, std = 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
-            resizer = resize.build_resizer(mode=self.RUN.resize_fn, size=res)
-            trsf = transforms.Compose([transforms.ToTensor()])
+            resizer = resize.build_resizer(resizer=self.RUN.post_resizer,
+                                           backbone="ResNet50_torch",
+                                           size=res)
+            totensor = transforms.ToTensor()
             mean = torch.Tensor(mean).view(1, 3, 1, 1).to("cuda")
             std = torch.Tensor(std).view(1, 3, 1, 1).to("cuda")
 
@@ -1104,7 +1091,7 @@ class WORKER(object):
                                                                         cal_trsp_cost=False)
                 fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor = ops.quantize_images(fake_anchor)
-                fake_anchor = ops.resize_images(fake_anchor, resizer, trsf, mean, std)
+                fake_anchor = ops.resize_images(fake_anchor, resizer, totensor, mean, std, self.local_rank)
                 fake_anchor_embed = torch.squeeze(resnet50_conv(fake_anchor))
 
                 num_samples, target_sampler = sample.make_target_cls_sampler(dataset=dataset, target_class=c)
@@ -1119,7 +1106,7 @@ class WORKER(object):
                 for batch_idx in range(num_samples//batch_size):
                     real_images, real_labels = next(c_iter)
                     real_images = ops.quantize_images(real_images)
-                    real_images = ops.resize_images(real_images, resizer, trsf, mean, std)
+                    real_images = ops.resize_images(real_images, resizer, totensor, mean, std, self.local_rank)
                     real_embed = torch.squeeze(resnet50_conv(real_images))
                     if batch_idx == 0:
                         distances = torch.square(real_embed - fake_anchor_embed).mean(dim=1).detach().cpu().numpy()
@@ -1435,6 +1422,7 @@ class WORKER(object):
                                                     is_stylegan=self.is_stylegan,
                                                     generator_mapping=generator_mapping,
                                                     generator_synthesis=generator_synthesis,
+                                                    quantize=True,
                                                     world_size=self.OPTIMIZATION.world_size,
                                                     DDP=self.DDP,
                                                     device=self.local_rank,
@@ -1447,7 +1435,7 @@ class WORKER(object):
                                                      cfgs=self.cfgs,
                                                      pre_cal_mean=mu,
                                                      pre_cal_std=sigma,
-                                                     quantize=True,
+                                                     quantize=False,
                                                      fake_feats=c_fake_feats,
                                                      disable_tqdm=True)
 

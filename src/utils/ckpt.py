@@ -35,7 +35,7 @@ def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, loa
                                                   strict=False)
             print("The following parameters/buffers do not match with the ones of the pre-trained model:", mismatch_names)
         else:
-            model.load_state_dict(ckpt["state_dict"], strict=False)
+            model.load_state_dict(ckpt["state_dict"], strict=True)
 
     if load_opt:
         optimizer.load_state_dict(ckpt["optimizer"])
@@ -99,9 +99,6 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
                   load_misc=True,
                   is_freezeD=is_freezeD)
 
-    if not is_train:
-        prev_run_name = cfg_file[cfg_file.rindex("/")+1:cfg_file.index(".yaml")]+prev_run_name[prev_run_name.index("-train"):]
-
     if apply_g_ema:
         Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
         load_ckpt(model=Gen_ema,
@@ -145,6 +142,7 @@ def load_best_model(ckpt_dir, Gen, Dis, apply_g_ema, Gen_ema, ema):
               load_opt=False,
               load_misc=False,
               is_freezeD=False)
+
 
     _, _, _, _, _, _, best_step, _, _, _ = load_ckpt(model=Dis,
                                                   optimizer=None,

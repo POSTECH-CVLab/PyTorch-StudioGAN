@@ -1,0 +1,45 @@
+DATA:
+  name: "ImageNet"
+  img_size: 128
+  num_classes: 1000
+MODEL:
+  backbone: "stylegan3"
+  g_cond_mtd: "cAdaIN"
+  d_cond_mtd: "SPD"
+  g_act_fn: "Auto"
+  d_act_fn: "Auto"
+  z_prior: "gaussian"
+  z_dim: 512
+  w_dim: 512
+  g_conv_dim: "N/A"
+  d_conv_dim: "N/A"
+  apply_g_ema: True
+LOSS:
+  adv_loss: "logistic"
+  apply_r1_reg: True
+  r1_lambda: 0.5
+  r1_place: "outside_loop"
+OPTIMIZATION:
+  # These values will be slightly changed if lazy regularization is applied.
+  batch_size: 256
+  acml_steps: 1
+  g_lr: 0.0025
+  d_lr: 0.002
+  beta1: 0
+  beta2: 0.99
+  d_first: False
+  g_updates_per_step: 1
+  d_updates_per_step: 1
+  total_steps: 200000
+STYLEGAN:
+  stylegan3_cfg: "stylegan3-t"
+  g_reg_interval: 1
+  d_reg_interval: 16
+  mapping_network: 2
+  style_mixing_p: 0
+  g_ema_kimg: 10
+  g_ema_rampup: 0.05
+  apply_pl_reg: False
+  pl_weight: 0
+  d_architecture: "resnet"
+  d_epilogue_mbstd_group_size: 4
