@@ -6,7 +6,7 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
-**Moreover, ** StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
+**Moreover**, StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
 
 # News
 - Our new paper "[StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis](https://arxiv.org/abs/2206.09479)" is made public on arXiv.
@@ -333,10 +333,9 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset
 ```
 
 * Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folder saved in DSET2 using pre-computed features and moments of dset1.
-
-  ```bash
-  CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1_feats DSET1_FEATS --dset1_moments DSET1_MOMENTS --dset2 DSET2
-  ```
+```bash
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1_feats DSET1_FEATS --dset1_moments DSET1_MOMENTS --dset2 DSET2
+```
 
 * Evaluate friendly-IS, friendly-FID, friendly-Prc, friendly-Rec, friendly-Dns, friendly-Cvg (``-metrics is fid prdc --post_resizer friendly``) of image folders saved in DSET1 and DSET2 through ``DistributedDataParallel`` using GPUs ``(0,...,N)``.
 
