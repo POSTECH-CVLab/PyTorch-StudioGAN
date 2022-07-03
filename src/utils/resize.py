@@ -47,13 +47,26 @@ dict_name_to_filter = {
 }
 
 
-def build_resizer(mode, size):
-    if mode == "clean":
-        return make_resizer("PIL", "bilinear", (size, size))
-    elif mode == "legacy":
+def build_resizer(resizer, backbone, size):
+    if resizer == "friendly":
+        if backbone == "InceptionV3_tf":
+            return make_resizer("PIL", "bilinear", (size, size))
+        elif backbone == "InceptionV3_torch":
+            return make_resizer("PIL", "lanczos", (size, size))
+        elif backbone == "ResNet50_torch":
+            return make_resizer("PIL", "bilinear", (size, size))
+        elif backbone == "SwAV_torch":
+            return make_resizer("PIL", "bilinear", (size, size))
+        elif backbone == "DINO_torch":
+            return make_resizer("PIL", "bilinear", (size, size))
+        elif backbone == "Swin-T_torch":
+            return make_resizer("PIL", "bicubic", (size, size))
+        else:
+            raise ValueError(f"Invalid resizer {resizer} specified")
+    elif resizer == "clean":
+        return make_resizer("PIL", "bicubic", (size, size))
+    elif resizer == "legacy":
         return make_resizer("PyTorch", "bilinear", (size, size))
-    else:
-        raise ValueError(f"Invalid mode {mode} specified")
 
 
 def make_resizer(library, filter, output_size):

@@ -232,7 +232,7 @@ def quantize_images(x):
     return x
 
 
-def resize_images(x, resizer, ToTensor, mean, std, device="cuda"):
+def resize_images(x, resizer, ToTensor, mean, std, device):
     x = x.transpose((0, 2, 3, 1))
     x = list(map(lambda x: ToTensor(resizer(x)), list(x)))
     x = torch.stack(x, 0).to(device)

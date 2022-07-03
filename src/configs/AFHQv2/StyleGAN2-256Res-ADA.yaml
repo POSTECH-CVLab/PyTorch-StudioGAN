@@ -1,0 +1,51 @@
+DATA:
+  name: "AFHQv2"
+  img_size: 256
+  num_classes: 3
+MODEL:
+  backbone: "stylegan2"
+  g_cond_mtd: "cAdaIN"
+  d_cond_mtd: "SPD"
+  g_act_fn: "Auto"
+  d_act_fn: "Auto"
+  z_prior: "gaussian"
+  z_dim: 512
+  w_dim: 512
+  g_conv_dim: "N/A"
+  d_conv_dim: "N/A"
+  apply_g_ema: True
+LOSS:
+  adv_loss: "logistic"
+  apply_r1_reg: True
+  r1_lambda: 1
+  r1_place: "outside_loop"
+OPTIMIZATION:
+  # These values will be slightly changed if lazy regularization is applied.
+  batch_size: 64
+  acml_steps: 1
+  g_lr: 0.0025
+  d_lr: 0.0025
+  beta1: 0
+  beta2: 0.99
+  d_first: False
+  g_updates_per_step: 1
+  d_updates_per_step: 1
+  total_steps: 200000
+AUG:
+  apply_ada: True
+  ada_aug_type: "bgc"
+  ada_initial_augment_p: 0
+  ada_target: 0.6
+  ada_kimg: 500
+  ada_interval: 4
+STYLEGAN:
+  g_reg_interval: 4
+  d_reg_interval: 16
+  mapping_network: 8
+  style_mixing_p: 0.9
+  g_ema_kimg: 20
+  g_ema_rampup: "N/A"
+  apply_pl_reg: True
+  pl_weight: 2
+  d_architecture: "resnet"
+  d_epilogue_mbstd_group_size: 8

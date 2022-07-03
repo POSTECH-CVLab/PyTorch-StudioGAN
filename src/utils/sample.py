@@ -170,12 +170,12 @@ def generate_images(z_prior, truncation_factor, batch_size, z_dim, num_classes, 
                                                                truncation_psi=truncation_factor,
                                                                truncation_cutoff=RUN.truncation_cutoff)
         else:
-            _, fake_images_eps = generator(zs_eps, fake_labels, eval=not is_train)
+            fake_images_eps = generator(zs_eps, fake_labels, eval=not is_train)
     else:
         fake_images_eps = None
     return fake_images, fake_labels, fake_images_eps, trsp_cost, ws, info_discrete_c, info_conti_c
 
-def stylegan_generate_images(zs, fake_labels, num_classes, style_mixing_p, update_emas, 
+def stylegan_generate_images(zs, fake_labels, num_classes, style_mixing_p, update_emas,
                              generator_mapping, generator_synthesis, truncation_psi, truncation_cutoff):
     one_hot_fake_labels = F.one_hot(fake_labels, num_classes=num_classes)
     if truncation_psi == -1:

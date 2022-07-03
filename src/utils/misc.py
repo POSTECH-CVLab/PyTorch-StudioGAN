@@ -12,6 +12,7 @@ import math
 import os
 import sys
 import glob
+import json
 import warnings
 
 from torch.nn import DataParallel
@@ -175,7 +176,7 @@ def setup(rank, world_size, backend="nccl"):
     else:
         # initialize the process group
         dist.init_process_group(backend,
-                                init_method="tcp://%s:%s" % (os.environ["MASTER_ADDR"], os.environ["MASTER_PORT"]),
+                                init_method="env://",
                                 rank=rank,
                                 world_size=world_size)
 
@@ -569,16 +570,20 @@ def save_dict_npy(directory, name, dictionary):
     np.save(save_path, dictionary)
 
 
-def load_ImageNet_label_dict():
-    label_table = open("./src/utils/ImageNet_label.txt", 'r')
-    label_dict, label = {}, 0
-    while True:
-        line = label_table.readline()
-        if not line: break
-        folder = line.split(' ')[0]
-        label_dict[folder] = label
-        label += 1
-    return label_dict
+def load_ImageNet_label_dict(data_name, is_torch_backbone):
+    if data_name in ["Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"] and is_torch_backbone:
+        with open("./src/utils/pytorch_imagenet_folder_label_pairs.json", "r") as f:
+            ImageNet_folder_label_dict = json.load(f)
+    else:
+        label_table = open("./src/utils/tf_imagenet_folder_label_pairs.txt", 'r')
+        ImageNet_folder_label_dict, label = {}, 0
+        while True:
+            line = label_table.readline()
+            if not line: break
+            folder = line.split(' ')[0]
+            ImageNet_folder_label_dict[folder] = label
+            label += 1
+    return ImageNet_folder_label_dict
 
 
 def compute_gradient(fx, logits, label, num_classes):
@@ -613,3 +618,65 @@ def enable_allreduce(dict_):
         if value is not None and key != "label":
             loss += value.mean()*0
     return loss
+
+
+def load_pretrained_weights(model, pretrained_weights, checkpoint_key, model_name, patch_size):
+    if os.path.isfile(pretrained_weights):
+        state_dict = torch.load(pretrained_weights, map_location="cpu")
+        if checkpoint_key is not None and checkpoint_key in state_dict:
+            print(f"Take key {checkpoint_key} in provided checkpoint dict")
+            state_dict = state_dict[checkpoint_key]
+        # remove `module.` prefix
+        state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
+        # remove `backbone.` prefix induced by multicrop wrapper
+        state_dict = {k.replace("backbone.", ""): v for k, v in state_dict.items()}
+        msg = model.load_state_dict(state_dict, strict=False)
+        print('Pretrained weights found at {} and loaded with msg: {}'.format(pretrained_weights, msg))
+    else:
+        print("Please use the `--pretrained_weights` argument to indicate the path of the checkpoint to evaluate.")
+        url = None
+        if model_name == "vit_small" and patch_size == 16:
+            url = "dino_deitsmall16_pretrain/dino_deitsmall16_pretrain.pth"
+        elif model_name == "vit_small" and patch_size == 8:
+            url = "dino_deitsmall8_pretrain/dino_deitsmall8_pretrain.pth"
+        elif model_name == "vit_base" and patch_size == 16:
+            url = "dino_vitbase16_pretrain/dino_vitbase16_pretrain.pth"
+        elif model_name == "vit_base" and patch_size == 8:
+            url = "dino_vitbase8_pretrain/dino_vitbase8_pretrain.pth"
+        elif model_name == "xcit_small_12_p16":
+            url = "dino_xcit_small_12_p16_pretrain/dino_xcit_small_12_p16_pretrain.pth"
+        elif model_name == "xcit_small_12_p8":
+            url = "dino_xcit_small_12_p8_pretrain/dino_xcit_small_12_p8_pretrain.pth"
+        elif model_name == "xcit_medium_24_p16":
+            url = "dino_xcit_medium_24_p16_pretrain/dino_xcit_medium_24_p16_pretrain.pth"
+        elif model_name == "xcit_medium_24_p8":
+            url = "dino_xcit_medium_24_p8_pretrain/dino_xcit_medium_24_p8_pretrain.pth"
+        elif model_name == "resnet50":
+            url = "dino_resnet50_pretrain/dino_resnet50_pretrain.pth"
+        if url is not None:
+            print("Since no pretrained weights have been provided, we load the reference pretrained DINO weights.")
+            state_dict = torch.hub.load_state_dict_from_url(url="https://dl.fbaipublicfiles.com/dino/" + url)
+            model.load_state_dict(state_dict, strict=False)
+        else:
+            print("There is no reference weights available for this model => We use random weights.")
+
+
+def load_pretrained_linear_weights(linear_classifier, model_name, patch_size):
+    url = None
+    if model_name == "vit_small" and patch_size == 16:
+        url = "dino_deitsmall16_pretrain/dino_deitsmall16_linearweights.pth"
+    elif model_name == "vit_small" and patch_size == 8:
+        url = "dino_deitsmall8_pretrain/dino_deitsmall8_linearweights.pth"
+    elif model_name == "vit_base" and patch_size == 16:
+        url = "dino_vitbase16_pretrain/dino_vitbase16_linearweights.pth"
+    elif model_name == "vit_base" and patch_size == 8:
+        url = "dino_vitbase8_pretrain/dino_vitbase8_linearweights.pth"
+    elif model_name == "resnet50":
+        url = "dino_resnet50_pretrain/dino_resnet50_linearweights.pth"
+    if url is not None:
+        print("We load the reference pretrained linear weights.")
+        state_dict = torch.hub.load_state_dict_from_url(url="https://dl.fbaipublicfiles.com/dino/" + url)["state_dict"]
+        state_dict = {k.replace("module.linear.", ""): v for k, v in state_dict.items()}
+        linear_classifier.load_state_dict(state_dict, strict=True)
+    else:
+        print("We use random linear weights.")
