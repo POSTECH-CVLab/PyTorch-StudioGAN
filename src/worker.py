@@ -58,8 +58,8 @@ LOG_FORMAT = ("Step: {step:>6} "
 
 class WORKER(object):
     def __init__(self, cfgs, run_name, Gen, Gen_mapping, Gen_synthesis, Dis, Gen_ema, Gen_ema_mapping, Gen_ema_synthesis,
-                 ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, logger, aa_p,
-                 best_step, best_fid, best_ckpt_path, lecam_emas, loss_list_dict, metric_dict_during_train):
+                 ema, eval_model, train_dataloader, eval_dataloader, global_rank, local_rank, mu, sigma, real_feats, logger,
+                 aa_p, best_step, best_fid, best_ckpt_path, lecam_emas, num_eval, loss_list_dict, metric_dict_during_train):
         self.cfgs = cfgs
         self.run_name = run_name
         self.Gen = Gen
@@ -103,13 +103,13 @@ class WORKER(object):
         self.is_stylegan = cfgs.MODEL.backbone in ["stylegan2", "stylegan3"]
         self.effective_batch_size = self.OPTIMIZATION.batch_size * self.OPTIMIZATION.acml_steps
         self.blur_init_sigma = self.STYLEGAN.blur_init_sigma
-        self.blur_fade_kimg = self.effective_batch_size * 200 / 32
+        self.blur_fade_kimg = self.effective_batch_size * 200/32
         self.DDP = self.RUN.distributed_data_parallel
         self.adc_fake = False
 
         num_classes = self.DATA.num_classes
 
-        self.sampler = misc.define_sampler(self.DATA.name, self.MODEL.d_cond_mtd, 
+        self.sampler = misc.define_sampler(self.DATA.name, self.MODEL.d_cond_mtd,
                                             self.OPTIMIZATION.batch_size, self.DATA.num_classes)
 
         self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN.pl_weight, pl_no_weight_grad=(cfgs.MODEL.backbone == "stylegan2"))
