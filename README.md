@@ -101,11 +101,11 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 
 # Reproducibility
 
-* CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
+We check the reproducibility of GANs implemented in StudioGAN  by comparing IS and FID with the original papers. We identify our platform successfully reproduces most of representative GANs except for PD-GAN, ACGAN, LOGAN, SAGAN, and BigGAN-Deep. FQ means Flickr-Faces-HQ Dataset (FFHQ). The resolutions of ImageNet, AFHQv2, and FQ datasets are 128, 512, and 1024, respectively.
 
-  <p align="left">
-    <img width="50%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility.png" />
-  </p>
+<p align="left">
+  <img width="50%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility.png" />
+</p>
 
 # Requirements
 
