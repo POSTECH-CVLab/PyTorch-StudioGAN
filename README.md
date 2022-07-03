@@ -99,14 +99,6 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 | [**DDLS**](https://arxiv.org/abs/2003.06060)           | Neurips'2020 |          -           |
 | [**SeFa**](https://arxiv.org/abs/2007.06600)           |  CVPR'2021   |        BigGAN        |
 
-#  GAN Taxonomy
-
-The **implemented methods** in StudioGAN are marked with **colored boxes** in Taxonomy.
-
-<p align="center">
-  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Taxonomy.png" />
-</p>
-
 # Requirements
 
 First, install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
