@@ -101,6 +101,8 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 
 #  GAN Taxonomy
 
+The **implemented methods** in StudioGAN are marked with **colored boxes** in Taxonomy.
+
 <p align="center">
   <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Taxonomy.png" />
 </p>
@@ -133,7 +135,7 @@ docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/c
 * CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
 * Tiny ImageNet, ImageNet, or a custom dataset:
-  1. download [Tiny ImageNet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) and [ImageNet](http://www.image-net.org). Prepare your own dataset.
+  1. download [Tiny ImageNet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) , Baby ImageNet, Papa ImageNet, Grandpa ImageNet, [ImageNet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
 ```
@@ -253,17 +255,9 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -v -cfg CONFIG_PATH -ckpt CKPT 
 ```
 
 <p align="center">
-  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/AFHQ_.png" />
+  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/StudioGAN_generated_images.png" />
 </p>
 
-
-<p align="center">
-  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/generated_images1.png" />
-</p>
-
-<p align="center">
-  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Anime_.png" />
-</p>
 
 * K-Nearest Neighbor Analysis (we have fixed K=7, the images in the first column are generated images.)
 ```bash
