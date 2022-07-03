@@ -6,7 +6,7 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
-**Moreover, ** StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
+**Moreover** StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
 
 # News
 - Our new paper "[StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis](https://arxiv.org/abs/2206.09479)" is made public on arXiv.
