@@ -6,66 +6,62 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
+**Moreover, ** StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
+
 # News
-- Our new paper "[Rebooting ACGAN: Auxiliary Classifier GANs with Stable Training (ReACGAN)](https://openreview.net/forum?id=Ja-hVQrfeGZ)" is made public on Neurips 2021 Openreview.
+- Our new paper "[StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis](https://arxiv.org/abs/2206.09479)" is made public on arXiv.
+- StudioGAN provides implementations of 7 GAN architectures, 9 conditioning methods, 4 adversarial losses, 13 regularization modules, 3 differentiable augmentations, 8 evaluation metrics, and 5 evaluation backbones.
+- StudioGAN supports both clean and architecture-friendly metrics (IS, FID, PRDC, IFID) with a comprehensive benchmark.
+- StudioGAN provides wandb logs and pre-trained models (will be ready soon).
 
-- StudioGAN provides clean-measures (IS, FID, Improved Precision & Recall, and Density & Coverage) using anti-aliasing PIL.BICUBIC resizer.
-
-- StudioGAN contains StyleGAN2 and StyleGAN3 implementations. We will upload pre-trained models (StyleGAN2, StyleGAN3-t, and StyleGAN3-r) on AFHQ-v2 datasets.
-
-#  Release Notes (v.0.3.0)
-- Add SOTA GANs: LGAN, TACGAN, StyleGAN2, MDGAN, MHGAN, ADCGAN, ReACGAN.
-- Add five types of differentiable augmentation: CR, DiffAugment, ADA, SimCLR, BYOL.
-- Implement useful regularizations: Top-K training, Feature Matching, R1-Regularization, MaxGP
-- Add Improved Precision & Recall, Density & Coverage, iFID, and CAS for reliable evaluation.
-- Support Inception_V3 and SwAV backbones for GAN evaluation.
-- Verify the reproducibility of StyleGAN2 and BigGAN.
-- Fix bugs in FreezeD, DDP training, Mixed Precision training, and ADA.
-- Support Discriminator Driven Latent Sampling, Semantic Factorization for BigGAN evaluation.
-- Support Wandb logging instead of Tensorboard.
+#  Release Notes (v.0.4.0)
+- We checked the reproducibility of implemented GANs.
+- We provide Baby, Papa, and Grandpa ImageNet datasets where images are processed using the anti-aliasing and high-quality resizer.
+- StudioGAN provides a dedicatedly established Benchmark on standard datasets (CIFAR10, ImageNet, AFHQv2, and FFHQ).
+- StudioGAN supports InceptionV3, ResNet50, SwAV, DINO, and Swin Transformer backbones for GAN evaluation.
 
 #  Features
-- Extensive GAN implementations using PyTorch.
-- The only repository to train/evaluate BigGAN and StyleGAN2 baselines in a unified training pipeline.
-- Comprehensive benchmark of GANs using CIFAR10, Tiny ImageNet, CUB200, and ImageNet datasets.
-- Provide pre-trained models that are fully compatible with up-to-date PyTorch environment.
-- Easy to handle other personal datasets (i.e. AFHQ, anime, and much more!).
-- Better performance and lower memory consumption than original implementations.
-- Support seven evaluation metrics including iFID, improved precision & recall, density & coverage, and CAS.
-- Provide clean-IS, clean-FID, clean-prdc (Improved Precision & Recall, Density & Coverage).
-- Support Multi-GPU (DP, DDP, and Multinode DistributedDataParallel), Mixed Precision, Synchronized Batch Normalization, Wandb Visualization, and other analysis methods.
+- **Coverage:** StudioGAN is a self-contained library that provides 7 GAN architectures, 9 conditioning methods, 4 adversarial losses, 13 regularization modules, 6 augmentation modules, 8 evaluation metrics, and 5 evaluation backbones. Among these configurations, we formulate 30 GANs as representatives.
+- **Flexibility:** Each modularized option is managed through a configuration system that works through a YAML file, so users can train a large combination of GANs by mix-matching distinct options.
+- **Reproducibility:** With StudioGAN, users can compare and debug various GANs with the unified computing environment without concerning about hidden details and tricks.
+- **Plentifulness:** StudioGAN provides a large collection of pre-trained GAN models, training logs, and evaluation results.
+- **Versatility:** StudioGAN supports 5 types of acceleration methods with synchronized batch normalization for training: a single GPU training, data-parallel training (DP), distributed data-parallel training (DDP), multi-node distributed data-parallel training (MDDP), and mixed-precision training.
 
 #  Implemented GANs
 
 | Method | Venue | Architecture | GC | DC | Loss | EMA |
 |:-----------|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
-| [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv'15 | CNN/ResNet<sup>[1](#footnote_1)</sup> | N/A | N/A | Vanilla | False |
-| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV'17 | CNN/ResNet<sup>[1](#footnote_1)</sup> | N/A | N/A | Least Sqaure | False |
-| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv'17 | CNN/ResNet<sup>[1](#footnote_1)</sup> | N/A | N/A | Hinge | False |
-| [**InfoGAN**](https://arxiv.org/abs/1606.03657) | NIPS'16 | All | N/A | N/A | Vanilla | False |
-| [**WGAN-WC**](https://arxiv.org/abs/1701.04862) | ICLR'17 |  ResNet | N/A | N/A | Wasserstein | False |
-| [**WGAN-GP**](https://arxiv.org/abs/1704.00028) | NIPS'17 |  ResNet | N/A | N/A | Wasserstein |  False |
-| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215) | arXiv'17 |  ResNet | N/A | N/A | Wasserstein | False |
-| **ACGAN-Mod**<sup>[2](#footnote_2)</sup> | - |  ResNet | cBN | AC | Hinge | False |
-| [**ProjGAN**](https://arxiv.org/abs/1802.05637) | ICLR'18 |  ResNet | cBN | PD | Hinge | False |
-| [**SNGAN**](https://arxiv.org/abs/1802.05957) | ICLR'18 |  ResNet | cBN | PD | Hinge | False |
-| [**SAGAN**](https://arxiv.org/abs/1805.08318) | ICML'19 |  ResNet | cBN | PD | Hinge | False |
-| [**TACGAN**](https://arxiv.org/abs/1907.02690) | Neurips'19 |  Big ResNet | cBN | TAC | Hinge | True |
-| [**LGAN**](https://arxiv.org/abs/1902.05687) | ICML'19 |  ResNet | N/A | N/A | Vanilla | False |
-| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR'19 |  Big ResNet | cBN | PD | Hinge | True |
-| [**BigGAN-Deep-CompareGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/models/big_resnet_deep_legacy.py) | ICLR'19 |  Big ResNet Deep CompareGAN | cBN | PD | Hinge | True |
-| [**BigGAN-Deep-StudioGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/models/big_resnet_deep_studiogan.py) | - |  Big ResNet Deep StudioGAN | cBN | PD | Hinge | True |
-| [**LOGAN**](https://arxiv.org/abs/1912.00953) | arXiv'19 |  Big ResNet | cBN | PD | Hinge | True |
-| [**StyleGAN2**](https://arxiv.org/abs/1912.04958) | CVPR' 20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
-| [**CRGAN**](https://arxiv.org/abs/1910.12027) | ICLR'20 |  Big ResNet | cBN | PD | Hinge | True |
-| [**BigGAN + DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 | Big ResNet | cBN | PD | Hinge | True |
-| [**StyleGAN2 + ADA**](https://arxiv.org/abs/2006.06676) | Neurips'20 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
-| [**ContraGAN**](https://arxiv.org/abs/2006.12681) | Neurips'20 | Big ResNet | cBN | 2C | Hinge | True |
-| [**MHGAN**](https://arxiv.org/abs/1912.04216) | WACV'21 |  Big ResNet | cBN | MH | MH | True |
-| [**ICRGAN**](https://arxiv.org/abs/2002.04724) | AAAI'21 |  Big ResNet | cBN | PD | Hinge | True |
-| [**ADCGAN**](https://arxiv.org/abs/2107.10060) | arXiv'21 | Big ResNet | cBN | ADC | Hinge | True |
-| [**ReACGAN**](https://arxiv.org/abs/2111.01118) | Neurips'21 | Big ResNet | cBN | D2D-CE | Hinge | True |
-| [**StyleGAN3**](https://nvlabs.github.io/stylegan3/) | Neurips'21 | StyleGAN3 | cAaIN | SPD | Logistic | True |
+| [**DCGAN**](https://arxiv.org/abs/1511.06434) | arXiv'15 | DCGAN/ResNetGAN<sup>[1](#footnote_1)</sup> | N/A | N/A | Vanilla | False |
+| [**InfoGAN**](https://papers.nips.cc/paper/2016/hash/7c9d0b1f96aebd7b5eca8c3edaa19ebb-Abstract.html) | NIPS'16 | DCGAN/ResNetGAN<sup>[1](#footnote_1)</sup> | N/A | N/A | Vanilla | False |
+| [**LSGAN**](https://arxiv.org/abs/1611.04076) | ICCV'17 | DCGAN/ResNetGAN<sup>[1](#footnote_1)</sup> | N/A | N/A | Least Sqaure | False |
+| [**GGAN**](https://arxiv.org/abs/1705.02894) | arXiv'17 | DCGAN/ResNetGAN<sup>[1](#footnote_1)</sup> | N/A | N/A | Hinge | False |
+| [**WGAN-WC**](https://arxiv.org/abs/1701.04862)              |  ICLR'17   |                 ResNetGAN                  |  N/A   |  N/A   | Wasserstein  | False |
+| [**WGAN-GP**](https://arxiv.org/abs/1704.00028)              |  NIPS'17   |                 ResNetGAN                  |  N/A   |  N/A   | Wasserstein  | False |
+| [**WGAN-DRA**](https://arxiv.org/abs/1705.07215)             |  arXiv'17  |                 ResNetGAN                  |  N/A   |  N/A   | Wasserstein  | False |
+| **ACGAN-Mod**<sup>[2](#footnote_2)</sup>                     |     -      |                 ResNetGAN                  |  cBN   |   AC   |    Hinge     | False |
+| [**PDGAN**](https://arxiv.org/abs/1802.05637)                |  ICLR'18   |                 ResNetGAN                  |  cBN   |   PD   |    Hinge     | False |
+| [**SNGAN**](https://arxiv.org/abs/1802.05957)                |  ICLR'18   |                 ResNetGAN                  |  cBN   |   PD   |    Hinge     | False |
+| [**SAGAN**](https://arxiv.org/abs/1805.08318)                |  ICML'19   |                 ResNetGAN                  |  cBN   |   PD   |    Hinge     | False |
+| [**TACGAN**](https://arxiv.org/abs/1907.02690)               | Neurips'19 |                   BigGAN                   |  cBN   |  TAC   |    Hinge     | True  |
+| [**LGAN**](https://arxiv.org/abs/1902.05687)                 |  ICML'19   |                 ResNetGAN                  |  N/A   |  N/A   |   Vanilla    | False |
+| [**Unconditional BigGAN**](https://arxiv.org/abs/1809.11096) |  ICLR'19   |                   BigGAN                   |  N/A   |  N/A   |    Hinge     | True  |
+| [**BigGAN**](https://arxiv.org/abs/1809.11096) | ICLR'19 | BigGAN | cBN | PD | Hinge | True |
+| [**BigGAN-Deep-CompareGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/models/big_resnet_deep_legacy.py) | ICLR'19 | BigGAN-Deep CompareGAN | cBN | PD | Hinge | True |
+| [**BigGAN-Deep-StudioGAN**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/models/big_resnet_deep_studiogan.py) | - | BigGAN-Deep StudioGAN | cBN | PD | Hinge | True |
+| [**StyleGAN2**](https://arxiv.org/abs/1912.04958)            |  CVPR' 20  |                 StyleGAN2                  | cAdaIN |  SPD   |   Logistic   | True  |
+| [**CRGAN**](https://arxiv.org/abs/1910.12027)                |  ICLR'20   |                   BigGAN                   |  cBN   |   PD   |    Hinge     | True  |
+| [**ICRGAN**](https://arxiv.org/abs/2002.04724)               |  AAAI'21   |                   BigGAN                   |  cBN   |   PD   |    Hinge     | True  |
+| [**LOGAN**](https://arxiv.org/abs/1912.00953)                |  arXiv'19  |                 ResNetGAN                  |  cBN   |   PD   |    Hinge     | True  |
+| [**ContraGAN**](https://arxiv.org/abs/2006.12681)            | Neurips'20 |                   BigGAN                   |  cBN   |   2C   |    Hinge     | True  |
+| [**MHGAN**](https://arxiv.org/abs/1912.04216)                |  WACV'21   |                   BigGAN                   |  cBN   |   MH   |      MH      | True  |
+| [**BigGAN + DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |                   BigGAN                   |  cBN   |   PD   |    Hinge     | True  |
+| [**StyleGAN2 + ADA**](https://arxiv.org/abs/2006.06676)      | Neurips'20 |                 StyleGAN2                  | cAdaIN |  SPD   |   Logistic   | True  |
+| [**BigGAN + LeCam**](https://arxiv.org/abs/2104.03310)       | CVPR'2021  |                   BigGAN                   |  cBN   |   PD   |    Hinge     | True  |
+| [**ADCGAN**](https://arxiv.org/abs/2107.10060) | arXiv'21 | BigGAN | cBN | ADC | Hinge | True |
+| [**ReACGAN**](https://arxiv.org/abs/2111.01118) | Neurips'21 | BigGAN | cBN | D2D-CE | Hinge | True |
+| [**StyleGAN2 + APA**](https://arxiv.org/abs/2111.06849) | Neurips'21 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
+| [**StyleGAN3-t**](https://nvlabs.github.io/stylegan3/) | Neurips'21 | StyleGAN3 | cAaIN | SPD | Logistic | True |
+| [**StyleGAN3-r**](https://nvlabs.github.io/stylegan3/) | Neurips'21 | StyleGAN3 | cAaIN | SPD | Logistic | True |
 
 GC/DC indicates the way how we inject label information to the Generator or Discriminator.
 
@@ -81,35 +77,33 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 [ADC](https://arxiv.org/abs/2107.10060) : Auxiliary Discriminative Classifier.
 [D2D-CE](https://arxiv.org/abs/2111.01118) : Data-to-Data Cross-Entropy.
 
-#  Differentiable Augmentations
-| Method | Venue | Target Loss |
-|:-----------|:-------------:|:-------------:|
-| [**CR**](https://arxiv.org/abs/1910.12027) | ICLR'2020 | - |
-| [**SimCLR**](https://arxiv.org/abs/2002.05709) | ICML'2020 | - |
-| [**DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'2020 | - |
-| [**BYOL**](https://arxiv.org/abs/2006.07733) | Neurips'2020 | - |
-| [**ADA**](https://arxiv.org/abs/2006.06676) | Neurips'2020 | Logistic |
-| [**APA**](https://arxiv.org/abs/2111.06849) | Neurips'2021 | Logistic |
-
-#  Training Techniques and Misc
-| Method | Venue | Target Architecture |
-|:-----------|:-------------:|:-------------:|
-| [**FreezeD**](https://arxiv.org/abs/2002.10964) | CVPRW'20 | Except for StyleGAN2 |
-| [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'2020 | - |
-| [**LeCam**](https://arxiv.org/abs/2104.03310) | CVPR'2021 | - |
-| [**SeFa**](https://arxiv.org/abs/2007.06600) | CVPR'2021 | BigGAN |
-
 #  Evaluation Metrics
 | Method | Venue | Architecture |
 |:-----------|:-------------:|:-------------:|
-| [**Inception Score (IS)**](https://arxiv.org/abs/1606.03498) | Neurips'16 | Inception_V3 |
-| [**Frechet Inception Distance (FID)**](https://arxiv.org/abs/1706.08500) | Neurips'17 | Inception_V3 |
-| **Intra-class FID** | - | Inception_V3 |
-| [**Improved Precision & Recall**](https://arxiv.org/abs/1904.06991) | Neurips'19 | Inception_V3 |
-| [**Classifier Accuracy Score (CAS)**](https://arxiv.org/abs/1905.10887) | Neurips'19 | Inception_V3 |
-| [**Density & Coverage**](https://arxiv.org/abs/2002.09797) | ICML'20 | Inception_V3 |
+| [**Inception Score (IS)**](https://arxiv.org/abs/1606.03498) | Neurips'16 | InceptionV3 |
+| [**Frechet Inception Distance (FID)**](https://arxiv.org/abs/1706.08500) | Neurips'17 | InceptionV3 |
+| [**Improved Precision & Recall**](https://arxiv.org/abs/1904.06991) | Neurips'19 |        InceptionV3         |
+| [**Classifier Accuracy Score (CAS)**](https://arxiv.org/abs/1905.10887) | Neurips'19 |        InceptionV3         |
+| [**Density & Coverage**](https://arxiv.org/abs/2002.09797)   |  ICML'20   |        InceptionV3         |
+| **Intra-class FID**                                          |     -      |        InceptionV3         |
 | [**SwAV FID**](https://openreview.net/forum?id=NeRdBeTionN) | ICLR'21 | SwAV |
-| [**Clean metrics (IS, FID, PRDC)**](https://arxiv.org/abs/2104.11222) | arXiv'21 | - |
+| [**Clean metrics (IS, FID, PRDC)**](https://arxiv.org/abs/2104.11222) | CVPR'22 | InceptionV3 |
+| [**Architecture-friendly metrics (IS, FID, PRDC)**](https://arxiv.org/abs/2206.09479) | arXiv'22 | Not limited to InceptionV3 |
+
+#  Training and Inference Techniques
+
+| Method                                                 |    Venue     | Target Architecture  |
+| :----------------------------------------------------- | :----------: | :------------------: |
+| [**FreezeD**](https://arxiv.org/abs/2002.10964)        |   CVPRW'20   | Except for StyleGAN2 |
+| [**Top-K Training**](https://arxiv.org/abs/2002.06224) | Neurips'2020 |          -           |
+| [**DDLS**](https://arxiv.org/abs/2003.06060)           | Neurips'2020 |          -           |
+| [**SeFa**](https://arxiv.org/abs/2007.06600)           |  CVPR'2021   |        BigGAN        |
+
+#  GAN Taxonomy
+
+<p align="center">
+  <img width="95%" src="https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Taxonomy.png" />
+</p>
 
 # Requirements
 
@@ -535,7 +529,7 @@ PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However
 StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
 ```bib
 @article{kang2022StudioGAN,
-  title   = {StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis},
+  title   = {{StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis}},
   author  = {MinGuk Kang and Joonghyuk Shin and Jaesik Park},
   journal = {2206.09479 (arXiv)},
   year    = {2022}
