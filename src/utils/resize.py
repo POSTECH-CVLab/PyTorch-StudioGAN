@@ -48,7 +48,7 @@ dict_name_to_filter = {
 
 
 def build_resizer(resizer, backbone, size):
-    if resizer == "tailored":
+    if resizer == "friendly":
         if backbone == "InceptionV3_tf":
             return make_resizer("PIL", "bilinear", (size, size))
         elif backbone == "InceptionV3_torch":

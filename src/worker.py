@@ -10,6 +10,7 @@ import glob
 import random
 import string
 import pickle
+import copy
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
@@ -103,14 +104,20 @@ class WORKER(object):
         self.blur_init_sigma = self.STYLEGAN.blur_init_sigma
         self.blur_fade_kimg = self.effective_batch_size * 200 / 32
         self.DDP = self.RUN.distributed_data_parallel
+        self.adc_fake = False
+
+        num_classes = self.DATA.num_classes
 
         self.pl_reg = losses.PathLengthRegularizer(device=local_rank, pl_weight=cfgs.STYLEGAN.pl_weight)
         self.l2_loss = torch.nn.MSELoss()
         self.ce_loss = torch.nn.CrossEntropyLoss()
         self.fm_loss = losses.feature_matching_loss
         self.lecam_ema = ops.LeCamEMA(decay=self.LOSS.lecam_ema_decay, start_iter=self.LOSS.lecam_ema_start_iter)
+        if self.LOSS.adv_loss == "MH":
+            self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
+            self.lossy.data.fill_(self.DATA.num_classes)
 
-        if self.AUG.apply_ada or self.AUG.apply_apa:
+        if self.AUG.apply_ada + self.AUG.apply_apa:
             if self.AUG.apply_ada: self.AUG.series_augment.p.copy_(torch.as_tensor(self.aa_p))
             self.aa_interval = self.AUG.ada_interval if self.AUG.ada_interval != "N/A" else self.AUG.apa_interval
             self.aa_target = self.AUG.ada_target if self.AUG.ada_target != "N/A" else self.AUG.apa_target
@@ -120,44 +127,27 @@ class WORKER(object):
             self.dis_sign_real_log, self.dis_sign_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
             self.dis_logit_real_log, self.dis_logit_fake_log = torch.zeros(2, device=self.local_rank), torch.zeros(2, device=self.local_rank)
 
-        if self.LOSS.adv_loss == "MH":
-            self.lossy = torch.LongTensor(self.OPTIMIZATION.batch_size).to(self.local_rank)
-            self.lossy.data.fill_(self.DATA.num_classes)
-
         if self.MODEL.aux_cls_type == "ADC":
-            num_classes = self.DATA.num_classes * 2
+            num_classes = num_classes*2
             self.adc_fake = True
-        else:
-            num_classes = self.DATA.num_classes
-            self.adc_fake = False
 
         if self.MODEL.d_cond_mtd == "AC":
-            self.cond_loss = losses.CrossEntropyLoss()
-            if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.MiCrossEntropyLoss()
+            self.cond_loss = self.ce_loss
         elif self.MODEL.d_cond_mtd == "2C":
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
                                                                temperature=self.LOSS.temperature,
                                                                master_rank="cuda",
                                                                DDP=self.DDP)
-            if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.MiConditionalContrastiveLoss(num_classes=num_classes,
-                                                                        temperature=self.LOSS.temperature,
-                                                                        master_rank="cuda",
-                                                                        DDP=self.DDP)
         elif self.MODEL.d_cond_mtd == "D2DCE":
             self.cond_loss = losses.Data2DataCrossEntropyLoss(num_classes=num_classes,
                                                               temperature=self.LOSS.temperature,
                                                               m_p=self.LOSS.m_p,
                                                               master_rank="cuda",
                                                               DDP=self.DDP)
-            if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.MiData2DataCrossEntropyLoss(num_classes=num_classes,
-                                                                       temperature=self.LOSS.temperature,
-                                                                       m_p=self.LOSS.m_p,
-                                                                       master_rank="cuda",
-                                                                       DDP=self.DDP)
         else: pass
+
+        if self.MODEL.aux_cls_type == "TAC":
+            self.cond_loss_mi = copy.deepcopy(self.cond_loss)
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  generator_mapping=self.Gen_ema_mapping,
@@ -205,6 +195,7 @@ class WORKER(object):
                 pass
             self.train_iter = iter(self.train_dataloader)
             real_image_basket, real_label_basket = next(self.train_iter)
+
         real_image_basket = torch.split(real_image_basket, self.OPTIMIZATION.batch_size)
         real_label_basket = torch.split(real_label_basket, self.OPTIMIZATION.batch_size)
         return real_image_basket, real_label_basket
@@ -833,6 +824,9 @@ class WORKER(object):
                                                                    logger=self.logger,
                                                                    disable_tqdm=self.global_rank != 0)
 
+            if ("fid" in metrics or "prdc" in metrics) and self.global_rank == 0:
+                self.logger.info("{num_images} real images is used for evaluation.".format(num_images=len(self.eval_dataloader.dataset)))
+
             if "is" in metrics:
                 kl_score, kl_std, top1, top5 = ins.eval_features(probs=fake_probs,
                                                                  labels=fake_labels,
@@ -1089,7 +1083,7 @@ class WORKER(object):
                                                                         cal_trsp_cost=False)
                 fake_anchor = torch.unsqueeze(fake_images[0], dim=0)
                 fake_anchor = ops.quantize_images(fake_anchor)
-                fake_anchor = ops.resize_images(fake_anchor, resizer, totensor, mean, std)
+                fake_anchor = ops.resize_images(fake_anchor, resizer, totensor, mean, std, self.local_rank)
                 fake_anchor_embed = torch.squeeze(resnet50_conv(fake_anchor))
 
                 num_samples, target_sampler = sample.make_target_cls_sampler(dataset=dataset, target_class=c)
@@ -1104,7 +1098,7 @@ class WORKER(object):
                 for batch_idx in range(num_samples//batch_size):
                     real_images, real_labels = next(c_iter)
                     real_images = ops.quantize_images(real_images)
-                    real_images = ops.resize_images(real_images, resizer, totensor, mean, std)
+                    real_images = ops.resize_images(real_images, resizer, totensor, mean, std, self.local_rank)
                     real_embed = torch.squeeze(resnet50_conv(real_images))
                     if batch_idx == 0:
                         distances = torch.square(real_embed - fake_anchor_embed).mean(dim=1).detach().cpu().numpy()

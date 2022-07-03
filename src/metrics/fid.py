@@ -72,7 +72,7 @@ def calculate_moments(data_loader, eval_model, num_generate, batch_size, quantiz
         total_instance = len(data_loader.dataset)
         data_iter = iter(data_loader)
         num_batches = math.ceil(float(total_instance) / float(batch_size))
-        if DDP: num_batches = num_batches//world_size + 1
+        if DDP: num_batches = int(math.ceil(float(total_instance) / float(batch_size*world_size)))
 
         acts = []
         for i in tqdm(range(0, num_batches), disable=disable_tqdm):
@@ -82,6 +82,8 @@ def calculate_moments(data_loader, eval_model, num_generate, batch_size, quantiz
                 images, labels = next(data_iter)
             except StopIteration:
                 break
+
+            images, labels = images.to("cuda"), labels.to("cuda")
 
             with torch.no_grad():
                 embeddings, logits = eval_model.get_outputs(images, quantize=quantize)

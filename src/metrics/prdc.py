@@ -40,8 +40,8 @@ __all__ = ["compute_prdc"]
 
 def compute_real_embeddings(data_loader, batch_size, eval_model, quantize, world_size, DDP, disable_tqdm):
     data_iter = iter(data_loader)
-    num_batches = int(math.ceil(float(len(data_loader.dataset))/float(batch_size)))
-    if DDP: num_batches = num_batches//world_size + 1
+    num_batches = int(math.ceil(float(len(data_loader.dataset)) / float(batch_size)))
+    if DDP: num_batches = num_batches = int(math.ceil(float(len(data_loader.dataset)) / float(batch_size*world_size)))
 
     real_embeds = []
     for i in tqdm(range(num_batches), disable=disable_tqdm):
@@ -49,6 +49,8 @@ def compute_real_embeddings(data_loader, batch_size, eval_model, quantize, world
             real_images, real_labels = next(data_iter)
         except StopIteration:
             break
+
+        real_images, real_labels = real_images.to("cuda"), real_labels.to("cuda")
 
         with torch.no_grad():
             real_embeddings, _ = eval_model.get_outputs(real_images, quantize=quantize)

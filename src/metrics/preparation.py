@@ -111,7 +111,13 @@ class LoadEvalModel(object):
             repres, logits = self.model(x)
         elif self.eval_backbone in ["InceptionV3_torch", "ResNet50_torch", "SwAV_torch"]:
             logits = self.model(x)
-            repres = self.save_output.outputs[0][0].to(self.device)
+            if len(self.save_output.outputs) > 1:
+                repres = []
+                for rank in range(len(self.save_output.outputs)):
+                    repres.append(self.save_output.outputs[rank][0].detach().cpu())
+                repres = torch.cat(repres, dim=0).to(self.device)
+            else:
+                repres = self.save_output.outputs[0][0].to(self.device)
             self.save_output.clear()
         return repres, logits
 
@@ -172,8 +178,8 @@ def prepare_real_feats(data_loader, eval_model, num_feats, quantize, cfgs, logge
                                                 quantize=quantize,
                                                 world_size=cfgs.OPTIMIZATION.world_size,
                                                 DDP=cfgs.RUN.distributed_data_parallel,
+                                                device=device,
                                                 disable_tqdm=disable_tqdm)
-
         if device == 0:
             logger.info("Save real_features to disk.")
             np.savez(feat_path, **{"real_feats": real_feats,

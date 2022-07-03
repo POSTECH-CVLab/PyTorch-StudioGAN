@@ -69,7 +69,7 @@ def sample_images_from_loader_and_stack_features(dataloader, eval_model, batch_s
     eval_model.eval()
     total_instance = len(dataloader.dataset)
     num_batches = math.ceil(float(total_instance) / float(batch_size))
-    if DDP: num_batches = num_batches//world_size + 1
+    if DDP: num_batches = int(math.ceil(float(total_instance) / float(batch_size*world_size)))
     data_iter = iter(dataloader)
 
     if device == 0 and not disable_tqdm:
@@ -81,6 +81,8 @@ def sample_images_from_loader_and_stack_features(dataloader, eval_model, batch_s
             images, labels = next(data_iter)
         except StopIteration:
             break
+
+        images, labels = images.to(device), labels.to(device)
 
         with torch.no_grad():
             features, logits = eval_model.get_outputs(images, quantize=quantize)
@@ -101,7 +103,7 @@ def sample_images_from_loader_and_stack_features(dataloader, eval_model, batch_s
     return feature_holder, prob_holder, list(label_holder.detach().cpu().numpy())
 
 
-def stack_features(data_loader, eval_model, num_feats, batch_size, quantize, world_size, DDP, disable_tqdm):
+def stack_features(data_loader, eval_model, num_feats, batch_size, quantize, world_size, DDP, device, disable_tqdm):
     eval_model.eval()
     data_iter = iter(data_loader)
     num_batches = math.ceil(float(num_feats) / float(batch_size))
@@ -115,6 +117,8 @@ def stack_features(data_loader, eval_model, num_feats, batch_size, quantize, wor
             images, labels = next(data_iter)
         except StopIteration:
             break
+
+        images, labels = images.to(device), labels.to(device)
 
         with torch.no_grad():
             embeddings, logits = eval_model.get_outputs(images, quantize=quantize)

@@ -51,20 +51,10 @@ class CenterCropLongEdge(object):
 
 
 class Dataset_(Dataset):
-    def __init__(self, data_dir, imagenet_name=None, imagenet_resize=None, imagenet_resizer=None):
+    def __init__(self, data_dir):
         super(Dataset_, self).__init__()
         self.data_dir = data_dir
-        self.data_name = imagenet_name
-        if imagenet_name in ["ImageNet", "Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"] \
-                and isinstance(imagenet_resize, int) and imagenet_resize > 0 \
-                and imagenet_resizer in ["nearest", "bilinear", "bicubic", "lanczos"]:
-            self.trsf_list = [CenterCropLongEdge(),
-                              transforms.Resize(imagenet_resize,
-                                                resizer_collection[imagenet_resizer]),
-                              transforms.ToTensor(),
-                              transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
-        else:
-            self.trsf_list = [transforms.PILToTensor()]
+        self.trsf_list = [transforms.PILToTensor()]
         self.trsf = transforms.Compose(self.trsf_list)
 
         self.load_dataset()
@@ -86,14 +76,9 @@ def prepare_evaluation():
     parser.add_argument("-metrics", "--eval_metrics", nargs='+', default=['fid'],
                         help="evaluation metrics to use during training, a subset list of ['fid', 'is', 'prdc'] or none")
     parser.add_argument("--post_resizer", type=str, default="legacy", help="which resizer will you use to evaluate GANs\
-                        in ['legacy', 'clean', 'tailored']")
+                        in ['legacy', 'clean', 'friendly']")
     parser.add_argument('--eval_backbone', type=str, default='InceptionV3_tf',\
                         help="[InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch, Swin-T_torch]")
-    parser.add_argument("--is_ImageNet", action="store_true")
-    parser.add_argument("--ImageNet_name", type=str, default=None, help="specify the type of ImageNet \in [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
-    parser.add_argument("--ImageNet_resolution", type=int, default=0, help="specify the resolution of [ImageNet, Baby_ImageNet, Papa_ImageNet, Grandpa_ImageNet]")
-    parser.add_argument("--ImageNet_pre_resizer", type=str, default="wo_resize", help="which resizer will you use to pre-process ImageNet\
-                        in ['wo_resize', 'nearest', 'bilinear', 'bicubic', 'lanczos']")
     parser.add_argument("--dset1", type=str, default=None, help="specify the directory of the folder that contains dset1 images (real).")
     parser.add_argument("--dset1_feats", type=str, default=None, help="specify the path of *.npy that contains features of dset1 (real). \
                         If not specified, StudioGAN will automatically extract feat1 using the whole dset1.")
@@ -110,15 +95,15 @@ def prepare_evaluation():
     parser.add_argument("--num_workers", type=int, default=8)
     args = parser.parse_args()
 
-    if args.is_ImageNet:
-        assert args.ImageNet_name in ["ImageNet", "Baby_ImageNet", "Papa_ImageNet", "Grandpa_ImageNet"],\
-            "Please specify the type of ImageNet dataset exactly."
-        assert args.ImageNet_resolution > 0, "Resolution should be larger than 0"
-        assert args.ImageNet_pre_resizer in ["wo_resize", "nearest", "bilinear", "bicubic", "lanczos"], \
-            "You shold choose a resizer for pre-precessing ImageNet."
+    if args.dset1_feats == None and args.dset1_moments == None:
+        assert args.dset1 != None, "dset1 should be specified!"
+    if "fid" in args.eval_metrics:
+        assert args.dset1 != None or args.dset1_moments != None, "Either dset1 or dset1_moments should be given to compute FID."
+    if "prdc" in args.eval_metrics:
+        assert args.dset1 != None or args.dset1_feats != None, "Either dset1 or dset1_feats should be given to compute PRDC."
+
     gpus_per_node, rank = torch.cuda.device_count(), torch.cuda.current_device()
     world_size = gpus_per_node * args.total_nodes
-
     if args.seed == -1: args.seed = random.randint(1, 4096)
     if world_size == 1: print("You have chosen a specific GPU. This will completely disable data parallelism.")
     return args, world_size, gpus_per_node, rank
@@ -146,14 +131,15 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     # load dset1 and dset1.
     # -----------------------------------------------------------------------------
-    dset1 = Dataset_(data_dir=args.dset1,
-                     imagenet_name=args.ImageNet_name,
-                     imagenet_resize=args.ImageNet_resolution,
-                     imagenet_resizer=args.ImageNet_pre_resizer)
-    dset2 = Dataset_(data_dir=args.dset2,
-                     imagenet_name=args.ImageNet_name)
+    load_dset1 = ("fid" in args.eval_metrics and args.dset1_moments == None)*\
+        ("prdc" in args.eval_metrics and args.dset1_feats == None)
+    if load_dset1:
+        dset1 = Dataset_(data_dir=args.dset1)
+        if local_rank == 0:
+            print("Size of dset1: {dataset_size}".format(dataset_size=len(dset1)))
+
+    dset2 = Dataset_(data_dir=args.dset2)
     if local_rank == 0:
-        print("Size of dset1: {dataset_size}".format(dataset_size=len(dset1)))
         print("Size of dset2: {dataset_size}".format(dataset_size=len(dset2)))
 
     # -----------------------------------------------------------------------------
@@ -161,11 +147,13 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     if args.distributed_data_parallel:
         batch_size = args.batch_size//world_size
-        dset1_sampler = DistributedSampler(dset1,
-                                           num_replicas=world_size,
-                                           rank=local_rank,
-                                           shuffle=False,
-                                           drop_last=False)
+        if load_dset1:
+            dset1_sampler = DistributedSampler(dset1,
+                                               num_replicas=world_size,
+                                               rank=local_rank,
+                                               shuffle=False,
+                                               drop_last=False)
+
         dset2_sampler = DistributedSampler(dset2,
                                            num_replicas=world_size,
                                            rank=local_rank,
@@ -178,13 +166,15 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     # define dataloaders for dset1 and dset2.
     # -----------------------------------------------------------------------------
-    dset1_dataloader = DataLoader(dataset=dset1,
-                                  batch_size=batch_size,
-                                  shuffle=False,
-                                  pin_memory=True,
-                                  num_workers=args.num_workers,
-                                  sampler=dset1_sampler,
-                                  drop_last=False)
+    if load_dset1:
+        dset1_dataloader = DataLoader(dataset=dset1,
+                                      batch_size=batch_size,
+                                      shuffle=False,
+                                      pin_memory=True,
+                                      num_workers=args.num_workers,
+                                      sampler=dset1_sampler,
+                                      drop_last=False)
+
     dset2_dataloader = DataLoader(dataset=dset2,
                                   batch_size=batch_size,
                                   shuffle=False,
@@ -205,16 +195,16 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     # extract features, probabilities, and labels to calculate metrics.
     # -----------------------------------------------------------------------------
-    dset1_feats, dset1_probs, dset1_labels = features.sample_images_from_loader_and_stack_features(
-                                      dataloader=dset1_dataloader,
-                                      eval_model=eval_model,
-                                      batch_size=batch_size,
-                                      quantize=True if args.is_ImageNet and args.ImageNet_resolution > 0 and \
-        args.ImageNet_pre_resizer in ["nearest", "bilinear", "bicubic", "lanczos"] else False,
-                                      world_size=world_size,
-                                      DDP=args.distributed_data_parallel,
-                                      device=local_rank,
-                                      disable_tqdm=local_rank != 0)
+    if load_dset1:
+        dset1_feats, dset1_probs, dset1_labels = features.sample_images_from_loader_and_stack_features(
+                                          dataloader=dset1_dataloader,
+                                          eval_model=eval_model,
+                                          batch_size=batch_size,
+                                          quantize=False,
+                                          world_size=world_size,
+                                          DDP=args.distributed_data_parallel,
+                                          device=local_rank,
+                                          disable_tqdm=local_rank != 0)
 
     dset2_feats, dset2_probs, dset2_labels = features.sample_images_from_loader_and_stack_features(
                                       dataloader=dset2_dataloader,
@@ -232,14 +222,17 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     metric_dict = {}
     if "is" in args.eval_metrics:
         num_splits = 1
-        dset1_kl_score, dset1_kl_std, dset1_top1, dset1_top5 = ins.eval_features(probs=dset1_probs,
-                                                               labels=dset1_labels,
-                                                               data_loader=dset1_dataloader,
-                                                               num_features=len(dset1),
-                                                               split=num_splits,
-                                                               is_acc=args.is_ImageNet,
-                                                               is_torch_backbone=True if "torch" in args.eval_backbone else False)
-        dset2_kl_score, dset2_kl_std, dset2_top1, dset2_top5 = ins.eval_features(probs=dset2_probs,
+        if load_dset1:
+            dset1_kl_score, dset1_kl_std, dset1_top1, dset1_top5 = ins.eval_features(probs=dset1_probs,
+                                                                   labels=dset1_labels,
+                                                                   data_loader=dset1_dataloader,
+                                                                   num_features=len(dset1),
+                                                                   split=num_splits,
+                                                                   is_acc=False,
+                                                                   is_torch_backbone=True if "torch" in args.eval_backbone else False)
+
+        dset2_kl_score, dset2_kl_std, dset2_top1, dset2_top5 = ins.eval_features(
+                                                               probs=dset2_probs,
                                                                labels=dset2_labels,
                                                                data_loader=dset2_dataloader,
                                                                num_features=len(dset2),
@@ -248,11 +241,9 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
                                                                is_torch_backbone=True if "torch" in args.eval_backbone else False)
         if local_rank == 0:
             metric_dict.update({"IS": dset2_kl_score, "Top1_acc": dset2_top1, "Top5_acc": dset2_top5})
-            print("Inception score of dset1 ({num} images): {IS}".format(num=str(len(dset1)), IS=dset1_kl_score))
+            if load_dset1:
+                print("Inception score of dset1 ({num} images): {IS}".format(num=str(len(dset1)), IS=dset1_kl_score))
             print("Inception score of dset2 ({num} images): {IS}".format(num=str(len(dset2)), IS=dset2_kl_score))
-            if args.is_ImageNet:
-                print("{eval_model} Top1 acc (dset1): {Top1}".format(eval_model=args.eval_backbone, Top1=dset1_top1))
-                print("{eval_model} Top5 acc (dset1): {Top5}".format(eval_model=args.eval_backbone, Top5=dset1_top5))
 
     if "fid" in args.eval_metrics:
         if args.dset1_moments is None:
@@ -296,9 +287,6 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
             print("Coverage between {dset1_mode} (ref) and dset2 (target) ({dset1_mode}: {num1} images, dset2: {num2} images): {cvg}".\
                 format(dset1_mode=str(dset1_mode), num1=str(len(dset1_feats_np)), num2=str(len(dset2_feats_np)), cvg=cvg))
 
-    if local_rank == 0:
-        with open("./eval_pickles/"+ args.dset2[30:].replace('/','-') + "-" + args.ImageNet_pre_resizer + args.eval_backbone +".pickle", "wb") as f:
-            pickle.dump(metric_dict, f)
 
 if __name__ == "__main__":
     args, world_size, gpus_per_node, rank = prepare_evaluation()

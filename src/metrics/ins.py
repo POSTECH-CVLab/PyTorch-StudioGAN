@@ -84,7 +84,7 @@ def eval_dataset(data_loader, eval_model, quantize, splits, batch_size, world_si
     eval_model.eval()
     num_samples = len(data_loader.dataset)
     num_batches = int(math.ceil(float(num_samples) / float(batch_size)))
-    if DDP: num_batches = num_batches//world_size + 1
+    if DDP: num_batches = int(math.ceil(float(num_samples) / float(batch_size*world_size)))
     dataset_iter = iter(data_loader)
 
     if is_acc:
@@ -97,7 +97,13 @@ def eval_dataset(data_loader, eval_model, quantize, splits, batch_size, world_si
     ps_holder = []
     labels_holder = []
     for i in tqdm(range(num_batches), disable=disable_tqdm):
-        real_images, real_labels = next(dataset_iter)
+        try:
+            real_images, real_labels = next(dataset_iter)
+        except StopIteration:
+            break
+
+        real_images, real_labels = real_images.to("cuda"), real_labels.to("cuda")
+
         with torch.no_grad():
             ps = inception_softmax(eval_model, real_images, quantize)
             ps_holder.append(ps)

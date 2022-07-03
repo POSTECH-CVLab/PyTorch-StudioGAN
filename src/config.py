@@ -630,7 +630,6 @@ class Configurations(object):
     def check_compatability(self):
         if self.RUN.distributed_data_parallel and self.RUN.mixed_precision:
             print("-"*120)
-            print("WARNING: DDP Training with mixed_precision and synchronized_bn can lead significant difference in evaluation.")
             print("Please using standing statistics (-std_stat) with -std_max and -std_step options for reliable evaluation!")
             print("-"*120)
 
@@ -718,10 +717,6 @@ class Configurations(object):
         if self.RUN.train * self.RUN.standing_statistics:
             print("StudioGAN does not support standing_statistics during training")
             print("After training is done, StudioGAN will accumulate batchnorm statistics to evaluate GAN.")
-
-        if self.RUN.distributed_data_parallel:
-            print("Turning on DDP might cause inexact evaluation results.")
-            print("Please use a single GPU or DataParallel for the exact evluation.")
 
         if self.OPTIMIZATION.world_size > 1 and self.RUN.synchronized_bn:
             assert not self.RUN.batch_statistics, "batch_statistics cannot be used with synchronized_bn."
@@ -852,12 +847,10 @@ class Configurations(object):
                 self.AUG.ada_interval == self.AUG.apa_interval, \
                 "ADA and APA specifications should be the completely same."
 
-        assert self.OPTIMIZATION.total_steps % self.RUN.save_freq == 0, "total_steps should be divided by save_freq."
-
         assert self.RUN.eval_backbone in ["InceptionV3_tf", "InceptionV3_torch", "ResNet50_torch", "SwAV_torch", "DINO_torch", "Swin-T_torch"], \
             "eval_backbone should be in [InceptionV3_tf, InceptionV3_torch, ResNet50_torch, SwAV_torch, DINO_torch, Swin-T_torch]"
 
-        assert self.RUN.post_resizer in ["legacy", "clean", "tailored"], "resizing flag should be in [legacy, clean, tailored]"
+        assert self.RUN.post_resizer in ["legacy", "clean", "friendly"], "resizing flag should be in [legacy, clean, friendly]"
 
         assert self.RUN.batch_statistics*self.RUN.standing_statistics == 0, \
             "You can't turn on batch_statistics and standing_statistics simultaneously."
