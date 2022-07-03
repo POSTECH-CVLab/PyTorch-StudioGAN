@@ -6,7 +6,7 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
-**Moreover**, StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
+**Moreover, ** StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
 
 # News
 - Our new paper "[StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis](https://arxiv.org/abs/2206.09479)" is made public on arXiv.
@@ -308,13 +308,17 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 
 #  Metrics
 
-StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score, and SwAV backbone FID. Users can get ``Intra-Class FID, Classifier Accuracy Score, SwAV backbone FID`` scores using ``-iFID, -GAN_train, -GAN_test, and --eval_backbone "SwAV"`` options, respectively. In addition to this, users can calculate metrics with clean-resizer (please refer to [paper](https://arxiv.org/abs/2104.11222)) using --resize_fn clean.
+StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score. Users can get ``Intra-Class FID, Classifier Accuracy Score`` scores using ``-iFID, -GAN_train, and -GAN_test`` options, respectively. 
+
+Users can change the evaluation backbone from InceptionV3 to ResNet50, SwAV, DINO, or Swin Transformer using ``--eval_backbone ResNet50_torch, SwAV_torch, DINO_torch, or Swin-T_torch`` option.
+
+In addition, Users can calculate metrics with clean- or architecture-friendly resizer using ``--post_resizer clean or friendly`` option.
 
 ### 1. Inception Score (IS)
 Inception Score (IS) is a metric to measure how much GAN generates high-fidelity and diverse images. Calculating IS requires the pre-trained Inception-V3 network. Note that we do not split a dataset into ten folds to calculate IS ten times.
 
 ### 2. Frechet Inception Distance (FID)
-FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires the pre-trained Inception-V3 network, and modern approaches use [Tensorflow-based FID](https://github.com/bioinf-jku/TTUR). StudioGAN utilizes the [PyTorch-based FID](https://github.com/mseitzer/pytorch-fid) to test GAN models in the same PyTorch environment. We show that the PyTorch based FID implementation provides [almost the same results](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Table3.png) with the TensorFlow implementation (See Appendix F of [our paper](https://arxiv.org/abs/2006.12681)).
+FID is a widely used metric to evaluate the performance of a GAN model. Calculating FID requires the pre-trained Inception-V3 network, and modern approaches use [Tensorflow-based FID](https://github.com/bioinf-jku/TTUR). StudioGAN utilizes the [PyTorch-based FID](https://github.com/mseitzer/pytorch-fid) to test GAN models in the same PyTorch environment. We show that the PyTorch based FID implementation provides [almost the same results](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/docs/figures/Table3.png) with the TensorFlow implementation (See Appendix F of [ContraGAN paper](https://arxiv.org/abs/2006.12681)).
 
 ### 3. Improved Precision and Recall (Prc, Rec)
 Improved precision and recall are developed to make up for the shortcomings of the precision and recall. Like IS, FID, calculating improved precision and recall requires the pre-trained Inception-V3 model. StudioGAN uses the PyTorch implementation provided by [developers of density and coverage scores](https://github.com/clovaai/generative-evaluation-prdc). 
@@ -323,12 +327,19 @@ Improved precision and recall are developed to make up for the shortcomings of t
 Density and coverage metrics can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metrics are known to be robust to outliers, and they can detect identical real and fake distributions. StudioGAN uses the [authors' official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN follows the author's suggestion for hyperparameter selection.
 
 #  Evaluating pre-saved image folders
-* Evaluate IS, FID, Prc, Rec, Dns, Cvg (-metrics is fid prdc) of image folders saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
+* Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folders (already preprocessed) saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
 ```bash
 CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1 DSET1 --dset2 DSET2
 ```
 
-* Evaluate clean-IS, clean-FID, clean-Prc, clean-Rec, clean-Dns, clean-Cvg (-metrics is fid prdc --resize_fn clean) of image folders saved in DSET1 and DSET2 through ``DistributedDataParallel`` using GPUs ``(0,...,N)``.
+* Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folder saved in DSET2 using pre-computed features and moments of dset1.
+
+  ```bash
+  CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1_feats DSET1_FEATS --dset1_moments DSET1_MOMENTS --dset2 DSET2
+  ```
+
+* Evaluate friendly-IS, friendly-FID, friendly-Prc, friendly-Rec, friendly-Dns, friendly-Cvg (``-metrics is fid prdc --post_resizer friendly``) of image folders saved in DSET1 and DSET2 through ``DistributedDataParallel`` using GPUs ``(0,...,N)``.
+
 ```bash
 export MASTER_ADDR="localhost"
 export MASTER_PORT=2222
@@ -339,11 +350,9 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --resi
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
 
-We report the best IS, FID, and F_beta values of various GANs. B.S. means batch size for training.
+We report the best IS, FID, Improved Precision & Recall, and Density & Coverage of GANs.
 
-To download all checkpoints reported in StudioGAN, Please [click here](https://drive.google.com/drive/folders/1CDM96Ic-99KdCDYTALkqvoAliprEnltC?usp=sharing).
-
-[CR](https://arxiv.org/abs/1910.12027), [ICR](https://arxiv.org/abs/2002.04724), [DiffAugment](https://arxiv.org/abs/2006.10738), [ADA](https://arxiv.org/abs/2006.06676), and [LO](https://arxiv.org/abs/1912.00953) refer to regularization or optimization techiniques: CR (Consistency Regularization), ICR (Improved Consistency Regularization), DiffAugment (Differentiable Augmentation), ADA (Adaptive Discriminator Augmentation), and LO (Latent Optimization), respectively.
+To download all checkpoints reported in StudioGAN, Please [click here](https://drive.google.com/drive/folders/1CDM96Ic-99KdCDYTALkqvoAliprEnltC?usp=sharing) (will be ready soon).
 
 ### CIFAR10 (3x32x32)
 
