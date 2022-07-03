@@ -6,7 +6,7 @@
 
 **StudioGAN** is a Pytorch library providing implementations of representative Generative Adversarial Networks (GANs) for conditional/unconditional image generation. StudioGAN aims to offer an identical playground for modern GANs so that machine learning researchers can readily compare and analyze a new idea.
 
-**Moreover**, StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
+**Moreover, ** StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
 
 # News
 - Our new paper "[StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis](https://arxiv.org/abs/2206.09479)" is made public on arXiv.
@@ -99,6 +99,14 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 | [**DDLS**](https://arxiv.org/abs/2003.06060)           | Neurips'2020 |          -           |
 | [**SeFa**](https://arxiv.org/abs/2007.06600)           |  CVPR'2021   |        BigGAN        |
 
+# Reproducibility
+
+* CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
+
+  <p align="left">
+    <img width="50%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility.png" />
+  </p>
+
 # Requirements
 
 First, install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
@@ -132,7 +140,7 @@ docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/c
 
 ```
 data
-└── ImageNet or Tiny_ImageNet or CUSTOM
+└── ImageNet, Tiny_ImageNet, Baby ImageNet, Papa ImageNet, or Grandpa ImageNet
     ├── train
     │   ├── cls0
     │   │   ├── train0.png
@@ -165,12 +173,13 @@ i.e. ``-metrics is fid`` calculates only IS and FID and ``-metrics none`` skips 
 CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics is fid prdc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
-* Train (``-t``) and evaluate clean-IS, clean-FID, clean-Prc, clean-Rec, clean-Dns, clean-Cvg (``-metrics is fid prdc --resize_fn clean``) of the model defined in ``CONFIG_PATH`` using GPU ``0``.
+* Preprocess images for training and evaluation using PIL.LANCZOS filter (``--pre_resizer lanczos``). Then, train (``-t``) and evaluate friendly-IS, friendly-FID, friendly-Prc, friendly-Rec, friendly-Dns, friendly-Cvg (``-metrics is fid prdc --post_resizer clean``) of the model defined in ``CONFIG_PATH`` using GPU ``0``.
 ```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics is fid prdc --resize_fn clean -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -metrics is fid prdc --pre_resizer lanczos --post_resizer clean -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
 
 * Train (``-t``) and evaluate FID of the model defined in ``CONFIG_PATH`` through ``DataParallel`` using GPUs ``(0, 1, 2, 3)``. Evaluation of FID does not require (``-metrics``) argument!
+
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
 ```
