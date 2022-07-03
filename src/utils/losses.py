@@ -166,16 +166,17 @@ class Data2DataCrossEntropyLoss(torch.nn.Module):
 
 
 class PathLengthRegularizer:
-    def __init__(self, device, pl_decay=0.01, pl_weight=2):
+    def __init__(self, device, pl_decay=0.01, pl_weight=2, pl_no_weight_grad=False):
         self.pl_decay = pl_decay
         self.pl_weight = pl_weight
         self.pl_mean = torch.zeros([], device=device)
+        self.pl_no_weight_grad = pl_no_weight_grad
 
     def cal_pl_reg(self, fake_images, ws):
         #ws refers to weight style
         #receives new fake_images of original batch (in original implementation, fakes_images used for calculating g_loss and pl_loss is generated independently)
         pl_noise = torch.randn_like(fake_images) / np.sqrt(fake_images.shape[2] * fake_images.shape[3])
-        with conv2d_gradfix.no_weight_gradients():
+        with conv2d_gradfix.no_weight_gradients(self.pl_no_weight_grad):
             pl_grads = torch.autograd.grad(outputs=[(fake_images * pl_noise).sum()], inputs=[ws], create_graph=True, only_inputs=True)[0]
         pl_lengths = pl_grads.square().sum(2).mean(1).sqrt()
         pl_mean = self.pl_mean.lerp(pl_lengths.mean(), self.pl_decay)

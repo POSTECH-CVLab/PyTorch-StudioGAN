@@ -247,5 +247,5 @@ def make_target_cls_sampler(dataset, target_class):
         if targets[i] == target_class:
             label_indices.append(i)
     num_samples = len(label_indices)
-    sampler = torch.utils.data.sampler.SubsetRandomSampler(label_indices)    
+    sampler = torch.utils.data.sampler.SubsetRandomSampler(label_indices)
     return num_samples, sampler

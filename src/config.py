@@ -852,6 +852,10 @@ class Configurations(object):
 
         assert self.RUN.post_resizer in ["legacy", "clean", "friendly"], "resizing flag should be in [legacy, clean, friendly]"
 
+        assert self.RUN.data_dir is not None or self.RUN.save_fake_images, "Please specify data_dir if dataset is prepared. \
+            \nIn the case of CIFAR10 or CIFAR100, just specify the directory where you want \
+            dataset to be downloaded."
+
         assert self.RUN.batch_statistics*self.RUN.standing_statistics == 0, \
             "You can't turn on batch_statistics and standing_statistics simultaneously."
 
