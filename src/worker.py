@@ -269,6 +269,7 @@ class WORKER(object):
                             real_images = upfirdn2d.filter2d(real_images, f / f.sum())
                             fake_images = upfirdn2d.filter2d(fake_images, f / f.sum())
 
+                    # shuffle real and fake images (APA)
                     if self.AUG.apply_apa:
                         real_images = apa_aug.apply_apa_aug(real_images, fake_images.detach(), self.aa_p, self.local_rank)
 
@@ -405,6 +406,7 @@ class WORKER(object):
                             lecam_loss = torch.tensor(0., device=self.local_rank)
                         dis_acml_loss += self.LOSS.lecam_lambda*lecam_loss
 
+                    # apply r1_reg inside of training loop
                     if self.LOSS.apply_r1_reg and not self.is_stylegan:
                         self.r1_penalty = losses.cal_r1_reg(adv_output=real_dict["adv_output"], images=real_images, device=self.local_rank)
                         dis_acml_loss += self.LOSS.r1_lambda*self.r1_penalty
@@ -440,6 +442,7 @@ class WORKER(object):
             else:
                 self.OPTIMIZATION.d_optimizer.step()
 
+            # apply r1_reg outside of training loop
             if self.LOSS.apply_r1_reg and self.LOSS.r1_place == "outside_loop" and \
              (self.OPTIMIZATION.d_updates_per_step*current_step + step_index) % self.STYLEGAN.d_reg_interval == 0:
                 self.OPTIMIZATION.d_optimizer.zero_grad()
@@ -487,6 +490,8 @@ class WORKER(object):
             if self.LOSS.apply_wc:
                 for p in self.Dis.parameters():
                     p.data.clamp_(-self.LOSS.wc_bound, self.LOSS.wc_bound)
+
+        # empty cache to discard used memory
         if self.RUN.empty_cache:
             torch.cuda.empty_cache()
         return real_cond_loss, dis_acml_loss
@@ -547,8 +552,8 @@ class WORKER(object):
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     fake_dict = self.Dis(fake_images_, fake_labels)
 
+                    # accumulate discriminator output informations for logging
                     if self.AUG.apply_ada or self.AUG.apply_apa:
-                        # accumulate discriminator output informations for logging
                         self.dis_sign_fake += torch.tensor((fake_dict["adv_output"].sign().sum().item(),
                                                             self.OPTIMIZATION.batch_size),
                                                         device=self.local_rank)
@@ -599,6 +604,7 @@ class WORKER(object):
                         fake_zcr_loss = -1 * self.l2_loss(fake_images, fake_images_eps)
                         gen_acml_loss += self.LOSS.g_lambda * fake_zcr_loss
 
+                    # compute infomation loss for InfoGAN
                     if self.MODEL.info_type in ["discrete", "both"]:
                         dim = self.MODEL.info_dim_discrete_c
                         self.info_discrete_loss = 0.0
@@ -652,6 +658,7 @@ class WORKER(object):
                         style_mixing_p=self.cfgs.STYLEGAN.style_mixing_p,
                         stylegan_update_emas=False,
                         cal_trsp_cost=True if self.LOSS.apply_lo else False)
+
                     # blur images for stylegan3-r
                     if self.MODEL.backbone == "stylegan3" and self.STYLEGAN.stylegan3_cfg == "stylegan3-r" and self.blur_init_sigma != "N/A":
                         blur_sigma = max(1 - (self.effective_batch_size * current_step) / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma
@@ -667,6 +674,8 @@ class WORKER(object):
             # if ema is True: update parameters of the Gen_ema in adaptive way
             if self.MODEL.apply_g_ema:
                 self.ema.update(current_step)
+
+        # empty cache to discard used memory
         if self.RUN.empty_cache:
             torch.cuda.empty_cache()
         return gen_acml_loss

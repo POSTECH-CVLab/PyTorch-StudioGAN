@@ -45,6 +45,7 @@ def generate_images_and_stack_features(generator, discriminator, eval_model, num
                                                                    device=device,
                                                                    stylegan_update_emas=False,
                                                                    cal_trsp_cost=False)
+
         with torch.no_grad():
             features, logits = eval_model.get_outputs(fake_images, quantize=quantize)
             probs = torch.nn.functional.softmax(logits, dim=1)
