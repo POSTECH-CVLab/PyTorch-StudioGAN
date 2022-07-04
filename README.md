@@ -300,9 +300,16 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/fox.png" />
 </p>
-<p align="center">
-  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/boat.png" />
-</p>
+
+
+
+#  Training GANs
+
+StudioGAN supports the training of 30 representative GANs from DCGAN to StyleGAN3-r.
+
+We used different scripts depending on the dataset and model, and it is as follows:
+
+### CIFAR10
 
 
 
@@ -326,25 +333,6 @@ Improved precision and recall are developed to make up for the shortcomings of t
 ### 4. Density and Coverage (Dns, Cvg)
 Density and coverage metrics can estimate the fidelity and diversity of generated images using the pre-trained Inception-V3 model. The metrics are known to be robust to outliers, and they can detect identical real and fake distributions. StudioGAN uses the [authors' official PyTorch implementation](https://github.com/clovaai/generative-evaluation-prdc), and StudioGAN follows the author's suggestion for hyperparameter selection.
 
-#  Evaluating pre-saved image folders
-* Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folders (already preprocessed) saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
-```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1 DSET1 --dset2 DSET2
-```
-
-* Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folder saved in DSET2 using pre-computed features (``--dset1_feats DSET1_FEATS``), moments of dset1 (``--dset1_moments DSET1_MOMENTS``), and GPUs ``(0,...,N)``.
-```bash
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1_feats DSET1_FEATS --dset1_moments DSET1_MOMENTS --dset2 DSET2
-```
-
-* Evaluate friendly-IS, friendly-FID, friendly-Prc, friendly-Rec, friendly-Dns, friendly-Cvg (``-metrics is fid prdc --post_resizer friendly``) of image folders saved in DSET1 and DSET2 through ``DistributedDataParallel`` using GPUs ``(0,...,N)``.
-
-```bash
-export MASTER_ADDR="localhost"
-export MASTER_PORT=2222
-CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --resize_fn clean --dset1 DSET1 --dset2 DSET2 -DDP
-```
-
 # Benchmark
 
 #### ※ We always welcome your contribution if you find any wrong implementation, bug, and misreported score.
@@ -355,15 +343,45 @@ To download all checkpoints reported in StudioGAN, Please [click here](https://d
 
 ### 1. GANs from StudioGAN
 
+The resolutions of CIFAR10, Baby ImageNet, Papa ImageNet, Grandpa ImageNet, ImageNet, AFHQv2, and FQ are 32, 64, 64, 64, 128, 512, and 1024, respectively.
+
+We use the same number of generated images as the training images for Frechet Inception Distance (FID), Precision, Recall, Density, and Coverage calculation. For the experiments using Baby/Papa/Grandpa ImageNet and ImageNet, we exceptionally use 50k fake images against a complete training set as real images.
+
+All features and moments of reference datasets can be downloaded via [Google Drive](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) (will be ready soon).
+
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
 </p>
-
 ### 2. Other generative models
+
+The resolutions of ImageNet-128 and ImageNet 256 are 128 and 256, respectively.
+
+All images used for Benchmark can be downloaded via [Google Drive](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) (will be ready soon).
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
 </p>
+#  Evaluating pre-saved image folders
+
+* Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folders (already preprocessed) saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
+
+```bash
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1 DSET1 --dset2 DSET2
+```
+
+* Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folder saved in DSET2 using pre-computed features (``--dset1_feats DSET1_FEATS``), moments of dset1 (``--dset1_moments DSET1_MOMENTS``), and GPUs ``(0,...,N)``.
+
+```bash
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --dset1_feats DSET1_FEATS --dset1_moments DSET1_MOMENTS --dset2 DSET2
+```
+
+* Evaluate friendly-IS, friendly-FID, friendly-Prc, friendly-Rec, friendly-Dns, friendly-Cvg (``-metrics is fid prdc --post_resizer friendly``) of image folders saved in DSET1 and DSET2 through ``DistributedDataParallel`` using GPUs ``(0,...,N)``.
+
+```bash
+export MASTER_ADDR="localhost"
+export MASTER_PORT=2222
+CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --post_resizer friendly --dset1 DSET1 --dset2 DSET2 -DDP
+```
 
 ## StudioGAN thanks the following Repos for the code sharing
 
