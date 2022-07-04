@@ -412,33 +412,33 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --post
 
 ## StudioGAN thanks the following Repos for the code sharing
 
-[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE) Synchronized BatchNorm: https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
-
-[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/ops.py) Self-Attention module: https://github.com/voletiv/self-attention-GAN-pytorch
-
 Implementation Details: https://github.com/ajbrock/BigGAN-PyTorch
 
 Architecture Details: https://github.com/google/compare_gan
-
-[[NVIDIA source code license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA) StyleGAN2: https://github.com/NVlabs/stylegan2
-
-[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/diffaug.py) DiffAugment: https://github.com/mit-han-lab/data-efficient-gans
-
-[[NVIDIA source code license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA) Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
 
 Tensorflow IS: https://github.com/openai/improved-gan
 
 Tensorflow FID: https://github.com/bioinf-jku/TTUR
 
-[[Apache License]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/fid.py) Pytorch FID: https://github.com/mseitzer/pytorch-fid
-
 Tensorflow Precision and Recall: https://github.com/msmsajjadi/precision-recall-distributions
+
+[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE) Synchronized BatchNorm: https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+
+[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/ops.py) Self-Attention module: https://github.com/voletiv/self-attention-GAN-pytorch
+
+[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/diffaug.py) DiffAugment: https://github.com/mit-han-lab/data-efficient-gans
 
 [[MIT_license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/prdc.py) PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-evaluation-prdc
 
 [[MIT_license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/prdc.py) PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
 
 [[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/resize.py) PyTorch clean-FID: https://github.com/GaParmar/clean-fid
+
+[[NVIDIA source code license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA) StyleGAN2: https://github.com/NVlabs/stylegan2
+
+[[NVIDIA source code license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA) Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
+
+[[Apache License]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/fid.py) Pytorch FID: https://github.com/mseitzer/pytorch-fid
 
 ## License
 PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN2, StyleGAN2-ADA, and StyleGAN3 are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), and PyTorch-FID is licensed under [Apache License](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/fid.py).
