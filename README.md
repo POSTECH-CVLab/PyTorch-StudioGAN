@@ -377,6 +377,7 @@ All features and moments of reference datasets can be downloaded via [Google Dri
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
 </p>
+
 ### 2. Other generative models
 
 The resolutions of ImageNet-128 and ImageNet 256 are 128 and 256, respectively.
@@ -386,6 +387,7 @@ All images used for Benchmark can be downloaded via [Google Drive](https://githu
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
 </p>
+
 # Evaluating pre-saved image folders
 
 * Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folders (already preprocessed) saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
