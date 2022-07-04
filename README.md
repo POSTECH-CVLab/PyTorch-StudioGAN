@@ -310,10 +310,40 @@ StudioGAN supports the training of 30 representative GANs from DCGAN to StyleGAN
 We used different scripts depending on the dataset and model, and it is as follows:
 
 ### CIFAR10
+```bash
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -hdf5 -l -std_stat -std_max STD_MAX -std_step STD_STEP -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
+```
 
+### CIFAR10 using StyleGAN2/3
+```bash
+CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -hdf5 -l -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
+```
 
+### Baby/Papa/Grandpa ImageNet
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -hdf5 -l -sync_bn -std_stat -std_max STD_MAX -std_step STD_STEP -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --pre_resizer "lanczos" --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
+```
 
-#  Metrics
+### ImageNet
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -hdf5 -l -sync_bn -std_stat -std_max STD_MAX -std_step STD_STEP -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --pre_resizer "lanczos" --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
+```
+
+### AFHQv2
+```bash
+export MASTER_ADDR="localhost"
+export MASTER_PORT=8888
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --pre_resizer "lanczos" --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
+```
+
+### FFHQ
+```bash
+export MASTER_ADDR="localhost"
+export MASTER_PORT=8888
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 src/main.py -t -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --pre_resizer "lanczos" --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
+```
+
+# Metrics
 
 StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score. Users can get ``Intra-Class FID, Classifier Accuracy Score`` scores using ``-iFID, -GAN_train, and -GAN_test`` options, respectively. 
 
@@ -361,7 +391,7 @@ All images used for Benchmark can be downloaded via [Google Drive](https://githu
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
 </p>
-#  Evaluating pre-saved image folders
+# Evaluating pre-saved image folders
 
 * Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folders (already preprocessed) saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
 
