@@ -412,38 +412,36 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --post
 
 ## StudioGAN thanks the following Repos for the code sharing
 
-Exponential Moving Average: https://github.com/ajbrock/BigGAN-PyTorch
+[MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE) Synchronized BatchNorm: https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
 
-Synchronized BatchNorm: https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
-
-Self-Attention module: https://github.com/voletiv/self-attention-GAN-pytorch
+[MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/ops.py)Self-Attention module: https://github.com/voletiv/self-attention-GAN-pytorch
 
 Implementation Details: https://github.com/ajbrock/BigGAN-PyTorch
 
 Architecture Details: https://github.com/google/compare_gan
 
-StyleGAN2: https://github.com/NVlabs/stylegan2
+[NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA)StyleGAN2: https://github.com/NVlabs/stylegan2
 
-DiffAugment: https://github.com/mit-han-lab/data-efficient-gans
+[MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/diffaug.py)DiffAugment: https://github.com/mit-han-lab/data-efficient-gans
 
-Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
+[NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA)Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
 
 Tensorflow IS: https://github.com/openai/improved-gan
 
 Tensorflow FID: https://github.com/bioinf-jku/TTUR
 
-Pytorch FID: https://github.com/mseitzer/pytorch-fid
+[Apache License](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/fid.py)Pytorch FID: https://github.com/mseitzer/pytorch-fid
 
 Tensorflow Precision and Recall: https://github.com/msmsajjadi/precision-recall-distributions
 
-PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-evaluation-prdc
+[MIT_license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/prdc.py)PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-evaluation-prdc
 
-PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
+[MIT_license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/prdc.py)PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
 
-PyTorch clean-FID: https://github.com/GaParmar/clean-fid
+[MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/resize.py)PyTorch clean-FID: https://github.com/GaParmar/clean-fid
 
 ## License
-PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN2, StyleGAN2-ADA, and StyleGAN3 are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), Synchronized batch normalization is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE), HDF5 generator is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/hdf5.py), differentiable SimCLR-style augmentations is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/simclr_aug.py), and clean-FID is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/resize.py).
+PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN2, StyleGAN2-ADA, and StyleGAN3 are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA).
 
 ## Citation
 StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
