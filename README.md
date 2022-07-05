@@ -103,8 +103,8 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 
 We check the reproducibility of GANs implemented in StudioGAN  by comparing IS and FID with the original papers. We identify our platform successfully reproduces most of representative GANs except for PD-GAN, ACGAN, LOGAN, SAGAN, and BigGAN-Deep. FQ means Flickr-Faces-HQ Dataset (FFHQ). The resolutions of ImageNet, AFHQv2, and FQ datasets are 128, 512, and 1024, respectively.
 
-<p align="center">
-  <img width="55%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility.png" />
+<p align="left">
+  <img width="50%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility.png" />
 </p>
 
 # Requirements
@@ -306,39 +306,9 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -sefa -sefa_axis SEFA_AXIS -sef
 #  Training GANs
 
 StudioGAN supports the training of 30 representative GANs from DCGAN to StyleGAN3-r.
-
 We used different scripts depending on the dataset and model, and it is as follows:
 
-### CIFAR10
-```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -hdf5 -l -std_stat -std_max STD_MAX -std_step STD_STEP -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
-```
-
-### CIFAR10 using StyleGAN2/3
-```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/main.py -t -hdf5 -l -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
-```
-
-### Baby/Papa/Grandpa ImageNet and ImageNet
-```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -hdf5 -l -sync_bn -std_stat -std_max STD_MAX -std_step STD_STEP -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --pre_resizer "lanczos" --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
-```
-
-### AFHQv2
-```bash
-export MASTER_ADDR="localhost"
-export MASTER_PORT=8888
-CUDA_VISIBLE_DEVICES=0,1,2,3 python3 src/main.py -t -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --pre_resizer "lanczos" --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
-```
-
-### FFHQ
-```bash
-export MASTER_ADDR="localhost"
-export MASTER_PORT=8888
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 src/main.py -t -metrics is fid prdc -ref "train" -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH -mpc --pre_resizer "lanczos" --post_resizer "friendly" --eval_backbone "InceptionV3_tf"
-```
-
-# Metrics
+#  Metrics
 
 StudioGAN supports Inception Score, Frechet Inception Distance, Improved Precision and Recall, Density and Coverage, Intra-Class FID, Classifier Accuracy Score. Users can get ``Intra-Class FID, Classifier Accuracy Score`` scores using ``-iFID, -GAN_train, and -GAN_test`` options, respectively. 
 
@@ -364,7 +334,9 @@ Density and coverage metrics can estimate the fidelity and diversity of generate
 
 We report the best IS, FID, Improved Precision & Recall, and Density & Coverage of GANs.
 
-To download all checkpoints reported in StudioGAN, Please [click here](https://drive.google.com/drive/folders/1CDM96Ic-99KdCDYTALkqvoAliprEnltC?usp=sharing) (will be ready soon).
+To download all checkpoints reported in StudioGAN, Please [**click here**](https://drive.google.com/drive/folders/1CDM96Ic-99KdCDYTALkqvoAliprEnltC?usp=sharing) (will be ready soon).
+
+You can evaluate the checkpoint by adding ``-ckpt CKPT_PATH`` option with the corresponding configuration path ``-cfg CORRESPONDING_CONFIG_PATH``. 
 
 ### 1. GANs from StudioGAN
 
@@ -372,23 +344,21 @@ The resolutions of CIFAR10, Baby ImageNet, Papa ImageNet, Grandpa ImageNet, Imag
 
 We use the same number of generated images as the training images for Frechet Inception Distance (FID), Precision, Recall, Density, and Coverage calculation. For the experiments using Baby/Papa/Grandpa ImageNet and ImageNet, we exceptionally use 50k fake images against a complete training set as real images.
 
-All features and moments of reference datasets can be downloaded via [Google Drive](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) (will be ready soon).
+All features and moments of reference datasets can be downloaded via [**Google Drive**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) (will be ready soon).
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
 </p>
-
 ### 2. Other generative models
 
 The resolutions of ImageNet-128 and ImageNet 256 are 128 and 256, respectively.
 
-All images used for Benchmark can be downloaded via [Google Drive](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) (will be ready soon).
+All images used for Benchmark can be downloaded via [**Google Drive**](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) (will be ready soon).
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
 </p>
-
-# Evaluating pre-saved image folders
+#  Evaluating pre-saved image folders
 
 * Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folders (already preprocessed) saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
 
@@ -412,36 +382,38 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --post
 
 ## StudioGAN thanks the following Repos for the code sharing
 
+Exponential Moving Average: https://github.com/ajbrock/BigGAN-PyTorch
+
+Synchronized BatchNorm: https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+
+Self-Attention module: https://github.com/voletiv/self-attention-GAN-pytorch
+
 Implementation Details: https://github.com/ajbrock/BigGAN-PyTorch
 
 Architecture Details: https://github.com/google/compare_gan
+
+StyleGAN2: https://github.com/NVlabs/stylegan2
+
+DiffAugment: https://github.com/mit-han-lab/data-efficient-gans
+
+Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
 
 Tensorflow IS: https://github.com/openai/improved-gan
 
 Tensorflow FID: https://github.com/bioinf-jku/TTUR
 
+Pytorch FID: https://github.com/mseitzer/pytorch-fid
+
 Tensorflow Precision and Recall: https://github.com/msmsajjadi/precision-recall-distributions
 
-[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE) Synchronized BatchNorm: https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-evaluation-prdc
 
-[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/ops.py) Self-Attention module: https://github.com/voletiv/self-attention-GAN-pytorch
+PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
 
-[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/diffaug.py) DiffAugment: https://github.com/mit-han-lab/data-efficient-gans
-
-[[MIT_license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/prdc.py) PyTorch Improved Precision and Recall: https://github.com/clovaai/generative-evaluation-prdc
-
-[[MIT_license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/prdc.py) PyTorch Density and Coverage: https://github.com/clovaai/generative-evaluation-prdc
-
-[[MIT license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/resize.py) PyTorch clean-FID: https://github.com/GaParmar/clean-fid
-
-[[NVIDIA source code license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA) StyleGAN2: https://github.com/NVlabs/stylegan2
-
-[[NVIDIA source code license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA) Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
-
-[[Apache License]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/fid.py) Pytorch FID: https://github.com/mseitzer/pytorch-fid
+PyTorch clean-FID: https://github.com/GaParmar/clean-fid
 
 ## License
-PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN2, StyleGAN2-ADA, and StyleGAN3 are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), and PyTorch-FID is licensed under [Apache License](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/fid.py).
+PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN2, StyleGAN2-ADA, and StyleGAN3 are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), Synchronized batch normalization is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/sync_batchnorm/LICENSE), HDF5 generator is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/hdf5.py), differentiable SimCLR-style augmentations is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/simclr_aug.py), and clean-FID is licensed under [MIT license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/utils/resize.py).
 
 ## Citation
 StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
