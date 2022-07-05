@@ -219,7 +219,7 @@ Try ``python3 src/main.py`` to see available options.
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -mpc -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
   ```
   
-* Change Batch Normalization Statistics
+* [Change Batch Normalization Statistics](https://arxiv.org/abs/2206.09479)
   ```bash
   # Synchronized batchNorm (-sync_bn)
   CUDA_VISIBLE_DEVICES=0,...,N python3 src/main.py -t -sync_bn -cfg CONFIG_PATH -data DATA_PATH -save SAVE_PATH
@@ -379,6 +379,7 @@ All features and moments of reference datasets can be downloaded via [**Google D
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
 </p>
+
 ### 2. Other generative models
 
 The resolutions of ImageNet-128 and ImageNet 256 are 128 and 256, respectively.
@@ -388,6 +389,7 @@ All images used for Benchmark can be downloaded via [**Google Drive**](https://g
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
 </p>
+
 # Evaluating pre-saved image folders
 
 * Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folders (already preprocessed) saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
