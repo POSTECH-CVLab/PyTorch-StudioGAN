@@ -468,7 +468,3 @@ StudioGAN is established for the following research projects. Please cite our wo
 <a name="footnote_1">[1]</a> Experiments on Tiny ImageNet are conducted using the ResNet architecture instead of CNN.
 
 <a name="footnote_2">[2]</a> Our re-implementation of [ACGAN (ICML'17)](https://arxiv.org/abs/1610.09585) with slight modifications, which bring strong performance enhancement for the experiment using CIFAR10.
-
-<a name="footnote_3">[4]</a> IS is computed using Tensorflow official code.
-
-<a name="footnote_4">[5]</a> The difference in FID values between the original StyleGAN2 and StudioGAN implementation is caused by the presence of random flip augmentation.
