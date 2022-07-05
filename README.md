@@ -388,7 +388,7 @@ All images used for Benchmark can be downloaded via [**Google Drive**](https://g
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
 </p>
-#  Evaluating pre-saved image folders
+# Evaluating pre-saved image folders
 
 * Evaluate IS, FID, Prc, Rec, Dns, Cvg (``-metrics is fid prdc``) of image folders (already preprocessed) saved in DSET1 and DSET2 using GPUs ``(0,...,N)``.
 
@@ -429,16 +429,6 @@ CUDA_VISIBLE_DEVICES=0,...,N python3 src/evaluate.py -metrics is fid prdc --post
 [[NVIDIA source code license]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA) Adaptive Discriminator Augmentation: https://github.com/NVlabs/stylegan2
 
 [[Apache License]](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/fid.py) Pytorch FID: https://github.com/mseitzer/pytorch-fid
-
-Implementation Details: https://github.com/ajbrock/BigGAN-PyTorch
-
-Architecture Details: https://github.com/google/compare_gan
-
-Tensorflow IS: https://github.com/openai/improved-gan
-
-Tensorflow FID: https://github.com/bioinf-jku/TTUR
-
-Tensorflow Precision and Recall: https://github.com/msmsajjadi/precision-recall-distributions
 
 ## License
 PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However, portions of the library are avaiiable under distinct license terms: StyleGAN2, StyleGAN2-ADA, and StyleGAN3 are licensed under [NVIDIA source code license](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/LICENSE-NVIDIA), and PyTorch-FID is licensed under [Apache License](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN/blob/master/src/metrics/fid.py).
