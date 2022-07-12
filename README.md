@@ -57,11 +57,11 @@
 | [**BigGAN + DiffAugment**](https://arxiv.org/abs/2006.10738) | Neurips'20 |                   BigGAN                   |  cBN   |   PD   |    Hinge     | True  |
 | [**StyleGAN2 + ADA**](https://arxiv.org/abs/2006.06676)      | Neurips'20 |                 StyleGAN2                  | cAdaIN |  SPD   |   Logistic   | True  |
 | [**BigGAN + LeCam**](https://arxiv.org/abs/2104.03310)       | CVPR'2021  |                   BigGAN                   |  cBN   |   PD   |    Hinge     | True  |
-| [**ADCGAN**](https://arxiv.org/abs/2107.10060) | arXiv'21 | BigGAN | cBN | ADC | Hinge | True |
 | [**ReACGAN**](https://arxiv.org/abs/2111.01118) | Neurips'21 | BigGAN | cBN | D2D-CE | Hinge | True |
 | [**StyleGAN2 + APA**](https://arxiv.org/abs/2111.06849) | Neurips'21 | StyleGAN2 | cAdaIN | SPD | Logistic | True |
 | [**StyleGAN3-t**](https://nvlabs.github.io/stylegan3/) | Neurips'21 | StyleGAN3 | cAaIN | SPD | Logistic | True |
 | [**StyleGAN3-r**](https://nvlabs.github.io/stylegan3/) | Neurips'21 | StyleGAN3 | cAaIN | SPD | Logistic | True |
+| [**ADCGAN**](https://arxiv.org/abs/2107.10060) | ICML'22 | BigGAN | cBN | ADC | Hinge | True |
 
 GC/DC indicates the way how we inject label information to the Generator or Discriminator.
 
