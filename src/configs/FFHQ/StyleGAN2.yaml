@@ -17,7 +17,7 @@ MODEL:
 LOSS:
   adv_loss: "logistic"
   apply_r1_reg: True
-  r1_lambda: 10
+  r1_lambda: 2
   r1_place: "outside_loop"
 OPTIMIZATION:
   # These values will be slightly changed if lazy regularization is applied.
@@ -37,7 +37,7 @@ STYLEGAN:
   mapping_network: 8
   style_mixing_p: 0.9
   g_ema_kimg: 10
-  g_ema_rampup: 0.05
+  g_ema_rampup: "N/A"
   apply_pl_reg: True
   pl_weight: 2
   d_architecture: "resnet"

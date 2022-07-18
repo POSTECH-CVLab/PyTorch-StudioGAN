@@ -11,7 +11,6 @@ import json
 import os
 import random
 import warnings
-import wandb
 
 from torch.backends import cudnn
 from torch.utils.data import DataLoader

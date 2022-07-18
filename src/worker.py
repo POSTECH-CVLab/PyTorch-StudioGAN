@@ -151,27 +151,10 @@ class WORKER(object):
                                                               m_p=self.LOSS.m_p,
                                                               master_rank="cuda",
                                                               DDP=self.DDP)
-            if self.MODEL.aux_cls_type == "TAC":
-                self.cond_loss_mi = losses.MiData2DataCrossEntropyLoss(num_classes=num_classes,
-                                                                       temperature=self.LOSS.temperature,
-                                                                       m_p=self.LOSS.m_p,
-                                                                       master_rank="cuda",
-                                                                       DDP=self.DDP)
-        else:
-            pass
+        else: pass
 
-        if self.DATA.name in ["CIFAR10", "CIFAR100"]:
-            self.num_eval = {"train": 50000, "test": 10000}
-        elif self.DATA.name == ["Tiny_ImageNet"]:
-            self.num_eval = {"train": 50000, "valid": 10000}
-        elif self.DATA.name ==  "ImageNet":
-            self.num_eval = {"train": 50000, "valid": 50000}
-        else:
-            self.num_eval = {}
-            if self.eval_dataloader is not None:
-                self.num_eval["train"] = len(self.eval_dataloader.dataset)
-                self.num_eval["test"] = len(self.eval_dataloader.dataset)
-                self.num_eval["valid"] = len(self.eval_dataloader.dataset)
+        if self.MODEL.aux_cls_type == "TAC":
+            self.cond_loss_mi = copy.deepcopy(self.cond_loss)
 
         self.gen_ctlr = misc.GeneratorController(generator=self.Gen_ema if self.MODEL.apply_g_ema else self.Gen,
                                                  generator_mapping=self.Gen_ema_mapping,
