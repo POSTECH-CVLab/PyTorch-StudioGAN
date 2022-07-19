@@ -11,3 +11,4 @@ data/
 wandb/
 test/
 *.csv
+*.npy

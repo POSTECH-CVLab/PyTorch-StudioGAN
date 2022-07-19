@@ -630,7 +630,7 @@ class Configurations(object):
     def check_compatability(self):
         if self.RUN.distributed_data_parallel and self.RUN.mixed_precision:
             print("-"*120)
-            print("Please using standing statistics (-std_stat) with -std_max and -std_step options for reliable evaluation!")
+            print("Please use standing statistics (-std_stat) with -std_max and -std_step options for reliable evaluation!")
             print("-"*120)
 
         if len(self.RUN.eval_metrics):

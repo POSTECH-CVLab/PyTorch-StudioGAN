@@ -111,23 +111,23 @@ We check the reproducibility of GANs implemented in StudioGAN  by comparing IS a
 
 First, install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
 ```bash
-pip3 install torch==1.10.0+cu111 torchvision==0.11.1+cu111 torchaudio==0.10.0+cu111 -f https://download.pytorch.org/whl/cu111/torch_stable.html
+pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 ```
 
 Then, use the following command to install the rest of the libraries:
 ```bash
-pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg
+pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg timm
 ```
 
-With docker, you can use:
+With docker, you can use (Updated 19/JUL/2022):
 ```bash
-docker pull mgkang/studiogan:latest
+docker pull alex4727/experiment:pytorch112_cuda113
 ```
 
-This is my command to make a container named "StudioGAN".
+This is our command to make a container named "StudioGAN".
 
 ```bash
-docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/code --workdir /root/code mgkang/studiogan:latest /bin/bash
+docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/code --workdir /root/code alex4727/experiment:pytorch112_cuda113 /bin/zsh
 ```
 
 # Dataset
