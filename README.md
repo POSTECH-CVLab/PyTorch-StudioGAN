@@ -374,7 +374,7 @@ The resolutions of CIFAR10, Baby ImageNet, Papa ImageNet, Grandpa ImageNet, Imag
 
 We use the same number of generated images as the training images for Frechet Inception Distance (FID), Precision, Recall, Density, and Coverage calculation. For the experiments using Baby/Papa/Grandpa ImageNet and ImageNet, we exceptionally use 50k fake images against a complete training set as real images.
 
-All features and moments of reference datasets can be downloaded via [**Feature**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Et50K874lE1PuBmQqDA5w_oBkKQPdzAQEvk6zATcVZf5RA?e=B5VMre) and [**Moments**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Eubg0vPR3_9Hqhzxt0VYLPEBqE05ysOFL_smYNftSjX6jQ?e=rBy0nd).
+All features and moments of reference datasets can be downloaded via [**features**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Et50K874lE1PuBmQqDA5w_oBkKQPdzAQEvk6zATcVZf5RA?e=B5VMre) and [**moments**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Eubg0vPR3_9Hqhzxt0VYLPEBqE05ysOFL_smYNftSjX6jQ?e=rBy0nd).
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
