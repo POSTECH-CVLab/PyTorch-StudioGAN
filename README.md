@@ -135,7 +135,7 @@ docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/c
 * CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
 * Tiny ImageNet, ImageNet, or a custom dataset:
-  1. download [Tiny ImageNet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4) , [Baby ImageNet](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Ei917sp0jZFOt8nKyhs7J_cBzF0UZRe6HJxMPJRH3soa5A?e=qiAEKO), [Papa ImageNet](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Eq26glk_zQJDlGh8BKVa3HcBDd7Gd9VtHDzEnIvzy2BKZQ?e=KUN6fy), [Grandpa ImageNet](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/ElN4XhAiZMRFoEKer6LymCcBJhGS6mtg4AYr7qcGfYnrZQ?e=eZJ1ON), [ImageNet](http://www.image-net.org). Prepare your own dataset.
+  1. download [Tiny ImageNet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4), Baby ImageNet, Papa ImageNet, Grandpa ImageNet, [ImageNet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
 ```
@@ -374,7 +374,7 @@ The resolutions of CIFAR10, Baby ImageNet, Papa ImageNet, Grandpa ImageNet, Imag
 
 We use the same number of generated images as the training images for Frechet Inception Distance (FID), Precision, Recall, Density, and Coverage calculation. For the experiments using Baby/Papa/Grandpa ImageNet and ImageNet, we exceptionally use 50k fake images against a complete training set as real images.
 
-All features and moments of reference datasets can be downloaded via [**features**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Et50K874lE1PuBmQqDA5w_oBkKQPdzAQEvk6zATcVZf5RA?e=B5VMre) and [**moments**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Eubg0vPR3_9Hqhzxt0VYLPEBqE05ysOFL_smYNftSjX6jQ?e=rBy0nd).
+All features and moments of reference datasets can be downloaded via features and moments.
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
@@ -384,7 +384,7 @@ All features and moments of reference datasets can be downloaded via [**features
 
 The resolutions of ImageNet-128 and ImageNet 256 are 128 and 256, respectively.
 
-All images used for Benchmark can be downloaded via [**One Drive**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/En9hjJF00AhKg-jAH1h8ZqUBGvbl33sHowBIjnFcWoazeQ?e=4BLMna).
+All images used for Benchmark can be downloaded via One Drive.
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
