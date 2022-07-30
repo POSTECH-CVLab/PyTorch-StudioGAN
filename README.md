@@ -135,7 +135,7 @@ docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/c
 * CIFAR10/CIFAR100: StudioGAN will automatically download the dataset once you execute ``main.py``.
 
 * Tiny ImageNet, ImageNet, or a custom dataset:
-  1. download [Tiny ImageNet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4), Baby ImageNet, Papa ImageNet, Grandpa ImageNet, [ImageNet](http://www.image-net.org). Prepare your own dataset.
+  1. download [Tiny ImageNet](https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4), [Baby ImageNet](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Es-M92IXeN1Dv_L6H_ScswEBxiUanxF9BVsWkH3GsazABQ?e=Bs5ROw), [Papa ImageNet](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Es-M92IXeN1Dv_L6H_ScswEBxiUanxF9BVsWkH3GsazABQ?e=Bs5ROw), [Grandpa ImageNet](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/Es-M92IXeN1Dv_L6H_ScswEBxiUanxF9BVsWkH3GsazABQ?e=Bs5ROw), [ImageNet](http://www.image-net.org). Prepare your own dataset.
   2. make the folder structure of the dataset as follows:
 
 ```
@@ -374,7 +374,7 @@ The resolutions of CIFAR10, Baby ImageNet, Papa ImageNet, Grandpa ImageNet, Imag
 
 We use the same number of generated images as the training images for Frechet Inception Distance (FID), Precision, Recall, Density, and Coverage calculation. For the experiments using Baby/Papa/Grandpa ImageNet and ImageNet, we exceptionally use 50k fake images against a complete training set as real images.
 
-All features and moments of reference datasets can be downloaded via features and moments.
+All features and moments of reference datasets can be downloaded via [features](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/ElbkH1fLidJDpzUvrZZiT6EBZgBUhi-t1xoOhnqCas2p9g?e=WfGdGT) and [moments](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/En88Meh2gJtKk-1tIM1b3YEBcUZlP_4ksAI-qAS9pja4Yw?e=3OWJ7E).
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
