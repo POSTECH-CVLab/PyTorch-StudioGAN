@@ -200,8 +200,8 @@ class Configurations(object):
         self.LOSS.apply_topk = False
         # hyperparameter for batch_size decay rate for topk training \in [0,1]
         self.LOSS.topk_gamma = "N/A"
-        # hyperparameter for the supremum of the number of topk samples \in [0,1],
-        # sup_batch_size = int(topk_nu*batch_size)
+        # hyperparameter for the inf of the number of topk samples \in [0,1],
+        # inf_batch_size = int(topk_nu*batch_size)
         self.LOSS.topk_nu = "N/A"
         # strength lambda for infoGAN loss in case of discrete c (typically 0.1)
         self.LOSS.infoGAN_loss_discrete_lambda = "N/A"
