@@ -374,7 +374,7 @@ The resolutions of CIFAR10, Baby ImageNet, Papa ImageNet, Grandpa ImageNet, Imag
 
 We use the same number of generated images as the training images for Frechet Inception Distance (FID), Precision, Recall, Density, and Coverage calculation. For the experiments using Baby/Papa/Grandpa ImageNet and ImageNet, we exceptionally use 50k fake images against a complete training set as real images.
 
-All features and moments of reference datasets can be downloaded via [features](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/ElbkH1fLidJDpzUvrZZiT6EBZgBUhi-t1xoOhnqCas2p9g?e=WfGdGT) and [moments](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/En88Meh2gJtKk-1tIM1b3YEBcUZlP_4ksAI-qAS9pja4Yw?e=3OWJ7E).
+All features and moments of reference datasets can be downloaded via [**features**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/ElbkH1fLidJDpzUvrZZiT6EBZgBUhi-t1xoOhnqCas2p9g?e=WfGdGT) and [**moments**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/En88Meh2gJtKk-1tIM1b3YEBcUZlP_4ksAI-qAS9pja4Yw?e=3OWJ7E).
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
@@ -384,7 +384,7 @@ All features and moments of reference datasets can be downloaded via [features](
 
 The resolutions of ImageNet-128 and ImageNet 256 are 128 and 256, respectively.
 
-All images used for Benchmark can be downloaded via One Drive.
+All images used for Benchmark can be downloaded via One Drive (will be uploaded soon).
 
 <p align="center">
   <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
