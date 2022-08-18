@@ -131,7 +131,7 @@ def evaluate(local_rank, args, world_size, gpus_per_node):
     # -----------------------------------------------------------------------------
     # load dset1 and dset1.
     # -----------------------------------------------------------------------------
-    load_dset1 = ("fid" in args.eval_metrics and args.dset1_moments == None)*\
+    load_dset1 = ("fid" in args.eval_metrics and args.dset1_moments == None) or \
         ("prdc" in args.eval_metrics and args.dset1_feats == None)
     if load_dset1:
         dset1 = Dataset_(data_dir=args.dset1)
