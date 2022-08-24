@@ -156,7 +156,10 @@ def load_configs_initialize_training():
     cfgs.PRE.crop_long_edge, cfgs.PRE.resize_size = crop_long_edge, resize_size
 
     misc.prepare_folder(names=cfgs.MISC.base_folders, save_dir=cfgs.RUN.save_dir)
-    misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
+    try:
+        misc.download_data_if_possible(data_name=cfgs.DATA.name, data_dir=cfgs.RUN.data_dir)
+    except:
+        pass
 
     if cfgs.RUN.seed == -1:
         cfgs.RUN.seed = random.randint(1, 4096)
