@@ -77,8 +77,11 @@ def load_ckpt(model, optimizer, ckpt_path, load_model=False, load_opt=False, loa
 def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer, run_name, apply_g_ema, Gen_ema, ema,
                          is_train, RUN, logger, global_rank, device, cfg_file):
     when = "best" if load_best is True else "current"
-    Gen_ckpt_path = glob.glob(join(ckpt_dir, "model=G-{when}-weights-step*.pth".format(when=when)))[0]
-    Dis_ckpt_path = glob.glob(join(ckpt_dir, "model=D-{when}-weights-step*.pth".format(when=when)))[0]
+    x = join(ckpt_dir, "model=G-{when}-weights-step=".format(when=when))
+    Gen_ckpt_path = glob.glob(glob.escape(x) + '*.pth')[0]
+    y = join(ckpt_dir, "model=D-{when}-weights-step=".format(when=when))
+    Dis_ckpt_path = glob.glob(glob.escape(y) + '*.pth')[0]
+
     prev_run_name = torch.load(Dis_ckpt_path, map_location=lambda storage, loc: storage)["run_name"]
     is_freezeD = True if RUN.freezeD > -1 else False
 
@@ -100,7 +103,8 @@ def load_StudioGAN_ckpts(ckpt_dir, load_best, Gen, Dis, g_optimizer, d_optimizer
                   is_freezeD=is_freezeD)
 
     if apply_g_ema:
-        Gen_ema_ckpt_path = glob.glob(join(ckpt_dir, "model=G_ema-{when}-weights-step*.pth".format(when=when)))[0]
+        z = join(ckpt_dir, "model=G_ema-{when}-weights-step=".format(when=when))
+        Gen_ema_ckpt_path = glob.glob(glob.escape(z) + '*.pth')[0]
         load_ckpt(model=Gen_ema,
                   optimizer=None,
                   ckpt_path=Gen_ema_ckpt_path,
