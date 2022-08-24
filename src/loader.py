@@ -294,6 +294,8 @@ def load_worker(local_rank, cfgs, gpus_per_node, run_name, hdf5_path):
     else:
         if eval_dataloader is not None:
             num_eval[cfgs.RUN.ref_dataset] = len(eval_dataloader.dataset)
+        else:
+            num_eval["train"], num_eval["valid"], num_eval["test"] = 50000, 50000, 50000
 
     if len(cfgs.RUN.eval_metrics) or cfgs.RUN.intra_class_fid:
         eval_model = pp.LoadEvalModel(eval_backbone=cfgs.RUN.eval_backbone,
