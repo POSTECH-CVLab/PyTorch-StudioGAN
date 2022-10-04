@@ -139,7 +139,7 @@ class WORKER(object):
             self.adc_fake = True
 
         if self.MODEL.d_cond_mtd == "AC":
-            self.cond_loss = self.ce_loss
+            self.cond_loss = losses.CrossEntropyLoss()
         elif self.MODEL.d_cond_mtd == "2C":
             self.cond_loss = losses.ConditionalContrastiveLoss(num_classes=num_classes,
                                                                temperature=self.LOSS.temperature,
