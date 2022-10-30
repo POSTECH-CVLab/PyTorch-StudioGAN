@@ -1,0 +1,15 @@
+# implement config for jointgan
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+MODEL:
+  backbone: "deep_conv"
+  g_conv_dim: "N/A"
+  d_conv_dim: "N/A"
+LOSS:
+  adv_loss: "ragan"
+  relativistic: True
+OPTIMIZATION:
+  d_updates_per_step: 2
+  total_steps: 200000
