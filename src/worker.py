@@ -285,6 +285,10 @@ class WORKER(object):
                     real_dict = self.Dis(real_images_, real_labels)
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
 
+                    # <new> implement JointGAN
+                    if self.MODEL.backbone == "jointgan":
+                        real_images_, fake_images_ = real_images_[0], fake_images_[0]
+
                     # accumulate discriminator output informations for logging
                     if self.AUG.apply_ada or self.AUG.apply_apa:
                         self.dis_sign_real += torch.tensor((real_dict["adv_output"].sign().sum().item(),
@@ -555,6 +559,11 @@ class WORKER(object):
 
                     # <new> implement JointGAN
                     if self.MODEL.backbone == "jointgan":
+                        real_image_basket, real_label_basket = self.sample_data_basket()
+                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True)
+                        real_labels = real_label_basket[0].to(self.local_rank, non_blocking=True)
+                        real_images_ = self.AUG.series_augment(real_images)
+
                         fake_images_ = (fake_images_, real_images_)
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
@@ -585,11 +594,7 @@ class WORKER(object):
 
                     # <new> compute loss for real image provided fake image as reference
                     if self.MODEL.backbone == "jointgan":
-                        real_images_ = self.AUG.series_augment(real_images)
-                        real_images_ = (real_images_, fake_images_)
-                        real_image_basket, real_label_basket = self.sample_data_basket()
-                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True)
-                        real_dict = self.Dis(real_images_, real_labels)
+                        real_dict = self.Dis((real_images_, fake_images_), real_labels)
                         gen_acml_loss += self.LOSS.g_loss(-real_dict["adv_output"], DDP=self.DDP)
 
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
@@ -608,7 +613,7 @@ class WORKER(object):
                     # apply feature matching regularization to stabilize adversarial dynamics
                     if self.LOSS.apply_fm:
                         real_image_basket, real_label_basket = self.sample_data_basket()
-                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True) # TODO: make PR
+                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True)
                         real_labels = real_label_basket[0].to(self.local_rank, non_blocking=True)
                         real_images_ = self.AUG.series_augment(real_images)
                         real_dict = self.Dis(real_images_, real_labels)
