@@ -279,8 +279,7 @@ class WORKER(object):
 
                     # <new> implement JointGAN
                     if self.MODEL.backbone == "jointgan":
-                        real_images_ = (real_images_, fake_images_.detach())
-                        fake_images_ = (fake_images_, real_images_.detach())
+                        real_images_, fake_images_ = (real_images_, fake_images_.detach()), (fake_images_, real_images_.detach())
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     real_dict = self.Dis(real_images_, real_labels)
@@ -560,6 +559,10 @@ class WORKER(object):
 
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     fake_dict = self.Dis(fake_images_, fake_labels)
+
+                    # <new> revert
+                    if self.MODEL.backbone == "jointgan":
+                        fake_images_ = fake_images_[0]
 
                     # accumulate discriminator output informations for logging
                     if self.AUG.apply_ada or self.AUG.apply_apa:
