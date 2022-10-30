@@ -415,6 +415,7 @@ class Configurations(object):
         else:
             g_losses = {
                 "vanilla": losses.g_vanilla,
+                "joint": losses.g_vanilla,
                 "logistic": losses.g_logistic,
                 "least_square": losses.g_ls,
                 "hinge": losses.g_hinge,
@@ -423,6 +424,7 @@ class Configurations(object):
 
             d_losses = {
                 "vanilla": losses.d_vanilla,
+                "joint": losses.d_vanilla,
                 "logistic": losses.d_logistic,
                 "least_square": losses.d_ls,
                 "hinge": losses.d_hinge,
