@@ -193,6 +193,30 @@ def enable_allreduce(dict_):
             loss += value.mean()*0
     return loss
 
+###########################################
+# <new> losses for relativistic training. #
+###########################################
+def g_vanilla_relative(d_logit_fake, DDP, d_logit_real=None):
+    if d_logit_real is None:
+        return g_vanilla(d_logit_fake, DDP)
+    else:
+        return torch.mean(F.softplus(d_logit_real)) + torch.mean(F.softplus(-d_logit_fake))
+
+
+def g_ls_relative(d_logit_fake, DDP, d_logit_real=None):
+    if d_logit_real is None:
+        return g_ls(d_logit_fake, DDP)
+    else:
+        return 0.5 * (d_logit_fake - torch.ones_like(d_logit_fake))**2 + 0.5 * (d_logit_real)**2
+
+
+#def g_wasserstein_relative(d_logit_fake, DDP, d_logit_real=None):
+#    if d_logit_real is None:
+#        return g_vanilla(d_logit_fake, DDP)
+#    else:
+#        return torch.mean(F.softplus(d_logit_real)) + torch.mean(F.softplus(-d_logit_fake))
+###########################################
+
 
 def d_vanilla(d_logit_real, d_logit_fake, DDP):
     d_loss = torch.mean(F.softplus(-d_logit_real)) + torch.mean(F.softplus(d_logit_fake))

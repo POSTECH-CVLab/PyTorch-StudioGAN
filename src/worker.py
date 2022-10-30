@@ -589,13 +589,14 @@ class WORKER(object):
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
                         gen_acml_loss = self.LOSS.mh_lambda * self.LOSS.g_loss(DDP=self.DDP, **fake_dict, )
+                    # <new> compute loss for real image provided fake image as reference
+                    elif self.LOSS.relativistic or self.MODEL.backbone == "jointgan":
+                        real_dict = self.Dis((real_images_, fake_images_), real_labels)
+                        gen_acml_loss = self.LOSS.g_loss(d_logit_fake=fake_dict["adv_output"],
+                                                         d_logit_real=real_dict["adv_output"], DDP=self.DDP)
                     else:
                         gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"], DDP=self.DDP)
 
-                    # <new> compute loss for real image provided fake image as reference
-                    if self.MODEL.backbone == "jointgan":
-                        real_dict = self.Dis((real_images_, fake_images_), real_labels)
-                        gen_acml_loss += self.LOSS.g_loss(-real_dict["adv_output"], DDP=self.DDP)
 
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
