@@ -1,3 +1,9 @@
+# implement config for jointgan
+# implement config for jointgan
+# implement config for jointgan
+# implement config for jointgan
+# implement config for jointgan
+# implement config for jointgan
 DATA:
   name: "CIFAR10"
   img_size: 32
