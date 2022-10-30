@@ -277,6 +277,11 @@ class WORKER(object):
                     real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
 
+                    # <new> implement JointGAN
+                    if self.MODEL.backbone == "jointgan":
+                        real_images_ = (real_images_, fake_images_.detach())
+                        fake_images_ = (fake_images_, real_images_.detach())
+
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     real_dict = self.Dis(real_images_, real_labels)
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
@@ -549,6 +554,10 @@ class WORKER(object):
                     # apply differentiable augmentations if "apply_diffaug" is True
                     fake_images_ = self.AUG.series_augment(fake_images)
 
+                    # <new> implement JointGAN
+                    if self.MODEL.backbone == "jointgan":
+                        fake_images_ = (fake_images_, real_images_)
+
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     fake_dict = self.Dis(fake_images_, fake_labels)
 
@@ -571,6 +580,15 @@ class WORKER(object):
                     else:
                         gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"], DDP=self.DDP)
 
+                    # <new> compute loss for real image provided fake image as reference
+                    if self.MODEL.backbone == "jointgan":
+                        real_images_ = self.AUG.series_augment(real_images)
+                        real_images_ = (real_images_, fake_images_)
+                        real_image_basket, real_label_basket = self.sample_data_basket()
+                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True)
+                        real_dict = self.Dis(real_images_, real_labels)
+                        gen_acml_loss += self.LOSS.g_loss(-real_dict["adv_output"], DDP=self.DDP)
+
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
                         fake_cond_loss = self.cond_loss(**fake_dict)
@@ -587,7 +605,7 @@ class WORKER(object):
                     # apply feature matching regularization to stabilize adversarial dynamics
                     if self.LOSS.apply_fm:
                         real_image_basket, real_label_basket = self.sample_data_basket()
-                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True)
+                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True) # TODO: make PR
                         real_labels = real_label_basket[0].to(self.local_rank, non_blocking=True)
                         real_images_ = self.AUG.series_augment(real_images)
                         real_dict = self.Dis(real_images_, real_labels)
