@@ -9,6 +9,8 @@ MODEL:
   d_conv_dim: "N/A"
 LOSS:
   adv_loss: "least_square"
+  lsgan_gen_fake_target: 0
+  lsgan_disc_real_target: 1
   lsgan_disc_fake_target: -1
 
 OPTIMIZATION:
