@@ -364,7 +364,7 @@ Density and coverage metrics can estimate the fidelity and diversity of generate
 
 We report the best IS, FID, Improved Precision & Recall, and Density & Coverage of GANs.
 
-To download all checkpoints reported in StudioGAN, Please [**click here**](https://drive.google.com/drive/folders/1CDM96Ic-99KdCDYTALkqvoAliprEnltC?usp=sharing) (will be ready soon).
+To download all checkpoints reported in StudioGAN, Please [**click here**](https://huggingface.co/Mingguksky/PyTorch-StudioGAN/tree/main) (Hugging face Git).
 
 You can evaluate the checkpoint by adding ``-ckpt CKPT_PATH`` option with the corresponding configuration path ``-cfg CORRESPONDING_CONFIG_PATH``. 
 
