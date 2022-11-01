@@ -427,6 +427,7 @@ class Configurations(object):
                 "ragan": losses.g_ragan,
                 "vanilla_relativistic": losses.g_vanilla_relative,
                 "least_square_relativistic": losses.g_ls_relative,
+                "wasserstein_relativistic": losses.g_wasserstein_relative
             }
 
             d_losses = {
@@ -438,7 +439,8 @@ class Configurations(object):
                 "rgan": losses.d_rgan,
                 "ragan": losses.d_ragan,
                 "vanilla_relativistic": losses.d_vanilla,
-                "least_square_relativistic": losses.d_ls,
+                "least_square_relativistic": losses.d_ls_relative,
+                "wasserstein_relativistic":losses.d_wasserstein
             }
 
             self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]

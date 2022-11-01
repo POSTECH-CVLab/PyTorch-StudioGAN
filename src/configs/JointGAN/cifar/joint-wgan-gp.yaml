@@ -1,0 +1,9 @@
+DATA:
+  name: "CIFAR10"
+  img_size: 32
+  num_classes: 10
+LOSS:
+  adv_loss: "wasserstein_relativistic"
+  apply_gp: True
+  gp_lambda: 10.0
+  relativistic: True
