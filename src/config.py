@@ -118,6 +118,8 @@ class Configurations(object):
         self.MODEL.info_num_conti_c = "N/A"
         # dimension of discrete c to use in InfoGAN (one-hot)
         self.MODEL.info_dim_discrete_c = "N/A"
+        # <new> jointgan type
+        self.MODEL.jointgan_type = "concat"
 
         # -----------------------------------------------------------------------------
         # loss settings
