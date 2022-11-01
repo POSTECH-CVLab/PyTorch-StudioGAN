@@ -222,7 +222,7 @@ def g_ls_relative(d_logit_fake, DDP, d_logit_real=None):
     if d_logit_real is None:
         return g_ls(d_logit_fake, DDP)
     else:
-        gen_loss = 0.5 * (d_logit_fake)**2 + 0.5 * (d_logit_real)**2
+        gen_loss = 0.5 * (d_logit_fake - torch.ones_like(d_logit_fake))**2 + 0.5 * (d_logit_real)**2
         return gen_loss.mean()
 
 
