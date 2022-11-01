@@ -233,10 +233,6 @@ def g_wasserstein_relative(d_logit_fake, DDP, d_logit_real=None):
         return torch.mean(d_logit_real - d_logit_fake)
 
 
-def d_ls_relative(d_logit_real, d_logit_fake,  DDP):
-    d_loss = 0.5 * (d_logit_real - 1.0)**2 + \
-             0.5 * (d_logit_fake + 1.0)**2
-    return d_loss.mean()
 
 
 def d_vanilla(d_logit_real, d_logit_fake, DDP):
