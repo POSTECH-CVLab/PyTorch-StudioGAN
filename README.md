@@ -14,6 +14,20 @@
 - StudioGAN supports both clean and architecture-friendly metrics (IS, FID, PRDC, IFID) with a comprehensive benchmark.
 - StudioGAN provides wandb logs and pre-trained models (will be ready soon).
 
+# <new> Data preperation
+
+## Tiny_ImageNet
+```
+!wget http://cs231n.stanford.edu/tiny-imagenet-200.zip
+
+# process
+!wget https://gist.github.com/moskomule/2e6a9a463f50447beca4e64ab4699ac4/raw -O process_tiny_imagenet.sh
+!bash process_tiny_imagenet.sh
+
+!mv tiny-imagenet-200/val tiny-imagenet-200/valid
+!rm tiny-imagenet-200.zip
+```
+
 #  Release Notes (v.0.4.0)
 - We checked the reproducibility of implemented GANs.
 - We provide Baby, Papa, and Grandpa ImageNet datasets where images are processed using the anti-aliasing and high-quality resizer.

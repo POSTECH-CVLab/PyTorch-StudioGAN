@@ -118,6 +118,8 @@ class Configurations(object):
         self.MODEL.info_num_conti_c = "N/A"
         # dimension of discrete c to use in InfoGAN (one-hot)
         self.MODEL.info_dim_discrete_c = "N/A"
+        # <new> jointgan type
+        self.MODEL.jointgan_type = "concat"
 
         # -----------------------------------------------------------------------------
         # loss settings
@@ -794,7 +796,8 @@ class Configurations(object):
             "hierarchical embedding is only applicable to big_resnet or big_resnet_deep backbones."
 
         if isinstance(self.MODEL.g_conv_dim, int) or isinstance(self.MODEL.d_conv_dim, int):
-            assert self.MODEL.backbone in ["resnet", "big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan"], \
+            backbone_name = self.MODEL.backbone.split('.')[-1]
+            assert backbone_name in ["resnet", "big_resnet", "big_resnet_deep_legacy", "big_resnet_deep_studiogan"], \
             "g_conv_dim and d_conv_dim are hyperparameters for controlling dimensions of resnet, big_resnet, and big_resnet_deeps."
 
         if self.MODEL.backbone in ["stylegan2", "stylegan3"]:

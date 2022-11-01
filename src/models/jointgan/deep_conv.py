@@ -12,152 +12,23 @@ import utils.ops as ops
 import utils.misc as misc
 
 
-class GenBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, g_cond_mtd, g_info_injection, affine_input_dim, MODULES):
-        super(GenBlock, self).__init__()
-        self.g_cond_mtd = g_cond_mtd
-        self.g_info_injection = g_info_injection
-
-        self.deconv0 = MODULES.g_deconv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=4, stride=2, padding=1)
-
-        if self.g_cond_mtd == "W/O" and self.g_info_injection in ["N/A", "concat"]:
-            self.bn0 = MODULES.g_bn(in_features=out_channels)
-        elif self.g_cond_mtd == "cBN" or self.g_info_injection == "cBN":
-            self.bn0 = MODULES.g_bn(affine_input_dim, out_channels, MODULES)
-        else:
-            raise NotImplementedError
-
-        self.activation = MODULES.g_act_fn
-
-    def forward(self, x, affine):
-        x = self.deconv0(x)
-        if self.g_cond_mtd == "W/O" and self.g_info_injection in ["N/A", "concat"]:
-            x = self.bn0(x)
-        elif self.g_cond_mtd == "cBN" or self.g_info_injection == "cBN":
-            x = self.bn0(x, affine)
-        out = self.activation(x)
-        return out
-
-
-class Generator(nn.Module):
-    def __init__(self, z_dim, g_shared_dim, img_size, g_conv_dim, apply_attn, attn_g_loc, g_cond_mtd, num_classes, g_init, g_depth,
-                 mixed_precision, MODULES, MODEL):
-        super(Generator, self).__init__()
-        self.in_dims = [512, 256, 128]
-        self.out_dims = [256, 128, 64]
-
-        self.z_dim = z_dim
-        self.num_classes = num_classes
-        self.g_cond_mtd = g_cond_mtd
-        self.mixed_precision = mixed_precision
-        self.MODEL = MODEL
-        self.affine_input_dim = 0
-
-        info_dim = 0
-        if self.MODEL.info_type in ["discrete", "both"]:
-            info_dim += self.MODEL.info_num_discrete_c*self.MODEL.info_dim_discrete_c
-        if self.MODEL.info_type in ["continuous", "both"]:
-            info_dim += self.MODEL.info_num_conti_c
-
-        self.g_info_injection = self.MODEL.g_info_injection
-        if self.MODEL.info_type != "N/A":
-            if self.g_info_injection == "concat":
-                self.info_mix_linear = MODULES.g_linear(in_features=self.z_dim + info_dim, out_features=self.z_dim, bias=True)
-            elif self.g_info_injection == "cBN":
-                self.affine_input_dim += self.z_dim
-                self.info_proj_linear = MODULES.g_linear(in_features=info_dim, out_features=self.z_dim, bias=True)
-
-        if self.g_cond_mtd != "W/O" and self.g_cond_mtd == "cBN":
-            self.affine_input_dim += self.num_classes
-
-        self.linear0 = MODULES.g_linear(in_features=self.z_dim, out_features=self.in_dims[0]*4*4, bias=True)
-
-        self.blocks = []
-        for index in range(len(self.in_dims)):
-            self.blocks += [[
-                GenBlock(in_channels=self.in_dims[index],
-                         out_channels=self.out_dims[index],
-                         g_cond_mtd=self.g_cond_mtd,
-                         g_info_injection=self.g_info_injection,
-                         affine_input_dim=self.affine_input_dim,
-                         MODULES=MODULES)
-            ]]
-
-            if index + 1 in attn_g_loc and apply_attn:
-                self.blocks += [[ops.SelfAttention(self.out_dims[index], is_generator=True, MODULES=MODULES)]]
-
-        self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
-
-        self.conv4 = MODULES.g_conv2d(in_channels=self.out_dims[-1], out_channels=3, kernel_size=3, stride=1, padding=1)
-        self.tanh = nn.Tanh()
-
-        ops.init_weights(self.modules, g_init)
-
-    def forward(self, z, label, shared_label=None, eval=False):
-        affine_list = []
-        if self.g_cond_mtd != "W/O":
-            label = F.one_hot(label, num_classes=self.num_classes).to(torch.float32)
-        with torch.cuda.amp.autocast() if self.mixed_precision and not eval else misc.dummy_context_mgr() as mp:
-            if self.MODEL.info_type != "N/A":
-                if self.g_info_injection == "concat":
-                    z = self.info_mix_linear(z)
-                elif self.g_info_injection == "cBN":
-                    z, z_info = z[:, :self.z_dim], z[:, self.z_dim:]
-                    affine_list.append(self.info_proj_linear(z_info))
-
-            if self.g_cond_mtd != "W/O":
-                affine_list.append(label)
-            if len(affine_list) > 0:
-                affines = torch.cat(affine_list, 1)
-            else:
-                affines = None
-
-            act = self.linear0(z)
-            act = act.view(-1, self.in_dims[0], 4, 4)
-            for index, blocklist in enumerate(self.blocks):
-                for block in blocklist:
-                    if isinstance(block, ops.SelfAttention):
-                        act = block(act)
-                    else:
-                        act = block(act, affines)
-
-            act = self.conv4(act)
-            out = self.tanh(act)
-        return out
-
-
-class DiscBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, apply_d_sn, MODULES):
-        super(DiscBlock, self).__init__()
-        self.apply_d_sn = apply_d_sn
-
-        self.conv0 = MODULES.d_conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-        self.conv1 = MODULES.d_conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=4, stride=2, padding=1)
-
-        if not apply_d_sn:
-            self.bn0 = MODULES.d_bn(in_features=out_channels)
-            self.bn1 = MODULES.d_bn(in_features=out_channels)
-
-        self.activation = MODULES.d_act_fn
-
-    def forward(self, x):
-        x = self.conv0(x)
-        if not self.apply_d_sn:
-            x = self.bn0(x)
-        x = self.activation(x)
-
-        x = self.conv1(x)
-        if not self.apply_d_sn:
-            x = self.bn1(x)
-        out = self.activation(x)
-        return out
+from ..deep_conv import Generator, DiscBlock  # noqa
 
 
 class Discriminator(nn.Module):
     def __init__(self, img_size, d_conv_dim, apply_d_sn, apply_attn, attn_d_loc, d_cond_mtd, aux_cls_type, d_embed_dim, normalize_d_embed,
                  num_classes, d_init, d_depth, mixed_precision, MODULES, MODEL):
         super(Discriminator, self).__init__()
-        self.in_dims = [3*2] + [64, 128] # <new> 3+3 channels
+
+        input_image_channels = 3
+
+        # <new> jointgan types
+        if MODEL.jointgan_type == "concat":
+            input_image_channels *= 2
+        else:
+            raise ValueError(f"Invalid jointgan_type `{MODEL.jointgan_type}` was given.")
+
+        self.in_dims = [input_image_channels] + [64, 128]
         self.out_dims = [64, 128, 256]
 
         self.apply_d_sn = apply_d_sn
@@ -237,7 +108,12 @@ class Discriminator(nn.Module):
             info_discrete_c_logits, info_conti_mu, info_conti_var = None, None, None
             
             x, reference_image = x
-            h = torch.cat([x, reference_image], dim=1) # <new> concat
+
+            if self.MODEL.jointgan_type == "concat":  # <new> concat mode
+                h = torch.cat([x, reference_image], dim=1)
+            else:
+                h = x
+
             for index, blocklist in enumerate(self.blocks):
                 for block in blocklist:
                     h = block(h)
