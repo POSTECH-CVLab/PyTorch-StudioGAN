@@ -214,13 +214,11 @@ def d_ragan(d_logit_fake, DDP, d_logit_real=None):
     fake_loss = F.softplus(d_logit_fake - torch.mean(d_logit_real))
     return torch.mean(real_loss +fake_loss) / 2
 
-
 def g_vanilla_relative(d_logit_fake, DDP, d_logit_real=None):
     if d_logit_real is None:
         return g_vanilla(d_logit_fake, DDP)
     else:
         return torch.mean(F.softplus(d_logit_real)) + torch.mean(F.softplus(-d_logit_fake))
-
 
 def g_ls_relative(d_logit_fake, DDP, d_logit_real=None, real_target=0, fake_target=1):
     if d_logit_real is None:
