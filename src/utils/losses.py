@@ -203,12 +203,16 @@ def d_rgan(d_logit_fake, DDP, d_logit_real=None):
     return torch.mean(F.softplus(d_logit_fake-d_logit_real))
 
 def g_ragan(d_logit_real, d_logit_fake, DDP):
-    # label=1 for first term, label=0 for second term.
-    return (F.softplus(d_logit_real - torch.mean(d_logit_fake)) + F.softplus(-d_logit_fake + torch.mean(d_logit_real))) / 2
+    # label=0 for first term, label=1 for second term.
+    real_loss = F.softplus(d_logit_real - torch.mean(d_logit_fake))
+    fake_loss = F.softplus(-d_logit_fake + torch.mean(d_logit_real))
+    return torch.mean(real_loss + fake_loss) / 2
 
 def d_ragan(d_logit_fake, DDP, d_logit_real=None):
-    # label=0 for first term, label=1 for second term.
-    return (F.softplus(-d_logit_real + torch.mean(d_logit_fake)) + F.softplus(d_logit_fake - torch.mean(d_logit_real))) / 2
+    # label=1 for first term, label=0 for second term.
+    real_loss = F.softplus(-d_logit_real + torch.mean(d_logit_fake))
+    fake_loss = F.softplus(d_logit_fake - torch.mean(d_logit_real))
+    return torch.mean(real_loss +fake_loss) / 2
 
 
 def g_vanilla_relative(d_logit_fake, DDP, d_logit_real=None):
@@ -218,11 +222,15 @@ def g_vanilla_relative(d_logit_fake, DDP, d_logit_real=None):
         return torch.mean(F.softplus(d_logit_real)) + torch.mean(F.softplus(-d_logit_fake))
 
 
-def g_ls_relative(d_logit_fake, DDP, d_logit_real=None):
+def g_ls_relative(d_logit_fake, DDP, d_logit_real=None, real_target=0, fake_target=1):
     if d_logit_real is None:
-        return g_ls(d_logit_fake, DDP)
+        return g_ls(d_logit_fake, DDP, fake_target=fake_target)
     else:
-        gen_loss = 0.5 * (d_logit_fake - torch.ones_like(d_logit_fake))**2 + 0.5 * (d_logit_real)**2
+        real_target = torch.ones_like(d_logit_real) * real_target
+        fake_target = torch.ones_like(d_logit_real) * fake_target
+        gen_loss = 0.5 * (d_logit_real - real_target) ** 2 + \
+                   0.5 * (d_logit_fake - fake_target) ** 2
+
         return gen_loss.mean()
 
 
@@ -253,13 +261,17 @@ def g_logistic(d_logit_fake, DDP):
     return F.softplus(-d_logit_fake).mean()
 
 
-def d_ls(d_logit_real, d_logit_fake, DDP):
-    d_loss = 0.5 * (d_logit_real - torch.ones_like(d_logit_real))**2 + 0.5 * (d_logit_fake)**2
+def d_ls(d_logit_real, d_logit_fake, DDP, real_target=1, fake_target=0):
+    real_target = torch.ones_like(d_logit_real) * real_target
+    fake_target = torch.ones_like(d_logit_real) * fake_target
+    d_loss = 0.5 * (d_logit_real - real_target) ** 2 + \
+             0.5 * (d_logit_fake - fake_target) ** 2
     return d_loss.mean()
 
 
-def g_ls(d_logit_fake, DDP):
-    gen_loss = 0.5 * (d_logit_fake - torch.ones_like(d_logit_fake))**2
+def g_ls(d_logit_fake, DDP, fake_target=1):
+    fake_target = torch.ones_like(d_logit_fake) * fake_target
+    gen_loss = 0.5 * (d_logit_fake - fake_target)**2
     return gen_loss.mean()
 
 
