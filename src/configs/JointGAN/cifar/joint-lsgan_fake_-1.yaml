@@ -9,8 +9,10 @@ MODEL:
 LOSS:
   adv_loss: "least_square_relativistic"
   relativistic: True
+  lsgan_gen_real_target: 0
+  lsgan_gen_fake_target: 0
+  lsgan_disc_real_target: 1
   lsgan_disc_fake_target: -1
-  lsgan_gen_real_target: -1
 
 OPTIMIZATION:
   d_updates_per_step: 2
