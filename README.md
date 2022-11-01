@@ -25,6 +25,7 @@
 !bash process_tiny_imagenet.sh
 
 !mv tiny-imagenet-200/val tiny-imagenet-200/valid
+!rm tiny-imagenet-200.zip
 ```
 
 #  Release Notes (v.0.4.0)
