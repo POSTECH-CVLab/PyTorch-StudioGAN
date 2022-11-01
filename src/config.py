@@ -439,7 +439,7 @@ class Configurations(object):
                 "rgan": losses.d_rgan,
                 "ragan": losses.d_ragan,
                 "vanilla_relativistic": losses.d_vanilla,
-                "least_square_relativistic": losses.d_ls_relative,
+                "least_square_relativistic": losses.d_ls,
                 "wasserstein_relativistic":losses.d_wasserstein
             }
 
