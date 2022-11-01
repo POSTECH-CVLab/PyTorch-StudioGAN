@@ -9,7 +9,7 @@
 **Moreover**, StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
 
 # News
-- We provide all checkpoints we used: Please visit [Hugging Face Git](https://huggingface.co/Mingguksky/PyTorch-StudioGAN/tree/main)
+- We provide all checkpoints we used: Please visit [Hugging Face Hub](https://huggingface.co/Mingguksky/PyTorch-StudioGAN/tree/main)
 - Our new paper "[StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis](https://arxiv.org/abs/2206.09479)" is made public on arXiv.
 - StudioGAN provides implementations of 7 GAN architectures, 9 conditioning methods, 4 adversarial losses, 13 regularization modules, 3 differentiable augmentations, 8 evaluation metrics, and 5 evaluation backbones.
 - StudioGAN supports both clean and architecture-friendly metrics (IS, FID, PRDC, IFID) with a comprehensive benchmark.
@@ -365,7 +365,7 @@ Density and coverage metrics can estimate the fidelity and diversity of generate
 
 We report the best IS, FID, Improved Precision & Recall, and Density & Coverage of GANs.
 
-To download all checkpoints reported in StudioGAN, Please [**click here**](https://huggingface.co/Mingguksky/PyTorch-StudioGAN/tree/main) (Hugging face Git).
+To download all checkpoints reported in StudioGAN, Please [**click here**](https://huggingface.co/Mingguksky/PyTorch-StudioGAN/tree/main) (Hugging face Hub).
 
 You can evaluate the checkpoint by adding ``-ckpt CKPT_PATH`` option with the corresponding configuration path ``-cfg CORRESPONDING_CONFIG_PATH``. 
 
