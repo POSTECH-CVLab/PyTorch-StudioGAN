@@ -277,9 +277,17 @@ class WORKER(object):
                     real_images_ = self.AUG.series_augment(real_images)
                     fake_images_ = self.AUG.series_augment(fake_images)
 
+                    # <new> implement JointGAN
+                    if self.MODEL.backbone == "jointgan":
+                        real_images_, fake_images_ = (real_images_, fake_images_.detach()), (fake_images_, real_images_.detach())
+
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     real_dict = self.Dis(real_images_, real_labels)
                     fake_dict = self.Dis(fake_images_, fake_labels, adc_fake=self.adc_fake)
+
+                    # <new> implement JointGAN
+                    if self.MODEL.backbone == "jointgan":
+                        real_images_, fake_images_ = real_images_[0], fake_images_[0]
 
                     # accumulate discriminator output informations for logging
                     if self.AUG.apply_ada or self.AUG.apply_apa:
@@ -301,7 +309,7 @@ class WORKER(object):
                         dis_acml_loss = self.LOSS.d_loss(DDP=self.DDP, **real_dict)
                         dis_acml_loss += self.LOSS.d_loss(fake_dict["adv_output"], self.lossy, DDP=self.DDP)
                     else:
-                        dis_acml_loss = self.LOSS.d_loss(real_dict["adv_output"], fake_dict["adv_output"], DDP=self.DDP)
+                        dis_acml_loss = self.LOSS.d_loss(d_logit_real=real_dict["adv_output"], d_logit_fake=fake_dict["adv_output"], DDP=self.DDP)
 
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:
@@ -549,8 +557,23 @@ class WORKER(object):
                     # apply differentiable augmentations if "apply_diffaug" is True
                     fake_images_ = self.AUG.series_augment(fake_images)
 
+                    get_real_dict = self.LOSS.relativistic or self.MODEL.backbone == "jointgan"
+                    # <new> implement JointGAN
+                    if get_real_dict:
+                        real_image_basket, real_label_basket = self.sample_data_basket()
+                        real_images = real_image_basket[0].to(self.local_rank, non_blocking=True)
+                        real_labels = real_label_basket[0].to(self.local_rank, non_blocking=True)
+                        real_images_ = self.AUG.series_augment(real_images)
+
+                    if self.MODEL.backbone == "jointgan":
+                        fake_images_ = (fake_images_, real_images_)
+
                     # calculate adv_output, embed, proxy, and cls_output using the discriminator
                     fake_dict = self.Dis(fake_images_, fake_labels)
+
+                    # <new> revert
+                    if self.MODEL.backbone == "jointgan":
+                        fake_images_ = fake_images_[0]
 
                     # accumulate discriminator output informations for logging
                     if self.AUG.apply_ada or self.AUG.apply_apa:
@@ -568,8 +591,17 @@ class WORKER(object):
                     # calculate adversarial loss defined by "LOSS.adv_loss"
                     if self.LOSS.adv_loss == "MH":
                         gen_acml_loss = self.LOSS.mh_lambda * self.LOSS.g_loss(DDP=self.DDP, **fake_dict, )
+                    # <new> compute loss for real image provided fake image as reference
+                    elif get_real_dict:
+                        if self.MODEL.backbone == "jointgan":
+                            real_dict = self.Dis((real_images_, fake_images_), real_labels)
+                        else:
+                            real_dict = self.Dis(real_images_, real_labels)
+                        gen_acml_loss = self.LOSS.g_loss(d_logit_fake=fake_dict["adv_output"],
+                                                         d_logit_real=real_dict["adv_output"], DDP=self.DDP)
                     else:
                         gen_acml_loss = self.LOSS.g_loss(fake_dict["adv_output"], DDP=self.DDP)
+
 
                     # calculate class conditioning loss defined by "MODEL.d_cond_mtd"
                     if self.MODEL.d_cond_mtd in self.MISC.classifier_based_GAN:

@@ -148,6 +148,8 @@ class Configurations(object):
         self.LOSS.m_p = "N/A"
         # temperature scalar for [2C, D2DCE]
         self.LOSS.temperature = "N/A"
+        # relativistic training of generator requires `d_real` to be computed while training generator.
+        self.LOSS.relativistic = False
         # whether to apply weight clipping regularization to let the discriminator satisfy Lipschitzness
         self.LOSS.apply_wc = False
         # clipping bound for weight clippling regularization
@@ -419,6 +421,10 @@ class Configurations(object):
                 "least_square": losses.g_ls,
                 "hinge": losses.g_hinge,
                 "wasserstein": losses.g_wasserstein,
+                "rgan": losses.g_rgan,
+                "ragan": losses.g_ragan,
+                "vanilla_relativistic": losses.g_vanilla_relative,
+                "least_square_relativistic": losses.g_ls_relative,
             }
 
             d_losses = {
@@ -427,6 +433,10 @@ class Configurations(object):
                 "least_square": losses.d_ls,
                 "hinge": losses.d_hinge,
                 "wasserstein": losses.d_wasserstein,
+                "rgan": losses.d_rgan,
+                "ragan": losses.d_ragan,
+                "vanilla_relativistic": losses.d_vanilla,
+                "least_square_relativistic": losses.d_ls,
             }
 
             self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
