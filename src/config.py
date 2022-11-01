@@ -4,6 +4,7 @@
 
 # src/config.py
 
+from functools import partial
 from itertools import chain
 import json
 import os
@@ -219,6 +220,11 @@ class Configurations(object):
         self.LOSS.lecam_ema_start_iter = "N/A"
         # decay rate for the EMALosses
         self.LOSS.lecam_ema_decay = "N/A"
+        # <new> use custom targets for lsgan
+        self.LOSS.lsgan_gen_real_target = 0  # this is enabled for Ra-LSGAN or Joint-LSGAN.
+        self.LOSS.lsgan_gen_fake_target = 1
+        self.LOSS.lsgan_disc_real_target = 1
+        self.LOSS.lsgan_disc_fake_target = 0
 
         # -----------------------------------------------------------------------------
         # optimizer settings
@@ -420,25 +426,40 @@ class Configurations(object):
             g_losses = {
                 "vanilla": losses.g_vanilla,
                 "logistic": losses.g_logistic,
-                "least_square": losses.g_ls,
+                "least_square": partial(
+                    losses.g_ls,
+                    fake_target=self.LOSS.lsgan_gen_fake_target,
+                ),
                 "hinge": losses.g_hinge,
                 "wasserstein": losses.g_wasserstein,
                 "rgan": losses.g_rgan,
                 "ragan": losses.g_ragan,
                 "vanilla_relativistic": losses.g_vanilla_relative,
-                "least_square_relativistic": losses.g_ls_relative,
+                "least_square_relativistic": partial(
+                    losses.g_ls_relative,
+                    real_target=self.LOSS.lsgan_gen_real_target,
+                    fake_target=self.LOSS.lsgan_gen_fake_target,
+                ),
             }
 
             d_losses = {
                 "vanilla": losses.d_vanilla,
                 "logistic": losses.d_logistic,
-                "least_square": losses.d_ls,
+                "least_square": partial(
+                    losses.d_ls,
+                    real_target=self.LOSS.lsgan_disc_real_target,
+                    fake_target=self.LOSS.lsgan_disc_fake_target,
+                ),
                 "hinge": losses.d_hinge,
                 "wasserstein": losses.d_wasserstein,
                 "rgan": losses.d_rgan,
                 "ragan": losses.d_ragan,
                 "vanilla_relativistic": losses.d_vanilla,
-                "least_square_relativistic": losses.d_ls,
+                "least_square_relativistic": partial(
+                    losses.d_ls,
+                    real_target=self.LOSS.lsgan_disc_real_target,
+                    fake_target=self.LOSS.lsgan_disc_fake_target,
+                ),
             }
 
             self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
