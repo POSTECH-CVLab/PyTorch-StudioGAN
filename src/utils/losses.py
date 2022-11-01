@@ -197,10 +197,10 @@ def enable_allreduce(dict_):
 # <new> losses for relativistic training. #
 ###########################################
 def g_rgan(d_logit_real, d_logit_fake, DDP):
-    return torch.mean(F.softplus(d_logit_real-d_logit_fake))
+    return torch.mean(F.softplus(d_logit_real - d_logit_fake))
 
 def d_rgan(d_logit_fake, DDP, d_logit_real=None):
-    return torch.mean(F.softplus(d_logit_fake-d_logit_real))
+    return torch.mean(F.softplus(d_logit_fake - d_logit_real))
 
 def g_ragan(d_logit_real, d_logit_fake, DDP):
     # label=0 for first term, label=1 for second term.
@@ -232,12 +232,13 @@ def g_ls_relative(d_logit_fake, DDP, d_logit_real=None, real_target=0, fake_targ
         return gen_loss.mean()
 
 
-#def g_wasserstein_relative(d_logit_fake, DDP, d_logit_real=None):
-#    if d_logit_real is None:
-#        return g_vanilla(d_logit_fake, DDP)
-#    else:
-#        return torch.mean(F.softplus(d_logit_real)) + torch.mean(F.softplus(-d_logit_fake))
-###########################################
+def g_wasserstein_relative(d_logit_fake, DDP, d_logit_real=None):
+    if d_logit_real is None:
+        return g_wasserstein(d_logit_fake, DDP)
+    else:
+        return torch.mean(d_logit_real - d_logit_fake)
+
+
 
 
 def d_vanilla(d_logit_real, d_logit_fake, DDP):

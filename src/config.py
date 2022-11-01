@@ -440,6 +440,7 @@ class Configurations(object):
                     real_target=self.LOSS.lsgan_gen_real_target,
                     fake_target=self.LOSS.lsgan_gen_fake_target,
                 ),
+                "wasserstein_relativistic": losses.g_wasserstein_relative,
             }
 
             d_losses = {
@@ -460,6 +461,7 @@ class Configurations(object):
                     real_target=self.LOSS.lsgan_disc_real_target,
                     fake_target=self.LOSS.lsgan_disc_fake_target,
                 ),
+                "wasserstein_relativistic":losses.d_wasserstein
             }
 
             self.LOSS.g_loss = g_losses[self.LOSS.adv_loss]
