@@ -426,7 +426,7 @@ class Configurations(object):
             g_losses = {
                 "vanilla": losses.g_vanilla,
                 "logistic": losses.g_logistic,
-                "least_square": losses.partial(
+                "least_square": partial(
                     losses.g_ls,
                     fake_target=self.LOSS.lsgan_gen_fake_target,
                 ),
