@@ -378,7 +378,7 @@ def cal_grad_penalty_with_reference(real_images, real_labels, fake_images, discr
     interpolates = interpolates.to(device)
     interpolates = autograd.Variable(interpolates, requires_grad=True)
 
-    references = (1 - alpha) * real_images + (alpha * fake_images)
+    references = (1 - alpha) * real_images + alpha * fake_images
     references = references.to(device)
     references = autograd.Variable(references, requires_grad=True)
 
