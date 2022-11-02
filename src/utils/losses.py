@@ -384,8 +384,8 @@ def cal_grad_penalty_with_reference(real_images, real_labels, fake_images, discr
 
     fake_dict = discriminator((interpolates, references), real_labels, eval=False)
     
-    grads1 = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device).view(grads1.size(0), -1)
-    grads2 = cal_deriv(inputs=references, outputs=fake_dict["adv_output"], device=device).view(grads2.size(0), -1)
+    grads1 = cal_deriv(inputs=interpolates, outputs=fake_dict["adv_output"], device=device).view(batch_size, -1)
+    grads2 = cal_deriv(inputs=references, outputs=fake_dict["adv_output"], device=device).view(batch_size, -1)
     grads = torch.cat([grads1, grads2], dim=1)
 
     grad_penalty = ((grads.norm(2, dim=1) - 1)**2).mean() + interpolates[:,0,0,0].mean()*0
