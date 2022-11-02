@@ -1,9 +1,9 @@
-MODEL:
-  backbone: "jointgan.resnet"
 DATA:
   name: "Tiny_ImageNet"
   img_size: 64
   num_classes: 200
+MODEL:
+  backbone: "jointgan.resnet"
 LOSS:
   adv_loss: "wasserstein_relativistic"
   apply_gp: True

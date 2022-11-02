@@ -375,11 +375,18 @@ class WORKER(object):
 
                     # apply gradient penalty regularization to train wasserstein GAN
                     if self.LOSS.apply_gp:
-                        gp_loss = losses.cal_grad_penalty(real_images=real_images,
-                                                          real_labels=real_labels,
-                                                          fake_images=fake_images,
-                                                          discriminator=self.Dis,
-                                                          device=self.local_rank)
+                        if "jointgan." in self.MODEL.backbone:
+                            gp_loss = losses.cal_grad_penalty_with_reference(real_images=real_images,
+                                                                             real_labels=real_labels,
+                                                                             fake_images=fake_images,
+                                                                             discriminator=self.Dis,
+                                                                             device=self.local_rank)
+                        else:
+                            gp_loss = losses.cal_grad_penalty(real_images=real_images,
+                                                            real_labels=real_labels,
+                                                            fake_images=fake_images,
+                                                            discriminator=self.Dis,
+                                                            device=self.local_rank)
                         dis_acml_loss += self.LOSS.gp_lambda * gp_loss
 
                     # apply deep regret analysis regularization to train wasserstein GAN

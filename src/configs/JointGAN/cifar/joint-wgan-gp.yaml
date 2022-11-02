@@ -2,6 +2,10 @@ DATA:
   name: "CIFAR10"
   img_size: 32
   num_classes: 10
+MODEL:
+  backbone: "jointgan.deep_conv"
+  g_conv_dim: "N/A"
+  d_conv_dim: "N/A"
 LOSS:
   adv_loss: "wasserstein_relativistic"
   apply_gp: True
