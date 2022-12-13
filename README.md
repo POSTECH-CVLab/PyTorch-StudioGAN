@@ -120,15 +120,15 @@ Then, use the following command to install the rest of the libraries:
 pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg timm
 ```
 
-With docker, you can use (Updated 19/JUL/2022):
+With docker, you can use (Updated 14/DEC/2022):
 ```bash
-docker pull alex4727/experiment:pytorch112_cuda113
+docker pull alex4727/experiment:pytorch113_cuda116
 ```
 
 This is our command to make a container named "StudioGAN".
 
 ```bash
-docker run -it --gpus all --shm-size 128g --name StudioGAN -v /home/USER:/root/code --workdir /root/code alex4727/experiment:pytorch112_cuda113 /bin/zsh
+docker run -it --gpus all --shm-size 128g --name StudioGAN -v /path_to_your_folders:/root/code --workdir /root/code alex4727/experiment:pytorch113_cuda116 /bin/zsh
 ```
 
 # Dataset
