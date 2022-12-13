@@ -110,14 +110,14 @@ We check the reproducibility of GANs implemented in StudioGAN  by comparing IS a
 
 # Requirements
 
-First, install PyTorch meeting your environment (at least 1.7, recommmended 1.10):
+First, install PyTorch meeting your environment (at least 1.7):
 ```bash
-pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
 ```
 
 Then, use the following command to install the rest of the libraries:
 ```bash
-pip3 install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg timm
+pip install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg timm
 ```
 
 With docker, you can use (Updated 14/DEC/2022):
