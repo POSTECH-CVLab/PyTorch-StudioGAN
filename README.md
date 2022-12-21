@@ -130,6 +130,10 @@ This is our command to make a container named "StudioGAN".
 ```bash
 docker run -it --gpus all --shm-size 128g --name StudioGAN -v /path_to_your_folders:/root/code --workdir /root/code alex4727/experiment:pytorch113_cuda116 /bin/zsh
 ```
+If your nvidia driver version doesn't satisfy requirements, you can try adding below to above command.
+```bash
+--env NVIDIA_DISABLE_REQUIRE=true
+```
 
 # Dataset
 
