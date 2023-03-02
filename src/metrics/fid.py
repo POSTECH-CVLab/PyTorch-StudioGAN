@@ -64,6 +64,7 @@ def frechet_inception_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 def calculate_moments(data_loader, eval_model, num_generate, batch_size, quantize, world_size,
                       DDP, disable_tqdm, fake_feats=None):
+    real_acts = None
     if fake_feats is not None:
         total_instance = num_generate
         acts = fake_feats.detach().cpu().numpy()[:num_generate]
@@ -75,27 +76,47 @@ def calculate_moments(data_loader, eval_model, num_generate, batch_size, quantiz
         if DDP: num_batches = int(math.ceil(float(total_instance) / float(batch_size*world_size)))
 
         acts = []
+        labels = []
         for i in tqdm(range(0, num_batches), disable=disable_tqdm):
             start = i * batch_size
             end = start + batch_size
             try:
-                images, labels = next(data_iter)
+                images, batch_labels = next(data_iter)
             except StopIteration:
                 break
 
-            images, labels = images.to("cuda"), labels.to("cuda")
+            images, batch_labels = images.to("cuda"), batch_labels.to("cuda")
 
             with torch.no_grad():
                 embeddings, logits = eval_model.get_outputs(images, quantize=quantize)
                 acts.append(embeddings)
+                labels.append(batch_labels)
 
         acts = torch.cat(acts, dim=0)
-        if DDP: acts = torch.cat(losses.GatherLayer.apply(acts), dim=0)
+        labels = torch.cat(labels, dim=0)
+        if DDP: 
+            acts = torch.cat(losses.GatherLayer.apply(acts), dim=0)
+            labels = torch.cat(losses.GatherLayer.apply(labels), dim=0)
         acts = acts.detach().cpu().numpy()[:total_instance].astype(np.float64)
+        labels = labels.detach().cpu().numpy()[:total_instance]
+
+        #print("Real embedding shape",acts.shape) #(50000, 2048)
+        #print("Labels shape", labels.shape) # Labels shape (50000,)
+        # make another torch copy of acts
+        real_acts = np.copy(acts)
+
+        # group embeddings by labels
+        acts_by_label = []
+        for label in np.unique(labels):
+            acts_by_label.append(acts[labels == label])
+        min_instances = min([acts_by_label[i].shape[0] for i in range(len(acts_by_label))])
+        real_acts = np.zeros((len(acts_by_label), min_instances, acts.shape[1]))
+        for i, label_acts in enumerate(acts_by_label):
+            real_acts[i] = label_acts[:min_instances]
 
     mu = np.mean(acts, axis=0)
     sigma = np.cov(acts, rowvar=False)
-    return mu, sigma
+    return mu, sigma, real_acts
 
 
 def calculate_fid(data_loader,
@@ -108,11 +129,12 @@ def calculate_fid(data_loader,
                   fake_feats=None,
                   disable_tqdm=False):
     eval_model.eval()
+    real_acts = None
 
-    if pre_cal_mean is not None and pre_cal_std is not None:
-        m1, s1 = pre_cal_mean, pre_cal_std
-    else:
-        m1, s1 = calculate_moments(data_loader=data_loader,
+    #if pre_cal_mean is not None and pre_cal_std is not None:
+        #m1, s1 = pre_cal_mean, pre_cal_std
+    #else:
+    m1, s1,real_acts = calculate_moments(data_loader=data_loader,
                                    eval_model=eval_model,
                                    num_generate="N/A",
                                    batch_size=cfgs.OPTIMIZATION.batch_size,
@@ -122,7 +144,7 @@ def calculate_fid(data_loader,
                                    disable_tqdm=disable_tqdm,
                                    fake_feats=None)
 
-    m2, s2 = calculate_moments(data_loader="N/A",
+    m2, s2, _ = calculate_moments(data_loader="N/A",
                                eval_model=eval_model,
                                num_generate=num_generate,
                                batch_size=cfgs.OPTIMIZATION.batch_size,
@@ -133,4 +155,5 @@ def calculate_fid(data_loader,
                                fake_feats=fake_feats)
 
     fid_value = frechet_inception_distance(m1, s1, m2, s2)
-    return fid_value, m1, s1
+    #print("real_acts shape", real_acts.shape) # (10, 5000, 2048)
+    return fid_value, m1, s1, real_acts

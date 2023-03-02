@@ -1,0 +1,3 @@
+[submodule "bioval"]
+	path = bioval
+	url = git@github.com:IhabBendidi/bioval.git

@@ -839,7 +839,46 @@ class WORKER(object):
                                                                    device=self.local_rank,
                                                                    logger=self.logger,
                                                                    disable_tqdm=self.global_rank != 0)
+            #print("fake_feats.shape: ", fake_feats.shape) # fake_feats.shape:  torch.Size([50048, 2048]) for Cifar10
+            #print("fake_probs.shape: ", fake_probs.shape) # fake_probs.shape:  torch.Size([50048, 1008]) for Cifar10
+            #print("fake_labels length: ", len(fake_labels)) # 50048 for Cifar10
+            #print("set of fake_labels: ", set(fake_labels)) # set of fake_labels:  {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
+
+            # Get the set of unique labels
+            unique_labels = set(fake_labels)
+
+            # Determine the minimum number of instances per class
+            min_instances = min([(fake_labels == label).sum().item() for label in unique_labels])
+
+            # Create the new vector
+            fake_vector = torch.zeros(len(unique_labels), min_instances, fake_feats.shape[1])
+            for i, label in enumerate(unique_labels):
+                instances = fake_feats[fake_labels == label][:min_instances]
+                fake_vector[i] = instances
+            
+            #print("fake_vector.shape: ", fake_vector.shape) # fake_vector.shape:  torch.Size([10, 4882, 2048]) for Cifar10
+
+            #print("Number of batches in reak data: ",len(self.eval_dataloader)) # 782
+
+            #print("Real data full size: ",len(self.eval_dataloader.dataset)) # 50000 for Cifar10
+
+            #batch = next(iter(self.eval_dataloader))
+            #num_columns = batch[0].shape[1]
+            #print("Real data columns : ", num_columns) # 3 for Cifar10
+
+            #print("general batch info :",batch[0].shape) # torch.Size([64, 3, 32, 32]) for Cifar10
+            #print("general batch info :",batch[1].shape) # torch.Size([64]) for Cifar10, probably the labels of images
+
+
+            # Explore the type of each of the three values of the batch
+            #print("type of batch[0] : ",type(batch[0])) # type of batch[0] :  <class 'torch.Tensor'
+            #print("type of batch[1] : ",type(batch[1])) # type of batch[1] :  <class 'torch.Tensor'>
+            #print("type of batch[2] : ",type(batch[2])) # Error index our of range
+
+
+
+            
             if ("fid" in metrics or "prdc" in metrics) and self.global_rank == 0:
                 self.logger.info("{num_images} real images is used for evaluation.".format(num_images=len(self.eval_dataloader.dataset)))
 
@@ -867,7 +906,7 @@ class WORKER(object):
                             wandb.log({"{eval_model} Top5 acc".format(eval_model=self.RUN.eval_backbone): top5}, step=self.wandb_step)
 
             if "fid" in metrics:
-                fid_score, m1, c1 = fid.calculate_fid(data_loader=self.eval_dataloader,
+                fid_score, m1, c1, real_vector = fid.calculate_fid(data_loader=self.eval_dataloader,
                                                       eval_model=self.eval_model,
                                                       num_generate=self.num_eval[self.RUN.ref_dataset],
                                                       cfgs=self.cfgs,
@@ -875,6 +914,8 @@ class WORKER(object):
                                                       pre_cal_std=self.sigma,
                                                       fake_feats=fake_feats,
                                                       disable_tqdm=self.global_rank != 0)
+                
+                # shape of real_vector is (10, 5000, 2048) for Cifar10
                 if self.global_rank == 0:
                     self.logger.info("FID score (Step: {step}, Using {type} moments): {FID}".format(
                         step=step, type=self.RUN.ref_dataset, FID=fid_score))
@@ -886,6 +927,8 @@ class WORKER(object):
                     if training:
                         self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
                             step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))
+            
+
 
             if "prdc" in metrics:
                 prc, rec, dns, cvg = prdc.calculate_pr_dc(real_feats=self.real_feats,
@@ -1402,7 +1445,7 @@ class WORKER(object):
                                                          pin_memory=True,
                                                          drop_last=False)
 
-                mu, sigma = fid.calculate_moments(data_loader=dataloader,
+                mu, sigma, _ = fid.calculate_moments(data_loader=dataloader,
                                                   eval_model=self.eval_model,
                                                   num_generate="N/A",
                                                   batch_size=batch_size,
@@ -1436,7 +1479,7 @@ class WORKER(object):
                                                     logger=self.logger,
                                                     disable_tqdm=True)
 
-                ifid_score, _, _ = fid.calculate_fid(data_loader="N/A",
+                ifid_score, _, _, _ = fid.calculate_fid(data_loader="N/A",
                                                      eval_model=self.eval_model,
                                                      num_generate=num_samples,
                                                      cfgs=self.cfgs,

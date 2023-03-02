@@ -1,0 +1,5 @@
+- Compute the aggregated values of real data in the beginning of the training
+- Install library in environement (and write installation process)
+- Modify evaluation script to use our evaluation metrics
+- Log evaluation metrics in wandb
+
