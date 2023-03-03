@@ -11,6 +11,7 @@ import random
 import string
 import pickle
 import copy
+import time
 
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
@@ -43,6 +44,8 @@ import utils.ops as ops
 import utils.resize as resize
 import utils.apa_aug as apa_aug
 import wandb
+from bioval.metrics.conditional_evaluation import ConditionalEvaluation
+
 
 SAVE_FORMAT = "step={step:0>3}-Inception_mean={Inception_mean:<.4}-Inception_std={Inception_std:<.4}-FID={FID:<.5}.pth"
 
@@ -182,7 +185,19 @@ class WORKER(object):
                        name=self.run_name,
                        dir=self.RUN.save_dir,
                        resume=self.best_step > 0 and resume)
-
+            
+            _ , _ ,real_acts = fid.calculate_moments(data_loader=self.eval_dataloader,
+                                   eval_model=self.eval_model,
+                                   num_generate="N/A",
+                                   batch_size=self.cfgs.OPTIMIZATION.batch_size,
+                                   quantize=True,
+                                   world_size=self.cfgs.OPTIMIZATION.world_size,
+                                   DDP=self.cfgs.RUN.distributed_data_parallel,
+                                   disable_tqdm=self.global_rank != 0,
+                                   fake_feats=None)
+            self.real_vector = real_acts
+            
+            
         self.start_time = datetime.now()
 
     def prepare_train_iter(self, epoch_counter):
@@ -914,6 +929,24 @@ class WORKER(object):
                                                       pre_cal_std=self.sigma,
                                                       fake_feats=fake_feats,
                                                       disable_tqdm=self.global_rank != 0)
+                if real_vector is not None:
+                    self.real_vector = real_vector
+                
+                # compute time needed for operation
+                #start_time = time.time()
+                
+                topk = ConditionalEvaluation()
+                bioval_metrics = topk(self.real_vector, fake_vector,k_range=[1, 5])
+
+                # spliit real_vector into two parts with total number of classes but half the number of images per class
+                real_vector_1 = self.real_vector[:, :int(self.real_vector.shape[1]/2), :]
+                real_vector_2 = self.real_vector[:, int(self.real_vector.shape[1]/2):, :]
+
+                tests = topk(real_vector_1, real_vector_2, k_range=[1, 5])
+                
+
+                # compute time needed for operation and print it
+                #print("Time elapsed: {:.2f}s".format(time.time() - start_time)) # Time elapsed: 0.79s for Cifar10
                 
                 # shape of real_vector is (10, 5000, 2048) for Cifar10
                 if self.global_rank == 0:
@@ -924,6 +957,13 @@ class WORKER(object):
                     metric_dict.update({"FID": fid_score})
                     if writing:
                         wandb.log({"FID score": fid_score}, step=self.wandb_step)
+                        wandb.log({"intra_top1": bioval_metrics["intra_top1"]}, step=self.wandb_step)
+                        wandb.log({"intra_top5": bioval_metrics["intra_top5"]}, step=self.wandb_step)
+                        wandb.log({"inter_corr": bioval_metrics["inter_corr"]}, step=self.wandb_step)
+                        wandb.log({"inter_p": bioval_metrics["inter_p"]}, step=self.wandb_step)
+                        wandb.log({"exact_matching": bioval_metrics["exact_matching"]}, step=self.wandb_step)
+                        wandb.log({"val_intra_top1": tests["intra_top1"]}, step=self.wandb_step)
+                        wandb.log({"val_intra_top5": tests["intra_top5"]}, step=self.wandb_step)
                     if training:
                         self.logger.info("Best FID score (Step: {step}, Using {type} moments): {FID}".format(
                             step=self.best_step, type=self.RUN.ref_dataset, FID=self.best_fid))

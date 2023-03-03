@@ -139,7 +139,7 @@ def prepare_moments(data_loader, eval_model, quantize, cfgs, logger, device):
         if device == 0:
             logger.info("Calculate moments of {ref} dataset using {eval_backbone} model.".\
                         format(ref=cfgs.RUN.ref_dataset, eval_backbone=cfgs.RUN.eval_backbone))
-        mu, sigma = fid.calculate_moments(data_loader=data_loader,
+        mu, sigma, _ = fid.calculate_moments(data_loader=data_loader,
                                           eval_model=eval_model,
                                           num_generate="N/A",
                                           batch_size=cfgs.OPTIMIZATION.batch_size,

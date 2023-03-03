@@ -131,18 +131,18 @@ def calculate_fid(data_loader,
     eval_model.eval()
     real_acts = None
 
-    #if pre_cal_mean is not None and pre_cal_std is not None:
-        #m1, s1 = pre_cal_mean, pre_cal_std
-    #else:
-    m1, s1,real_acts = calculate_moments(data_loader=data_loader,
-                                   eval_model=eval_model,
-                                   num_generate="N/A",
-                                   batch_size=cfgs.OPTIMIZATION.batch_size,
-                                   quantize=quantize,
-                                   world_size=cfgs.OPTIMIZATION.world_size,
-                                   DDP=cfgs.RUN.distributed_data_parallel,
-                                   disable_tqdm=disable_tqdm,
-                                   fake_feats=None)
+    if pre_cal_mean is not None and pre_cal_std is not None:
+        m1, s1 = pre_cal_mean, pre_cal_std
+    else:
+        m1, s1,real_acts = calculate_moments(data_loader=data_loader,
+                                    eval_model=eval_model,
+                                    num_generate="N/A",
+                                    batch_size=cfgs.OPTIMIZATION.batch_size,
+                                    quantize=quantize,
+                                    world_size=cfgs.OPTIMIZATION.world_size,
+                                    DDP=cfgs.RUN.distributed_data_parallel,
+                                    disable_tqdm=disable_tqdm,
+                                    fake_feats=None)
 
     m2, s2, _ = calculate_moments(data_loader="N/A",
                                eval_model=eval_model,
