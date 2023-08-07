@@ -106,7 +106,7 @@ GC/DC indicates the way how we inject label information to the Generator or Disc
 We check the reproducibility of GANs implemented in StudioGAN  by comparing IS and FID with the original papers. We identify our platform successfully reproduces most of representative GANs except for PD-GAN, ACGAN, LOGAN, SAGAN, and BigGAN-Deep. FQ means Flickr-Faces-HQ Dataset (FFHQ). The resolutions of ImageNet, AFHQv2, and FQ datasets are 128, 512, and 1024, respectively.
 
 <p align="center">
-  <img width="50%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility.png" />
+  <img width="50%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Reproducibility_.png" />
 </p>
 
 # Requirements
@@ -393,7 +393,7 @@ The resolutions of ImageNet-128 and ImageNet 256 are 128 and 256, respectively.
 All images used for Benchmark can be downloaded via One Drive (will be uploaded soon).
 
 <p align="center">
-  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark_.png"/>
+  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/Other_Benchmark.png"/>
 </p>
 
 # Evaluating pre-saved image folders
