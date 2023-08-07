@@ -9,6 +9,7 @@
 **Moreover**, StudioGAN provides an unprecedented-scale benchmark for generative models. The benchmark includes results from GANs (BigGAN-Deep, StyleGAN-XL), auto-regressive models (MaskGIT, RQ-Transformer), and Diffusion models (LSGM++, CLD-SGM, ADM-G-U).
 
 # News
+- StudioGAN paper is accepted at IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI), 2023.
 - We provide all checkpoints we used: Please visit [Hugging Face Hub](https://huggingface.co/Mingguksky/PyTorch-StudioGAN/tree/main).
 - Our new paper "[StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis](https://arxiv.org/abs/2206.09479)" is made public on arXiv.
 - StudioGAN provides implementations of 7 GAN architectures, 9 conditioning methods, 4 adversarial losses, 13 regularization modules, 3 differentiable augmentations, 8 evaluation metrics, and 5 evaluation backbones.
@@ -443,11 +444,11 @@ PyTorch-StudioGAN is an open-source library under the MIT license (MIT). However
 ## Citation
 StudioGAN is established for the following research projects. Please cite our work if you use StudioGAN.
 ```bib
-@article{kang2022StudioGAN,
+@article{kang2023StudioGANpami,
   title   = {{StudioGAN: A Taxonomy and Benchmark of GANs for Image Synthesis}},
   author  = {MinGuk Kang and Joonghyuk Shin and Jaesik Park},
-  journal = {2206.09479 (arXiv)},
-  year    = {2022}
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)},
+  year    = {2023}
 }
 ```
 
