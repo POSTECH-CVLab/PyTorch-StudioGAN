@@ -383,7 +383,7 @@ We use the same number of generated images as the training images for Frechet In
 All features and moments of reference datasets can be downloaded via [**features**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/ElbkH1fLidJDpzUvrZZiT6EBZgBUhi-t1xoOhnqCas2p9g?e=WfGdGT) and [**moments**](https://postechackr-my.sharepoint.com/:f:/g/personal/jaesik_postech_ac_kr/En88Meh2gJtKk-1tIM1b3YEBcUZlP_4ksAI-qAS9pja4Yw?e=3OWJ7E).
 
 <p align="center">
-  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark_.png"/>
+  <img width="95%" src="https://raw.githubusercontent.com/POSTECH-CVLab/PyTorch-StudioGAN/master/docs/figures/StudioGAN_Benchmark.png"/>
 </p>
 
 ### 2. Other generative models
