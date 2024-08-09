@@ -118,7 +118,7 @@ pip install torch torchvision torchaudio --extra-index-url https://download.pyto
 
 Then, use the following command to install the rest of the libraries:
 ```bash
-pip install tqdm ninja h5py kornia matplotlib pandas sklearn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg timm
+pip install tqdm ninja h5py kornia matplotlib pandas scikit-learn scipy seaborn wandb PyYaml click requests pyspng imageio-ffmpeg timm
 ```
 
 With docker, you can use (Updated 14/DEC/2022):
